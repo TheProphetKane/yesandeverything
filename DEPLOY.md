@@ -57,31 +57,51 @@ Still on the Pages settings page:
 
 The `CNAME` file in your repo already has `yesandeverything.com` in it, so GitHub will keep this setting locked in.
 
-## Step 5 — Point your domain at GitHub
+## Step 5 — Point your domain at GitHub (Squarespace / Google Workspace)
 
-This is the part that depends on **where you bought yesandeverything.com**. Go to that registrar's control panel (Namecheap, Cloudflare, Google Domains/Squarespace, GoDaddy, Porkbun, etc.) and find the **DNS settings** for the domain.
+You bought the domain through Google when setting up your email. That means:
 
-Add **all four** of these A records for the apex domain (`@` means "the root domain itself"):
+- The registration itself was handled by Google Domains, which Google sold to **Squarespace** in 2023. By now your domain is almost certainly managed through Squarespace, even though your email still runs on Google Workspace.
+- Your **email is on Google Workspace**, which means there are **MX records** and probably **SPF / DKIM / DMARC TXT records** already in place on the DNS for `yesandeverything.com`.
 
-| Type | Host/Name | Value           | TTL  |
-|------|-----------|-----------------|------|
-| A    | @         | 185.199.108.153 | auto |
-| A    | @         | 185.199.109.153 | auto |
-| A    | @         | 185.199.110.153 | auto |
-| A    | @         | 185.199.111.153 | auto |
+> 🚨 **CRITICAL — DO NOT DELETE EMAIL RECORDS.**
+> When you edit DNS, leave every existing **MX**, **TXT**, and **SPF** record exactly as it is. Deleting any of them will silently break your Google Workspace email delivery. You're only **adding** new records (four A, one CNAME) and **only deleting** old A records that point at a parking page on `@`. If you see records labeled `mx`, `spf`, `_dmarc`, `google._domainkey`, or anything containing "google" or "@aspmx" — leave them alone.
 
-Then add this **CNAME record** so `www.yesandeverything.com` also works:
+### 5a — Get to your DNS settings
 
-| Type  | Host/Name | Value                          | TTL  |
-|-------|-----------|--------------------------------|------|
-| CNAME | www       | theprophetkane.github.io.      | auto |
+Try these in order; whichever loads your domain first is the right one:
 
-> Notes for specific registrars:
-> - **Cloudflare**: set the four A records to **DNS only** (gray cloud), not Proxied, until HTTPS provisions. You can flip back to proxied later if you want.
-> - **Namecheap/GoDaddy**: their UI uses the same fields above. If they require a value in the Host column instead of `@`, leave it blank or use `@`.
-> - **Squarespace/Google Domains**: same pattern, just menus.
+1. **Squarespace**: https://account.squarespace.com/domains — sign in with the same Google account you used when buying the domain (Squarespace usually offers Google sign-in for migrated domains). Click `yesandeverything.com` → **DNS Settings** (or **DNS**).
+2. **Google Workspace Admin Console** (fallback): https://admin.google.com → **Account** → **Domains** → **Manage domains** → click `yesandeverything.com` → **Advanced DNS settings** or **Manage DNS**. This may redirect you to Squarespace.
 
-If the registrar already has any other A records on `@` (like a parking page), **delete them**.
+You should land on a page showing a list of DNS records (MX, TXT, possibly some A or CNAME records).
+
+### 5b — Add the GitHub records
+
+Add **all four** of these A records on the apex (host shown as `@` or left blank for "root domain"):
+
+| Type | Host | Value           |
+|------|------|-----------------|
+| A    | @    | 185.199.108.153 |
+| A    | @    | 185.199.109.153 |
+| A    | @    | 185.199.110.153 |
+| A    | @    | 185.199.111.153 |
+
+Add **one CNAME** so `www.yesandeverything.com` also works:
+
+| Type  | Host | Value                       |
+|-------|------|-----------------------------|
+| CNAME | www  | theprophetkane.github.io    |
+
+> If Squarespace's UI rejects the CNAME value because it ends without a dot, that's fine — it'll auto-canonicalize. If it requires a trailing dot, use `theprophetkane.github.io.`
+
+### 5c — Remove only conflicting A records
+
+If — and only if — there are existing **A records on `@`** pointing at a Squarespace parking page (you'll see IPs like `198.185.159.x` or `198.49.23.x`), **delete those four**. They will conflict with GitHub's IPs.
+
+If you also see an existing **CNAME on `www`** pointing somewhere else (like a Squarespace site), delete it before adding the GitHub one.
+
+**Do not delete anything else.** A safe pre-flight check: write down (or screenshot) the list of records before you change anything. If something breaks, you can put it back.
 
 ## Step 6 — Wait for DNS + HTTPS
 
