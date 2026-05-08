@@ -581,7 +581,7 @@
   <div class="title-row">
     <h1 class="game-title">Here There Be Hordes</h1>
     <span class="subtitle">Game Design Document</span>
-    <span class="meta-pill">v0.26.11</span>
+    <span class="meta-pill">v0.26.12</span>
     <span class="meta-pill">2026-05-07</span>
   </div>
   <nav class="tabs">
@@ -860,6 +860,7 @@
     <hr class="changelog-sep">
     <div class="footer-changelog">
       <strong style="color: var(--text-dim);">Changelog</strong><br>
+      <strong>v0.26.12</strong> (2026-05-07) - wall NE pulls + CP NW + Wood Tower shrink. (1) Wood Wall NE-SW (30,22) -> (35,17); NW-SE (28,48) -> (33,43) - both more NE per Nick. (2) Stone Wall NE-SW (28,30) -> (38,20) - heavy NE pull. NW-SE (26,46) -> (29,49) - slight SE. (3) CP (24,9) -> (20,5) - slight NW. (4) <strong>Wood Watchtower shrunk 0.5 -> 0.35 (~70%)</strong>; offsets (29,33) -> (20,20) (proportional + 3 north per Nick). Tuning table updated. <br>
       <strong>v0.26.11</strong> (2026-05-07) - logos splash skippable. <code>logos.gd</code> now intercepts <code>_input</code>: Esc or Space stops the AnimationPlayer and queue_frees the splash so the player drops straight into the main menu. <br>
       <strong>v0.26.10</strong> (2026-05-07) - wall directional tuning + CP NE shift + house/warehouse polish + CP-biased rescue. (1) Wood Wall scale 0.31 -> 0.295 (~5%). NE-SW (26,26) -> (30,22) - more NE. NW-SE (22,42) -> (28,48) - more SE. (2) Stone Wall NE-SW (26,36) -> (28,30) - NNE pull. NW-SE (22,52) -> (26,46) - NE pull. (3) CP (20,13) -> (24,9) - NE shift. (4) House (6,27) -> (6,30); Warehouse (2,22) -> (2,25). (5) <strong>Rescue helper now CP-biased</strong>: at the first non-empty rescue radius, picks the passable candidate closest to CP centre (Chebyshev) instead of arbitrary first. Cached <code>_cp_center_tile</code> on gameplay; clarified that rescue only fires when the unit's own tile is impassable (so enemy-surrounded units don't teleport). Tuning table updated. <br>
       <strong>v0.26.9</strong> (2026-05-07) - rescue stuck units on move-command. Per Nick: "if a unit ends up somewhere it shouldnt, it should be detected when you try to move them, if they find they are stuck, they should get pushed to the nearest empty cell." (1) <strong>New <code>_find_nearest_passable_tile</code></strong> in gameplay.gd: spirals outward (max radius 12) until it finds a passable tile or gives up. (2) <strong>_command_unit_to now rescues stuck units</strong>: if the unit's current tile is impassable (occupied by a building, on a tree, etc.), snap them to the nearest passable cell BEFORE pathfinding. Previously the move silently no-op'd. Solves the "Scout stuck inside CP" soft-lock - even if collision push or some edge case lands a unit inside a building footprint, the next move command unsticks them. (3) <strong>Boundary verification</strong>: every building (including CP) already claims its footprint via <code>Building._ready</code> -> <code>grid.set_tile_occupied</code> (loops <code>footprint.x * footprint.y</code> tiles, calls rebake_pathing after). CP is 4x4 = 16 tiles claimed; same mechanism as Barracks 3x3. Scout paths around CP via A*. The "stuck" cases must have been collision-push edge conditions; the rescue fix in (2) handles them. <br>
@@ -1344,11 +1345,11 @@ Defense:    Q=WoodWall W=WoodGate  E=WoodTwr
       <tr><td>Warehouse</td><td><code>buildings/economy/warehouse.png</code></td><td>0.29</td><td>(2, 25)</td></tr>
       <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Military</td></tr>
       <tr><td>Barracks</td><td><code>buildings/military/barracks.png</code></td><td>0.23</td><td>(0, -9)</td></tr>
-      <tr><td>Command Post</td><td><code>buildings/military/command_post.png</code></td><td>0.34</td><td>(24, 9)</td></tr>
+      <tr><td>Command Post</td><td><code>buildings/military/command_post.png</code></td><td>0.34</td><td>(20, 5)</td></tr>
       <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Defense</td></tr>
-      <tr><td>Wood Wall</td><td><code>walls/palisade_03a.png</code> + <code>palisade_03c.png</code></td><td>0.295</td><td>NE-SW (30, 22) / NW-SE (28, 48)</td></tr>
-      <tr><td>Stone Wall</td><td><code>walls/wall_06a.png</code> + <code>wall_06b.png</code></td><td>0.54</td><td>NE-SW (28, 30) / NW-SE (26, 46)</td></tr>
-      <tr><td>Wood Watchtower</td><td><code>buildings/defense/wood_watchtower.png</code></td><td>0.50</td><td>(29, 33)</td></tr>
+      <tr><td>Wood Wall</td><td><code>walls/palisade_03a.png</code> + <code>palisade_03c.png</code></td><td>0.295</td><td>NE-SW (35, 17) / NW-SE (33, 43)</td></tr>
+      <tr><td>Stone Wall</td><td><code>walls/wall_06a.png</code> + <code>wall_06b.png</code></td><td>0.54</td><td>NE-SW (38, 20) / NW-SE (29, 49)</td></tr>
+      <tr><td>Wood Watchtower</td><td><code>buildings/defense/wood_watchtower.png</code></td><td>0.35</td><td>(20, 20)</td></tr>
       <tr><td>Stone Watchtower</td><td><code>buildings/defense/stone_watchtower.png</code></td><td>0.28</td><td>(31, 30)</td></tr>
       <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Units</td></tr>
       <tr><td>Scout</td><td><code>units/scout/{idle,walk,attack,die}.png</code> (15 frames x 8 dirs each)</td><td>0.625</td><td>foot anchor: <code>-88 * scale</code> = -55 px</td></tr>
