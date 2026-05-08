@@ -581,7 +581,7 @@
   <div class="title-row">
     <h1 class="game-title">Here There Be Hordes</h1>
     <span class="subtitle">Game Design Document</span>
-    <span class="meta-pill">v0.26.15</span>
+    <span class="meta-pill">v0.26.16</span>
     <span class="meta-pill">2026-05-08</span>
   </div>
   <nav class="tabs">
@@ -860,6 +860,7 @@
     <hr class="changelog-sep">
     <div class="footer-changelog">
       <strong style="color: var(--text-dim);">Changelog</strong><br>
+      <strong>v0.26.16</strong> (2026-05-08) - publish-gdd.ps1 regex API fix. The static <code>[regex]::Replace($i, $p, $r, 1)</code> 4th argument is <code>RegexOptions</code>, not a count - so my count-limited replacement was actually IgnoreCase-flagged-and-replace-all. Switched to instance method <code>[regex]::new($p).Replace($i, $r, 1)</code> which actually limits to 1 match. Functional impact was small (index.html likely only has one matching pattern anyway), but this is the correct .NET API. <br>
       <strong>v0.26.15</strong> (2026-05-08) - YaE index.html version chip uses series notation. The HTBH project card on yesandeverything.com's landing page renders the version as <code>v0.21.x</code> (not <code>v0.21.3</code>). My v0.26.14 regex looked for the full triple <code>v#.#.#</code> so it never matched. Fixed: <code>publish-gdd.ps1</code> now reads the GDD's full version (e.g. v0.26.15), strips the patch number to a series (v0.26.x), and replaces any <code>v#.#.[0-9x]+</code> pattern in YaE index.html with the new series. Date pattern unchanged. Landing page should pick up the bump on next publish + Pages rebuild + hard refresh. <br>
       <strong>v0.26.14</strong> (2026-05-08) - root cause located: YaE index.html has a hardcoded HTBH version + date in the project card. publish-gdd.ps1 was only copying the GDD file; the landing-page card stayed at v0.21.3. Added a best-effort patch in publish-gdd.ps1 that swaps the FIRST <code>v#.#.#</code> and FIRST date in YaE index.html with the current GDD version + date. Conservative single-replacement so it won't cascade. If the heuristic misses the right markers (e.g. another version mentioned earlier on the page), Nick can share the index.html snippet and I'll write a targeted patch. Date pill bumped 2026-05-07 -> 2026-05-08 since we're now in the next day for tooling. <br>
       <strong>v0.26.13</strong> (2026-05-07) - push-to-github + diagnostic improvements. (1) <strong>push-to-github.ps1 hardened</strong>: reads current GDD version from the meta-pill and uses it in the commit message (was hardcoded to "v0.22.0 to v0.25.5" - that's why every push since the catch-up looked like the same commit). Also handles "nothing to commit" gracefully and still pushes any unpushed local commits in that case. (2) <strong>diagnose-gdd-publish.ps1 expanded</strong> to also report HTBH git state - branch, remote, local HEAD vs origin/main, ahead/behind counts, working-tree dirty count. Catches the "HTBH GitHub stuck behind local" failure mode that left the website stale. (3) Diagnostic root-cause: yesandeverything.com was showing v0.21.3 because the YaE repo had only ever received that publish before today; the v0.25.7 / v0.26.6 / v0.26.8 / v0.26.11 publishes all worked, just hadn't reached the live site (Pages cache + browser cache). Hard refresh after each release.ps1 run. <br>
