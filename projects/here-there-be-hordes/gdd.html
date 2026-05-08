@@ -581,7 +581,7 @@
   <div class="title-row">
     <h1 class="game-title">Here There Be Hordes</h1>
     <span class="subtitle">Game Design Document</span>
-    <span class="meta-pill">v0.26.6</span>
+    <span class="meta-pill">v0.26.8</span>
     <span class="meta-pill">2026-05-07</span>
   </div>
   <nav class="tabs">
@@ -860,6 +860,8 @@
     <hr class="changelog-sep">
     <div class="footer-changelog">
       <strong style="color: var(--text-dim);">Changelog</strong><br>
+      <strong>v0.26.8</strong> (2026-05-07) - wall shrink + cell alignment + zone size bumps + offset polish. (1) <strong>Walls -10% scale + offset bumps</strong>: Wood Wall 0.34 -> 0.31; Stone Wall 0.6 -> 0.54. Per-orientation offsets nudged east + south to land on the cell-border line per Nick screenshot. (2) <strong>CP shrunk again</strong> 0.38 -> 0.34 (~90%); offsets (22, 14) -> (20, 13). (3) <strong>CP buildable zone 12x12 -> 16x16</strong>: <code>ZONE_EXTENSION</code> 4 -> 6. (4) <strong>Warehouse zone 7x7 -> 11x11</strong>: warehouse now has its own <code>ZONE_EXTENSION = 5</code> (decoupled from CP). (5) <strong>Warehouse south +8</strong> (2, 14) -> (2, 22) so the building lands inside its tile. (6) <strong>Cottage / House / Barracks south bumps</strong>: Cottage (3, 20) -> (3, 23), House (6, 24) -> (6, 27), Barracks (0, -12) -> (0, -9). Live-tuning reference table updated to match. <br>
+      <strong>v0.26.7</strong> (2026-05-07) - GDD: live sprite tuning reference table. New table in Assets tab section 3 lists every wired building/unit's active asset path + render scale + texture_offset (per-orientation for walls). Updated alongside code so you can find current values at a glance instead of grepping the .gd files. <br>
       <strong>v0.26.6</strong> (2026-05-07) - Warehouse shrunk ~10%. Per Nick: scale 0.32 -> 0.29 (~90%). Offsets adjusted to (2, 14) so the foundation still lands inside the tile. <br>
       <strong>v0.26.5</strong> (2026-05-07) - Command Post shrunk ~10%. Per Nick: scale 0.42 -> 0.38 (~90% of prior). Offsets scaled proportionally: (24, 15) -> (22, 14) so the body still lands centered on the 4x4 footprint. <br>
       <strong>v0.26.4</strong> (2026-05-07) - release workflow lock. Nick: "we need to be commiting changes to github every time. We still have our website out of date, we need to be pushing GDD changes to the webpage github as well." Locked rule going forward: every version bump runs <code>scripts/release.ps1</code>, which orchestrates both <code>push-to-github.ps1</code> (HTBH repo) and <code>publish-gdd.ps1</code> (Yes-and-Everything repo, refreshes yesandeverything.com). Memory updated to remind on every bump-reply. <br>
@@ -1321,6 +1323,34 @@ Defense:    Q=WoodWall W=WoodGate  E=WoodTwr
   </table>
 
   <h2>3 &middot; Buildings, Units, Enemies, VFX</h2>
+
+  <h3>Live sprite tuning reference (v0.26.6)</h3>
+  <p style="color: var(--text-dim); font-size: 13px;">
+    Active asset path + render scale + texture_offset for every wired-up building and unit. Updated alongside any code change. Asset paths are relative to <code>assets/art/</code> in the project root. Per-orientation walls list both offsets (NE-SW / NW-SE).
+  </p>
+  <table class="tuning">
+    <thead><tr><th>Building / Unit</th><th>Active asset path</th><th>Scale</th><th>texture_offset</th></tr></thead>
+    <tbody>
+      <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Housing</td></tr>
+      <tr><td>Tent</td><td><code>buildings/housing/tent.png</code> + <code>tent_b.png</code></td><td>0.30</td><td>(0, 16)</td></tr>
+      <tr><td>Cottage</td><td><code>buildings/housing/cottage.png</code> + <code>cottage_b.png</code></td><td>0.32</td><td>(3, 23)</td></tr>
+      <tr><td>House</td><td><code>buildings/housing/house.png</code> + <code>house_b.png</code></td><td>0.30</td><td>(6, 27)</td></tr>
+      <tr><td>Manor</td><td><code>buildings/housing/manor.png</code> + <code>manor_b.png</code></td><td>0.25</td><td>(10, 24)</td></tr>
+      <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Economy</td></tr>
+      <tr><td>Lumberyard</td><td><code>buildings/economy/lumberyard_realm.png</code> (fallback <code>lumberyard.png</code>)</td><td>0.21 / 1.0</td><td>(0, 20) / (0, 0)</td></tr>
+      <tr><td>Warehouse</td><td><code>buildings/economy/warehouse.png</code></td><td>0.29</td><td>(2, 22)</td></tr>
+      <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Military</td></tr>
+      <tr><td>Barracks</td><td><code>buildings/military/barracks.png</code></td><td>0.23</td><td>(0, -9)</td></tr>
+      <tr><td>Command Post</td><td><code>buildings/military/command_post.png</code></td><td>0.34</td><td>(20, 13)</td></tr>
+      <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Defense</td></tr>
+      <tr><td>Wood Wall</td><td><code>walls/palisade_03a.png</code> + <code>palisade_03c.png</code></td><td>0.31</td><td>NE-SW (26, 26) / NW-SE (22, 42)</td></tr>
+      <tr><td>Stone Wall</td><td><code>walls/wall_06a.png</code> + <code>wall_06b.png</code></td><td>0.54</td><td>NE-SW (26, 36) / NW-SE (22, 52)</td></tr>
+      <tr><td>Wood Watchtower</td><td><code>buildings/defense/wood_watchtower.png</code></td><td>0.50</td><td>(29, 33)</td></tr>
+      <tr><td>Stone Watchtower</td><td><code>buildings/defense/stone_watchtower.png</code></td><td>0.28</td><td>(31, 30)</td></tr>
+      <tr><td colspan="4" style="background: rgba(255,255,255,0.04); font-weight: 600; color: var(--text-dim);">Units</td></tr>
+      <tr><td>Scout</td><td><code>units/scout/{idle,walk,attack,die}.png</code> (15 frames x 8 dirs each)</td><td>0.625</td><td>foot anchor: <code>-88 * scale</code> = -55 px</td></tr>
+    </tbody>
+  </table>
 
   <h3>Buildings</h3>
   <p style="color: var(--text-dim); font-size: 13px;">
