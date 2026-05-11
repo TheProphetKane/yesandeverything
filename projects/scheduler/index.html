@@ -30,6 +30,8 @@
   .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
   .pill { padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); }
   .pill.status::before { content: "● "; color: var(--amber); }
+  .pill.status.launching::before { color: var(--accent); }
+  code { font-family: var(--mono); color: var(--accent-dim); font-size: 13px; }
   hr.dashed { border: none; border-top: 1px dashed var(--border); margin: 32px 0; }
   h2 { color: var(--accent); font-size: 16px; margin: 32px 0 12px; }
   h2::before { content: "// "; color: var(--accent-dim); }
@@ -44,17 +46,28 @@
   <div class="crumb"><a href="/">yesandeverything</a> / projects / scheduler</div>
   <h1>Scheduler</h1>
   <div class="meta">
-    <span class="pill status">incubating</span>
-    <span class="pill">v0.1.0 — design</span>
+    <span class="pill status launching">launching</span>
+    <span class="pill">v1.0</span>
     <span class="pill">internal tool</span>
   </div>
   <p class="blurb">
-    An employee-scheduling web app. Employees submit preferred / available / unavailable
-    shifts on a rolling six-week window; an auto-fill rotates through staff,
-    handing out preferred shifts first, then filling gaps from availability.
-    Built first for an Aquatics department (lifeguard + swim instructor),
-    architected to grow into other departments without code changes.
+    An employee-scheduling web app. Employees sign in with a magic link, set
+    Preferred / Available / Unavailable on a rolling six-week shift window, and
+    request swaps, drops, time off, or open-shift claims. Managers run an
+    auto-fill that rotates through staff (preferred shifts first, then
+    availability, then min-hours), edit cells manually, publish a week, and
+    clear a review queue. Admins manage users, departments, sub-departments,
+    system settings, and an append-only audit log. Built first for an Aquatics
+    department (Lifeguard + Swim Instructor sub-departments), architected to
+    grow to additional departments without code changes. Mobile-first.
   </p>
+
+  <h2>Live</h2>
+  <ul class="links">
+    <li><a href="https://scheduler.yesandeverything.com">scheduler.yesandeverything.com</a> &mdash; SPA (custom domain, cert provisioning)</li>
+    <li><a href="https://theprophetkane.github.io/yesandscheduler/">theprophetkane.github.io/yesandscheduler/</a> &mdash; SPA (current)</li>
+    <li><a href="https://scheduler-api.theprophetkane.workers.dev/api/health">scheduler-api.theprophetkane.workers.dev</a> &mdash; Worker API (health check)</li>
+  </ul>
 
   <h2>Documents</h2>
   <ul class="links">
@@ -63,13 +76,17 @@
 
   <h2>Source</h2>
   <ul class="links">
-    <li><a href="https://github.com/TheProphetKane/scheduler">github.com/TheProphetKane/scheduler</a></li>
+    <li><a href="https://github.com/TheProphetKane/scheduler">github.com/TheProphetKane/scheduler</a> &mdash; private</li>
   </ul>
 
   <h2>Stack</h2>
   <p class="blurb">
-    Cloudflare Pages + Workers + D1. React 18 + TypeScript + Vite + Tailwind on the frontend,
-    Hono on the Worker. Bcrypt password hashing, session cookies, no third-party identity provider.
+    Cloudflare Workers + D1 SQLite for the API (Hono routes, schedule auto-fill,
+    notifications, audit log). React 18 + TypeScript + Vite + Tailwind on the
+    SPA, deployed to GitHub Pages. Supabase Auth for magic-link sign-in; the
+    Worker verifies Supabase JWTs against the project JWKS &mdash; no passwords
+    stored anywhere. Resend SMTP for transactional email. Single pnpm workspace:
+    <code>apps/web</code>, <code>apps/api</code>, <code>packages/shared</code>.
   </p>
 
   <hr class="dashed">
