@@ -1,9 +1,10 @@
-// main.js - bootstrap. Wires data → state → editor → preview + print-stage.
+// main.js - bootstrap. Wires data -> state -> editor + saved-labels -> preview.
 
 import { createState, defaultState, DEFAULT_PLACEMENT } from './state.js';
 import { render } from './render.js';
 import { mountEditor } from './ui/editor.js';
 import { mountShopName } from './ui/shop-name.js';
+import { mountSavedLabels } from './ui/saved-labels-ui.js';
 import { makeLookup } from './util/lookup.js';
 import { loadState, saveState, clearState, debounce } from './util/persist.js';
 
@@ -20,15 +21,15 @@ async function loadJson(path) {
 }
 
 async function main() {
-  const [herbDB, runes, aliasMap] = await Promise.all([
+  const [herbDB, runes, aliasMap, runeMeanings] = await Promise.all([
     loadJson('data/herbs.json'),
     loadJson('data/runes.json'),
     loadJson('data/aliases.json'),
+    loadJson('data/rune-meanings.json'),
   ]);
 
   const lookupHerb = makeLookup(herbDB, aliasMap);
 
-  // Load state and backfill any newer-version fields missing from saved shape.
   const persisted = loadState();
   const initial = persisted ?? defaultState();
   const defaults = defaultState();
@@ -37,24 +38,24 @@ async function main() {
   if (!initial.sizeId || !tmpl.sizes.find(s => s.id === initial.sizeId)) {
     initial.sizeId = tmpl.defaultSize;
   }
-  // v0.3 back fields
   for (const k of ['backEnabled', 'descFull', 'historicUses', 'nutrition', 'pairings']) {
     if (typeof initial[k] === 'undefined') initial[k] = defaults[k];
   }
-  // v0.4 placement
   if (!initial.placement) initial.placement = structuredClone(DEFAULT_PLACEMENT);
   for (const k of Object.keys(DEFAULT_PLACEMENT)) {
     if (!initial.placement[k]) initial.placement[k] = { ...DEFAULT_PLACEMENT[k] };
   }
-  // v0.4 icon
   if (typeof initial.icon === 'undefined') initial.icon = defaults.icon;
 
   const state = createState(initial);
 
   mountShopName(document.querySelector('[data-shop-name]'), state);
 
+  const savedMount = document.querySelector('[data-saved-labels]');
+  if (savedMount) mountSavedLabels(savedMount, state);
+
   mountEditor(document.querySelector('[data-editor]'), {
-    state, lookupHerb, runes, herbDB, aliasMap,
+    state, lookupHerb, runes, herbDB, aliasMap, runeMeanings,
     symbols: SYMBOLS, symbolLabels: SYMBOL_LABELS,
     templates: TEMPLATES,
     onReset: () => {
@@ -82,5 +83,4 @@ async function main() {
 
 main().catch(err => {
   console.error('Apothecary label creator failed to start:', err);
-  document.body.innerHTML = `<pre style="color:#C4580A; padding:20px; font-family:monospace;">${err.stack || err.message}</pre>`;
-});
+  document.body.inne
