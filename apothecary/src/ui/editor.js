@@ -36,8 +36,10 @@ export function mountEditor(root, ctx) {
 
     <div class="field">
       <label class="field-label" for="herbName">Herb / Ingredient Name</label>
-      <input id="herbName" class="field-input" type="text" list="herb-suggestions" autocomplete="off" placeholder="e.g. Chamomile, Lavender, Ginger..." />
-      <datalist id="herb-suggestions"></datalist>
+      <div class="herb-autocomplete" data-herb-autocomplete>
+        <input id="herbName" class="field-input" type="text" autocomplete="off" placeholder="e.g. Chamomile, Lavender, Ginger..." aria-autocomplete="list" aria-controls="herb-suggestions" />
+        <ul id="herb-suggestions" class="herb-suggestions" data-herb-suggestions hidden role="listbox"></ul>
+      </div>
     </div>
     <button id="btn-autofill" class="btn-primary">Auto-Fill Label</button>
     <div id="status-msg" class="status-msg">&nbsp;</div>
@@ -204,20 +206,89 @@ export function mountEditor(root, ctx) {
 
   const placementCheckboxes = root.querySelectorAll('[data-placement]');
 
-  // --- Herb autocomplete datalist ---
-  const herbList = root.querySelector('#herb-suggestions');
+  // --- Herb autocomplete (custom dropdown, v0.8.0) ---
+  // Replaces native <datalist> with styled, real-time-filtered dropdown.
+  // Keyboard nav (ArrowUp/Down/Enter/Escape) + click-to-select + hover
+  // highlight. Filters on every keystroke - no debounce, the index is small
+  // enough that O(n) per keystroke is fine.
+  const autocompleteRoot = root.querySelector('[data-herb-autocomplete]');
+  const suggestList      = root.querySelector('[data-herb-suggestions]');
   const titleCase = (s) => s.replace(/(^|\s)\w/g, c => c.toUpperCase());
-  const seen = new Set();
-  function addSuggestion(label) {
-    const t = titleCase(label);
-    if (seen.has(t)) return;
-    seen.add(t);
-    const opt = document.createElement('option');
-    opt.value = t;
-    herbList.appendChild(opt);
+  const escAttr   = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // Build searchable index from herbDB + aliases. Each entry: display label
+  // (title-cased), canonical herb key for lookup, Latin name for secondary
+  // display and matching, alias flag for the visual tag.
+  const searchIndex = [];
+  for (const k of Object.keys(herbDB)) {
+    searchIndex.push({ display: titleCase(k), canonical: k, latin: herbDB[k].latin ?? '', alias: false });
   }
-  for (const k of Object.keys(herbDB).sort()) addSuggestion(k);
-  if (aliasMap) for (const k of Object.keys(aliasMap).sort()) addSuggestion(k);
+  if (aliasMap) {
+    for (const k of Object.keys(aliasMap)) {
+      const canon = aliasMap[k];
+      if (herbDB[canon]) {
+        searchIndex.push({ display: titleCase(k), canonical: canon, latin: herbDB[canon].latin ?? '', alias: true });
+      }
+    }
+  }
+  searchIndex.sort((a, b) => a.display.localeCompare(b.display));
+
+  let suggestionIdx = -1;
+  let activeSuggestions = [];
+
+  function filterSuggestions(q) {
+    if (!q || !q.trim()) return searchIndex.slice(0, 12);
+    const ql = q.toLowerCase().trim();
+    const scored = [];
+    for (const item of searchIndex) {
+      const d = item.display.toLowerCase();
+      const l = item.latin.toLowerCase();
+      let score = 0;
+      if (d === ql)              score = 100;
+      else if (d.startsWith(ql)) score = 60;
+      else if (l.startsWith(ql)) score = 50;
+      else if (d.includes(ql))   score = 30;
+      else if (l.includes(ql))   score = 20;
+      if (score === 0) continue;
+      if (item.alias) score -= 1; // canonical beats alias on tie
+      scored.push({ item, score });
+    }
+    scored.sort((a, b) => b.score - a.score || a.item.display.localeCompare(b.item.display));
+    return scored.slice(0, 12).map(x => x.item);
+  }
+
+  function renderSuggestions(items) {
+    activeSuggestions = items;
+    suggestionIdx = -1;
+    if (items.length === 0) { suggestList.hidden = true; return; }
+    suggestList.innerHTML = items.map((it, i) => {
+      const latin = it.latin ? `<span class="herb-suggest__latin">${escAttr(it.latin)}</span>` : '';
+      const aliasTag = it.alias ? '<span class="herb-suggest__alias">alias</span>' : '';
+      return `<li class="herb-suggest" role="option" data-idx="${i}" data-canonical="${escAttr(it.canonical)}">
+        <span class="herb-suggest__name">${escAttr(it.display)}</span>${latin}${aliasTag}
+      </li>`;
+    }).join('');
+    suggestList.hidden = false;
+  }
+
+  function highlightSuggestion(idx) {
+    suggestionIdx = idx;
+    suggestList.querySelectorAll('.herb-suggest').forEach((el, i) => {
+      el.classList.toggle('is-active', i === idx);
+      if (i === idx) el.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function selectSuggestion(idx) {
+    const item = activeSuggestions[idx];
+    if (!item) return;
+    herbInput.value = item.display;
+    state.set({ herbName: item.display });
+    const h = lookupHerb(item.canonical);
+    if (h) state.set({ botanical: h.botanical, icon: h.icon ?? null });
+    suggestList.hidden = true;
+    herbInput.focus();
+  }
 
   // --- Selects ---
   for (const id of Object.keys(symbols)) {
@@ -313,6 +384,46 @@ export function mountEditor(root, ctx) {
     state.set({ herbName: herbInput.value });
     const h = lookupHerb(herbInput.value);
     if (h) state.set({ botanical: h.botanical, icon: h.icon ?? null });
+    renderSuggestions(filterSuggestions(herbInput.value));
+  });
+  herbInput.addEventListener('focus', () => {
+    renderSuggestions(filterSuggestions(herbInput.value));
+  });
+  herbInput.addEventListener('keydown', (e) => {
+    if (suggestList.hidden) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        renderSuggestions(filterSuggestions(herbInput.value));
+        if (activeSuggestions.length) highlightSuggestion(0);
+      }
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightSuggestion(Math.min(activeSuggestions.length - 1, suggestionIdx + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightSuggestion(Math.max(0, suggestionIdx - 1));
+    } else if (e.key === 'Enter' && suggestionIdx >= 0) {
+      e.preventDefault();
+      selectSuggestion(suggestionIdx);
+    } else if (e.key === 'Escape') {
+      suggestList.hidden = true;
+    }
+  });
+  suggestList.addEventListener('mousedown', (e) => {
+    const li = e.target.closest('.herb-suggest');
+    if (!li) return;
+    e.preventDefault();
+    selectSuggestion(parseInt(li.dataset.idx, 10));
+  });
+  suggestList.addEventListener('mouseover', (e) => {
+    const li = e.target.closest('.herb-suggest');
+    if (!li) return;
+    highlightSuggestion(parseInt(li.dataset.idx, 10));
+  });
+  document.addEventListener('mousedown', (e) => {
+    if (!autocompleteRoot.contains(e.target)) suggestList.hidden = true;
   });
   latinInput.addEventListener('input', () => state.set({ latin: latinInput.value }));
   propsInput.addEventListener('input', () => state.set({ props: propsInput.value }));

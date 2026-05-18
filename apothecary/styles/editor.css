@@ -1,4 +1,89 @@
-/* editor.css - v0.5: left panel + saved-labels sidebar + visual pickers. */
+/* editor.css - v0.8.0: left panel + saved-labels sidebar + visual pickers +
+   custom herb autocomplete dropdown. */
+
+/* --- Herb autocomplete dropdown (v0.8.0) ---
+   Replaces native <datalist> with a themed dropdown matching the editor's
+   dark/gold palette. Position-absolute below the input. Hover and keyboard-
+   active states share the same gold-fade highlight. */
+.herb-autocomplete { position: relative; }
+
+.herb-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.3);
+  max-height: 320px;
+  overflow-y: auto;
+  animation: herbDropIn 160ms var(--easing-soft);
+}
+.herb-suggestions[hidden] { display: none; }
+@keyframes herbDropIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.herb-suggest {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 100ms ease;
+  user-select: none;
+}
+.herb-suggest:hover,
+.herb-suggest.is-active {
+  background: var(--gold-fade);
+}
+
+.herb-suggest__name {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--gold-bright);
+  font-size: 13px;
+  letter-spacing: 0.4px;
+}
+.herb-suggest:hover .herb-suggest__name,
+.herb-suggest.is-active .herb-suggest__name {
+  color: var(--cream);
+  text-shadow: 0 0 10px var(--gold-glow);
+}
+
+.herb-suggest__latin {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--cream-dim);
+  opacity: 0.75;
+  flex: 1;
+}
+
+.herb-suggest__alias {
+  margin-left: auto;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--moss-light);
+  opacity: 0.7;
+  font-weight: 700;
+  padding: 2px 6px;
+  border: 1px solid var(--moss-dark);
+  border-radius: 3px;
+}
+
+.herb-suggestions::-webkit-scrollbar         { width: 8px; }
+.herb-suggestions::-webkit-scrollbar-track   { background: transparent; }
+.herb-suggestions::-webkit-scrollbar-thumb   { background: var(--moss-dark); border-radius: 4px; }
+.herb-suggestions::-webkit-scrollbar-thumb:hover { background: var(--moss); }
 
 .editor-panel {
   width: 38%;
