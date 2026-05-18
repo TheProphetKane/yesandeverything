@@ -1,11 +1,10 @@
 /* label.css - preview panel, label, print-stage, back-side styles.
  *
- * v0.4 fixes:
- *   - Each preview card lives in a .label-frame sized to its post-scale
- *     dimensions. Without this wrapper, transform: scale() doesn't claim
- *     layout space and the back label visually overlaps the front.
- *   - Body text on the label drops italic where legibility suffers at
- *     small physical sizes. Latin name keeps its italic (single short line).
+ * Font policy (v0.6.2): default body text on the label uses italic
+ * IM Fell English at the v0.4 sizes. Sizes smaller than the design
+ * baseline (mini, small) switch to Cinzel non-italic at slightly bumped
+ * sizes for legibility. The override is keyed off the label-design size
+ * class injected by render.js (label-design--mini / label-design--small).
  */
 
 .preview-panel {
@@ -13,6 +12,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 22px;
 }
 
 .preview-card {
@@ -37,7 +37,6 @@
   text-shadow: 0 0 14px var(--gold-glow);
 }
 
-/* Wrapper that holds one or two label frames. Vertical stack with a buffer. */
 .label-wrapper {
   margin: 0 auto;
   display: flex;
@@ -46,8 +45,8 @@
   gap: 24px;
 }
 
-/* Each label gets a frame sized to its post-scale visual dimensions, so flex
- * stacking gives correct layout space. Width/height set inline by render. */
+.preview-gap { height: 0; }
+
 .label-frame {
   position: relative;
   flex-shrink: 0;
@@ -65,7 +64,6 @@
   left: 0;
 }
 
-/* Label paper. Width/height inline (physical inches), preview-scale transform. */
 .label-card {
   position: relative;
   overflow: hidden;
@@ -109,10 +107,10 @@
 .label-zone.center { gap: 2.5px; overflow: visible; }
 .label-interior--back .label-zone { gap: 1px; width: 100%; }
 
-/* --- Front text styles --- (italic dropped on body for legibility at small sizes) */
+/* --- Front text styles (defaults: original italic IM Fell at v0.4 sizes) --- */
 .lbl-shop {
   font-family: var(--font-display);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 900;
   text-align: center;
   line-height: 1.1;
@@ -126,17 +124,16 @@
   line-height: 1.1;
 }
 .lbl-latin {
-  /* Latin name stays italic — single short line, legibility holds. */
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 700;
   text-align: center;
   line-height: 1.1;
 }
 .lbl-props {
   font-family: var(--font-body);
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -144,14 +141,12 @@
   line-height: 1.15;
 }
 .lbl-desc {
-  /* Was italic IM Fell — gets blurry below medium. Switched to Cinzel
-   * non-italic for functional legibility at mini and small sizes. */
-  font-family: var(--font-body);
-  font-style: normal;
-  font-size: 7.5px;
-  font-weight: 600;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 7px;
+  font-weight: 700;
   text-align: center;
-  line-height: 1.25;
+  line-height: 1.2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -159,20 +154,20 @@
 }
 
 .rune-item { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.rune-char { font-size: 22px; font-weight: 900; line-height: 1; }
+.rune-char { font-size: 21px; font-weight: 900; line-height: 1; }
 .rune-name {
   font-family: var(--font-body);
-  font-size: 7px;
+  font-size: 6.5px;
   font-weight: 700;
   text-transform: uppercase;
   text-align: center;
   line-height: 1.1;
 }
 
-/* --- Back text styles --- (italic dropped on bodies; titles stay caps Cinzel) */
+/* --- Back text styles (defaults: original italic at v0.4 sizes) --- */
 .back-name {
   font-family: var(--font-display);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 900;
   text-align: center;
   line-height: 1.1;
@@ -180,17 +175,17 @@
 .back-latin {
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 8px;
+  font-size: 7.5px;
   font-weight: 700;
   text-align: center;
   line-height: 1.1;
   margin-top: -1px;
 }
 .back-desc-full {
-  font-family: var(--font-body);
-  font-style: normal;
-  font-size: 7px;
-  font-weight: 600;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 6.5px;
+  font-weight: 700;
   text-align: center;
   line-height: 1.3;
   padding: 0 4px;
@@ -198,19 +193,19 @@
 .back-section { text-align: center; width: 100%; }
 .back-section-title {
   font-family: var(--font-body);
-  font-size: 6.5px;
-  font-weight: 800;
+  font-size: 6px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 1px;
   line-height: 1;
 }
 .back-section-body {
-  font-family: var(--font-body);
-  font-style: normal;
-  font-size: 6.5px;
-  font-weight: 600;
-  line-height: 1.3;
-  margin-top: 1.5px;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1px;
   padding: 0 4px;
 }
 .back-bottom-row {
@@ -226,8 +221,38 @@
 .back-third { flex: 1; min-width: 0; }
 .back-bottom-row--split { gap: 6px; }
 .back-bottom-row--split .back-section-body {
-  font-size: 6px;
+  font-size: 5.5px;
   letter-spacing: -0.05px;
+}
+
+/* --- Smaller-size overrides: switch body text to Cinzel non-italic for
+       legibility when the physical label drops below the design baseline. --- */
+.label-design--mini .lbl-desc,
+.label-design--small .lbl-desc {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 7.5px;
+  font-weight: 600;
+}
+.label-design--mini .back-desc-full,
+.label-design--small .back-desc-full {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 7px;
+  font-weight: 600;
+}
+.label-design--mini .back-section-body,
+.label-design--small .back-section-body {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 6.5px;
+  font-weight: 600;
+}
+.label-design--mini .back-latin,
+.label-design--small .back-latin {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 8px;
 }
 
 /* --- Print-stage --- */

@@ -187,7 +187,7 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
         height:${phys.hIn}in;
         transform: scale(${previewScale});
       ">
-        <div class="label-design label-design--${side}" style="
+        <div class="label-design label-design--${side} label-design--${state.sizeId}" style="
           width:${designW}in;
           height:${designH}in;
           transform: scale(${physicalScale});
@@ -211,7 +211,7 @@ function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme })
       width:${phys.wIn}in;
       height:${phys.hIn}in;
     ">
-      <div class="label-design label-design--${side}" style="
+      <div class="label-design label-design--${side} label-design--${state.sizeId}" style="
         width:${designW}in;
         height:${designH}in;
         transform: scale(${physicalScale});
