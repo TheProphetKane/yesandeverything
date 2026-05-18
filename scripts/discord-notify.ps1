@@ -65,9 +65,20 @@ $payloadObj = @{
 }
 $payload = $payloadObj | ConvertTo-Json -Compress -Depth 5
 
+# --- Dedupe guard: skip if this commit SHA was the last thing posted.
+# YaE has no version concept; commit SHA is the unique key. Override via
+# $env:DISCORD_FORCE = "1".
+$lastPostedFile = Join-Path $here ".discord_last_posted.txt"
+$lastPosted = if (Test-Path $lastPostedFile) { (Get-Content $lastPostedFile -Raw).Trim() } else { "" }
+if ($lastPosted -eq $commitSha -and $env:DISCORD_FORCE -ne "1") {
+    Write-Host "Skipping Discord post: commit $commitSha was already posted last run. Set `$env:DISCORD_FORCE = `"1`" to force." -ForegroundColor Yellow
+    exit 0
+}
+
 try {
     $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
     Invoke-RestMethod -Uri $webhookUrl -Method Post -Body $bodyBytes -ContentType "application/json; charset=utf-8" | Out-Null
+    Set-Content -Path $lastPostedFile -Value $commitSha -NoNewline
     Write-Host "Discord notification posted." -ForegroundColor Green
 } catch {
     Write-Host "Discord post failed: $($_.Exception.Message)" -ForegroundColor Red

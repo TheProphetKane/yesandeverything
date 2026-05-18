@@ -19,7 +19,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `hordes/index.html` | Password-gated HTBH GDD mirror. Password: `SneakPeak`. Contains base64-inlined GDD via `var ENCODED = "..."`. **Generated, not hand-edited.** |
 | `projects/here-there-be-hordes/gdd.html` | Public GDD preview iframe (lighter than the full mirror). |
 | `projects/scheduler/{index,design}.html` | Scheduler project landing + design preview. |
-| `apothecary/` | Celtic apothecary label designer — multi-file ES-module app, deployed by mirroring from `X:\YesAndApothecary` via that repo's `deploy.ps1`. Multi-file by design; the "one file per page" convention does not apply to this subdir (it's a project mirror, same as `hordes/`). Do not edit files in `apothecary/` directly; edit in the source repo and run deploy. |
+| `apothecary/` | Celtic apothecary label designer — multi-file ES-module app, deployed by mirroring from `X:\YesAndApothecary` via that repo's `scripts/release.ps1` (which calls `scripts/deploy-to-yae.ps1` then commits + pushes this side). Multi-file by design; the "one file per page" convention does not apply to this subdir (it's a project mirror, same as `hordes/`). Do not edit files in `apothecary/` directly; edit in the source repo and run release. |
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
 | `CLAUDE_SETTINGS.md` | Cross-project personal-Claude settings doc (the how-to-work-with-Nick rules). Source of truth for tone, pushback, voice. |
