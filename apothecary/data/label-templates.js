@@ -61,7 +61,7 @@ export const TEMPLATES = {
     fields: [
       'shopName', 'herbName', 'latin', 'props', 'description',
       'accent', 'symbol', 'rune1', 'rune2', 'rune3', 'physicalSize',
-      'backEnabled', 'descFull', 'historicUses', 'nutrition', 'pairings',
+      'backEnabled', 'descFull', 'historicUses', 'compounds', 'cautions', 'pairings',
     ],
 
     descMaxChars: 120,
@@ -69,7 +69,8 @@ export const TEMPLATES = {
 
     descFullMaxChars:    260,
     historicMaxChars:    180,
-    nutritionMaxChars:   140,
+    compoundsMaxChars:   240,
+    cautionsMaxChars:    240,
     pairingsMaxChars:    100,
   },
 };

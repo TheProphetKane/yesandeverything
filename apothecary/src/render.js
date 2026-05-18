@@ -94,7 +94,7 @@ const ITEM_RENDERERS = {
     <div class="back-bottom-row">
       <div class="back-section back-half">
         <div class="back-section-title" style="color:${s.accent}">Notes</div>
-        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.nutrition)}</div>
+        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc([s.compounds, s.cautions].filter(Boolean).join(' '))}</div>
       </div>
       <div class="back-section back-half">
         <div class="back-section-title" style="color:${s.accent}">Pairings</div>

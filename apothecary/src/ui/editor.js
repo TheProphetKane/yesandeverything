@@ -1,15 +1,16 @@
 // editor.js - left panel: form fields, swatches, size picker, back-label
-// toggle, placement table, herb autocomplete, visual symbol picker, visual
-// rune pickers, per-field reset, PNG export, print, reset.
+// toggle and content, field placement table, auto-fill, print, reset, herb
+// autocomplete dropdown.
 
 import { printLabel } from '../util/print.js';
-import { exportPng } from '../util/export-png.js';
 
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
   '#4A3F6B', '#C97BA8', '#C4580A', '#B8860B', '#6B3A2A',
 ];
 
+// Rows in the placement table. Each: { key (matches state.placement), label }.
+// Order = display order in the editor.
 const PLACEMENT_ROWS = [
   { key: 'shop',         label: 'Shop Name' },
   { key: 'description',  label: 'Short Description' },
@@ -21,26 +22,14 @@ const PLACEMENT_ROWS = [
   { key: 'rune3',        label: 'Rune 3' },
   { key: 'descFull',     label: 'Full Description' },
   { key: 'historicUses', label: 'Traditional Uses' },
-  { key: 'nutrition',    label: 'Notes' },
+  { key: 'compounds',    label: 'Active Compounds' },
+  { key: 'cautions',     label: 'Cautions' },
   { key: 'pairings',     label: 'Pairings' },
 ];
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
-// Tiny reset-button next to each field. Reverts that field to the current
-// herb's database default.
-function resetBtnHtml(field) {
-  return `<button type="button" class="field-reset" data-reset-field="${field}" title="Reset to herb default" aria-label="Reset ${field}">↺</button>`;
-}
-
 export function mountEditor(root, ctx) {
-  const { state, lookupHerb, runes, symbols, symbolLabels, herbDB, aliasMap, templates, runeMeanings } = ctx;
+  const { state, lookupHerb, runes, symbols, symbolLabels, herbDB, aliasMap, templates } = ctx;
   const tmpl = templates[state.get().templateId];
-  const runeMeanFor = (char) => runeMeanings?.[char] ?? '';
 
   root.innerHTML = `
     <h2 class="editor-title">Label Editor</h2>
@@ -57,88 +46,52 @@ export function mountEditor(root, ctx) {
 
     <div class="section">
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label" for="fLatin">Latin Name</label>
-          ${resetBtnHtml('latin')}
-        </div>
+        <label class="field-label" for="fLatin">Latin Name</label>
         <input id="fLatin" class="field-input italic-input" type="text" placeholder="Botanical Latin name" />
       </div>
 
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label" for="fProps">Properties</label>
-          ${resetBtnHtml('props')}
-        </div>
+        <label class="field-label" for="fProps">Properties</label>
         <input id="fProps" class="field-input" type="text" placeholder="Healing, Sleep, Peace..." />
       </div>
 
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label" for="fDesc">Front Description</label>
-          ${resetBtnHtml('description')}
-        </div>
+        <label class="field-label" for="fDesc">Front Description</label>
         <textarea id="fDesc" class="field-input" rows="6" maxlength="${tmpl.descMaxChars}" placeholder="A brief poetic description..."></textarea>
         <div id="descCounter" class="desc-counter">0 / ${tmpl.descMaxChars}</div>
         <div class="desc-hint">Label fits ${tmpl.descLineHint}. Keep it concise.</div>
       </div>
 
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label">Accent Color</label>
-          ${resetBtnHtml('accent')}
-        </div>
+        <label class="field-label">Accent Color</label>
         <div id="swatches" class="swatches"></div>
       </div>
 
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label">Celtic Symbol</label>
-          ${resetBtnHtml('symbol')}
-        </div>
-        <div id="symbol-picker" class="symbol-grid"></div>
+        <label class="field-label" for="fSymbol">Celtic Symbol</label>
+        <select id="fSymbol" class="field-input"></select>
       </div>
 
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label">Rune 1</label>
-          ${resetBtnHtml('rune1')}
+        <label class="field-label">Rune 1</label>
+        <div class="field-row">
+          <select id="r1Char" class="field-input"></select>
+          <input id="r1Mean" class="field-input" type="text" placeholder="Meaning" />
         </div>
-        <div class="rune-slot" data-rune-slot="0">
-          <button type="button" class="rune-current" data-rune-toggle="0">
-            <span class="rune-current-char"></span>
-            <span class="rune-current-name"></span>
-          </button>
-          <input class="field-input rune-meaning" data-rune-meaning="0" type="text" placeholder="Meaning" />
-        </div>
-        <div class="rune-popover" data-rune-popover="0" hidden></div>
       </div>
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label">Rune 2</label>
-          ${resetBtnHtml('rune2')}
+        <label class="field-label">Rune 2</label>
+        <div class="field-row">
+          <select id="r2Char" class="field-input"></select>
+          <input id="r2Mean" class="field-input" type="text" placeholder="Meaning" />
         </div>
-        <div class="rune-slot" data-rune-slot="1">
-          <button type="button" class="rune-current" data-rune-toggle="1">
-            <span class="rune-current-char"></span>
-            <span class="rune-current-name"></span>
-          </button>
-          <input class="field-input rune-meaning" data-rune-meaning="1" type="text" placeholder="Meaning" />
-        </div>
-        <div class="rune-popover" data-rune-popover="1" hidden></div>
       </div>
       <div class="field">
-        <div class="field-label-row">
-          <label class="field-label">Rune 3</label>
-          ${resetBtnHtml('rune3')}
+        <label class="field-label">Rune 3</label>
+        <div class="field-row">
+          <select id="r3Char" class="field-input"></select>
+          <input id="r3Mean" class="field-input" type="text" placeholder="Meaning" />
         </div>
-        <div class="rune-slot" data-rune-slot="2">
-          <button type="button" class="rune-current" data-rune-toggle="2">
-            <span class="rune-current-char"></span>
-            <span class="rune-current-name"></span>
-          </button>
-          <input class="field-input rune-meaning" data-rune-meaning="2" type="text" placeholder="Meaning" />
-        </div>
-        <div class="rune-popover" data-rune-popover="2" hidden></div>
       </div>
 
       <div class="gold-divider"></div>
@@ -156,39 +109,32 @@ export function mountEditor(root, ctx) {
           <input id="fBackEnabled" type="checkbox" />
           <span>Print Back Label</span>
         </label>
-        <div class="desc-hint">Optional second label with full description, traditional uses, notes, and pairings. Prints alongside the front on a single 8.5x11 sheet.</div>
+        <div class="desc-hint">Optional second label with full description, historic uses, notes, and pairings. Prints alongside the front on a single 8.5x11 sheet.</div>
       </div>
 
       <div id="back-fields" class="back-fields" hidden>
         <div class="field">
-          <div class="field-label-row">
-            <label class="field-label" for="fDescFull">Full Description</label>
-            ${resetBtnHtml('descFull')}
-          </div>
+          <label class="field-label" for="fDescFull">Full Description</label>
           <textarea id="fDescFull" class="field-input" rows="4" maxlength="${tmpl.descFullMaxChars}" placeholder="The original poetic description, full length..."></textarea>
           <div id="descFullCounter" class="desc-counter">0 / ${tmpl.descFullMaxChars}</div>
         </div>
         <div class="field">
-          <div class="field-label-row">
-            <label class="field-label" for="fHistoric">Traditional Uses (folk + modern applications)</label>
-            ${resetBtnHtml('historicUses')}
-          </div>
+          <label class="field-label" for="fHistoric">Traditional Uses (folk + modern applications)</label>
           <textarea id="fHistoric" class="field-input" rows="3" maxlength="${tmpl.historicMaxChars}" placeholder="Druidic dawn-rite tea. Strewn on Beltane fires..."></textarea>
           <div id="historicCounter" class="desc-counter">0 / ${tmpl.historicMaxChars}</div>
         </div>
         <div class="field">
-          <div class="field-label-row">
-            <label class="field-label" for="fNutrition">Notes (active compounds, effects)</label>
-            ${resetBtnHtml('nutrition')}
-          </div>
-          <textarea id="fNutrition" class="field-input" rows="2" maxlength="${tmpl.nutritionMaxChars}" placeholder="Apigenin, bisabolol. Mild sedative. Caffeine-free."></textarea>
-          <div id="nutritionCounter" class="desc-counter">0 / ${tmpl.nutritionMaxChars}</div>
+          <label class="field-label" for="fCompounds">Active Compounds &amp; Effects</label>
+          <textarea id="fCompounds" class="field-input" rows="2" maxlength="${tmpl.compoundsMaxChars}" placeholder="Apigenin, bisabolol. Mild sedative. Anti-inflammatory."></textarea>
+          <div id="compoundsCounter" class="desc-counter">0 / ${tmpl.compoundsMaxChars}</div>
         </div>
         <div class="field">
-          <div class="field-label-row">
-            <label class="field-label" for="fPairings">Good Pairings</label>
-            ${resetBtnHtml('pairings')}
-          </div>
+          <label class="field-label" for="fCautions">Cautions &amp; Interactions</label>
+          <textarea id="fCautions" class="field-input" rows="2" maxlength="${tmpl.cautionsMaxChars}" placeholder="Avoid in pregnancy. May interact with anticoagulants."></textarea>
+          <div id="cautionsCounter" class="desc-counter">0 / ${tmpl.cautionsMaxChars}</div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="fPairings">Good Pairings</label>
           <input id="fPairings" class="field-input" type="text" maxlength="${tmpl.pairingsMaxChars}" placeholder="Honey, Lavender, Lemon balm, Vanilla" />
           <div id="pairingsCounter" class="desc-counter">0 / ${tmpl.pairingsMaxChars}</div>
         </div>
@@ -213,9 +159,8 @@ export function mountEditor(root, ctx) {
         </div>
       </div>
 
-      <button id="btn-print"  class="btn-secondary">Print Label</button>
-      <button id="btn-export-png" class="btn-secondary">Save as PNG</button>
-      <button id="btn-reset"  class="btn-ghost" type="button">Reset to Defaults</button>
+      <button id="btn-print" class="btn-secondary">Print Label</button>
+      <button id="btn-reset" class="btn-ghost" type="button">Reset to Defaults</button>
     </div>
   `;
 
@@ -225,32 +170,32 @@ export function mountEditor(root, ctx) {
   const propsInput = $('fProps');
   const descInput  = $('fDesc');
   const descCounter = $('descCounter');
+  const symbolSel  = $('fSymbol');
   const sizeSel    = $('fSize');
   const swatchBox  = $('swatches');
-  const symbolGrid = $('symbol-picker');
   const autofillBtn = $('btn-autofill');
   const statusMsg  = $('status-msg');
   const printBtn   = $('btn-print');
-  const exportBtn  = $('btn-export-png');
   const resetBtn   = $('btn-reset');
+  const runeChar = [$('r1Char'), $('r2Char'), $('r3Char')];
+  const runeMean = [$('r1Mean'), $('r2Mean'), $('r3Mean')];
 
   const backToggle    = $('fBackEnabled');
   const backFieldsBox = $('back-fields');
   const descFullInput = $('fDescFull');
   const historicInput = $('fHistoric');
-  const nutritionInput = $('fNutrition');
+  const compoundsInput = $('fCompounds');
+  const cautionsInput  = $('fCautions');
   const pairingsInput = $('fPairings');
   const descFullCounter  = $('descFullCounter');
   const historicCounter  = $('historicCounter');
-  const nutritionCounter = $('nutritionCounter');
+  const compoundsCounter = $('compoundsCounter');
+  const cautionsCounter  = $('cautionsCounter');
   const pairingsCounter  = $('pairingsCounter');
 
   const placementCheckboxes = root.querySelectorAll('[data-placement]');
-  const runeMeaningInputs   = [0, 1, 2].map(i => root.querySelector(`[data-rune-meaning="${i}"]`));
-  const runeToggleBtns      = [0, 1, 2].map(i => root.querySelector(`[data-rune-toggle="${i}"]`));
-  const runePopovers        = [0, 1, 2].map(i => root.querySelector(`[data-rune-popover="${i}"]`));
 
-  // --- Herb autocomplete ---
+  // --- Herb autocomplete datalist ---
   const herbList = root.querySelector('#herb-suggestions');
   const titleCase = (s) => s.replace(/(^|\s)\w/g, c => c.toUpperCase());
   const seen = new Set();
@@ -265,44 +210,26 @@ export function mountEditor(root, ctx) {
   for (const k of Object.keys(herbDB).sort()) addSuggestion(k);
   if (aliasMap) for (const k of Object.keys(aliasMap).sort()) addSuggestion(k);
 
-  // --- Size select ---
+  // --- Selects ---
+  for (const id of Object.keys(symbols)) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = symbolLabels[id] ?? id;
+    symbolSel.appendChild(opt);
+  }
   for (const sz of tmpl.sizes) {
     const opt = document.createElement('option');
     opt.value = sz.id;
     opt.textContent = sz.label;
     sizeSel.appendChild(opt);
   }
-
-  // --- Visual symbol picker ---
-  function renderSymbolGrid() {
-    const accent = state.get().accent;
-    const cur = state.get().symbol;
-    symbolGrid.innerHTML = Object.keys(symbols).map(id => `
-      <button type="button" class="sym-tile ${id === cur ? 'selected' : ''}" data-symbol="${id}" title="${esc(symbolLabels[id] ?? id)}" aria-label="${esc(symbolLabels[id] ?? id)}">
-        ${symbols[id](accent)}
-        <span class="sym-tile-label">${esc(symbolLabels[id] ?? id)}</span>
-      </button>
-    `).join('');
-  }
-
-  // --- Visual rune pickers (popover per slot) ---
-  function renderRunePopover(slotIdx) {
-    const accent = state.get().accent;
-    const cur = state.get().runes[slotIdx]?.c;
-    runePopovers[slotIdx].innerHTML = runes.map(r => `
-      <button type="button" class="rune-tile ${r.c === cur ? 'selected' : ''}" data-rune-char="${r.c}" data-rune-slot="${slotIdx}" title="${esc(r.n)} — ${esc(runeMeanFor(r.c))}">
-        <span class="rune-tile-char" style="color:${accent}">${esc(r.c)}</span>
-        <span class="rune-tile-name">${esc(r.n)}</span>
-      </button>
-    `).join('');
-  }
-  function refreshRuneCurrent(slotIdx) {
-    const c = state.get().runes[slotIdx]?.c ?? '';
-    const r = runes.find(x => x.c === c);
-    const btn = runeToggleBtns[slotIdx];
-    btn.querySelector('.rune-current-char').textContent = c;
-    btn.querySelector('.rune-current-char').style.color = state.get().accent;
-    btn.querySelector('.rune-current-name').textContent = r ? r.n : '—';
+  for (const sel of runeChar) {
+    for (const r of runes) {
+      const opt = document.createElement('option');
+      opt.value = r.c;
+      opt.textContent = `${r.c} ${r.n}`;
+      sel.appendChild(opt);
+    }
   }
 
   // --- Swatches ---
@@ -322,31 +249,34 @@ export function mountEditor(root, ctx) {
   colorPicker.setAttribute('aria-label', 'Custom accent color');
   swatchBox.appendChild(colorPicker);
 
-  // --- Sync state -> UI ---
   function syncFromState() {
     const s = state.get();
     herbInput.value  = s.herbName;
     latinInput.value = s.latin;
     propsInput.value = s.props;
     descInput.value  = s.description;
+    symbolSel.value  = s.symbol;
     sizeSel.value    = s.sizeId;
     colorPicker.value = s.accent;
     for (let i = 0; i < 3; i++) {
-      runeMeaningInputs[i].value = s.runes[i]?.m ?? '';
-      refreshRuneCurrent(i);
+      runeChar[i].value = s.runes[i].c;
+      runeMean[i].value = s.runes[i].m;
     }
     backToggle.checked = !!s.backEnabled;
     backFieldsBox.hidden = !s.backEnabled;
     descFullInput.value  = s.descFull ?? '';
     historicInput.value  = s.historicUses ?? '';
-    nutritionInput.value = s.nutrition ?? '';
+    compoundsInput.value = s.compounds ?? '';
+    cautionsInput.value  = s.cautions  ?? '';
     pairingsInput.value  = s.pairings ?? '';
+    // Placement checkboxes
     placementCheckboxes.forEach(cb => {
-      cb.checked = !!(s.placement?.[cb.dataset.placement]?.[cb.dataset.side]);
+      const key = cb.dataset.placement;
+      const side = cb.dataset.side;
+      cb.checked = !!(s.placement?.[key]?.[side]);
     });
     updateAllCounters();
     updateSwatchSelection();
-    renderSymbolGrid();
   }
 
   function counterUpdate(input, counter, max) {
@@ -358,7 +288,8 @@ export function mountEditor(root, ctx) {
     counterUpdate(descInput, descCounter, tmpl.descMaxChars);
     counterUpdate(descFullInput, descFullCounter, tmpl.descFullMaxChars);
     counterUpdate(historicInput, historicCounter, tmpl.historicMaxChars);
-    counterUpdate(nutritionInput, nutritionCounter, tmpl.nutritionMaxChars);
+    counterUpdate(compoundsInput, compoundsCounter, tmpl.compoundsMaxChars);
+    counterUpdate(cautionsInput,  cautionsCounter,  tmpl.cautionsMaxChars);
     counterUpdate(pairingsInput, pairingsCounter, tmpl.pairingsMaxChars);
   }
   function updateSwatchSelection() {
@@ -368,11 +299,117 @@ export function mountEditor(root, ctx) {
     });
   }
 
-  // --- Input wiring ---
   herbInput.addEventListener('input', () => {
     state.set({ herbName: herbInput.value });
     const h = lookupHerb(herbInput.value);
     if (h) state.set({ botanical: h.botanical, icon: h.icon ?? null });
   });
   latinInput.addEventListener('input', () => state.set({ latin: latinInput.value }));
-  propsInput.add
+  propsInput.addEventListener('input', () => state.set({ props: propsInput.value }));
+  descInput.addEventListener('input', () => {
+    state.set({ description: descInput.value });
+    counterUpdate(descInput, descCounter, tmpl.descMaxChars);
+  });
+  symbolSel.addEventListener('change', () => state.set({ symbol: symbolSel.value }));
+  sizeSel.addEventListener('change', () => state.set({ sizeId: sizeSel.value }));
+
+  runeChar.forEach((sel, i) => {
+    sel.addEventListener('change', () => {
+      const next = state.get().runes.slice();
+      next[i] = { ...next[i], c: sel.value };
+      state.set({ runes: next });
+    });
+  });
+  runeMean.forEach((inp, i) => {
+    inp.addEventListener('input', () => {
+      const next = state.get().runes.slice();
+      next[i] = { ...next[i], m: inp.value };
+      state.set({ runes: next });
+    });
+  });
+
+  swatchBox.addEventListener('click', (e) => {
+    const sw = e.target.closest('.swatch');
+    if (!sw) return;
+    state.set({ accent: sw.dataset.color });
+    colorPicker.value = sw.dataset.color;
+    updateSwatchSelection();
+  });
+  colorPicker.addEventListener('input', () => {
+    state.set({ accent: colorPicker.value });
+    updateSwatchSelection();
+  });
+
+  backToggle.addEventListener('change', () => {
+    state.set({ backEnabled: backToggle.checked });
+    backFieldsBox.hidden = !backToggle.checked;
+  });
+  descFullInput.addEventListener('input', () => {
+    state.set({ descFull: descFullInput.value });
+    counterUpdate(descFullInput, descFullCounter, tmpl.descFullMaxChars);
+  });
+  historicInput.addEventListener('input', () => {
+    state.set({ historicUses: historicInput.value });
+    counterUpdate(historicInput, historicCounter, tmpl.historicMaxChars);
+  });
+  compoundsInput.addEventListener('input', () => {
+    state.set({ compounds: compoundsInput.value });
+    counterUpdate(compoundsInput, compoundsCounter, tmpl.compoundsMaxChars);
+  });
+  cautionsInput.addEventListener('input', () => {
+    state.set({ cautions: cautionsInput.value });
+    counterUpdate(cautionsInput, cautionsCounter, tmpl.cautionsMaxChars);
+  });
+  pairingsInput.addEventListener('input', () => {
+    state.set({ pairings: pairingsInput.value });
+    counterUpdate(pairingsInput, pairingsCounter, tmpl.pairingsMaxChars);
+  });
+
+  // Placement checkboxes — update state.placement[key][side]
+  placementCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const key  = cb.dataset.placement;
+      const side = cb.dataset.side;
+      const cur  = state.get().placement ?? {};
+      const next = { ...cur, [key]: { ...(cur[key] ?? {}), [side]: cb.checked } };
+      state.set({ placement: next });
+    });
+  });
+
+  autofillBtn.addEventListener('click', () => {
+    const found = lookupHerb(herbInput.value);
+    if (!found) {
+      statusMsg.textContent = 'Not in database. Fill manually.';
+      statusMsg.className = 'status-msg warn';
+      return;
+    }
+    state.set({
+      latin: found.latin,
+      props: found.props,
+      description: found.desc.slice(0, tmpl.descMaxChars),
+      accent: found.accent,
+      symbol: found.symbol,
+      botanical: found.botanical,
+      icon: found.icon ?? null,
+      runes: found.runes.map(r => ({ c: r.c, m: r.m })),
+      descFull:     (found.descFull     ?? found.desc).slice(0, tmpl.descFullMaxChars),
+      historicUses: (found.historicUses ?? '').slice(0, tmpl.historicMaxChars),
+      compounds:    (found.compounds    ?? '').slice(0, tmpl.compoundsMaxChars),
+      cautions:     (found.cautions     ?? '').slice(0, tmpl.cautionsMaxChars),
+      pairings:     (found.pairings     ?? '').slice(0, tmpl.pairingsMaxChars),
+    });
+    syncFromState();
+    statusMsg.textContent = 'Found. Customize freely.';
+    statusMsg.className = 'status-msg ok';
+  });
+
+  printBtn.addEventListener('click', printLabel);
+
+  resetBtn.addEventListener('click', () => {
+    if (!confirm('Reset all fields to defaults? Saved label will be cleared.')) return;
+    ctx.onReset();
+  });
+
+  syncFromState();
+  state.subscribe(syncFromState);
+}

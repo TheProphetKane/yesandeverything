@@ -41,7 +41,7 @@ async function main() {
   for (const k of ['backEnabled', 'descFull', 'historicUses', 'nutrition', 'pairings']) {
     if (typeof initial[k] === 'undefined') initial[k] = defaults[k];
   }
-  if (!initial.placement) initial.placement = structuredClone(DEFAULT_PLACEMENT);
+  if (!initial.placement) initial.placement = JSON.parse(JSON.stringify(DEFAULT_PLACEMENT));
   for (const k of Object.keys(DEFAULT_PLACEMENT)) {
     if (!initial.placement[k]) initial.placement[k] = { ...DEFAULT_PLACEMENT[k] };
   }
@@ -83,4 +83,5 @@ async function main() {
 
 main().catch(err => {
   console.error('Apothecary label creator failed to start:', err);
-  document.body.inne
+  document.body.innerHTML = '<pre style="color:#C4580A; padding:20px; font-family:monospace;">' + (err.stack || err.message) + '</pre>';
+});
