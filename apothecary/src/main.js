@@ -1,4 +1,4 @@
-// main.js — bootstrap. Wires data → state → editor → preview.
+// main.js — bootstrap. Wires data → state → editor → preview + print-stage.
 
 import { createState, defaultState } from './state.js';
 import { render } from './render.js';
@@ -19,7 +19,6 @@ async function loadJson(path) {
 }
 
 async function main() {
-  // Load data that's served as JSON (kept out of the JS bundle for editing).
   const [herbDB, runes, aliasMap] = await Promise.all([
     loadJson('data/herbs.json'),
     loadJson('data/runes.json'),
@@ -28,24 +27,25 @@ async function main() {
 
   const lookupHerb = makeLookup(herbDB, aliasMap);
 
-  // State: load from localStorage if present, else defaults.
+  // Load state and backfill any v0.2 or v0.1 fields missing from the saved shape.
   const persisted = loadState();
   const initial = persisted ?? defaultState();
-  // Backwards-compatible defaulting in case schema grows.
+  const defaults = defaultState();
   if (!initial.templateId) initial.templateId = DEFAULT_TEMPLATE_ID;
+  const tmpl = TEMPLATES[initial.templateId];
+  if (!initial.sizeId || !tmpl.sizes.find(s => s.id === initial.sizeId)) {
+    initial.sizeId = tmpl.defaultSize;
+  }
+  for (const k of ['backEnabled', 'descFull', 'historicUses', 'nutrition', 'pairings']) {
+    if (typeof initial[k] === 'undefined') initial[k] = defaults[k];
+  }
   const state = createState(initial);
 
-  // Mount shop-name header.
   mountShopName(document.querySelector('[data-shop-name]'), state);
 
-  // Mount editor panel.
   mountEditor(document.querySelector('[data-editor]'), {
-    state,
-    lookupHerb,
-    runes,
-    herbDB,
-    symbols: SYMBOLS,
-    symbolLabels: SYMBOL_LABELS,
+    state, lookupHerb, runes, herbDB, aliasMap,
+    symbols: SYMBOLS, symbolLabels: SYMBOL_LABELS,
     templates: TEMPLATES,
     onReset: () => {
       clearState();
@@ -53,19 +53,18 @@ async function main() {
     },
   });
 
-  // Mount preview: render on every state change.
   const previewMount = document.querySelector('[data-preview]');
+  const printStageMount = document.querySelector('[data-print-stage]');
   const ctx = {
     templates: TEMPLATES,
     themes: THEMES,
     symbols: SYMBOLS,
     botanicals: BOTANICALS,
   };
-  function paint(s) { render(s, previewMount, ctx); }
+  function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);
   paint(state.get());
 
-  // Persist on every change, debounced.
   const debouncedSave = debounce((s) => saveState(s), 200);
   state.subscribe(debouncedSave);
 }

@@ -1,4 +1,4 @@
-/* label.css — preview panel + the label itself */
+/* label.css — preview panel, the label itself, print-stage, back-side styles. */
 
 .preview-panel {
   flex: 1;
@@ -26,20 +26,30 @@
   text-align: center;
 }
 
-/* The on-screen scaled-up label */
 .label-wrapper {
-  /* width and height set inline by render based on template size & previewScale */
   overflow: hidden;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
 
+.preview-gap { height: 0; }
+
 .label-card {
-  /* size set inline by render */
   position: relative;
   overflow: hidden;
   transform-origin: top left;
-  /* transform: scale(...) set inline */
   border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.label-design {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
 }
 
 .parchment-bg { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; }
@@ -52,7 +62,13 @@
   gap: 5px;
   position: relative;
   z-index: 2;
-  /* width and height match label size, set inline */
+}
+
+.label-interior--back {
+  flex-direction: column;
+  padding: 8px 10px;
+  gap: 2px;
+  justify-content: space-between;
 }
 
 .label-zone {
@@ -63,8 +79,8 @@
   gap: 5px;
 }
 .label-zone.center { gap: 2.5px; overflow: visible; }
+.label-interior--back .label-zone { gap: 1px; width: 100%; }
 
-/* Text styles inside the label */
 .lbl-shop {
   font-family: var(--font-display);
   font-size: 10px;
@@ -121,19 +137,97 @@
   line-height: 1.1;
 }
 
-/* Print styles — visibility-toggle pattern so ancestor display:none doesn't kill us */
+.back-name {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.1;
+}
+.back-latin {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 7.5px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+  margin-top: -1px;
+}
+.back-desc-full {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 6.5px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.3;
+  padding: 0 4px;
+}
+.back-section { text-align: center; width: 100%; }
+.back-section-title {
+  font-family: var(--font-body);
+  font-size: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.back-section-body {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1px;
+  padding: 0 4px;
+}
+.back-bottom-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.back-half { flex: 1; }
+
+#print-stage { display: none; }
+
 @media print {
-  @page { size: 3in 1.5in; margin: 0; }
-  body * { visibility: hidden; }
-  .label-card, .label-card * { visibility: visible; }
-  .label-card {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 3in !important;
-    height: 1.5in !important;
+  @page { size: 8.5in 11in; margin: 0; }
+
+  body > * { display: none !important; }
+  #print-stage {
+    display: flex !important;
+    width: 8.5in;
+    height: 11in;
+    padding: 0.25in;
+    gap: 0.15in;
+    align-items: flex-start;
+    justify-content: flex-start;
+    background: white;
+  }
+
+  #print-stage.layout-single       { flex-direction: row; }
+  #print-stage.layout-side-by-side { flex-direction: row; }
+  #print-stage.layout-stacked      { flex-direction: column; }
+  #print-stage.layout-separate     { flex-direction: column; padding: 0; gap: 0; }
+
+  #print-stage.layout-separate .label-card {
+    page-break-after: always;
+    break-after: page;
+    margin: 0.25in;
+  }
+  #print-stage.layout-separate .label-card:last-of-type {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  #print-stage .label-card {
     transform: none !important;
     border-radius: 0 !important;
+    overflow: hidden;
   }
+
   * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }

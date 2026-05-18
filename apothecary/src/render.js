@@ -1,9 +1,17 @@
-// render.js — schema-driven label renderer.
+// render.js — schema-driven label renderer with front, optional back, and a
+// separate print-stage tree.
 //
-// Consumes the active template descriptor + theme + state and rebuilds the
-// label preview DOM. Pure of imports beyond ctx — swap any registry to test.
+// Print model: @page is fixed at 8.5x11 (US Letter). Labels are placed inside
+// the print-stage container at their physical inch size, in one of four
+// layouts depending on how many cards and how large they are:
+//
+//   - layout-single        : one card, top-left
+//   - layout-side-by-side  : two cards horizontally
+//   - layout-stacked       : two cards vertically (when side-by-side overflows)
+//   - layout-separate      : two cards across two pages (oversized only)
 
 import { autofitText } from './util/autofit.js';
+import { resolveSize } from '../data/label-templates.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({
@@ -14,6 +22,12 @@ function esc(s) {
 function wavyDivider(color) {
   return `<svg width="60" height="6" viewBox="0 0 60 6" xmlns="http://www.w3.org/2000/svg">
     <path d="M0 3 Q 7.5 0, 15 3 T 30 3 T 45 3 T 60 3" stroke="${color}" stroke-width="0.8" fill="none"/>
+  </svg>`;
+}
+
+function backDividerSvg(color) {
+  return `<svg width="240" height="2" viewBox="0 0 240 2" xmlns="http://www.w3.org/2000/svg">
+    <line x1="0" y1="1" x2="240" y2="1" stroke="${color}" stroke-width="0.5" opacity="0.6"/>
   </svg>`;
 }
 
@@ -42,15 +56,12 @@ function parchmentSvg(theme) {
   </svg>`;
 }
 
-function borderSvg(color, theme, sizeIn) {
-  // SVG coordinate space matches 1in = 96 user units convention (288×144 for 3×1.5).
-  const w = sizeIn.wIn * 96;
-  const h = sizeIn.hIn * 96;
-  const outer = theme.borderOpacityOuter;
-  const inner = theme.borderOpacityInner;
+function borderSvg(color, theme, designSize) {
+  const w = designSize.wIn * 96;
+  const h = designSize.hIn * 96;
   return `<svg class="border-overlay" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 ${w} ${h}">
-    <rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="4" fill="none" stroke="${color}" stroke-width="1" opacity="${outer}"/>
-    <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="3" fill="none" stroke="${color}" stroke-width="0.5" opacity="${inner}"/>
+    <rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="4" fill="none" stroke="${color}" stroke-width="1" opacity="${theme.borderOpacityOuter}"/>
+    <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="3" fill="none" stroke="${color}" stroke-width="0.5" opacity="${theme.borderOpacityInner}"/>
     <circle cx="6" cy="6" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
     <circle cx="${w - 6}" cy="6" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
     <circle cx="6" cy="${h - 6}" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
@@ -58,9 +69,8 @@ function borderSvg(color, theme, sizeIn) {
   </svg>`;
 }
 
-// Item renderer registry. Add a new label item by adding one entry here
-// and referencing its key from a template's zone.items array.
 const ITEM_RENDERERS = {
+  // Front
   symbol:        (s, ctx) => `<div>${ctx.symbols[s.symbol]?.(s.accent) ?? ''}</div>`,
   botanical:     (s, ctx) => `<div>${ctx.botanicals[s.botanical]?.(s.accent) ?? ''}</div>`,
   shop:          (s, ctx) => `<div class="lbl-shop" style="color:${ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
@@ -73,9 +83,30 @@ const ITEM_RENDERERS = {
   'rune-1':      (s)      => runeItem(s.runes[0], s.accent),
   'rune-2':      (s)      => runeItem(s.runes[1], s.accent),
   'rune-3':      (s)      => runeItem(s.runes[2], s.accent),
+
+  // Back
+  'back-name':            (s)      => `<div class="back-name" style="color:${s.accent}">${esc(s.herbName)}</div>`,
+  'back-latin':           (s, ctx) => `<div class="back-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
+  'back-divider':         (s)      => backDividerSvg(s.accent),
+  'back-desc-full':       (s, ctx) => `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`,
+  'back-historic-section': (s, ctx) => `
+    <div class="back-section">
+      <div class="back-section-title" style="color:${s.accent}">Historic Uses</div>
+      <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.historicUses)}</div>
+    </div>`,
+  'back-bottom-row':      (s, ctx) => `
+    <div class="back-bottom-row">
+      <div class="back-section back-half">
+        <div class="back-section-title" style="color:${s.accent}">Notes</div>
+        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.nutrition)}</div>
+      </div>
+      <div class="back-section back-half">
+        <div class="back-section-title" style="color:${s.accent}">Pairings</div>
+        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.pairings)}</div>
+      </div>
+    </div>`,
 };
 
-// Track whether fonts are ready. Autofit is a no-op until then.
 let fontsReady = false;
 if (document.fonts && document.fonts.ready) {
   document.fonts.ready.then(() => { fontsReady = true; });
@@ -83,45 +114,100 @@ if (document.fonts && document.fonts.ready) {
   fontsReady = true;
 }
 
-export function render(state, container, ctx) {
-  const tmpl = ctx.templates[state.templateId];
-  if (!tmpl) {
-    container.innerHTML = `<div style="color:#C4580A">Unknown template: ${esc(state.templateId)}</div>`;
-    return;
-  }
-  const theme = ctx.themes[tmpl.theme];
-  const fullCtx = { ...ctx, theme };
+const MAX_PREVIEW_PX = 800;
+const PREVIEW_SCALE_CAP = 3.0;
 
-  const { wIn, hIn } = tmpl.size;
-  const scale = tmpl.previewScale;
-  const wrapperW = `calc(${wIn}in * ${scale})`;
-  const wrapperH = `calc(${hIn}in * ${scale})`;
+function previewScaleFor(physWIn) {
+  return Math.min(PREVIEW_SCALE_CAP, MAX_PREVIEW_PX / (physWIn * 96));
+}
 
-  // Build zones
-  const zonesHtml = tmpl.zones.map(zone => {
+function pickPrintLayout({ wIn, hIn }, cardCount, paper = { wIn: 8.5, hIn: 11 }, gap = 0.15, pad = 0.25) {
+  if (cardCount <= 1) return 'layout-single';
+  const usableW = paper.wIn - 2 * pad;
+  const usableH = paper.hIn - 2 * pad;
+  if (cardCount * wIn + (cardCount - 1) * gap <= usableW) return 'layout-side-by-side';
+  if (cardCount * hIn + (cardCount - 1) * gap <= usableH) return 'layout-stacked';
+  return 'layout-separate';
+}
+
+function zonesHtml(state, fullCtx, zonesArray) {
+  return zonesArray.map(zone => {
     const items = zone.items.map(itemKey => {
       const renderer = ITEM_RENDERERS[itemKey];
       return renderer ? renderer(state, fullCtx) : '';
     }).join('');
     const isCenter = zone.id === 'center';
-    return `<div class="label-zone${isCenter ? ' center' : ''}" style="width:${zone.width}">${items}</div>`;
+    return `<div class="label-zone${isCenter ? ' center' : ''}" style="width:${zone.width ?? '100%'}">${items}</div>`;
   }).join('');
+}
 
-  container.style.width = wrapperW;
-  container.style.height = wrapperH;
-
-  container.innerHTML = `
-    <div class="label-card" style="width:${wIn}in; height:${hIn}in; transform: scale(${scale});">
-      ${parchmentSvg(theme)}
-      ${borderSvg(state.accent, theme, tmpl.size)}
-      <div class="label-interior" style="width:${wIn}in; height:${hIn}in;">
-        ${zonesHtml}
+function cardHtml({ state, fullCtx, designSize, phys, side, zones, theme, previewScaleForCard }) {
+  const { wIn: designW, hIn: designH } = designSize;
+  const physicalScale = phys.wIn / designW;
+  return `
+    <div class="label-card label-card--${side}" style="
+      width:${phys.wIn}in;
+      height:${phys.hIn}in;
+      transform: scale(${previewScaleForCard});
+    ">
+      <div class="label-design label-design--${side}" style="
+        width:${designW}in;
+        height:${designH}in;
+        transform: scale(${physicalScale});
+      ">
+        ${parchmentSvg(theme)}
+        ${borderSvg(state.accent, theme, designSize)}
+        <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
+          ${zonesHtml(state, fullCtx, zones)}
+        </div>
       </div>
     </div>
   `;
+}
 
-  // Run autofit on any element marked [data-autofit]. Wait for fonts on first paint.
-  const fits = container.querySelectorAll('[data-autofit]');
+export function render(state, mounts, ctx) {
+  const tmpl = ctx.templates[state.templateId];
+  if (!tmpl) {
+    mounts.preview.innerHTML = `<div style="color:#C4580A">Unknown template: ${esc(state.templateId)}</div>`;
+    if (mounts.printStage) mounts.printStage.innerHTML = '';
+    return;
+  }
+  const theme = ctx.themes[tmpl.theme];
+  const fullCtx = { ...ctx, theme };
+
+  const phys = resolveSize(tmpl, state.sizeId);
+  const previewScale = previewScaleFor(phys.wIn);
+
+  const showBack = !!state.backEnabled && Array.isArray(tmpl.backZones);
+  const cardCount = showBack ? 2 : 1;
+
+  const previewCards = [
+    cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+               zones: tmpl.zones, theme, previewScaleForCard: previewScale }),
+    ...(showBack ? [cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+               side: 'back', zones: tmpl.backZones, theme,
+               previewScaleForCard: previewScale })] : []),
+  ].join('<div class="preview-gap"></div>');
+
+  mounts.preview.style.width = `calc(${phys.wIn}in * ${previewScale})`;
+  mounts.preview.innerHTML = previewCards;
+  mounts.preview.style.height = showBack
+    ? `calc(${phys.hIn}in * ${previewScale} * 2 + 12px)`
+    : `calc(${phys.hIn}in * ${previewScale})`;
+
+  if (mounts.printStage) {
+    const printCards = [
+      cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+                 zones: tmpl.zones, theme, previewScaleForCard: 1 }),
+      ...(showBack ? [cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+                 side: 'back', zones: tmpl.backZones, theme,
+                 previewScaleForCard: 1 })] : []),
+    ].join('');
+    mounts.printStage.innerHTML = printCards;
+    mounts.printStage.className = pickPrintLayout(phys, cardCount);
+  }
+
+  const fits = mounts.preview.querySelectorAll('[data-autofit]');
   if (fontsReady) {
     fits.forEach(el => autofitText(el));
   } else {
