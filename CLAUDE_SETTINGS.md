@@ -17,9 +17,11 @@ YesAndChains (YaC) lives at X:\YesAndChains. Disc-golf caddy PWA at yesandchains
 
 Scheduler lives at X:\Scheduler. Employee-scheduling web app. pnpm workspaces, Vite plus React plus Tailwind on web, Cloudflare Worker plus D1 plus Hono on API.
 
-YesAndEverything (YaE) lives at X:\YesAndEverything. Static umbrella site at yesandeverything.com. Lists the other projects plus the password-gated HTBH GDD mirror.
+YesAndEverything (YaE) lives at X:\YesAndEverything. Static umbrella site at yesandeverything.com. Lists the other projects plus the password-gated HTBH GDD mirror plus the apothecary subdir mirror.
 
-Each project has a CLAUDE.md at its root. Read that first when opening a session in any of these folders. It tells you the canonical source of truth. docs/GDD.html for HTBH. docs/DESIGN.md for Scheduler. The multi-file canonical layer for YaC. DEPLOY.md plus index.html for YaE.
+YesAndApothecary (YaApothecary) lives at X:\YesAndApothecary. Browser-based Celtic apothecary label designer at yesandeverything.com/apothecary. Vanilla JS, native ES modules, no build step, no framework. Currently at v0.3.0. Deploys by mirroring static files into X:\YesAndEverything\apothecary\ via the repo's deploy.ps1, then pushing YaE.
+
+Each project has a CLAUDE.md at its root. Read that first when opening a session in any of these folders. It tells you the canonical source of truth. docs/GDD.html for HTBH. docs/DESIGN.md for Scheduler. The multi-file canonical layer for YaC. DEPLOY.md plus index.html for YaE. PROJECT_SPEC.md for YaApothecary.
 
 
 How I want you to communicate
@@ -99,7 +101,9 @@ Lock signals. If I say "perfect" or "ideal" or "exactly how I want it" about a v
 
 Check memory before asking. My memory has 20-plus entries covering project preferences, recurring quirks, voice rules, lock signals. The index is at the top of MEMORY.md. If a topic seems familiar, search memory before asking. If memory contradicts the current code, trust the code and update memory.
 
-Use the project's release script, do not reinvent it. Every project has its own release flow (HTBH scripts/release.ps1, YaC scripts/release.ps1, Scheduler scripts/release.ps1, YaE direct git push). When the task is "ship this" or "commit and push", invoke the script (.\scripts\release.ps1), do not hand-roll git add plus commit plus push. The scripts encode the project's index.lock clearing, version-pill bumping, Discord posting, GDD publishing, worker deploy, and any other ceremony I have wired up. Raw git is only correct in two cases. First case, bootstrapping the release script itself into the repo (one-time, only ever once per project). Second case, the script does not cover what is needed (rare, surface the gap as a queue item rather than skipping the script).
+Use the project's release script, do not reinvent it. Every project has its own release flow (HTBH scripts/release.ps1, YaC scripts/release.ps1, Scheduler scripts/release.ps1, YaE scripts/release.ps1, YaApothecary push.ps1). When the task is "ship this" or "commit and push", invoke the script (.\scripts\release.ps1 or .\push.ps1), do not hand-roll git add plus commit plus push. The scripts encode each project's index.lock clearing, version-pill bumping, integrity guards (canonical doc ends with closing tag, CNAME is right, conflict markers absent), Discord posting, GDD publishing, worker deploy, and any other ceremony I have wired up. Raw git is only correct in two cases. First, bootstrapping the release script itself into a new project (one-time). Second, the script genuinely does not cover what is needed (rare, surface as a queue item rather than skipping).
+
+Prompt for release after every substantive change, unless I said otherwise. At the end of any reply that landed a real change in a project (edited code, edited canonical doc, fixed a bug, shipped a feature, anything I would normally commit), surface the release script invocation as the next step. Concrete form: a one-line "ready to ship: `cd X:\<project>; .\scripts\release.ps1`" at the end of the response. Skip it if I explicitly said "don't ship yet" / "hold off" / "queue it" / "I'll commit later," or if the change was purely meta (memory edit, queue update, CLAUDE.md tweak that I would not commit). The cost of an unprompted skip (my work sits uncommitted overnight, FUSE eats it on the next mount cycle, the project drifts further from canonical) is real. The cost of an unwanted prompt is one ignored sentence.
 
 Commit after every patch on HTBH, no exceptions. Run release.ps1 after every version bump, even mid-session. Stacking versions without commits compounds FUSE write-truncation risk. The May 2026 incident stacked eight versions (v0.61.0 through v0.61.8) without commits and lost the v0.61.4-v0.61.6 settings polish work to FUSE truncation. Memory entry: commit_per_patch_on_htbh. If a multi-version polish session feels iterative-not-shippable, commit each step anyway.
 

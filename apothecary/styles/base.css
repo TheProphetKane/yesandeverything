@@ -1,61 +1,125 @@
-/* base.css — global resets, palette, body */
+/* base.css - global resets, garden palette, body, layout shell.
+ *
+ * Palette evolution (v0.4): deeper forest base, warmer moss cards, soft gold
+ * glows on interactive elements. Subtle radial-gradient bg gives the page
+ * depth without distracting from the parchment label preview.
+ */
 
 :root {
-  --bg: #111E12;
-  --bg-card: #1E3320;
-  --field: #0F1F11;
-  --gold: #C4922A;
-  --gold-fade: rgba(196, 146, 42, 0.31);
-  --gold-focus: rgba(196, 146, 42, 0.25);
-  --cream: #E8D5A0;
-  --green: #2D6A4F;
-  --green-hover: #3a8a65;
-  --warn: #C4580A;
+  /* Garden palette */
+  --bg:           #0E1A10;
+  --bg-deep:      #08110A;
+  --bg-card:      #1A2D1C;
+  --bg-card-hi:   #233A26;
+  --field:        #0B1810;
+  --field-hi:     #14241A;
 
-  --font-display: 'Cinzel Decorative', serif;
-  --font-body: 'Cinzel', serif;
-  --font-italic: 'IM Fell English', serif;
+  --gold:         #D1A14A;
+  --gold-bright:  #E8C172;
+  --gold-fade:    rgba(209, 161, 74, 0.32);
+  --gold-glow:    rgba(232, 193, 114, 0.18);
+  --gold-focus:   rgba(209, 161, 74, 0.45);
+
+  --cream:        #EFDDB0;
+  --cream-dim:    #C4B388;
+
+  --moss:         #4A7858;
+  --moss-light:   #6B9579;
+  --moss-glow:    rgba(107, 149, 121, 0.15);
+  --moss-dark:    #2D5238;
+
+  --green:        #2D6A4F;
+  --green-hover:  #3a8a65;
+
+  --warn:         #C4580A;
+  --warn-hover:   #E26B12;
+
+  --font-display: 'Cinzel Decorative', 'Cinzel', serif;
+  --font-body:    'Cinzel', serif;
+  --font-italic:  'IM Fell English', serif;
+
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 14px;
+
+  --easing-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-pop:  cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 0 1px var(--gold-fade), 0 0 12px var(--gold-glow);
 }
 
 * { box-sizing: border-box; }
 
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 20% 8%,  rgba(74, 120, 88, 0.18), transparent 55%),
+    radial-gradient(ellipse at 80% 92%, rgba(209, 161, 74, 0.08), transparent 55%),
+    radial-gradient(ellipse at 50% 50%, var(--bg) 40%, var(--bg-deep) 100%);
   color: var(--cream);
   font-family: var(--font-body);
-  margin: 0;
   min-height: 100vh;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--field); }
-::-webkit-scrollbar-thumb { background: rgba(196, 146, 42, 0.31); border-radius: 3px; }
+::-webkit-scrollbar-thumb {
+  background: var(--gold-fade);
+  border-radius: 4px;
+  transition: background 220ms var(--easing-soft);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-input, select, textarea { outline: none; }
+input, select, textarea {
+  outline: none;
+  transition: border-color 200ms var(--easing-soft),
+              box-shadow 200ms var(--easing-soft),
+              background 200ms var(--easing-soft);
+}
 input:focus, select:focus, textarea:focus {
   border-color: var(--gold) !important;
-  box-shadow: 0 0 0 1px var(--gold-focus);
+  box-shadow: 0 0 0 2px var(--gold-glow);
+  background: var(--field-hi);
 }
 
-a { color: var(--gold); }
+a {
+  color: var(--gold);
+  transition: color 180ms var(--easing-soft);
+}
+a:hover { color: var(--gold-bright); }
+
+button { font-family: var(--font-body); }
 
 /* Layout shell */
 .app {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  animation: appReveal 600ms var(--easing-soft) both;
+}
+
+@keyframes appReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .app-header {
   text-align: center;
-  padding: 24px 16px 16px;
+  padding: 28px 16px 14px;
 }
 
 .app-main {
   display: flex;
   flex-direction: row;
-  gap: 20px;
-  padding: 0 24px 32px;
+  gap: 22px;
+  padding: 0 24px 36px;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
@@ -67,8 +131,45 @@ a { color: var(--gold); }
 
 .app-footer {
   text-align: center;
-  padding: 16px;
+  padding: 18px 16px 24px;
   font-size: 12px;
-  color: var(--gold);
-  opacity: 0.4;
+  color: var(--moss-light);
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+}
+.app-footer a {
+  color: var(--moss-light);
+  border-bottom: 1px dashed var(--moss-dark);
+  text-decoration: none;
+  padding-bottom: 1px;
+}
+.app-footer a:hover { color: var(--gold); border-bottom-color: var(--gold-fade); }
+
+/* Subtle floating-particle layer (firefly drift). Static, just SVG. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--gold-glow) 0, transparent 2px),
+    radial-gradient(circle at 84% 32%, var(--moss-glow) 0, transparent 3px),
+    radial-gradient(circle at 28% 78%, var(--gold-glow) 0, transparent 2px),
+    radial-gradient(circle at 72% 88%, var(--moss-glow) 0, transparent 3px),
+    radial-gradient(circle at 48% 12%, var(--gold-glow) 0, transparent 1.5px),
+    radial-gradient(circle at 56% 64%, var(--gold-glow) 0, transparent 1.5px);
+  opacity: 0.7;
+  animation: fireflyDrift 14s ease-in-out infinite alternate;
+  z-index: 0;
+}
+.app, .app-footer, #print-stage { position: relative; z-index: 1; }
+
+@keyframes fireflyDrift {
+  0%   { transform: translate(0, 0); opacity: 0.55; }
+  50%  { transform: translate(6px, -4px); opacity: 0.9; }
+  100% { transform: translate(-4px, 6px); opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before, .app { animation: none; }
 }

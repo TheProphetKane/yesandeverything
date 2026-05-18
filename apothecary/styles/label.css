@@ -1,4 +1,12 @@
-/* label.css — preview panel, the label itself, print-stage, back-side styles. */
+/* label.css - preview panel, label, print-stage, back-side styles.
+ *
+ * v0.4 fixes:
+ *   - Each preview card lives in a .label-frame sized to its post-scale
+ *     dimensions. Without this wrapper, transform: scale() doesn't claim
+ *     layout space and the back label visually overlaps the front.
+ *   - Body text on the label drops italic where legibility suffers at
+ *     small physical sizes. Latin name keeps its italic (single short line).
+ */
 
 .preview-panel {
   flex: 1;
@@ -8,41 +16,61 @@
 }
 
 .preview-card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 20px;
+  background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-lg);
+  padding: 24px;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-shadow: var(--shadow-soft);
 }
 
 .preview-title {
   font-family: var(--font-display);
-  color: var(--gold);
-  font-size: 18px;
-  margin: 0 0 16px;
-  letter-spacing: 1px;
+  color: var(--gold-bright);
+  font-size: 19px;
+  margin: 0 0 18px;
+  letter-spacing: 2px;
   text-align: center;
+  text-shadow: 0 0 14px var(--gold-glow);
 }
 
+/* Wrapper that holds one or two label frames. Vertical stack with a buffer. */
 .label-wrapper {
-  overflow: hidden;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 24px;
 }
 
-.preview-gap { height: 0; }
+/* Each label gets a frame sized to its post-scale visual dimensions, so flex
+ * stacking gives correct layout space. Width/height set inline by render. */
+.label-frame {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 360ms var(--easing-soft);
+}
+.label-frame:hover {
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--gold-fade);
+}
+.label-frame .label-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 
+/* Label paper. Width/height inline (physical inches), preview-scale transform. */
 .label-card {
   position: relative;
   overflow: hidden;
   transform-origin: top left;
   border-radius: 3px;
-  flex-shrink: 0;
 }
 
 .label-design {
@@ -81,9 +109,10 @@
 .label-zone.center { gap: 2.5px; overflow: visible; }
 .label-interior--back .label-zone { gap: 1px; width: 100%; }
 
+/* --- Front text styles --- (italic dropped on body for legibility at small sizes) */
 .lbl-shop {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 900;
   text-align: center;
   line-height: 1.1;
@@ -97,16 +126,17 @@
   line-height: 1.1;
 }
 .lbl-latin {
+  /* Latin name stays italic — single short line, legibility holds. */
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 700;
   text-align: center;
   line-height: 1.1;
 }
 .lbl-props {
   font-family: var(--font-body);
-  font-size: 8px;
+  font-size: 8.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -114,12 +144,14 @@
   line-height: 1.15;
 }
 .lbl-desc {
-  font-family: var(--font-italic);
-  font-style: italic;
-  font-size: 7px;
-  font-weight: 700;
+  /* Was italic IM Fell — gets blurry below medium. Switched to Cinzel
+   * non-italic for functional legibility at mini and small sizes. */
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 7.5px;
+  font-weight: 600;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -127,19 +159,20 @@
 }
 
 .rune-item { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.rune-char { font-size: 21px; font-weight: 900; line-height: 1; }
+.rune-char { font-size: 22px; font-weight: 900; line-height: 1; }
 .rune-name {
   font-family: var(--font-body);
-  font-size: 6.5px;
+  font-size: 7px;
   font-weight: 700;
   text-transform: uppercase;
   text-align: center;
   line-height: 1.1;
 }
 
+/* --- Back text styles --- (italic dropped on bodies; titles stay caps Cinzel) */
 .back-name {
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 900;
   text-align: center;
   line-height: 1.1;
@@ -147,87 +180,20 @@
 .back-latin {
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 7.5px;
+  font-size: 8px;
   font-weight: 700;
   text-align: center;
   line-height: 1.1;
   margin-top: -1px;
 }
 .back-desc-full {
-  font-family: var(--font-italic);
-  font-style: italic;
-  font-size: 6.5px;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 7px;
+  font-weight: 600;
   text-align: center;
   line-height: 1.3;
   padding: 0 4px;
 }
 .back-section { text-align: center; width: 100%; }
-.back-section-title {
-  font-family: var(--font-body);
-  font-size: 6px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  line-height: 1;
-}
-.back-section-body {
-  font-family: var(--font-italic);
-  font-style: italic;
-  font-size: 6px;
-  font-weight: 700;
-  line-height: 1.25;
-  margin-top: 1px;
-  padding: 0 4px;
-}
-.back-bottom-row {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  width: 100%;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-.back-half { flex: 1; }
-
-#print-stage { display: none; }
-
-@media print {
-  @page { size: 8.5in 11in; margin: 0; }
-
-  body > * { display: none !important; }
-  #print-stage {
-    display: flex !important;
-    width: 8.5in;
-    height: 11in;
-    padding: 0.25in;
-    gap: 0.15in;
-    align-items: flex-start;
-    justify-content: flex-start;
-    background: white;
-  }
-
-  #print-stage.layout-single       { flex-direction: row; }
-  #print-stage.layout-side-by-side { flex-direction: row; }
-  #print-stage.layout-stacked      { flex-direction: column; }
-  #print-stage.layout-separate     { flex-direction: column; padding: 0; gap: 0; }
-
-  #print-stage.layout-separate .label-card {
-    page-break-after: always;
-    break-after: page;
-    margin: 0.25in;
-  }
-  #print-stage.layout-separate .label-card:last-of-type {
-    page-break-after: auto;
-    break-after: auto;
-  }
-
-  #print-stage .label-card {
-    transform: none !important;
-    border-radius: 0 !important;
-    overflow: hidden;
-  }
-
-  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-}
+.back

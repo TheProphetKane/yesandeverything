@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "project-canonical-audit", "runs": [{"id": "eval-0-yac-multi-file-canonical-with_skill", "prompt": "Audit YesAndChains (X:\\YesAndChains) against its canonical docs. The project uses a multi-file canonical layer (PROJECT_SPEC.md, CONTEXT.md, ROADMAP.md, BACKLOG.md, DECISIONS_NEEDED.md). Report what's aligned, what's drifted, and any phantom references. Don't apply fixes \u2014 just produce the findings report.", "eval_id": 0, "outputs": [{"name": "findings.md", "type": "text", "content": "# YesAndChains canonical-doc audit \u2014 2026-05-14\n\n## TL;DR\n\nThe multi-file canonical layer (PROJECT_SPEC / CONTEXT / ROADMAP / BACKLOG / DECISIONS_NEEDED + CLAUDE.md handler + `docs/launch-checklist-1.0.md`) is structurally healthy \u2014 each file owns a distinct, non-overlapping slice \u2014 but there is real drift in **`ROADMAP.md`** (lists shipped work as Tier B \"needs Nick's hands\" and references a stale migration filename), plus a **phantom `PRIORITY_QUEUE.md` reference in `CONTEXT.md`** and a still-resident `NEXT_SESSION_QUEUE.md` tombstone that ROADMAP.md still treats as live. `package.json` version (`0.5.57`) is stale relative to the canonical CONTEXT.md version (`0.25.2`), but this is an intentional repo convention (CONTEXT.md is the version pill source-of-truth) rather than a doc-drift bug.\n\nA prior audit at `docs/CANONICAL_AUDIT.md` (dated 2026-05-14) already documented findings #1 and #2 below. Both items it flagged are still unresolved.\n\n---\n\n## What's aligned (no fix needed)\n\n- **CLAUDE.md handler** correctly indexes every canonical-layer file with the right role assignment and stays in sync with the actual roles each doc plays. Version pill `v0.25.2 (2026-05-13)` matches CONTEXT.md.\n- **CONTEXT.md changelog** matches the deployed feature set the other docs describe (0.25.2 most recent, deletes-account migration `0012_delete_my_account.sql` exists, `0.25.0` token-system pass + `0.24.0` TechDisc importer + `0.21.x` cost cap policy + `0.20.0` skill-profile data layer + `0.19.0` strategies \u2014 all real).\n- **Migrations on disk** (`supabase/migrations/0001_init.sql` through `0012_delete_my_account.sql`, 12 files) match the changelog claims version-by-version. `0011_skill_profile.sql` shipped in 0.20.0 \u2713, `0012_delete_my_account.sql` shipped in 0.25.1 \u2713.\n- **Code files claimed by the changelog exist on disk:** `src/main.ts`, `src/onboarding.ts`, `src/techdisc-import.ts`, `src/strategies.ts`, `tools/audit_window_exposure.py`, `manifest.json`, `app.js` \u2014 all present.\n- **`docs/launch-checklist-1.0.md`** sits under `docs/`, signaling its transient/active-queue role, and is consistent with itself (says migration `0011` applied; matches real filename).\n- **`BACKLOG.md` priority-tag schema** (P0\u2013P3 + \u2705) is internally consistent and matches the role CLAUDE.md assigns to it.\n- **PROJECT_SPEC.md** sticks to vision + locked architecture + decision history; no status fields bleeding in. Role-clean.\n- **DECISIONS_NEEDED.md** + **HOW_TO_ADMIN.md** + **PLASTICS_REFERENCE.md** + **PLASTICS_FLIGHT_DATA.md** \u2014 all present and on-role per CLAUDE.md's index.\n- **ADRs in `docs/adr/`** \u2014 17 files numbered 0001\u20130017 (CLAUDE.md says \"15+\", which is correct as a floor).\n- **The append-only multi-file canonical pattern itself** holds up. No two docs claim the same authority over the same slice. The prior canonical audit's \"healthier than it looks at first glance\" assessment still stands.\n\n---\n\n## Drift found\n\n### 1. Phantom reference \u2014 `PRIORITY_QUEUE.md` cited in CONTEXT.md but does not exist at root\n**Severity:** high (every new AI session reading CONTEXT.md hits a dead link)\n\n`X:\\YesAndChains\\CONTEXT.md` lines 22\u201326:\n\n> \ud83d\udd12 **Active priority queue:** `PRIORITY_QUEUE.md` is the canonical to-do list until everything in it is checked off. New backlog items can be added at any time, but they don't preempt items already on the queue. AI re-reads PRIORITY_QUEUE.md at the start of every session and works the next unchecked item.\n\nThere is **no `PRIORITY_QUEUE.md` at the root.** The file does exist at `_archived/PRIORITY_QUEUE.md` (archived per 0.21.5 changelog entry). The actual active queue is `docs/launch-checklist-1.0.md`, per CLAUDE.md, per the launch-checklist file itself, and per the redirect in `NEXT_SESSION_QUEUE.md`.\n\nThis was already flagged in the prior `docs/CANONICAL_AUDIT.md` (Finding #2). Still unfixed.\n\n### 2. `ROADMAP.md` references a stale migration filename\n**Severity:** medium\n\n`X:\\YesAndChains\\ROADMAP.md` line 51:\n\n> \u00a722 User skill profile + TechDisc CSV import \u2014 needs migration `0009_skill_profile.sql` applied. Parser + UI scaffolding can ship around it.\n\nThe actual migration is **`0011_skill_profile.sql`** (shipped in 0.20.0, applied per `docs/launch-checklist-1.0.md` \"What's already done\"). `0009_*` is `0009_profile_home_course.sql`, an unrelated migration. ROADMAP.md is the only canonical-layer file with the wrong migration number.\n\n### 3. `ROADMAP.md` lists work as Tier B \"needs Nick's hands\" that has shipped\n**Severity:** medium (the doc says these are blocked on Nick when they're done)\n\nROADMAP.md Tier B (lines 49\u201353):\n\n- **\u00a722 User skill profile + TechDisc CSV import** \u2014 flagged as Tier B \"needs migration applied.\" Per CONTEXT.md changelog, \u00a722a data layer shipped 2026-05-05 in `0.20.0` and \u00a722b TechDisc importer + Throw Power profile + recommender wiring shipped 2026-05-06 in `0.24.0`. Migration is applied. Code module `src/techdisc-import.ts` exists.\n\nThe \"what's live\" header of ROADMAP.md also says `(as of 0.24.5, deployed)` \u2014 but CONTEXT.md is now on `0.25.2` (2026-05-13). The deployed-version anchor on ROADMAP is one week and three minor/patch entries behind.\n\n### 4. `NEXT_SESSION_QUEUE.md` tombstone still at repo root, still referenced as live by ROADMAP + BACKLOG\n**Severity:** medium\n\nThe file `NEXT_SESSION_QUEUE.md` at the repo root contains only a redirect to `docs/launch-checklist-1.0.md` (per 0.21.5 changelog). CLAUDE.md correctly describes it as tombstoned.\n\nBut ROADMAP.md (line 11) lists it in its companion-docs block as:\n\n> `NEXT_SESSION_QUEUE.md` \u2014 what AI picks up if no live request\n\n\u2026as if it were still live. And BACKLOG.md item 3c.3 (line 149) says:\n\n> **Top of NEXT_SESSION_QUEUE.md.**\n\n\u2026again treating the tombstone as authoritative.\n\nThe prior audit (`docs/CANONICAL_AUDIT.md` Finding #1) recommended `git rm NEXT_SESSION_QUEUE.md`. Still present. As long as it stays, ROADMAP and BACKLOG's references aren't strictly broken (the redirect file IS there), but they're misleading.\n\n### 5. `package.json` version (`0.5.57`) is far behind CONTEXT.md (`0.25.2`)\n**Severity:** low / convention-aware\n\n`X:\\YesAndChains\\package.json` carries `\"version\": \"0.5.57\"` while CONTEXT.md is on `0.25.2` and CLAUDE.md confirms CONTEXT is the version pill. Per the CONTEXT.md changelog `0.25.2` entry, there's also an internal `YAC_VERSION` in `src/util.ts` that was \"stuck at 0.18.0\" and got synced to BUILD_VERSION.\n\nGiven CLAUDE.md explicitly says \"the version pill lives in CONTEXT.md,\" this is more \"package.json hasn't been kept current\" than \"canonical doc drift.\" Not a Phase-1 audit blocker, but worth flagging since downstream tooling (npm tooling, CI) may key off `package.json`.\n\n### 6. `crawler_project_notes.md` is still at repo root\n**Severity:** very low (housekeeping)\n\nSingle-purpose crawler notes file living at root next to canonical docs. Prior `docs/CANONICAL_AUDIT.md` (Finding #4) suggested moving it to `tools/` or `docs/`. Still at root.\n\n### 7. ROADMAP.md \"\u2713 shipped 0.13.61\" annotations refer to a never-deployed version\n**Severity:** low (cosmetic; the work landed regardless)\n\nROADMAP.md uses `\u2713 shipped 0.13.61` to mark \u00a732.1 storage projection, \u00a727 daily welcome message rotation, \u00a728 In-Regulation surfacing, and the 9th preship gate. But the `0.13.61` CONTEXT.md changelog entry is annotated:\n\n> `0.13.61` (2026-05-04, never deployed \u2014 see 0.13.62 entry)\n\nSo the work technically went out under 0.13.62 (or later). ROADMAP's \"shipped 0.13.61\" tags are accurate as a code-landed marker but inaccurate as a \"deployed\" marker, which is the more common reading of \"shipped.\"\n\n---\n\n## Suggested fixes\n\nAll low-risk text edits unless flagged otherwise.\n\n1. **Fix the `PRIORITY_QUEUE.md` phantom in CONTEXT.md.** Edit `CONTEXT.md` lines 22\u201326 to point at `docs/launch-checklist-1.0.md` instead of `PRIORITY_QUEUE.md`. One short find-replace. (Already on the prior audit's action list.)\n\n2. **Fix the migration filename in ROADMAP.md.** Line 51: `0009_skill_profile.sql` \u2192 `0011_skill_profile.sql`.\n\n3. **Strike or rewrite the \u00a722 Tier-B entry in ROADMAP.md.** Both \u00a722a and \u00a722b are shipped. Either move to a \"shipped since this refresh\" note, or delete from Tier B and add to the \"What's live\" section.\n\n4. **Bump the \"as of 0.24.5, deployed\" anchor in ROADMAP.md** to the current CONTEXT.md version (`0.25.2`), and either run a one-pass refresh of \"What's live\" to capture 0.25.0 (visual modernization), 0.25.1 (account deletion), 0.25.2 (feedback inbox swap), or add a one-line \"last refreshed YYYY-MM-DD against vX.Y.Z\" stamp at the top so future drift is obvious.\n\n5. **Either `git rm NEXT_SESSION_QUEUE.md` and clean up the two stale references (ROADMAP line 11, BACKLOG line 149), OR keep the redirect and update both references to call it a tombstone.** The prior audit picked the `git rm` path. Either is fine, but the current half-state (file present + docs treating it as live) is the worst option.\n\n6. **Optional: bump `package.json` `version` to `0.25.2`.** Not strictly required since CONTEXT.md is the source of truth, but it would stop external tooling from displaying a wildly stale number. Low-risk.\n\n7. **Optional: move `crawler_project_notes.md` into `tools/` or `docs/`.** Cleanup, not correctness. (Already on the prior audit's action list.)\n\n8. **Optional / cosmetic: change \"shipped 0.13.61\" tags in ROADMAP.md** to \"shipped 0.13.62\" (or \"landed 0.13.61, deployed 0.13.62\") for the four affected items.\n\n---\n\n## Couldn't verify\n\n- **Whether the canonical KV courses count is still \"~6,300\"** as CLAUDE.md and ROADMAP.md both state. Verifying would require querying live KV; out of scope for a doc-audit.\n- **Whether the worker is actually deployed at version-parity with CONTEXT.md.** The 0.25.0/0.25.1/0.25.2 changelog entries describe worker-side changes; verification would need a live `caddy-api.theprophetkane.workers.dev` request.\n- **Whether Supabase migration `0012_delete_my_account.sql` has actually been applied to the live database.** The changelog says it's idempotent and needs manual application; the file exists on disk, but I can't confirm runtime application from docs alone.\n- **DNS registrar transfer status from Squarespace to Cloudflare** (CLAUDE.md says pending 5-7 days from 2026-05-06; today is 2026-05-14, so it should be at or near completion, but that's a DNS check not a doc check).\n- **Whether `legal/terms.md` / `legal/privacy.md` / `legal/README.md` exist.** Launch checklist N1 implies they should; not glob-checked in this audit (out of scope for canonical-layer drift, would belong in a 1.0 launch readiness audit).\n"}], "grading": {"expectations": [{"text": "Output has a TL;DR section that summarizes alignment status in 1-3 sentences", "passed": true, "evidence": "Found TL;DR marker"}, {"text": "Output has a 'What's aligned' section listing items confirmed correct (not just drift)", "passed": true, "evidence": "Found alignment section keyword"}, {"text": "Output identifies the phantom PRIORITY_QUEUE.md reference in CONTEXT.md (the file is referenced but doesn't exist)", "passed": true, "evidence": "PRIORITY_QUEUE.md mentioned"}, {"text": "Output identifies that NEXT_SESSION_QUEUE.md is tombstoned / superseded by docs/launch-checklist-1.0.md", "passed": true, "evidence": "NEXT_SESSION_QUEUE.md mentioned"}, {"text": "Output assigns a distinct role to each canonical doc (PROJECT_SPEC=vision, CONTEXT=vocab+changelog, ROADMAP=state, BACKLOG=deferred, DECISIONS_NEEDED=answered log)", "passed": true, "evidence": "Found 5 of 5 canonical doc names"}, {"text": "Output does NOT propose new features beyond what's in the canonical docs", "passed": true, "evidence": "No new-feature proposal language"}, {"text": "Output flags at least one item by severity (P0/P1/critical/high vs minor)", "passed": true, "evidence": "Found severity/priority marker"}, {"text": "Output is markdown-formatted with section headers", "passed": true, "evidence": "Found 12 '#' markers and 12 '##' markers"}]}}, {"id": "eval-0-yac-multi-file-canonical-without_skill", "prompt": "Audit YesAndChains (X:\\YesAndChains) against its canonical docs. The project uses a multi-file canonical layer (PROJECT_SPEC.md, CONTEXT.md, ROADMAP.md, BACKLOG.md, DECISIONS_NEEDED.md). Report what's aligned, what's drifted, and any phantom references. Don't apply fixes \u2014 just produce the findings report.", "eval_id": 0, "outputs": [{"name": "findings.md", "type": "text", "content": "# YesAndChains canonical-doc audit \u2014 findings\n\n**Audited:** 2026-05-14\n**Scope:** root canonical layer (PROJECT_SPEC.md, CONTEXT.md, ROADMAP.md, BACKLOG.md, DECISIONS_NEEDED.md, NEXT_SESSION_QUEUE.md, README.md, CLAUDE.md) + `docs/launch-checklist-1.0.md` + `docs/adr/` + the previous audit at `docs/CANONICAL_AUDIT.md`.\n**Method:** read each canonical file, cross-reference shipped-version claims against `CONTEXT.md` changelog + actual filesystem state + `git log`, and look for phantom references.\n\n---\n\n## TL;DR\n\nThe canonical layer holds up structurally \u2014 each file has a distinct, non-overlapping role and the previous `docs/CANONICAL_AUDIT.md` (2026-05-14, same day) already captures the architectural picture. The problems are **content drift**: the canonical files have not been kept up-to-date with what shipped in `0.20.0` through `0.25.2`. Three docs (ROADMAP, README, launch-checklist) still describe a `0.21.4`\u2013era app. The most expensive single drift is **TechDisc CSV import is shipped and live in 0.24.0 but still listed as future work in two places**.\n\nThe previous audit's two open recommendations are also still open: the `PRIORITY_QUEUE.md` phantom reference in `CONTEXT.md` and the tombstoned `NEXT_SESSION_QUEUE.md` file at root.\n\n---\n\n## What's aligned\n\n- **Version pill consistency.** `CONTEXT.md` (line 9), `src/util.ts:5` (`YAC_VERSION`), `src/profile.ts:72` (`BUILD_VERSION`), `index.html:1290` (cache-buster `app.js?v=0.25.2`), and `git log` HEAD all agree on `0.25.2`. The 9th preship gate (bundled `BUILD_VERSION` matches source) is working.\n- **Versioning policy.** `CONTEXT.md` line 11+ and `CLAUDE.md` agree on the revised pre-1.0 semver rule (PATCH / MINOR / MAJOR=1.0).\n- **Auth + SMTP wiring.** `BACKLOG.md` \u00a70.5 and `CLAUDE.md` agree: `auth@yesandeverything.com` via Resend SMTP, on the umbrella brand domain.\n- **Domain registration status.** `BACKLOG.md` \u00a70.1, the launch-checklist \"What's already done\" block, and `CLAUDE.md` all reflect that `.com` + `.app` are live on Cloudflare Registrar.\n- **The previous audit's TL;DR is correct.** Each root-level doc owns a distinct role; no two files claim the same authority.\n- **ADR count.** ROADMAP says \"15+\", actual is 17 (`docs/adr/0001`\u2013`0017`). Within tolerance.\n- **`udisc_course_data.json` cleanup.** CONTEXT.md `0.21.5` flagged a \"Pending Nick: delete `udisc_course_data.json`\" item \u2014 file is now absent from root. (No follow-up changelog entry confirming the cleanup, but the work is done.)\n\n---\n\n## Drift (in priority order)\n\n### D1. ROADMAP \u00a722 \u2014 claims TechDisc import is future work; it shipped in 0.24.0\n\n**ROADMAP.md:51 (Tier B \"needs Nick's hands once\"):**\n> \u00a722 User skill profile + TechDisc CSV import \u2014 needs migration `0009_skill_profile.sql` applied. Parser + UI scaffolding can ship around it.\n\nReality from `CONTEXT.md` line 79 (0.24.0, 2026-05-06):\n> \u00a722b TechDisc import + Throw Power profile + recommender consumes speed/spin\u2026 New `src/techdisc-import.ts` module parses TechDisc's `throws.csv` export\u2026 Two entry paths: (a) manual numeric input\u2026 (b) TechDisc CSV upload.\n\n`src/techdisc-import.ts` exists, `src/profile.ts:19` imports `parseTechDiscCsv, aggregateTechDisc, formatSpeedForDisplay`, and the recommender prompt is already extended to consume the throw power profile. The migration is `0011_skill_profile.sql` (not `0009`, which is `0009_profile_home_course.sql`), and it shipped in `0.20.0`.\n\nSo ROADMAP.md line 51 is wrong on three points: the work shipped, the migration filename is wrong, and the migration was already applied.\n\n`docs/launch-checklist-1.0.md:150` repeats the error in its \"Out of scope for 1.0 (post-launch)\" list:\n> TechDisc CSV importer (waits on a real export sample)\n\nSame item, opposite list, both wrong.\n\n### D2. BACKLOG \u00a728 header contradicts launch-checklist + CONTEXT 0.20.0\n\n**BACKLOG.md:998:**\n> \u00a728 In Regulation (C1 Reg / C2 Reg) \u2014 player stat (added 0.13.56) \u2705 DONE 0.13.61 (My-game card; **per-hole + per-course surfacing remain queued**)\n\n**docs/launch-checklist-1.0.md:13:**\n> [x] \u00a728 In-Regulation per-course + per-hole stats (0.20.0)\n\n**CONTEXT.md:96 (0.20.0):**\n> `inRegulationStats(scope?)` refactored to take optional `{courseSlug, holeNumber, par}` filter\u2026 Course-detail aggregate stats card now shows C1/C2 IR cells\u2026 per-hole stats panel shows a C1/C2 IR row\u2026\n\nPer-hole + per-course IR surfacing shipped in 0.20.0. BACKLOG.md \u00a728 header is stale.\n\n### D3. ROADMAP \"What's live\" pinned to 0.24.5; three releases newer\n\n**ROADMAP.md:16:**\n> ## What's live (as of `0.24.5`, deployed)\n\nCONTEXT.md changelog has `0.25.0` (visual modernization), `0.25.1` (in-app account deletion \u2014 material new feature touching legal compliance), and `0.25.2` (feedback inbox routing change). The \"What's live\" section doesn't mention any of: design tokens / hover-lift / 40px touch targets / in-app account deletion / new feedback address. The account-deletion item in particular is non-trivial (Apple 5.1.1(v) / GDPR Art. 17 / CCPA gate) \u2014 it deserves a line on the roadmap because it unblocks App Store submission.\n\n### D4. CONTEXT.md `PRIORITY_QUEUE.md` phantom reference still present\n\nIdentified in `docs/CANONICAL_AUDIT.md` Finding #2 (same-day audit), still unfixed.\n\n**CONTEXT.md:22:**\n> \ud83d\udd12 Active priority queue: `PRIORITY_QUEUE.md` is the canonical to-do list until everything in it is checked off\u2026 AI re-reads PRIORITY_QUEUE.md at the start of every session.\n\n`PRIORITY_QUEUE.md` is **archived to `_archived/PRIORITY_QUEUE.md`** (per `CONTEXT.md` 0.21.5 changelog) and the active queue is `docs/launch-checklist-1.0.md`. Any AI session following the CONTEXT.md instruction literally will hit a missing file.\n\n### D5. DECISIONS_NEEDED.md references a non-existent Decision 26\n\n**DECISIONS_NEEDED.md:274 (under \"Decision 24. Feedback email routing\"):**\n> **Answer (REVISED 2026-05-13 \u2014 see Decision 26):** All in-app feedback addresses route to `kane@yesandeverything.com`\u2026\n\nThe file contains Decisions 1\u201310 and 18\u201325. There is no Decision 26 record. The 0.25.2 CONTEXT.md changelog (line 71) also says \"Supersedes Decision 24\" but never landed a Decision 26 entry in the log.\n\nThe supersession itself is fine \u2014 the cross-reference target is the gap.\n\n### D6. DECISIONS_NEEDED.md Decision 15 missing supersession marker\n\n**DECISIONS_NEEDED.md:103 (Decision 15. Versioning policy):**\n> **Answer:** \"I like patch-on-related-feature, we are mainly looking at full screens being added, complete overhauls on screens, or new menu features being added as our qualifier for minor bumps.\"\n\n**CONTEXT.md:19:**\n> This supersedes Decision 15 (2026-05-02 \"patch-on-related-feature is fine\"). The old rule produced 0.13.70 in a single minor; the new rule keeps the minor counter meaningful.\n\nDecision 15 was superseded by the 2026-05-05 versioning revision, but the DECISIONS_NEEDED.md entry doesn't say so. The \"answered log\" pattern depends on supersessions being noted inline (e.g. Decision 7's \"SUPERSEDED by Decision 10\" marker on line 37).\n\n### D7. README.md is multiple versions stale\n\n**README.md:11:** `## What's working today (v0.13.x)` \u2014 current is `0.25.2` (many releases later).\n\n**README.md:22:** `~3,400 canonical courses` \u2014 `CLAUDE.md` and `ROADMAP.md` say `~6,300`; local `course_data.json` actually has 852 records (12 MB). All three numbers disagree, which suggests \"scraped\" vs \"in KV\" vs \"in local JSON\" haven't been disambiguated.\n\n**README.md:32:** Stats-mode wizard described as `Disc \u2192 Shot type \u2192 Landing \u2192 Execution \u2192 Result` (5 steps). Per `CONTEXT.md` 0.22.0 (line 88) the current order is 11 steps: `disc \u2192 stance \u2192 aim \u2192 release \u2192 shotType \u2192 landing \u2192 position \u2192 confidence \u2192 execution \u2192 result \u2192 distance` (reorderable in Settings per 0.22.2).\n\n**README.md:73:** `\u00a722 \u00a712 user skill profile + TechDisc CSV import \u2014 Ready to ship as soon as a real TechDisc export is in hand.` Same drift as D1: shipped in 0.24.0.\n\n**README.md:79:** `~830KB bundled` \u2014 actual `app.js` is 1,096,444 bytes (~1.04 MB). `CLAUDE.md:25` correctly says \"~1MB\".\n\n### D8. Phantom references / file-existence checks\n\n- `ROADMAP.md:51` references `0009_skill_profile.sql` \u2014 file does not exist. Actual file is `supabase/migrations/0011_skill_profile.sql`. (Already counted in D1.)\n- `CONTEXT.md:22` references `PRIORITY_QUEUE.md` \u2014 file is at `_archived/PRIORITY_QUEUE.md`, not the root path implied. (Already counted in D4.)\n- `NEXT_SESSION_QUEUE.md` is still present at root despite being tombstoned. CANONICAL_AUDIT.md Finding #1 recommended `git rm`; still not done.\n- `crawler_project_notes.md` lives at root rather than in `docs/` or `tools/`. CANONICAL_AUDIT.md Finding #4 flagged this; still in place.\n\n### D9. PROJECT_SPEC.md scope drift\n\n**PROJECT_SPEC.md:5:**\n> Live at `https://theprophetkane.github.io/yesandchains/`.\n\nThe product now also serves from `https://yesandchains.com` and `https://yesandchains.app` (both registered, DNS wired, auth allowlist updated \u2014 per BACKLOG \u00a70.1, launch-checklist line 23). PROJECT_SPEC, as the \"vision + locked architecture\" doc, should at minimum acknowledge the canonical custom-domain URLs.\n\nPROJECT_SPEC also still carries the \u00a78 \"Still open\" list (course ingestion, AI calls, data persistence, multi-player, monetization, disc database source) \u2014 all six of these have answered decisions elsewhere (\u00a71.1\u2013\u00a71.8 of BACKLOG; decisions 1, 2, 5, 10 in DECISIONS_NEEDED). The \u00a78 list reads as if it's the source-of-truth open-questions register, but it isn't.\n\n### D10. CONTEXT.md self-inconsistency on window-exposure regression count\n\n**CONTEXT.md:44:**\n> This regression has shipped **eight times across eight versions** (0.5.31 / 0.5.33 / 0.11.0 / 0.12.2 / 0.13.5 / 0.13.7 / 0.13.8 \u2014 count is unforgiving).\n\nSeven versions listed. Either the count is off by one or a version was dropped from the enumeration. Minor \u2014 but it's a \"HARD GATE\" rule block, and miscounts in a hard-rule block undermine the gate.\n\n### D11. ROADMAP \u00a727 / \u00a732.1 \"\u2713 shipped 0.13.61\" \u2014 BACKLOG status not fully mirrored\n\nROADMAP marks `\u00a727 Daily welcome message rotation` and `\u00a732.1 Storage feasibility projection` as shipped.\n\n- \u00a727 in BACKLOG.md:1074 header now reads `\u2705 DONE 0.13.61` \u2014 aligned. However, the \u00a727 phasing list (lines 1094\u20131098, 27.1\u201327.4) is **not crossed off** below the DONE header, so it's unclear whether the full rotation engine (27.2\u201327.4) shipped or just the static fallback (27.1, which line 1095 still marks as shipped 0.13.54). Worth a 30-second clarification pass.\n- \u00a732 in BACKLOG.md:1257 has no `DONE` marker on \u00a732.1 itself; the phasing list at line 1329 doesn't strike through `32.1`. `docs/scaling-projection.md` does exist on disk, so the work landed \u2014 the BACKLOG just doesn't reflect it.\n\n---\n\n## Phantom references summary\n\n| Reference | Source | Reality |\n|---|---|---|\n| `PRIORITY_QUEUE.md` | `CONTEXT.md:22` | At `_archived/PRIORITY_QUEUE.md`; active queue is `docs/launch-checklist-1.0.md` |\n| `0009_skill_profile.sql` | `ROADMAP.md:51` | Migration is `0011_skill_profile.sql`, already applied in 0.20.0 |\n| \"Decision 26\" | `DECISIONS_NEEDED.md:274` + `CONTEXT.md:71` | No Decision 26 record exists |\n| `https://theprophetkane.github.io/yesandchains/` as sole live URL | `PROJECT_SPEC.md:5` | Also live at `yesandchains.com` + `yesandchains.app` |\n| `v0.13.x` \"what's working today\" | `README.md:11` | Current is `0.25.2` |\n| \"~830KB bundled\" | `README.md:79` | `app.js` is ~1.04 MB |\n| \"~3,400 canonical courses\" | `README.md:22` | Disputed; `CLAUDE.md` + `ROADMAP.md` say ~6,300; local file has 852 |\n| 5-step stats wizard | `README.md:32` | 11-step reorderable wizard since 0.22.0/0.22.2 |\n| Decision 15 (versioning) as current rule | `DECISIONS_NEEDED.md:103` | Superseded 2026-05-05 per `CONTEXT.md:19` |\n\n---\n\n## Recommended remediation order\n\n1. **D1 + D7's TechDisc claim** \u2014 biggest lie. One edit each in `ROADMAP.md` (Tier B \u2192 \"What's live\"), `docs/launch-checklist-1.0.md` (drop from \"Out of scope\"), `README.md` (drop from \"Currently designed-but-not-built\").\n2. **D2** \u2014 strike \"per-hole + per-course surfacing remain queued\" from BACKLOG \u00a728 header; the launch-checklist + CONTEXT both confirm it shipped.\n3. **D3** \u2014 refresh ROADMAP \"What's live\" to 0.25.2; add a \"Visual modernization + account deletion + feedback routing (0.25.x)\" bullet block.\n4. **D4 + D8 NEXT_SESSION_QUEUE** \u2014 fix the `CONTEXT.md` PRIORITY_QUEUE phantom and `git rm NEXT_SESSION_QUEUE.md` (already recommended in same-day `docs/CANONICAL_AUDIT.md`).\n5. **D5 + D6** \u2014 append Decision 26 to DECISIONS_NEEDED.md (feedback inbox chains@\u2192kane@, 2026-05-13); add \"SUPERSEDED by 2026-05-05 versioning revision in CONTEXT.md\" line to Decision 15.\n6. **D7 README** \u2014 rewrite \"What's working today\" against 0.25.2 surface; reconcile course-count claim; bump bundle size; rewrite wizard step list.\n7. **D9 PROJECT_SPEC** \u2014 add custom-domain URLs to the header; either retire \u00a78 \"Still open\" by linking each item to its answered decision, or keep \u00a78 but mark each item as ANSWERED with a date and cross-reference.\n8. **D10** \u2014 count fix or enumerate the missing version.\n9. **D11** \u2014 cross off BACKLOG \u00a727 phasing items + \u00a732.1 in the phasing list.\n\nNone of these are structural \u2014 the canonical layer's shape works. The drifts are all \"files haven't kept pace with the changelog,\" which is fixable in a single sweep.\n"}], "grading": {"expectations": [{"text": "Output has a TL;DR section that summarizes alignment status in 1-3 sentences", "passed": true, "evidence": "Found TL;DR marker"}, {"text": "Output has a 'What's aligned' section listing items confirmed correct (not just drift)", "passed": true, "evidence": "Found alignment section keyword"}, {"text": "Output identifies the phantom PRIORITY_QUEUE.md reference in CONTEXT.md (the file is referenced but doesn't exist)", "passed": true, "evidence": "PRIORITY_QUEUE.md mentioned"}, {"text": "Output identifies that NEXT_SESSION_QUEUE.md is tombstoned / superseded by docs/launch-checklist-1.0.md", "passed": true, "evidence": "NEXT_SESSION_QUEUE.md mentioned"}, {"text": "Output assigns a distinct role to each canonical doc (PROJECT_SPEC=vision, CONTEXT=vocab+changelog, ROADMAP=state, BACKLOG=deferred, DECISIONS_NEEDED=answered log)", "passed": true, "evidence": "Found 5 of 5 canonical doc names"}, {"text": "Output does NOT propose new features beyond what's in the canonical docs", "passed": false, "evidence": "No new-feature proposal language"}, {"text": "Output flags at least one item by severity (P0/P1/critical/high vs minor)", "passed": true, "evidence": "Found severity/priority marker"}, {"text": "Output is markdown-formatted with section headers", "passed": true, "evidence": "Found 16 '#' markers and 16 '##' markers"}]}}, {"id": "eval-1-yae-static-site-with_skill", "prompt": "Do a canonical-doc audit on YesAndEverything (X:\\YesAndEverything). It's a static-site monorepo deployed via GitHub Pages with sub-project landing pages and a password-gated GDD mirror. Verify the docs match what's actually deployed. Report-only, no fixes.", "eval_id": 1, "outputs": [{"name": "findings.md", "type": "text", "content": "# YesAndEverything canonical-doc audit \u2014 2026-05-14\n\n## TL;DR\n\nThe deploy plumbing (CNAME, robots.txt, .nojekyll, hordes/ base64 gate) is sound and matches CLAUDE.md / DEPLOY.md. The **content** has two real drifts: (1) the auto-publish script writes the wrong version pill onto the Chains project card (it stamps the HTBH version onto Chains because of a first-match regex), leaving the HTBH card stuck at `v0.26.x` while live HTBH is `v0.34.22`; (2) `projects/here-there-be-hordes/gdd.html` is an abandoned tombstone at `v0.26.16` (2026-05-08) \u2014 the publish script's own header comment says nothing serves it, but it's still on disk and CLAUDE.md still describes it as a live \"GDD preview iframe.\"\n\n---\n\n## What's aligned (no fix needed)\n\n- **CNAME** \u2014 contains exactly `yesandeverything.com`. Matches CLAUDE.md's \"must contain `yesandeverything.com` exactly\" rule and the custom domain in DEPLOY.md \u00a74.\n- **robots.txt** \u2014 `Allow: /`, `Disallow: /hordes/`. Matches CLAUDE.md's rule that \"/hordes/ is private GDD.\"\n- **.nojekyll** \u2014 present at root, matches CLAUDE.md table and DEPLOY.md inventory.\n- **404.html** \u2014 present, dark-mode, mono font, auto-refreshes to `/`. Matches the \"dark-mode by default, mono-font-first\" aesthetic.\n- **hordes/index.html base64-injection structure** \u2014 password gate intact (`var PASSWORD = 'SneakPeak'` on line 98), `var ENCODED = \"...\"` on line 99 holds the live GDD payload. Most recent commit `cd20f41 docs(htbh): publish GDD v0.34.22` confirms the publish script is hitting the gate page correctly. CLAUDE.md's \"Never copy `gdd.html` into `hordes/`\" injection rule is being respected.\n- **DEPLOY.md** \u2014 accurate one-time runbook; the GitHub Pages + DNS setup described matches the live CNAME and the four `185.199.108-111.153` A-record pattern that GitHub Pages requires.\n- **File inventory in CLAUDE.md \"Files at a glance\"** \u2014 every listed file exists at the claimed path (`index.html`, `404.html`, `CNAME`, `robots.txt`, `hordes/index.html`, `projects/scheduler/{index,design}.html`, `DEPLOY.md`, `unstick-git.ps1`).\n- **Chains description** (index.html line 277-289) \u2014 broadly matches `X:\\YesAndChains\\PROJECT_SPEC.md` and `CONTEXT.md`. Course count (~6,300), TechDisc/UDisc CSV import, PWA + offline, opt-in AI caddy with per-user spend caps, Cloudflare Worker proxy all confirmed in the YaC canonical layer. The \"v0.34.x \u2192 1.0\" version is wrong (see Drift #1) but the prose is right.\n- **Scheduler description** (index.html line 327-337 + `projects/scheduler/index.html`) \u2014 matches `X:\\Scheduler\\docs\\DESIGN.md` \u00a71, \u00a72, \u00a73. Aquatics department, Lifeguard + Swim Instructor sub-departments, preference-driven six-week auto-fill, review queue, mobile-first, Cloudflare Workers + D1 + Vite/React/Tailwind + Supabase magic-link. Stack and feature scope all reconcile.\n- **Scheduler design.html** \u2014 password-gated (`var PASSWORD = 'SeeSchedule'`) base64 mirror of `X:\\Scheduler\\docs\\DESIGN.md`. Same shape as hordes/index.html. Note: CLAUDE.md doesn't document this password, only `SneakPeak` for hordes/.\n- **hordes/ is not linked from index.html** \u2014 only the HTBH card's \"GDD \u2192\" anchor (line 318) goes to `hordes/`, matching robots.txt's noindex intent. The orphan `projects/here-there-be-hordes/gdd.html` is also not linked from any page in the site.\n\n---\n\n## Drift found\n\n### 1. The auto-publish script bumps the wrong project's version pill \u2014 HIGH severity\n\n`X:\\HereThereBeHordes\\scripts\\publish-gdd.ps1` lines 159-163 use this regex to update the YaE landing page after every GDD publish:\n\n```powershell\n$verRe = [regex]::new('v\\d+\\.\\d+\\.[0-9x]+')\n$idxText = $verRe.Replace($idxText, $newSeries, 1)   # `, 1` = first match only\n```\n\nThe first `v#.#.x` in `index.html` is on **line 292**, which is the **Chains** project card (`v0.34.x &nbsp;&rarr;&nbsp; 1.0`). The HTBH card's pill on **line 317** (`v0.26.x`) is therefore never reached.\n\nNet result on the live site right now:\n- Chains card shows `v0.34.x \u2192 1.0` \u2014 **wrong** (YaC is actually at `0.25.2` per `CONTEXT.md` line 9).\n- HTBH card shows `v0.26.x` \u2014 **wrong** (HTBH is actually at `v0.34.22` per `docs/GDD.html` line 584; commit history confirms 11+ GDD publishes since v0.26.x).\n\nThe numbers are essentially swapped: Chains is wearing HTBH's version, and HTBH is wearing the version Chains was at the last time the page was hand-edited.\n\nGit evidence: commit `b033a86 docs(htbh): publish GDD v0.34.0` bumped Chains' pill from `v0.33.x` to `v0.34.x` while leaving the HTBH pill alone. This has been happening for at least 9 publish commits.\n\n### 2. `projects/here-there-be-hordes/gdd.html` is a stale tombstone \u2014 MEDIUM severity\n\nThe file exists at `X:\\YesAndEverything\\projects\\here-there-be-hordes\\gdd.html`, version pill `v0.26.16` dated `2026-05-08`. The HTBH GDD's live version is `v0.34.22` (2026-05-14). Eight minor versions and one Research tab behind.\n\nThe publish script's own header comment (`publish-gdd.ps1` lines 7-11) explicitly says:\n\n> v0.26.18: rewrite. The old version wrote to projects/here-there-be-hordes/gdd.html \u2014 **a stale file nothing serves**. The actual user-facing URL is /hordes/...\n\nSo the file has been abandoned by the publish pipeline for ~6 weeks of GDD publishes but is still on disk and still being served by GitHub Pages (it's reachable at `https://yesandeverything.com/projects/here-there-be-hordes/gdd.html`, just not linked from anywhere).\n\n`CLAUDE.md` line 20 describes it as:\n\n> `projects/here-there-be-hordes/gdd.html` | Public GDD preview iframe (lighter than the full mirror).\n\nTwo inaccuracies in that one row: (a) it's not an iframe, it's a full standalone GDD HTML page, and (b) it's not \"lighter than the full mirror\" \u2014 it's the same shape as `docs/GDD.html`, just frozen at v0.26.16.\n\n### 3. HTBH project blurb in `index.html` uses retired pitch language \u2014 LOW severity\n\n`index.html` lines 303-313 describe HTBH as:\n\n> A hand-painted grim-dark survival RTS in true 2:1 isometric \u2014 pitched as *an industrial nightmare in oil paint*: *They Are Billions*'s gameplay with *Risen Kingdom*'s brush.\n\nThe current GDD (`X:\\HereThereBeHordes\\docs\\GDD.html` line 611) gives the one-line pitch as:\n\n> *An industrial nightmare where silence is a currency. Build a colony loud enough to survive but quiet enough to live.*\n\nAnd the GDD changelog (line 964-965) explicitly notes the \u00a71 + \u00a715 rewrite that **moved away** from execution-anchored framing (\"oil-painted\", \"Risen Kingdom technique + They Are Billions palette\") toward mood-anchored framing:\n\n> Pillar 3 reframed from a specific art-execution commitment (oil-painted, painterly) to a mood commitment ... Anchor moved from execution (\"Risen Kingdom technique + They Are Billions palette\") to mood (\"the colony is the only candle in a graveyard\").\n\nSo the YaE blurb is still using the framing the GDD has deliberately retired. Per `CLAUDE.md` line 63: \"For per-project page content, mirror what the project's own canonical doc says.\" The current blurb doesn't.\n\n### 4. HTBH milestone status overstated \u2014 LOW severity\n\n`index.html` line 312-313:\n\n> Currently pre-alpha: M0 (Foundation) closed; M1 (Core Loop Vertical Slice) and M2 (Noise System) in flight.\n\nPer `docs/GDD.html` roadmap tab (line 1692-1740):\n- M0 Foundation \u2014 `status-done` (matches)\n- M1 Core Loop Vertical Slice \u2014 `status-in-progress` (\"in flight\" is accurate)\n- M2 Noise System Vertical Slice \u2014 `status-todo` (not in flight; only the Stone Wall + Wood Watchtower checklist items inside M2 are pre-shipped)\n\nCalling M2 \"in flight\" overstates progress.\n\n### 5. Chains version pill on index.html is shaped wrong even after Drift #1 is fixed \u2014 LOW severity\n\nThe Chains pill renders as `v0.34.x \u2192 1.0` (line 292) \u2014 even after fixing the auto-publish script, the static text \" \u2192 1.0\" is unique to Chains; the publish script doesn't preserve that suffix because its regex only replaces the version literal. Fine in isolation, but worth noting that the script's \"patch the first version pill\" behavior was originally written assuming a single project card and never adapted when the page grew to three cards.\n\n### 6. CLAUDE.md doesn't mention `PERSONAL_CLAUDE_ARCHITECTURE.md` \u2014 INFO\n\n`X:\\YesAndEverything\\PERSONAL_CLAUDE_ARCHITECTURE.md` exists at the repo root (drafted 2026-05-14). It is not listed in CLAUDE.md's \"Files at a glance\" table. It appears to be a meta-architecture doc not intended for deploy, but it is committed to the repo and therefore deploys to `https://yesandeverything.com/PERSONAL_CLAUDE_ARCHITECTURE.md` whether intended or not.\n\n### 7. CLAUDE.md doesn't document the Scheduler password \u2014 INFO\n\nCLAUDE.md line 19 documents the hordes/ password (`SneakPeak`) but doesn't mention that `projects/scheduler/design.html` is also password-gated with `SeeSchedule`. If someone is grepping the handler doc for \"password,\" they'd miss the second gate.\n\n---\n\n## Suggested fixes\n\n### Low-risk text alignments (canonical-doc only)\n\n1. **Fix HTBH version pill in `index.html` line 317** \u2014 change `v0.26.x` to `v0.34.x`. Structural fix: see #1 below.\n2. **Fix Chains version pill in `index.html` line 292** \u2014 change `v0.34.x` to `v0.25.x` (matches YaC `CONTEXT.md` \"Current version: 0.25.2\").\n3. **Update HTBH blurb in `index.html` lines 303-313** \u2014 replace \"*an industrial nightmare in oil paint*: *They Are Billions*'s gameplay with *Risen Kingdom*'s brush\" with a mood-first phrasing matching GDD \u00a71. Drop \"hand-painted\" if you want to honor the retired execution commitment, or keep it if you want a public-facing aesthetic hint that's looser than the GDD's locked direction.\n4. **Update HTBH milestone status in `index.html` line 312-313** \u2014 change to \"M0 closed; M1 (Core Loop Vertical Slice) in flight; M2 (Noise System) queued.\" Or just \"M1 in flight.\"\n5. **Fix `CLAUDE.md` line 20** \u2014 replace \"Public GDD preview iframe (lighter than the full mirror).\" with something accurate, e.g. \"Abandoned standalone GDD mirror \u2014 replaced by `hordes/index.html` in v0.26.18 of `publish-gdd.ps1`. Tombstone; safe to delete.\" (Pairs with structural fix #2.)\n6. **Add password reference in `CLAUDE.md`** \u2014 append the Scheduler password under the same row format. Or note that each gated mirror has its own password and they're embedded as plain `var PASSWORD = '...'` in the gate page.\n\n### Structural changes (need user decision)\n\n1. **Fix the publish script's regex in `X:\\HereThereBeHordes\\scripts\\publish-gdd.ps1`** \u2014 the `v\\d+\\.\\d+\\.[0-9x]+` pattern matched against `index.html` should anchor specifically to the HTBH card's pill, not \"first match.\" Two ways to scope it: (a) wrap a marker like `<!-- htbh-version -->` next to the right pill and have the regex match only inside the marker, or (b) match the regex against a window of text that's preceded by \"Here There Be Hordes\" within the previous ~30 lines. The script currently does (1) with `, 1` flag for first-match-only, which is the bug. Same applies to the `\\d{4}-\\d{2}-\\d{2}` date replace on line 167.\n2. **Decide what to do with `projects/here-there-be-hordes/gdd.html`** \u2014 three options: (a) delete it (publish script header comment treats it as dead), (b) keep it but re-enable publishing into it as a no-password public preview (would need a robots.txt change since gdd.html doesn't currently advertise as public), (c) leave it as-is and just fix CLAUDE.md to call it a tombstone. The robots.txt currently only disallows `/hordes/`, so this file IS crawlable as a public preview right now \u2014 it just happens to be 8 versions stale.\n3. **Decide whether `PERSONAL_CLAUDE_ARCHITECTURE.md` should be deployed.** If it's meant to stay private to the local repo, add it to `.gitignore` (and remove from index \u2014 but it's already pushed, so it's been public since 2026-05-14). If it's fine being public, mention it in CLAUDE.md's file inventory.\n\n---\n\n## Couldn't verify\n\n- **GitHub Pages settings (Source = main / root, Enforce HTTPS, Custom domain field)** \u2014 would need `gh repo view --json` or the Settings UI. Inferred from CNAME + DEPLOY.md but not directly confirmed.\n- **Cloudflare DNS state for `yesandeverything.com`** \u2014 CLAUDE.md line 57 says DNS is on Cloudflare as of 2026-05-06 with registrar transfer pending. Couldn't dig into actual nameservers from inside the repo.\n- **GitHub repository description / topics / homepageUrl** \u2014 `gh` CLI wasn't invoked. If the public repo description on github.com still says something stale, that wouldn't surface here.\n- **Whether `https://scheduler.yesandeverything.com` actually resolves** \u2014 `projects/scheduler/index.html` lines 67-68 link to both that custom domain and `theprophetkane.github.io/yesandscheduler/`. The fact that both are listed suggests the custom domain is still cert-provisioning. Worth a manual check.\n- **Whether the live GitHub Pages deploy matches the local repo HEAD** \u2014 `git log` shows `cd20f41` as the latest commit; CDN may still be serving an older version until the next ~30s deploy window.\n"}], "grading": {"expectations": [{"text": "Output has a TL;DR section", "passed": true, "evidence": "Found TL;DR marker"}, {"text": "Output has a 'What's aligned' section listing items confirmed correct", "passed": true, "evidence": "Found alignment section keyword"}, {"text": "Output verifies the hordes/ password-gate structure (base64-injection pattern) is preserved", "passed": true, "evidence": "hordes/ + base64/password/ENCODED mentioned"}, {"text": "Output verifies CNAME, robots.txt, or .nojekyll deploy configs are correct", "passed": true, "evidence": "Deploy config files mentioned"}, {"text": "Output checks sub-project landing pages under projects/ against actual content", "passed": true, "evidence": "Sub-project paths mentioned"}, {"text": "Output flags any version pill or label drift between index.html and the projects' actual versions", "passed": true, "evidence": "Version drift discussed"}, {"text": "Output does NOT propose new features or architectural changes", "passed": true, "evidence": "No new-feature proposal language"}, {"text": "Output is markdown-formatted with section headers", "passed": true, "evidence": "Found 14 '#' markers and 14 '##' markers"}]}}, {"id": "eval-1-yae-static-site-without_skill", "prompt": "Do a canonical-doc audit on YesAndEverything (X:\\YesAndEverything). It's a static-site monorepo deployed via GitHub Pages with sub-project landing pages and a password-gated GDD mirror. Verify the docs match what's actually deployed. Report-only, no fixes.", "eval_id": 1, "outputs": [{"name": "findings.md", "type": "text", "content": "# YesAndEverything \u2014 Canonical-Doc Audit\n\nAudit date: 2026-05-14\nScope: Verify CLAUDE.md + DEPLOY.md describe what is actually in the repo / deployed.\nMode: Report-only, no fixes.\n\n## TL;DR\n\nThe repo is in mostly-good shape, but there are several real drifts between the docs and the deployed state. The most serious is a **script bug in HTBH's `publish-gdd.ps1` that writes the HTBH version onto the Chains card on the public landing page**, leaving HTBH's own card stuck 8 minor versions behind and silently mislabeling Chains.\n\n---\n\n## Findings, by severity\n\n### P0 \u2014 Affects what visitors see\n\n**1. HTBH publish-gdd.ps1 overwrites the wrong version pill in `index.html`.**\n\n`X:\\HereThereBeHordes\\scripts\\publish-gdd.ps1` lines ~158-162:\n\n```powershell\n$verRe = [regex]::new('v\\d+\\.\\d+\\.[0-9x]+')\n$idxText = $verRe.Replace($idxText, $newSeries, 1)\n```\n\nThe regex is unanchored and the script replaces the **first** match in `index.html`. The Chains card (`v0.34.x`, line 292) appears before the HTBH card (`v0.26.x`, line 317), so every HTBH publish overwrites the Chains pill with HTBH's version, and the HTBH pill never gets touched.\n\nEffect on production:\n- HTBH card on yesandeverything.com currently reads **`v0.26.x`** \u2014 actual HTBH is at **v0.34.22** (per `docs/GDD.html` meta-pill and the most recent publish commit `cd20f41`). The HTBH card is 8+ minor versions stale.\n- Chains card reads **`v0.34.x`**, but YaC `CONTEXT.md` says current is **`0.25.2` (2026-05-13)**. The number on the Chains card is HTBH's version, not Chains's.\n\nGit history confirms: every `docs(htbh): publish GDD v0.X.Y` commit on YaE bumps the Chains pill, never the HTBH pill (e.g. `87cb7a1`, `31f2d45`, `b033a86`).\n\nThis is a script bug, not a doc bug, but CLAUDE.md does not mention it and the doc claim \"For HTBH GDD republishing, do not edit this repo directly \u2014 run `publish-gdd.ps1` and it'll push the injection here for you\" implicitly endorses the broken flow.\n\n**2. `projects/here-there-be-hordes/gdd.html` is a publicly accessible, ungated, non-noindexed full GDD copy \u2014 stale at v0.26.16 \u2014 and CLAUDE.md misdescribes it.**\n\nCLAUDE.md says: *\"`projects/here-there-be-hordes/gdd.html` | Public GDD preview iframe (lighter than the full mirror).\"*\n\nReality:\n- It is **not an iframe** \u2014 `grep -c iframe` = 0. It's a 314KB self-contained copy of the full GDD.\n- It is **not noindexed** \u2014 no `meta name=\"robots\"` in the head. Compare to `hordes/index.html` (gated) and `projects/scheduler/design.html` (gated), both of which carry `noindex, nofollow, noarchive`.\n- It is **not gated** \u2014 no password, no encoding, just renders directly.\n- `robots.txt` only disallows `/hordes/`, so `/projects/here-there-be-hordes/gdd.html` is fully crawlable.\n- It is **stale**: last touched 2026-05-08 at HTBH v0.26.16. HTBH is now v0.34.22.\n- It is **orphaned**: no link from `index.html` or anywhere else in the repo (`grep -r \"here-there-be-hordes\"` returns 0 link hits).\n- The current `publish-gdd.ps1` header explicitly says: *\"The old version wrote to projects/here-there-be-hordes/gdd.html \u2014 a stale file nothing serves.\"* The script was deliberately changed to stop updating it. CLAUDE.md still lists it as an active component.\n\nNet: there is a stale, public, unlinked, search-engine-indexable copy of the GDD at a known URL. If the gate at `/hordes/` is meant to keep the GDD off the open web, this file defeats that.\n\n---\n\n### P1 \u2014 Doc drift, no production impact yet\n\n**3. CLAUDE.md \"Files at a glance\" omits two real files in the repo root.**\n\nUntracked but present locally:\n- `CLAUDE.md` itself \u2014 not in `.gitignore` (file doesn't exist), but `git status` shows it as untracked. The system reminder's CLAUDE.md content was loaded from this file; if it's not pushed, it isn't part of the deployed repo.\n- `PERSONAL_CLAUDE_ARCHITECTURE.md` \u2014 meta-doc drafted 2026-05-14, untracked.\n\nNeither appears in CLAUDE.md's \"Files at a glance\" table. They aren't deployed (GitHub Pages serves what's pushed), so absence-from-table is fine, but the table claims to be the file inventory; consider noting that these are project-local meta files, or add them to a `.gitignore`.\n\n**4. `projects/scheduler/design.html` has version-pill typo `vv0.1.0`** (double `v`) on the gate page (line ~50). Cosmetic but ugly. The page is otherwise consistent with CLAUDE.md.\n\n**5. CLAUDE.md describes `projects/scheduler/{index,design}.html` as \"Scheduler project landing + design preview\"** \u2014 accurate, but understated. `design.html` is in fact a full base64-inlined password gate (password: `SeeSchedule`, same shape as `hordes/index.html`). Worth pinning the password and gate-shape note alongside the `hordes/` injection rule, since these are now two pages with the same fragile contract.\n\n---\n\n### P2 \u2014 Hygiene\n\n**6. Untracked junk filename in repo root.**\n\nThere is a file literally named `: close \u00a70.5 - custom SMTP shipped on yesandeverything.com via Resend\"` (with the leading `:` and trailing `\"`). Contents are a single git log line \u2014 clearly an accidental shell redirect (`git log ... > \"<commit message with leading colon>\"`). Should be deleted.\n\n**7. Uncommitted line-ending churn on `hordes/index.html`.**\n\n`git diff` shows 127 lines removed and 127 lines added, all line-ending changes (CRLF/LF flip). No content difference. Likely a tool re-saved the file. Will be a noisy commit if pushed. Consider a `.gitattributes` `* text=auto` line.\n\n**8. CLAUDE.md \"Things that will bite you\" mentions DNS still on Cloudflare pending registrar transfer from Squarespace (5-7 days from 2026-05-06).** Today is 2026-05-14 \u2014 8 days in. The note is approaching stale; either the transfer completed (CLAUDE.md should drop the pending caveat) or it's lagging (CLAUDE.md should note the lag). Cross-ref point only \u2014 DNS state itself wasn't verified in this audit.\n\n---\n\n## What is correct\n\nFor the avoidance of doubt, these are all good:\n\n- `CNAME` is exactly `yesandeverything.com` (no newline drama).\n- `.nojekyll` is present and empty (correct).\n- `robots.txt` disallows `/hordes/` as CLAUDE.md describes.\n- `hordes/index.html` is a hand-authored password gate (`PASSWORD = 'SneakPeak'`), has `var ENCODED = \"...\"` containing a base64-encoded GDD, decodes via `atob` + `TextDecoder('utf-8')` + `document.write` \u2014 matches CLAUDE.md exactly.\n- `404.html` is a simple meta-refresh to `/`, dark-mode, matches the site aesthetic.\n- `projects/scheduler/index.html` faithfully mirrors what DESIGN.md says (Aquatics, Lifeguard + Swim Instructor, magic link, six-week window, etc.), uses the established dark palette, and properly disclosing the design doc as password-gated.\n- Single-file-per-page convention is held throughout (no shared CSS/JS imports).\n- External `meta-link` anchors on `index.html` use `rel=\"noopener\"`.\n- `unstick-git.ps1` does what CLAUDE.md says it does.\n\n---\n\n## Suggested action order (not executed \u2014 report-only audit)\n\n1. **P0** \u2014 Fix `publish-gdd.ps1`'s regex to anchor on the HTBH card specifically (or add a unique marker around the HTBH version pill in `index.html` and anchor on that). Manually re-set both pills to truth on the next commit: HTBH `v0.34.x`, Chains `v0.25.x`.\n2. **P0** \u2014 Decide on the fate of `projects/here-there-be-hordes/gdd.html`. Either: delete (the publish script no longer maintains it; CLAUDE.md description is wrong anyway), or convert to a true noindex+gated preview and have the script keep it fresh. Today it is the worst of all worlds: stale, public, indexable.\n3. **P1** \u2014 Fix `vv0.1.0` typo on `projects/scheduler/design.html`.\n4. **P1** \u2014 Update CLAUDE.md \"Files at a glance\" to drop the iframe claim and either note `projects/here-there-be-hordes/gdd.html` as stale-and-pending-removal or remove the row.\n5. **P2** \u2014 Delete the stray `\": close \u00a70.5 ...\"` file.\n6. **P2** \u2014 Add `.gitattributes` with `* text=auto` to stop CRLF/LF flips on `hordes/index.html`.\n7. **P2** \u2014 Update the DNS transfer line in CLAUDE.md once the registrar transfer state is known.\n"}], "grading": {"expectations": [{"text": "Output has a TL;DR section", "passed": true, "evidence": "Found TL;DR marker"}, {"text": "Output has a 'What's aligned' section listing items confirmed correct", "passed": false, "evidence": "Found alignment section keyword"}, {"text": "Output verifies the hordes/ password-gate structure (base64-injection pattern) is preserved", "passed": true, "evidence": "hordes/ + base64/password/ENCODED mentioned"}, {"text": "Output verifies CNAME, robots.txt, or .nojekyll deploy configs are correct", "passed": true, "evidence": "Deploy config files mentioned"}, {"text": "Output checks sub-project landing pages under projects/ against actual content", "passed": true, "evidence": "Sub-project paths mentioned"}, {"text": "Output flags any version pill or label drift between index.html and the projects' actual versions", "passed": true, "evidence": "Version drift discussed"}, {"text": "Output does NOT propose new features or architectural changes", "passed": true, "evidence": "No new-feature proposal language"}, {"text": "Output is markdown-formatted with section headers", "passed": true, "evidence": "Found 7 '#' markers and 7 '##' markers"}]}}], "previous_feedback": {}, "previous_outputs": {}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

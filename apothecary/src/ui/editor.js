@@ -1,11 +1,29 @@
-// editor.js — left panel: form fields, swatches, size picker, back-label
-// toggle and content, auto-fill, print, reset, herb autocomplete dropdown.
+// editor.js - left panel: form fields, swatches, size picker, back-label
+// toggle and content, field placement table, auto-fill, print, reset, herb
+// autocomplete dropdown.
 
 import { printLabel } from '../util/print.js';
 
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
   '#4A3F6B', '#C97BA8', '#C4580A', '#B8860B', '#6B3A2A',
+];
+
+// Rows in the placement table. Each: { key (matches state.placement), label }.
+// Order = display order in the editor.
+const PLACEMENT_ROWS = [
+  { key: 'shop',         label: 'Shop Name' },
+  { key: 'description',  label: 'Short Description' },
+  { key: 'props',        label: 'Properties' },
+  { key: 'symbol',       label: 'Celtic Symbol' },
+  { key: 'botanical',    label: 'Botanical Icon' },
+  { key: 'rune1',        label: 'Rune 1' },
+  { key: 'rune2',        label: 'Rune 2' },
+  { key: 'rune3',        label: 'Rune 3' },
+  { key: 'descFull',     label: 'Full Description' },
+  { key: 'historicUses', label: 'Historic Uses' },
+  { key: 'nutrition',    label: 'Notes' },
+  { key: 'pairings',     label: 'Pairings' },
 ];
 
 export function mountEditor(root, ctx) {
@@ -116,6 +134,25 @@ export function mountEditor(root, ctx) {
         </div>
       </div>
 
+      <div class="gold-divider"></div>
+
+      <div class="placement-panel">
+        <div class="placement-title">
+          Field Placement
+          <span class="placement-title-hint">where each field appears</span>
+        </div>
+        <div class="placement-table">
+          <div class="placement-head">Field</div>
+          <div class="placement-head col">Front</div>
+          <div class="placement-head col">Back</div>
+          ${PLACEMENT_ROWS.map(row => `
+            <div class="placement-row-label">${row.label}</div>
+            <div class="placement-row-cell"><input type="checkbox" data-placement="${row.key}" data-side="front" /></div>
+            <div class="placement-row-cell"><input type="checkbox" data-placement="${row.key}" data-side="back" /></div>
+          `).join('')}
+        </div>
+      </div>
+
       <button id="btn-print" class="btn-secondary">Print Label</button>
       <button id="btn-reset" class="btn-ghost" type="button">Reset to Defaults</button>
     </div>
@@ -147,6 +184,8 @@ export function mountEditor(root, ctx) {
   const historicCounter  = $('historicCounter');
   const nutritionCounter = $('nutritionCounter');
   const pairingsCounter  = $('pairingsCounter');
+
+  const placementCheckboxes = root.querySelectorAll('[data-placement]');
 
   // --- Herb autocomplete datalist ---
   const herbList = root.querySelector('#herb-suggestions');
@@ -221,6 +260,12 @@ export function mountEditor(root, ctx) {
     historicInput.value  = s.historicUses ?? '';
     nutritionInput.value = s.nutrition ?? '';
     pairingsInput.value  = s.pairings ?? '';
+    // Placement checkboxes
+    placementCheckboxes.forEach(cb => {
+      const key = cb.dataset.placement;
+      const side = cb.dataset.side;
+      cb.checked = !!(s.placement?.[key]?.[side]);
+    });
     updateAllCounters();
     updateSwatchSelection();
   }
@@ -247,7 +292,7 @@ export function mountEditor(root, ctx) {
   herbInput.addEventListener('input', () => {
     state.set({ herbName: herbInput.value });
     const h = lookupHerb(herbInput.value);
-    if (h) state.set({ botanical: h.botanical });
+    if (h) state.set({ botanical: h.botanical, icon: h.icon ?? null });
   });
   latinInput.addEventListener('input', () => state.set({ latin: latinInput.value }));
   propsInput.addEventListener('input', () => state.set({ props: propsInput.value }));
@@ -291,53 +336,4 @@ export function mountEditor(root, ctx) {
   });
   descFullInput.addEventListener('input', () => {
     state.set({ descFull: descFullInput.value });
-    counterUpdate(descFullInput, descFullCounter, tmpl.descFullMaxChars);
-  });
-  historicInput.addEventListener('input', () => {
-    state.set({ historicUses: historicInput.value });
-    counterUpdate(historicInput, historicCounter, tmpl.historicMaxChars);
-  });
-  nutritionInput.addEventListener('input', () => {
-    state.set({ nutrition: nutritionInput.value });
-    counterUpdate(nutritionInput, nutritionCounter, tmpl.nutritionMaxChars);
-  });
-  pairingsInput.addEventListener('input', () => {
-    state.set({ pairings: pairingsInput.value });
-    counterUpdate(pairingsInput, pairingsCounter, tmpl.pairingsMaxChars);
-  });
-
-  autofillBtn.addEventListener('click', () => {
-    const found = lookupHerb(herbInput.value);
-    if (!found) {
-      statusMsg.textContent = 'Not in database. Fill manually.';
-      statusMsg.className = 'status-msg warn';
-      return;
-    }
-    state.set({
-      latin: found.latin,
-      props: found.props,
-      description: found.desc.slice(0, tmpl.descMaxChars),
-      accent: found.accent,
-      symbol: found.symbol,
-      botanical: found.botanical,
-      runes: found.runes.map(r => ({ c: r.c, m: r.m })),
-      descFull:     (found.descFull     ?? found.desc).slice(0, tmpl.descFullMaxChars),
-      historicUses: (found.historicUses ?? '').slice(0, tmpl.historicMaxChars),
-      nutrition:    (found.nutrition    ?? '').slice(0, tmpl.nutritionMaxChars),
-      pairings:     (found.pairings     ?? '').slice(0, tmpl.pairingsMaxChars),
-    });
-    syncFromState();
-    statusMsg.textContent = 'Found. Customize freely.';
-    statusMsg.className = 'status-msg ok';
-  });
-
-  printBtn.addEventListener('click', printLabel);
-
-  resetBtn.addEventListener('click', () => {
-    if (!confirm('Reset all fields to defaults? Saved label will be cleared.')) return;
-    ctx.onReset();
-  });
-
-  syncFromState();
-  state.subscribe(syncFromState);
-}
+  

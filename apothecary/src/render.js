@@ -1,14 +1,8 @@
-// render.js — schema-driven label renderer with front, optional back, and a
-// separate print-stage tree.
+// render.js - schema-driven label renderer with front, optional back, a
+// separate print-stage tree, and v0.4 per-side field placement.
 //
-// Print model: @page is fixed at 8.5x11 (US Letter). Labels are placed inside
-// the print-stage container at their physical inch size, in one of four
-// layouts depending on how many cards and how large they are:
-//
-//   - layout-single        : one card, top-left
-//   - layout-side-by-side  : two cards horizontally
-//   - layout-stacked       : two cards vertically (when side-by-side overflows)
-//   - layout-separate      : two cards across two pages (oversized only)
+// Preview cards now live inside a .label-frame sized to post-scale dimensions
+// so flex stacking gives correct layout space (avoids back-over-front overlap).
 
 import { autofitText } from './util/autofit.js';
 import { resolveSize } from '../data/label-templates.js';
@@ -70,9 +64,12 @@ function borderSvg(color, theme, designSize) {
 }
 
 const ITEM_RENDERERS = {
-  // Front
   symbol:        (s, ctx) => `<div>${ctx.symbols[s.symbol]?.(s.accent) ?? ''}</div>`,
-  botanical:     (s, ctx) => `<div>${ctx.botanicals[s.botanical]?.(s.accent) ?? ''}</div>`,
+  botanical:     (s, ctx) => {
+    const iconFn = ctx.icons?.[s.icon];
+    const svg = iconFn ? iconFn(s.accent) : (ctx.botanicals[s.botanical]?.(s.accent) ?? '');
+    return `<div>${svg}</div>`;
+  },
   shop:          (s, ctx) => `<div class="lbl-shop" style="color:${ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
   'divider-top': (s)      => wavyDivider(s.accent),
   'divider-bot': (s)      => wavyDivider(s.accent),
@@ -84,7 +81,6 @@ const ITEM_RENDERERS = {
   'rune-2':      (s)      => runeItem(s.runes[1], s.accent),
   'rune-3':      (s)      => runeItem(s.runes[2], s.accent),
 
-  // Back
   'back-name':            (s)      => `<div class="back-name" style="color:${s.accent}">${esc(s.herbName)}</div>`,
   'back-latin':           (s, ctx) => `<div class="back-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
   'back-divider':         (s)      => backDividerSvg(s.accent),
@@ -106,6 +102,28 @@ const ITEM_RENDERERS = {
       </div>
     </div>`,
 };
+
+function placementKeyFor(itemKey) {
+  if (itemKey === 'shop')          return 'shop';
+  if (itemKey === 'description')   return 'description';
+  if (itemKey === 'back-desc-full') return 'descFull';
+  if (itemKey === 'props')         return 'props';
+  if (itemKey === 'symbol')        return 'symbol';
+  if (itemKey === 'botanical')     return 'botanical';
+  if (itemKey === 'rune-1')        return 'rune1';
+  if (itemKey === 'rune-2')        return 'rune2';
+  if (itemKey === 'rune-3')        return 'rune3';
+  if (itemKey === 'back-historic-section') return 'historicUses';
+  return null;
+}
+
+function shouldRender(itemKey, side, placement) {
+  const key = placementKeyFor(itemKey);
+  if (!key) return true;
+  const p = placement[key];
+  if (!p) return true;
+  return !!p[side];
+}
 
 let fontsReady = false;
 if (document.fonts && document.fonts.ready) {
@@ -130,25 +148,52 @@ function pickPrintLayout({ wIn, hIn }, cardCount, paper = { wIn: 8.5, hIn: 11 },
   return 'layout-separate';
 }
 
-function zonesHtml(state, fullCtx, zonesArray) {
+function zonesHtml(state, fullCtx, zonesArray, side) {
   return zonesArray.map(zone => {
-    const items = zone.items.map(itemKey => {
-      const renderer = ITEM_RENDERERS[itemKey];
-      return renderer ? renderer(state, fullCtx) : '';
-    }).join('');
+    const items = zone.items
+      .filter(itemKey => shouldRender(itemKey, side, state.placement))
+      .map(itemKey => ITEM_RENDERERS[itemKey]?.(state, fullCtx) ?? '')
+      .join('');
     const isCenter = zone.id === 'center';
     return `<div class="label-zone${isCenter ? ' center' : ''}" style="width:${zone.width ?? '100%'}">${items}</div>`;
   }).join('');
 }
 
-function cardHtml({ state, fullCtx, designSize, phys, side, zones, theme, previewScaleForCard }) {
+function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme, previewScale }) {
+  const { wIn: designW, hIn: designH } = designSize;
+  const physicalScale = phys.wIn / designW;
+  const frameW = `calc(${phys.wIn}in * ${previewScale})`;
+  const frameH = `calc(${phys.hIn}in * ${previewScale})`;
+  return `
+    <div class="label-frame" style="width:${frameW}; height:${frameH};">
+      <div class="label-card label-card--${side}" style="
+        width:${phys.wIn}in;
+        height:${phys.hIn}in;
+        transform: scale(${previewScale});
+      ">
+        <div class="label-design label-design--${side}" style="
+          width:${designW}in;
+          height:${designH}in;
+          transform: scale(${physicalScale});
+        ">
+          ${parchmentSvg(theme)}
+          ${borderSvg(state.accent, theme, designSize)}
+          <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
+            ${zonesHtml(state, fullCtx, zones, side)}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme }) {
   const { wIn: designW, hIn: designH } = designSize;
   const physicalScale = phys.wIn / designW;
   return `
     <div class="label-card label-card--${side}" style="
       width:${phys.wIn}in;
       height:${phys.hIn}in;
-      transform: scale(${previewScaleForCard});
     ">
       <div class="label-design label-design--${side}" style="
         width:${designW}in;
@@ -158,7 +203,7 @@ function cardHtml({ state, fullCtx, designSize, phys, side, zones, theme, previe
         ${parchmentSvg(theme)}
         ${borderSvg(state.accent, theme, designSize)}
         <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
-          ${zonesHtml(state, fullCtx, zones)}
+          ${zonesHtml(state, fullCtx, zones, side)}
         </div>
       </div>
     </div>
@@ -176,44 +221,4 @@ export function render(state, mounts, ctx) {
   const fullCtx = { ...ctx, theme };
 
   const phys = resolveSize(tmpl, state.sizeId);
-  const previewScale = previewScaleFor(phys.wIn);
-
-  const showBack = !!state.backEnabled && Array.isArray(tmpl.backZones);
-  const cardCount = showBack ? 2 : 1;
-
-  const previewCards = [
-    cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-               zones: tmpl.zones, theme, previewScaleForCard: previewScale }),
-    ...(showBack ? [cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-               side: 'back', zones: tmpl.backZones, theme,
-               previewScaleForCard: previewScale })] : []),
-  ].join('<div class="preview-gap"></div>');
-
-  mounts.preview.style.width = `calc(${phys.wIn}in * ${previewScale})`;
-  mounts.preview.innerHTML = previewCards;
-  mounts.preview.style.height = showBack
-    ? `calc(${phys.hIn}in * ${previewScale} * 2 + 12px)`
-    : `calc(${phys.hIn}in * ${previewScale})`;
-
-  if (mounts.printStage) {
-    const printCards = [
-      cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-                 zones: tmpl.zones, theme, previewScaleForCard: 1 }),
-      ...(showBack ? [cardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-                 side: 'back', zones: tmpl.backZones, theme,
-                 previewScaleForCard: 1 })] : []),
-    ].join('');
-    mounts.printStage.innerHTML = printCards;
-    mounts.printStage.className = pickPrintLayout(phys, cardCount);
-  }
-
-  const fits = mounts.preview.querySelectorAll('[data-autofit]');
-  if (fontsReady) {
-    fits.forEach(el => autofitText(el));
-  } else {
-    document.fonts.ready.then(() => {
-      fontsReady = true;
-      fits.forEach(el => autofitText(el));
-    });
-  }
-}
+  const previewScale = preview

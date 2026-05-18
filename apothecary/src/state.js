@@ -1,4 +1,4 @@
-// state.js — tiny observable store.
+// state.js - tiny observable store.
 //
 // Single source of truth for the editor. The render layer reads from get();
 // the editor writes via set(); both subscribe for updates.
@@ -19,8 +19,7 @@ export function createState(initial) {
     const next = structuredClone(state);
     let cur = next;
     for (let i = 0; i < parts.length - 1; i++) {
-      const k = parts[i];
-      cur = cur[k];
+      cur = cur[parts[i]];
     }
     cur[parts[parts.length - 1]] = value;
     state = next;
@@ -39,8 +38,25 @@ export function createState(initial) {
   return { get, set, patchNested, subscribe };
 }
 
-// Default state. Adding a new field: add it here AND backfill in main.js for
-// restored sessions, so old localStorage state keeps working after upgrade.
+// Default placement: which side(s) each placeable item appears on.
+// front+back booleans. Both false = hidden. Both true = on both sides.
+// Adding a new placeable item: add an entry here AND a row in editor.js
+// PLACEMENT_ROWS so the user gets a checkbox.
+export const DEFAULT_PLACEMENT = {
+  shop:         { front: true,  back: false },
+  description:  { front: true,  back: false },
+  descFull:     { front: false, back: true  },
+  props:        { front: true,  back: false },
+  symbol:       { front: true,  back: false },
+  botanical:    { front: true,  back: false },
+  rune1:        { front: true,  back: false },
+  rune2:        { front: true,  back: false },
+  rune3:        { front: true,  back: false },
+  historicUses: { front: false, back: true  },
+  nutrition:    { front: false, back: true  },
+  pairings:     { front: false, back: true  },
+};
+
 export function defaultState() {
   return {
     templateId: 'apothecary-3x1.5',
@@ -53,17 +69,8 @@ export function defaultState() {
     accent: '#C4922A',
     symbol: 'solar-wheel',
     botanical: 'flower',
+    icon: 'chamomile',
     runes: [
       { c: 'ᛚ', m: 'Healing Flow' },
       { c: 'ᛁ', m: 'Stillness & Peace' },
-      { c: 'ᛜ', m: 'Inner Peace' },
-    ],
-
-    // Back-label fields (v0.3). backEnabled flips the optional back-side render.
-    backEnabled: false,
-    descFull: 'Beloved of the sun and the hearth, chamomile heals the body and stills the restless mind. Ancient Celts honored it as a solar herb, drunk at dawn to greet the light. Sacred to Brigid; gathered on Imbolc for the year\'s hearth-fires.',
-    historicUses: 'Druidic dawn-rite tea. Strewn on Beltane fires. Pressed into salves for sun-burned skin and into pillows for restless children.',
-    nutrition: 'Apigenin, bisabolol, chamazulene. Mild sedative. Anti-inflammatory. Caffeine-free.',
-    pairings: 'Honey · Lavender · Lemon balm · Vanilla',
-  };
-}
+      { c
