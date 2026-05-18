@@ -9,8 +9,6 @@ import { makeLookup } from './util/lookup.js';
 import { loadState, saveState, clearState, debounce } from './util/persist.js';
 
 import { SYMBOLS, SYMBOL_LABELS } from '../data/symbols.js';
-import { BOTANICALS } from '../data/botanicals.js';
-import { ICONS } from '../data/icons.js';
 import { THEMES } from '../data/themes.js';
 import { TEMPLATES, DEFAULT_TEMPLATE_ID } from '../data/label-templates.js';
 
@@ -80,8 +78,6 @@ async function main() {
     templates: TEMPLATES,
     themes: THEMES,
     symbols: SYMBOLS,
-    botanicals: BOTANICALS,
-    icons: ICONS,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);

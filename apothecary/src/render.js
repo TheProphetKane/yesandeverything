@@ -63,12 +63,20 @@ function borderSvg(color, theme, designSize) {
   </svg>`;
 }
 
+// v0.7.1: Celtic symbols render in solid black (was accent-tinted, looked anemic
+// at small sizes). Ingredient art switched from inline SVG to PNG sourced into
+// data/ingredients/<slug>.png. Filename slug = herb name lowercased, apostrophes
+// stripped, spaces hyphenated. Missing PNG renders nothing (no error, no broken
+// image icon).
+function ingredientSlug(name) {
+  return String(name ?? '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+}
+
 const ITEM_RENDERERS = {
-  symbol:        (s, ctx) => `<div>${ctx.symbols[s.symbol]?.(s.accent) ?? ''}</div>`,
-  botanical:     (s, ctx) => {
-    const iconFn = ctx.icons?.[s.icon];
-    const svg = iconFn ? iconFn(s.accent) : (ctx.botanicals[s.botanical]?.(s.accent) ?? '');
-    return `<div>${svg}</div>`;
+  symbol:        (s, ctx) => `<div class="lbl-symbol">${ctx.symbols[s.symbol]?.('#000') ?? ''}</div>`,
+  botanical:     (s)      => {
+    const slug = ingredientSlug(s.herbName);
+    return `<div class="lbl-botanical"><img src="data/ingredients/${slug}.png" alt="" width="44" height="50" onerror="this.style.visibility='hidden'"/></div>`;
   },
   shop:          (s, ctx) => `<div class="lbl-shop" style="color:${ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
   'divider-top': (s)      => wavyDivider(s.accent),
