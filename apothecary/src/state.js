@@ -77,13 +77,18 @@ export function defaultState() {
       { c: 'ᛜ', m: 'Inner Peace' },
     ],
 
-    // Back-label fields (v0.3).
+    // Back-label fields (v0.3, expanded v0.6).
     backEnabled: false,
-    descFull: 'Beloved of the sun and the hearth, chamomile heals the body and stills the restless mind. Ancient Celts honored it as a solar herb, drunk at dawn to greet the light. Sacred to Brigid; gathered on Imbolc for the year\'s hearth-fires.',
+    descFull: "Beloved of the sun and the hearth, chamomile heals the body and stills the restless mind. Ancient Celts honored it as a solar herb, drunk at dawn to greet the light. Sacred to Brigid; gathered on Imbolc for the year's hearth-fires.",
     historicUses: 'Druidic dawn-rite tea. Strewn on Beltane fires. Pressed into salves for sun-burned skin and into pillows for restless children.',
     compounds: 'Apigenin, bisabolol, chamazulene. Mild sedative and anti-inflammatory via GABA-A receptor binding. Rich in flavonoids.',
-    cautions: 'Ragweed allergy cross-reaction possible. Avoid therapeutic doses in pregnancy. May potentiate warfarin.',
+    cautions: 'Ragweed allergy cross-reaction possible. Avoid therapeutic doses in pregnancy. May potentiate warfarin and CNS depressants.',
     pairings: 'Honey · Lavender · Lemon balm · Vanilla',
+
+    // Back-label display mode (v0.6). false = combined "Notes" cell (compounds
+    // + cautions joined) beside Pairings. true = three columns: Compounds |
+    // Cautions | Pairings.
+    notesSplit: false,
 
     // Field placement (v0.4). Per-item visibility per side.
     placement: structuredClone(DEFAULT_PLACEMENT),

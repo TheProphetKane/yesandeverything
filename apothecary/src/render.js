@@ -90,7 +90,23 @@ const ITEM_RENDERERS = {
       <div class="back-section-title" style="color:${s.accent}">Traditional Uses</div>
       <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.historicUses)}</div>
     </div>`,
-  'back-bottom-row':      (s, ctx) => `
+  'back-bottom-row':      (s, ctx) => s.notesSplit
+    ? `
+    <div class="back-bottom-row back-bottom-row--split">
+      <div class="back-section back-third">
+        <div class="back-section-title" style="color:${s.accent}">Compounds</div>
+        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.compounds)}</div>
+      </div>
+      <div class="back-section back-third">
+        <div class="back-section-title" style="color:${s.accent}">Cautions</div>
+        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.cautions)}</div>
+      </div>
+      <div class="back-section back-third">
+        <div class="back-section-title" style="color:${s.accent}">Pairings</div>
+        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.pairings)}</div>
+      </div>
+    </div>`
+    : `
     <div class="back-bottom-row">
       <div class="back-section back-half">
         <div class="back-section-title" style="color:${s.accent}">Notes</div>

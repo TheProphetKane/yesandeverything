@@ -38,10 +38,20 @@ async function main() {
   if (!initial.sizeId || !tmpl.sizes.find(s => s.id === initial.sizeId)) {
     initial.sizeId = tmpl.defaultSize;
   }
-  for (const k of ['backEnabled', 'descFull', 'historicUses', 'nutrition', 'pairings']) {
+  for (const k of ['backEnabled', 'descFull', 'historicUses', 'compounds', 'cautions', 'pairings', 'notesSplit']) {
     if (typeof initial[k] === 'undefined') initial[k] = defaults[k];
   }
+  // Migrate v0.5 saved state: old `nutrition` field → new `compounds`.
+  if (typeof initial.nutrition === 'string' && !initial.compounds) {
+    initial.compounds = initial.nutrition;
+  }
   if (!initial.placement) initial.placement = JSON.parse(JSON.stringify(DEFAULT_PLACEMENT));
+  // Migrate v0.5 placement: old `nutrition` slot → `compounds` + `cautions`.
+  if (initial.placement.nutrition && !initial.placement.compounds) {
+    initial.placement.compounds = { ...initial.placement.nutrition };
+    initial.placement.cautions  = { ...initial.placement.nutrition };
+    delete initial.placement.nutrition;
+  }
   for (const k of Object.keys(DEFAULT_PLACEMENT)) {
     if (!initial.placement[k]) initial.placement[k] = { ...DEFAULT_PLACEMENT[k] };
   }

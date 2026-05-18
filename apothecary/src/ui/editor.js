@@ -138,6 +138,14 @@ export function mountEditor(root, ctx) {
           <input id="fPairings" class="field-input" type="text" maxlength="${tmpl.pairingsMaxChars}" placeholder="Honey, Lavender, Lemon balm, Vanilla" />
           <div id="pairingsCounter" class="desc-counter">0 / ${tmpl.pairingsMaxChars}</div>
         </div>
+
+        <div class="field back-notes-mode-row">
+          <label class="checkbox-label">
+            <input id="fNotesSplit" type="checkbox" />
+            <span>Split Compounds &amp; Cautions on back label</span>
+          </label>
+          <div class="desc-hint">Off (default): one combined "Notes" section beside Pairings. On: three columns — Compounds, Cautions, Pairings.</div>
+        </div>
       </div>
 
       <div class="gold-divider"></div>
@@ -181,6 +189,7 @@ export function mountEditor(root, ctx) {
   const runeMean = [$('r1Mean'), $('r2Mean'), $('r3Mean')];
 
   const backToggle    = $('fBackEnabled');
+  const notesSplitToggle = $('fNotesSplit');
   const backFieldsBox = $('back-fields');
   const descFullInput = $('fDescFull');
   const historicInput = $('fHistoric');
@@ -263,6 +272,7 @@ export function mountEditor(root, ctx) {
       runeMean[i].value = s.runes[i].m;
     }
     backToggle.checked = !!s.backEnabled;
+    notesSplitToggle.checked = !!s.notesSplit;
     backFieldsBox.hidden = !s.backEnabled;
     descFullInput.value  = s.descFull ?? '';
     historicInput.value  = s.historicUses ?? '';
@@ -343,6 +353,9 @@ export function mountEditor(root, ctx) {
   backToggle.addEventListener('change', () => {
     state.set({ backEnabled: backToggle.checked });
     backFieldsBox.hidden = !backToggle.checked;
+  });
+  notesSplitToggle.addEventListener('change', () => {
+    state.set({ notesSplit: notesSplitToggle.checked });
   });
   descFullInput.addEventListener('input', () => {
     state.set({ descFull: descFullInput.value });
