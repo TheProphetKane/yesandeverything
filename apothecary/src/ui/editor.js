@@ -21,7 +21,7 @@ const PLACEMENT_ROWS = [
   { key: 'rune2',        label: 'Rune 2' },
   { key: 'rune3',        label: 'Rune 3' },
   { key: 'descFull',     label: 'Full Description' },
-  { key: 'historicUses', label: 'Historic Uses' },
+  { key: 'historicUses', label: 'Traditional Uses' },
   { key: 'nutrition',    label: 'Notes' },
   { key: 'pairings',     label: 'Pairings' },
 ];
@@ -118,7 +118,7 @@ export function mountEditor(root, ctx) {
           <div id="descFullCounter" class="desc-counter">0 / ${tmpl.descFullMaxChars}</div>
         </div>
         <div class="field">
-          <label class="field-label" for="fHistoric">Historic Uses</label>
+          <label class="field-label" for="fHistoric">Traditional Uses (folk + modern applications)</label>
           <textarea id="fHistoric" class="field-input" rows="3" maxlength="${tmpl.historicMaxChars}" placeholder="Druidic dawn-rite tea. Strewn on Beltane fires..."></textarea>
           <div id="historicCounter" class="desc-counter">0 / ${tmpl.historicMaxChars}</div>
         </div>

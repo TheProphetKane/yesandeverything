@@ -87,7 +87,7 @@ const ITEM_RENDERERS = {
   'back-desc-full':       (s, ctx) => `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`,
   'back-historic-section': (s, ctx) => `
     <div class="back-section">
-      <div class="back-section-title" style="color:${s.accent}">Historic Uses</div>
+      <div class="back-section-title" style="color:${s.accent}">Traditional Uses</div>
       <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.historicUses)}</div>
     </div>`,
   'back-bottom-row':      (s, ctx) => `
