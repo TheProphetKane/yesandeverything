@@ -336,4 +336,65 @@ export function mountEditor(root, ctx) {
   });
   descFullInput.addEventListener('input', () => {
     state.set({ descFull: descFullInput.value });
-  
+    counterUpdate(descFullInput, descFullCounter, tmpl.descFullMaxChars);
+  });
+  historicInput.addEventListener('input', () => {
+    state.set({ historicUses: historicInput.value });
+    counterUpdate(historicInput, historicCounter, tmpl.historicMaxChars);
+  });
+  nutritionInput.addEventListener('input', () => {
+    state.set({ nutrition: nutritionInput.value });
+    counterUpdate(nutritionInput, nutritionCounter, tmpl.nutritionMaxChars);
+  });
+  pairingsInput.addEventListener('input', () => {
+    state.set({ pairings: pairingsInput.value });
+    counterUpdate(pairingsInput, pairingsCounter, tmpl.pairingsMaxChars);
+  });
+
+  // Placement checkboxes — update state.placement[key][side]
+  placementCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const key  = cb.dataset.placement;
+      const side = cb.dataset.side;
+      const cur  = state.get().placement ?? {};
+      const next = { ...cur, [key]: { ...(cur[key] ?? {}), [side]: cb.checked } };
+      state.set({ placement: next });
+    });
+  });
+
+  autofillBtn.addEventListener('click', () => {
+    const found = lookupHerb(herbInput.value);
+    if (!found) {
+      statusMsg.textContent = 'Not in database. Fill manually.';
+      statusMsg.className = 'status-msg warn';
+      return;
+    }
+    state.set({
+      latin: found.latin,
+      props: found.props,
+      description: found.desc.slice(0, tmpl.descMaxChars),
+      accent: found.accent,
+      symbol: found.symbol,
+      botanical: found.botanical,
+      icon: found.icon ?? null,
+      runes: found.runes.map(r => ({ c: r.c, m: r.m })),
+      descFull:     (found.descFull     ?? found.desc).slice(0, tmpl.descFullMaxChars),
+      historicUses: (found.historicUses ?? '').slice(0, tmpl.historicMaxChars),
+      nutrition:    (found.nutrition    ?? '').slice(0, tmpl.nutritionMaxChars),
+      pairings:     (found.pairings     ?? '').slice(0, tmpl.pairingsMaxChars),
+    });
+    syncFromState();
+    statusMsg.textContent = 'Found. Customize freely.';
+    statusMsg.className = 'status-msg ok';
+  });
+
+  printBtn.addEventListener('click', printLabel);
+
+  resetBtn.addEventListener('click', () => {
+    if (!confirm('Reset all fields to defaults? Saved label will be cleared.')) return;
+    ctx.onReset();
+  });
+
+  syncFromState();
+  state.subscribe(syncFromState);
+}

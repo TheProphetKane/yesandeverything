@@ -72,4 +72,15 @@ async function main() {
     botanicals: BOTANICALS,
     icons: ICONS,
   };
-  function paint(s) { render(s, { previ
+  function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
+  state.subscribe(paint);
+  paint(state.get());
+
+  const debouncedSave = debounce((s) => saveState(s), 200);
+  state.subscribe(debouncedSave);
+}
+
+main().catch(err => {
+  console.error('Apothecary label creator failed to start:', err);
+  document.body.innerHTML = `<pre style="color:#C4580A; padding:20px; font-family:monospace;">${err.stack || err.message}</pre>`;
+});

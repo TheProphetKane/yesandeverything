@@ -221,4 +221,43 @@ export function render(state, mounts, ctx) {
   const fullCtx = { ...ctx, theme };
 
   const phys = resolveSize(tmpl, state.sizeId);
-  const previewScale = preview
+  const previewScale = previewScaleFor(phys.wIn);
+
+  const showBack = !!state.backEnabled && Array.isArray(tmpl.backZones);
+  const cardCount = showBack ? 2 : 1;
+
+  // Preview tree: frames stack vertically with .label-wrapper gap.
+  const previewCards = [
+    previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+                      zones: tmpl.zones, theme, previewScale }),
+    ...(showBack ? [previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+                      side: 'back', zones: tmpl.backZones, theme, previewScale })] : []),
+  ].join('');
+
+  // The wrapper no longer needs an explicit height — children declare their own.
+  mounts.preview.style.width = `calc(${phys.wIn}in * ${previewScale})`;
+  mounts.preview.style.height = 'auto';
+  mounts.preview.innerHTML = previewCards;
+
+  // Print-stage tree: physical-only, no preview transform.
+  if (mounts.printStage) {
+    const printCards = [
+      printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+                      zones: tmpl.zones, theme }),
+      ...(showBack ? [printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+                      side: 'back', zones: tmpl.backZones, theme })] : []),
+    ].join('');
+    mounts.printStage.innerHTML = printCards;
+    mounts.printStage.className = pickPrintLayout(phys, cardCount);
+  }
+
+  const fits = mounts.preview.querySelectorAll('[data-autofit]');
+  if (fontsReady) {
+    fits.forEach(el => autofitText(el));
+  } else {
+    document.fonts.ready.then(() => {
+      fontsReady = true;
+      fits.forEach(el => autofitText(el));
+    });
+  }
+}
