@@ -75,9 +75,9 @@ export function mountEditor(root, ctx) {
       </div>
 
       <div class="field">
-        <label class="field-label" for="fParchment">Parchment Texture</label>
-        <select id="fParchment" class="field-input"></select>
-        <div class="desc-hint">Switch the label background to a raster parchment. Default is the SVG gradient.</div>
+        <label class="field-label">Parchment Texture</label>
+        <div id="parchmentPicker" class="parchment-picker" data-parchment-picker role="radiogroup" aria-label="Parchment texture"></div>
+        <div class="desc-hint">Click a tile. Missing textures fall back to the SVG gradient.</div>
       </div>
 
       <div class="field">
@@ -187,7 +187,7 @@ export function mountEditor(root, ctx) {
   const descInput  = $('fDesc');
   const descCounter = $('descCounter');
   const symbolSel  = $('fSymbol');
-  const parchSel   = $('fParchment');
+  const parchPicker = $('parchmentPicker');
   const sizeSel    = $('fSize');
   const swatchBox  = $('swatches');
   const autofillBtn = $('btn-autofill');
@@ -310,13 +310,29 @@ export function mountEditor(root, ctx) {
     opt.textContent = sz.label;
     sizeSel.appendChild(opt);
   }
-  // Parchment texture options (v0.8.0)
+  // Parchment texture picker (v0.8.1: visual thumbnail grid).
+  // Each tile is a button with the texture as background-image. The gradient
+  // option shows a CSS gradient preview. Click to select.
   for (const t of (parchmentTextures ?? [])) {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.label;
-    parchSel.appendChild(opt);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'parchment-tile';
+    btn.dataset.parchmentId = t.id;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-label', t.label);
+    btn.setAttribute('title', t.label);
+    if (t.file) {
+      btn.style.backgroundImage = `url('data/textures/${t.file}')`;
+    } else {
+      btn.classList.add('parchment-tile--gradient');
+    }
+    parchPicker.appendChild(btn);
   }
+  parchPicker.addEventListener('click', (e) => {
+    const tile = e.target.closest('.parchment-tile');
+    if (!tile) return;
+    state.set({ parchmentTexture: tile.dataset.parchmentId });
+  });
   for (const sel of runeChar) {
     for (const r of runes) {
       const opt = document.createElement('option');
@@ -350,7 +366,11 @@ export function mountEditor(root, ctx) {
     propsInput.value = s.props;
     descInput.value  = s.description;
     symbolSel.value  = s.symbol;
-    parchSel.value   = s.parchmentTexture ?? 'gradient';
+    const currentParch = s.parchmentTexture ?? 'gradient';
+    parchPicker.querySelectorAll('.parchment-tile').forEach(tile => {
+      tile.classList.toggle('is-selected', tile.dataset.parchmentId === currentParch);
+      tile.setAttribute('aria-checked', tile.dataset.parchmentId === currentParch ? 'true' : 'false');
+    });
     sizeSel.value    = s.sizeId;
     colorPicker.value = s.accent;
     for (let i = 0; i < 3; i++) {
@@ -447,7 +467,6 @@ export function mountEditor(root, ctx) {
     counterUpdate(descInput, descCounter, tmpl.descMaxChars);
   });
   symbolSel.addEventListener('change', () => state.set({ symbol: symbolSel.value }));
-  parchSel.addEventListener('change', () => state.set({ parchmentTexture: parchSel.value }));
   sizeSel.addEventListener('change', () => state.set({ sizeId: sizeSel.value }));
 
   runeChar.forEach((sel, i) => {

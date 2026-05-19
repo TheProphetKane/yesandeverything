@@ -29,6 +29,11 @@ export const PARCHMENT_TEXTURES = [
   { id: 'parchment-18', label: 'Parchment 18',                 file: 'parchment-18.png' },
   { id: 'parchment-19', label: 'Parchment 19',                 file: 'parchment-19.png' },
   { id: 'parchment-20', label: 'Parchment 20',                 file: 'parchment-20.png' },
+  { id: 'parchment-21', label: 'Parchment 21',                 file: 'parchment-21.png' },
+  { id: 'parchment-22', label: 'Parchment 22',                 file: 'parchment-22.png' },
+  { id: 'parchment-23', label: 'Parchment 23',                 file: 'parchment-23.png' },
+  { id: 'parchment-24', label: 'Parchment 24',                 file: 'parchment-24.png' },
+  { id: 'parchment-25', label: 'Parchment 25',                 file: 'parchment-25.png' },
 ];
 
 export const DEFAULT_PARCHMENT = 'gradient';
