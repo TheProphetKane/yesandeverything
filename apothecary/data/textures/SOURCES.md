@@ -47,3 +47,15 @@ Parchment and aged-paper textures. License values:
 | parchment-38.png | https://commons.wikimedia.org/wiki/File%3AOld%20Paper%20texture.jpg | PD | 2026-05-19 |
 | parchment-39.png | https://commons.wikimedia.org/wiki/File%3ADark%20Damaged%20Old%20Vintage%20Book%20Paper%20Pages%20Free%20High%20Resolution%20Wallpaper%20Texture%20Creative%20Commons%20(8077075546).jpg | PD | 2026-05-19 |
 | parchment-40.png | https://commons.wikimedia.org/wiki/File%3AFree%20dark%20vintage%20paper%20page%20texture%20for%20layers%20(2982207584).jpg | PD | 2026-05-19 |
+| parchment-01.png | https://commons.wikimedia.org/wiki/File%3AOld%20paper7.jpg | PD | 2026-05-19 |
+| parchment-02.png | https://commons.wikimedia.org/wiki/File%3APaper%20-%20Flickr%20-%20billionstrang.jpg | PD | 2026-05-19 |
+| parchment-03.png | https://commons.wikimedia.org/wiki/File%3AFrance%2C%20Rouen%2C%2016th%20century%20-%20Leaf%20from%20a%20Book%20of%20Hours-%20Text%20with%20Illustrated%20Border%20(verso)%20-%202001.79.b%20-%20Cleveland%20Museum%20of%20Art.tif | PD | 2026-05-19 |
+| parchment-04.png | https://commons.wikimedia.org/wiki/File%3AAlexander%20Cozens%20-%20Draft%20of%20Correspondence%20to%20William%20Hoar%20Esq%20%2C%20Bath%20-%20B1978.43.166(65)%20-%20Yale%20Center%20for%20British%20Art.jpg | PD | 2026-05-19 |
+| parchment-05.png | https://commons.wikimedia.org/wiki/File%3AAlexander%20Cozens%20-%20Draft%20of%20Correspondence%20to%20William%20Hoar%20Esq%20%2C%20Bath%20-%20B1978.43.166(61)%20-%20Yale%20Center%20for%20British%20Art.jpg | PD | 2026-05-19 |
+| parchment-06.png | https://commons.wikimedia.org/wiki/File%3ADrawing%20(BM%201903%2C0309.1).jpg | PD | 2026-05-19 |
+| parchment-07.png | https://commons.wikimedia.org/wiki/File%3AEdwin%20Douglas%20-%20Edwin%20Douglas%2C%20British%2C%201848%20to%201914%2C%20an%20antique%20etching%20on%20paper%20Leading%20the%20Flock%2C%20engraved%20by%20E.jpg | PD | 2026-05-19 |
+| parchment-08.png | https://commons.wikimedia.org/wiki/File%3AMoose%20watermark%20on%20antique%20paper.jpg | PD | 2026-05-19 |
+| parchment-09.png | https://commons.wikimedia.org/wiki/File%3ACopy%20after%20a%20Sculpture%20of%20the%20Sleeping%20Eros%20Based%20on%20an%20Antique%20Model%20(from%20Cassiano%20dal%20Pozzo's%20'Paper%20Museum')%20MET%20DP808200.jpg | PD | 2026-05-19 |
+| parchment-10.png | https://commons.wikimedia.org/wiki/File%3APaper%20Clip-1-yercaud-salem-India.jpg | PD | 2026-05-19 |
+| parchment-11.png | https://commons.wikimedia.org/wiki/File%3ACopy%20after%20a%20Sculpture%20of%20the%20Sleeping%20Eros%20Based%20on%20an%20Antique%20Model%20(from%20Cassiano%20dal%20Pozzo's%20'Paper%20Museum')%20MET%2045.36.jpg | PD | 2026-05-19 |
+| parchment-12.png | https://commons.wikimedia.org/wiki/File%3AEagle%20Map%20of%20the%20United%20States%20Engraved%20For%20Rudiments%20of%20National%20Knowledge%2C%20edit.jpg | PD | 2026-05-19 |

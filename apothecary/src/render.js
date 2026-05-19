@@ -85,17 +85,21 @@ function ingredientSlug(name) {
 }
 
 const ITEM_RENDERERS = {
-  symbol:        (s, ctx) => {
-    // v0.8.1: layered render. Inline geometric SVG renders first as graceful
-    // fallback, then a high-contrast PNG from data/symbols/<id>.png loads on
-    // top. If the PNG is missing (fetch-symbols.ps1 not yet run for that id),
-    // img onerror removes itself and the SVG shows through.
-    const inline = ctx.symbols[s.symbol]?.('#000') ?? '';
-    return `<div class="lbl-symbol">${inline}<img class="lbl-symbol-img" src="data/symbols/${s.symbol}.png" alt="" onerror="this.remove()"/></div>`;
+  symbol:        (s)      => {
+    // v0.8.2 LOCKED DECISION: zero SVG anywhere in the label. Symbol renders
+    // as an img only; if the PNG is missing, the slot hides. No fallback.
+    return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${s.symbol}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
   },
-  botanical:     (s)      => {
+  botanical:     (s, ctx) => {
+    // v0.8.2 LOCKED DECISION: zero SVG anywhere. The plant slot uses a
+    // PNG-to-PNG onerror chain: per-slug ingredient PNG → category-
+    // representative PNG (from data/category-defaults.js) → hide. No SVG
+    // touches this slot. data-cat-fallback carries the second URL the
+    // browser tries when the first 404s.
     const slug = ingredientSlug(s.herbName);
-    return `<div class="lbl-botanical"><img src="data/ingredients/${slug}.png" alt="" width="44" height="50" onerror="this.style.visibility='hidden'"/></div>`;
+    const catSlug = ctx.categoryDefaultSlug?.(s.botanical) ?? 'basil';
+    const fallback = `data/ingredients/${catSlug}.png`;
+    return `<div class="lbl-botanical"><img class="lbl-botanical-img" src="data/ingredients/${slug}.png" alt="" width="44" height="50" data-cat-fallback="${fallback}" onerror="if(this.dataset.catFallback){this.src=this.dataset.catFallback;this.dataset.catFallback='';}else{this.parentElement.style.display='none';}"/></div>`;
   },
   shop:          (s, ctx) => `<div class="lbl-shop" style="color:${ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
   'divider-top': (s)      => wavyDivider(s.accent),

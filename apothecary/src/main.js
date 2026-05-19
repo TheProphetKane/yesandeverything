@@ -8,9 +8,10 @@ import { mountSavedLabels } from './ui/saved-labels-ui.js';
 import { makeLookup } from './util/lookup.js';
 import { loadState, saveState, clearState, debounce } from './util/persist.js';
 
-import { SYMBOLS, SYMBOL_LABELS } from '../data/symbols.js';
+import { SYMBOL_LABELS } from '../data/symbols.js';
 import { THEMES } from '../data/themes.js';
 import { PARCHMENT_TEXTURES } from '../data/textures.js';
+import { categoryDefaultSlug } from '../data/category-defaults.js';
 import { TEMPLATES, DEFAULT_TEMPLATE_ID } from '../data/label-templates.js';
 
 async function loadJson(path) {
@@ -65,7 +66,7 @@ async function main() {
 
   mountEditor(document.querySelector('[data-editor]'), {
     state, lookupHerb, runes, herbDB, aliasMap, runeMeanings,
-    symbols: SYMBOLS, symbolLabels: SYMBOL_LABELS,
+    symbolLabels: SYMBOL_LABELS,
     templates: TEMPLATES,
     parchmentTextures: PARCHMENT_TEXTURES,
     onReset: () => {
@@ -79,8 +80,8 @@ async function main() {
   const ctx = {
     templates: TEMPLATES,
     themes: THEMES,
-    symbols: SYMBOLS,
     parchmentTextures: PARCHMENT_TEXTURES,
+    categoryDefaultSlug,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);
