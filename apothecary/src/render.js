@@ -85,7 +85,14 @@ function ingredientSlug(name) {
 }
 
 const ITEM_RENDERERS = {
-  symbol:        (s, ctx) => `<div class="lbl-symbol">${ctx.symbols[s.symbol]?.('#000') ?? ''}</div>`,
+  symbol:        (s, ctx) => {
+    // v0.8.1: layered render. Inline geometric SVG renders first as graceful
+    // fallback, then a high-contrast PNG from data/symbols/<id>.png loads on
+    // top. If the PNG is missing (fetch-symbols.ps1 not yet run for that id),
+    // img onerror removes itself and the SVG shows through.
+    const inline = ctx.symbols[s.symbol]?.('#000') ?? '';
+    return `<div class="lbl-symbol">${inline}<img class="lbl-symbol-img" src="data/symbols/${s.symbol}.png" alt="" onerror="this.remove()"/></div>`;
+  },
   botanical:     (s)      => {
     const slug = ingredientSlug(s.herbName);
     return `<div class="lbl-botanical"><img src="data/ingredients/${slug}.png" alt="" width="44" height="50" onerror="this.style.visibility='hidden'"/></div>`;
