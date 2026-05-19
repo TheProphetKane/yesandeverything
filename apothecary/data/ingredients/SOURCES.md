@@ -720,3 +720,10 @@ found, retry on next sourcing pass.
 | cats-claw | https://commons.wikimedia.org/wiki/File%3AFlorae%20Columbiae%20(Plate%20CLXXX)%20(8205993854).jpg | PD | 2026-05-19 |
 | dong-quai | https://commons.wikimedia.org/wiki/File%3AAngelica%20sinensis%20Bild.png | PD | 2026-05-19 |
 | eleuthero | https://commons.wikimedia.org/wiki/File%3APertinax%20Erfgoedcentrum%20Rozet%20300%20191%20d%206%20C%20(64)%2020171115%200001.jpg | PD-NEAR | 2026-05-19 |
+| goldenrod | https://commons.wikimedia.org/wiki/File%3AHortus%20Eystettensis%2C%201640%20(BHL%2045339%20286)%20-%20Classis%20Aestiva%20134.jpg | PD | 2026-05-19 |
+| hawthorn | https://commons.wikimedia.org/wiki/File%3ALines%20family%20sketchbook%20-%20Disc1%20015%20-%20Hawthorne%20at%20Wall%2C%20Lichfield.jpg | PD | 2026-05-19 |
+| kava | https://commons.wikimedia.org/wiki/File%3AKava.JPG | PD | 2026-05-19 |
+| licorice-root | https://commons.wikimedia.org/wiki/File%3AJapanese%20Herbal%2C%2017th%20century%20Wellcome%20L0030089.jpg | PD | 2026-05-19 |
+| meadowsweet | https://commons.wikimedia.org/wiki/File%3AFilipendula%20ulmaria%20Sturm12.jpg | PD | 2026-05-19 |
+| oat-straw | https://commons.wikimedia.org/wiki/File%3AIllustration%20Avena%20sativa0.jpg | PD | 2026-05-19 |
+| red-clover | https://commons.wikimedia.org/wiki/File%3AClover%20(Trifolium%20pratense)%2C%20from%20the%20Flowers%20series%20for%20Old%20Judge%20Cigarettes%20MET%20DP822023.jpg | PD | 2026-05-19 |

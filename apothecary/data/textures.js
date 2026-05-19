@@ -10,6 +10,21 @@
 
 export const PARCHMENT_TEXTURES = [
   { id: 'parchment-01', label: 'Parchment 01',                file: 'parchment-01.png', opacity: 1.00 },
+  { id: 'parchment-02', label: 'Parchment 02',                file: 'parchment-02.jpg', opacity: 1.00 },
+  { id: 'parchment-03', label: 'Parchment 03',                file: 'parchment-03.jpg', opacity: 1.00 },
+  { id: 'parchment-04', label: 'Parchment 04',                file: 'parchment-04.jpg', opacity: 1.00 },
+  { id: 'parchment-05', label: 'Parchment 05',                file: 'parchment-05.jpg', opacity: 1.00 },
+  { id: 'parchment-06', label: 'Parchment 06',                file: 'parchment-06.jpg', opacity: 1.00 },
+  { id: 'parchment-07', label: 'Parchment 07',                file: 'parchment-07.jpg', opacity: 1.00 },
+  { id: 'parchment-08', label: 'Parchment 08',                file: 'parchment-08.jpg', opacity: 1.00 },
+  { id: 'parchment-09', label: 'Parchment 09',                file: 'parchment-09.jpg', opacity: 0.80 },
+  { id: 'parchment-10', label: 'Parchment 10',                file: 'parchment-10.jpg', opacity: 0.76 },
+  { id: 'parchment-11', label: 'Parchment 11',                file: 'parchment-11.jpg', opacity: 0.71 },
+  { id: 'parchment-12', label: 'Parchment 12',                file: 'parchment-12.jpg', opacity: 0.67 },
+  { id: 'parchment-13', label: 'Parchment 13',                file: 'parchment-13.jpg', opacity: 0.63 },
+  { id: 'parchment-14', label: 'Parchment 14',                file: 'parchment-14.jpg', opacity: 0.59 },
+  { id: 'parchment-15', label: 'Parchment 15',                file: 'parchment-15.jpg', opacity: 0.54 },
+  { id: 'parchment-16', label: 'Parchment 16',                file: 'parchment-16.jpg', opacity: 0.50 },
 ];
 
 // Default: the lightest texture (parchment-01) after the sort pass.
