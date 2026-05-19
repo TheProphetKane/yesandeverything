@@ -88,9 +88,13 @@ function ingredientSlug(name) {
 }
 
 const ITEM_RENDERERS = {
-  symbol:        (s)      => {
+  symbol:        (s, ctx) => {
     if (!s.symbol || s.symbol === 'none') return '';
-    return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${s.symbol}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
+    // v0.8.5: resolve through SYMBOL_ALIASES so legacy herb symbol ids
+    // (triquetra, celtic-cross, etc.) map onto the actual variant files
+    // (celtic-knot-solid.png, celtic-cross-solid.png, etc.).
+    const resolved = ctx.symbolAliases?.[s.symbol] ?? s.symbol;
+    return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${resolved}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
   },
   botanical:     (s, ctx) => {
     const slug = ingredientSlug(s.herbName);

@@ -42,7 +42,7 @@ const { mountShopName } = shopMod;
 const { mountSavedLabels } = savedMod;
 const { makeLookup } = lookupMod;
 const { loadState, saveState, clearState, debounce } = persistMod;
-const { SYMBOL_LABELS } = symbolsMod;
+const { SYMBOL_LABELS, SYMBOL_ALIASES } = symbolsMod;
 const { THEMES } = themesMod;
 const { PARCHMENT_TEXTURES } = texturesMod;
 const { categoryDefaultSlug } = catDefMod;
@@ -122,6 +122,7 @@ async function main() {
     themes: THEMES,
     parchmentTextures: PARCHMENT_TEXTURES,
     categoryDefaultSlug,
+    symbolAliases: SYMBOL_ALIASES,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);
