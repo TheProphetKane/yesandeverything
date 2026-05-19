@@ -89,6 +89,14 @@ async function main() {
   }
   if (typeof initial.icon === 'undefined') initial.icon = defaults.icon;
 
+  // v0.8.3: validate parchmentTexture against the manifest. Old saved states
+  // may reference 'gradient' (retired) or a slot id that no longer exists
+  // after re-sorting; reset those to the default (parchment-01 / lightest).
+  const validIds = new Set(PARCHMENT_TEXTURES.map(t => t.id));
+  if (!validIds.has(initial.parchmentTexture)) {
+    initial.parchmentTexture = PARCHMENT_TEXTURES[0]?.id ?? 'parchment-01';
+  }
+
   const state = createState(initial);
 
   mountShopName(document.querySelector('[data-shop-name]'), state);
