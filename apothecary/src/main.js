@@ -85,6 +85,18 @@ async function main() {
 
   const debouncedSave = debounce((s) => saveState(s), 200);
   state.subscribe(debouncedSave);
+
+  // v0.8.0: ripple-position tracker. Sets --ripple-x/y CSS vars on each
+  // button click so the .btn-*::after radial-gradient ripple emanates from
+  // the actual click point. Pure CSS handles the animation; this just
+  // captures the coordinate.
+  document.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('.btn-primary, .btn-secondary, .btn-ghost');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    btn.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`);
+    btn.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`);
+  });
 }
 
 main().catch(err => {

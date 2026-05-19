@@ -628,3 +628,190 @@ textarea.field-input {
 .placement-row-cell input[type="checkbox"] {
   width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer;
 }
+
+/* ============================================================
+   v0.8.0 modernization pass — tactile buttons, animated focus,
+   ripple feedback, smoother interactions. Appended to editor.css.
+   ============================================================ */
+
+/* Universal motion-respecting easing custom properties. */
+:root {
+  --press-curve: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --bounce-curve: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* All buttons get a tactile press response and a focus-visible glow ring. */
+.btn-primary, .btn-secondary, .btn-ghost,
+.swatch, .shop-edit-btn, .saved-item-actions button,
+.field-reset {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 180ms var(--press-curve),
+    box-shadow 220ms var(--easing-soft),
+    background 200ms var(--easing-soft),
+    color 200ms var(--easing-soft),
+    border-color 200ms var(--easing-soft),
+    filter 200ms var(--easing-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Press scale — every clickable element. */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-ghost:active,
+.swatch:active,
+.shop-edit-btn:active,
+.saved-item-actions button:active,
+.field-reset:active {
+  transform: scale(0.95);
+  filter: brightness(0.92);
+}
+
+/* Ripple expansion from click position via pseudo-element. */
+.btn-primary::after,
+.btn-secondary::after,
+.btn-ghost::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%),
+    rgba(232, 193, 114, 0.35) 0%,
+    rgba(232, 193, 114, 0) 50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 460ms var(--easing-soft);
+}
+.btn-primary:active::after,
+.btn-secondary:active::after,
+.btn-ghost:active::after {
+  opacity: 1;
+  transition: opacity 0ms;
+}
+
+/* Focus-visible: tactile gold ring + soft halo, only for keyboard users. */
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-ghost:focus-visible,
+.field-input:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--gold-fade), 0 0 22px var(--gold-glow);
+}
+
+/* Selects get a chevron caret hint that animates on focus. */
+select.field-input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--gold) 50%),
+    linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 28px;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-position 260ms var(--bounce-curve), border-color 200ms var(--easing-soft);
+}
+select.field-input:focus {
+  background-position: calc(100% - 11px) 50%, calc(100% - 16px) 50%;
+}
+
+/* Swatches: pop-in scale, selected state ringed in gold, breathing pulse. */
+.swatch {
+  cursor: pointer;
+  will-change: transform, box-shadow;
+}
+.swatch.selected {
+  box-shadow: 0 0 0 2px var(--gold-bright), 0 0 18px var(--gold-glow);
+  animation: swatchPulse 2.4s var(--easing-soft) infinite;
+}
+@keyframes swatchPulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--gold-bright), 0 0 18px var(--gold-glow); }
+  50%      { box-shadow: 0 0 0 2px var(--gold-bright), 0 0 30px rgba(232, 193, 114, 0.5); }
+}
+
+/* Checkbox label: clickable target with subtle hover lift. */
+.checkbox-label {
+  cursor: pointer;
+  transition: color 180ms var(--easing-soft), transform 180ms var(--press-curve);
+}
+.checkbox-label:hover { color: var(--gold-bright); }
+.checkbox-label:active { transform: translateX(2px); }
+
+/* Checkbox itself: custom-painted, gold check. */
+.checkbox-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--moss);
+  border-radius: 3px;
+  background: var(--field);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 180ms var(--easing-soft), background 180ms var(--easing-soft);
+}
+.checkbox-label input[type="checkbox"]:hover { border-color: var(--gold-fade); }
+.checkbox-label input[type="checkbox"]:checked {
+  background: var(--gold);
+  border-color: var(--gold-bright);
+}
+.checkbox-label input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px; top: 0;
+  width: 5px; height: 10px;
+  border: solid var(--bg-deep);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  animation: checkPop 220ms var(--bounce-curve);
+}
+@keyframes checkPop {
+  0%   { transform: rotate(45deg) scale(0); opacity: 0; }
+  100% { transform: rotate(45deg) scale(1); opacity: 1; }
+}
+
+/* Inputs: subtle border-glow on focus, no jarring outline. */
+.field-input {
+  transition: border-color 200ms var(--easing-soft), box-shadow 200ms var(--easing-soft), background 200ms var(--easing-soft);
+}
+.field-input:hover:not(:focus) {
+  border-color: var(--gold-fade);
+}
+.field-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-fade), 0 0 16px var(--gold-glow);
+  outline: none;
+}
+
+/* Cards, panels: subtle hover-lift on saved items. */
+.saved-item {
+  cursor: pointer;
+  transform-origin: center left;
+}
+.saved-item:hover {
+  transform: translateX(2px);
+}
+
+/* Editor card entrance: fade-up on mount. */
+.editor-card, .preview-card {
+  animation: cardRise 460ms var(--easing-soft) both;
+}
+.preview-card { animation-delay: 80ms; }
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Reset / small buttons get a snappier press. */
+.field-reset:hover { color: var(--gold-bright); border-color: var(--gold); }
+
+/* Honor reduced-motion: kill animations for users who don't want them. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
