@@ -59,3 +59,6 @@ Parchment and aged-paper textures. License values:
 | parchment-10.png | https://commons.wikimedia.org/wiki/File%3APaper%20Clip-1-yercaud-salem-India.jpg | PD | 2026-05-19 |
 | parchment-11.png | https://commons.wikimedia.org/wiki/File%3ACopy%20after%20a%20Sculpture%20of%20the%20Sleeping%20Eros%20Based%20on%20an%20Antique%20Model%20(from%20Cassiano%20dal%20Pozzo's%20'Paper%20Museum')%20MET%2045.36.jpg | PD | 2026-05-19 |
 | parchment-12.png | https://commons.wikimedia.org/wiki/File%3AEagle%20Map%20of%20the%20United%20States%20Engraved%20For%20Rudiments%20of%20National%20Knowledge%2C%20edit.jpg | PD | 2026-05-19 |
+| parchment-13.png | https://commons.wikimedia.org/wiki/File%3ACa.%201277%20World%20Map.jpg | PD | 2026-05-19 |
+| parchment-14.png | https://commons.wikimedia.org/wiki/File%3AJohn%20Soane%20-%20Detail%20of%20Scrolled%20Acanthus%20Molding%20-%20B1977.14.5594%20-%20Yale%20Center%20for%20British%20Art.jpg | PD | 2026-05-19 |
+| parchment-15.png | https://commons.wikimedia.org/wiki/File%3AGangaram%20Chintaman%20Tambat%20-%20A%20Man%20holding%20a%20Scroll%20-%20B1977.14.22415%20-%20Yale%20Center%20for%20British%20Art.jpg | PD | 2026-05-19 |
