@@ -10,6 +10,7 @@ import { loadState, saveState, clearState, debounce } from './util/persist.js';
 
 import { SYMBOLS, SYMBOL_LABELS } from '../data/symbols.js';
 import { THEMES } from '../data/themes.js';
+import { PARCHMENT_TEXTURES } from '../data/textures.js';
 import { TEMPLATES, DEFAULT_TEMPLATE_ID } from '../data/label-templates.js';
 
 async function loadJson(path) {
@@ -66,6 +67,7 @@ async function main() {
     state, lookupHerb, runes, herbDB, aliasMap, runeMeanings,
     symbols: SYMBOLS, symbolLabels: SYMBOL_LABELS,
     templates: TEMPLATES,
+    parchmentTextures: PARCHMENT_TEXTURES,
     onReset: () => {
       clearState();
       state.set(defaultState());
@@ -78,6 +80,7 @@ async function main() {
     templates: TEMPLATES,
     themes: THEMES,
     symbols: SYMBOLS,
+    parchmentTextures: PARCHMENT_TEXTURES,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);

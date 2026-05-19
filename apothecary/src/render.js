@@ -50,6 +50,18 @@ function parchmentSvg(theme) {
   </svg>`;
 }
 
+// v0.8.0: parchment background may be a raster texture (from data/textures/)
+// or the original SVG gradient. The SVG sits behind the img so missing-file
+// onerror reveals the gradient as graceful fallback.
+function parchmentBg(state, theme, ctx) {
+  const id = state.parchmentTexture || 'gradient';
+  const textures = ctx.parchmentTextures || [];
+  const slot = textures.find(t => t.id === id);
+  const svg = parchmentSvg(theme);
+  if (!slot || !slot.file) return svg;
+  return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt="" onerror="this.remove()"/>`;
+}
+
 function borderSvg(color, theme, designSize) {
   const w = designSize.wIn * 96;
   const h = designSize.hIn * 96;
@@ -200,7 +212,7 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
           height:${designH}in;
           transform: scale(${physicalScale});
         ">
-          ${parchmentSvg(theme)}
+          ${parchmentBg(state, theme, fullCtx)}
           ${borderSvg(state.accent, theme, designSize)}
           <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
             ${zonesHtml(state, fullCtx, zones, side)}

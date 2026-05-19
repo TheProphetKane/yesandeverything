@@ -92,5 +92,11 @@ export function defaultState() {
 
     // Field placement (v0.4). Per-item visibility per side.
     placement: structuredClone(DEFAULT_PLACEMENT),
+
+    // Parchment background (v0.8.0). 'gradient' = SVG fallback (the original
+    // theme look). Other values reference a slot in data/textures.js, with
+    // the actual PNG at data/textures/<file>. Missing files fall back to
+    // the SVG gradient via img onerror.
+    parchmentTexture: 'gradient',
   };
 }

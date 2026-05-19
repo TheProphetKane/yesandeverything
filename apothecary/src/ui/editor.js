@@ -28,7 +28,7 @@ const PLACEMENT_ROWS = [
 ];
 
 export function mountEditor(root, ctx) {
-  const { state, lookupHerb, runes, symbols, symbolLabels, herbDB, aliasMap, templates } = ctx;
+  const { state, lookupHerb, runes, symbols, symbolLabels, herbDB, aliasMap, templates, parchmentTextures } = ctx;
   const tmpl = templates[state.get().templateId];
 
   root.innerHTML = `
@@ -72,6 +72,12 @@ export function mountEditor(root, ctx) {
       <div class="field">
         <label class="field-label" for="fSymbol">Celtic Symbol</label>
         <select id="fSymbol" class="field-input"></select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="fParchment">Parchment Texture</label>
+        <select id="fParchment" class="field-input"></select>
+        <div class="desc-hint">Switch the label background to a raster parchment. Default is the SVG gradient.</div>
       </div>
 
       <div class="field">
@@ -181,6 +187,7 @@ export function mountEditor(root, ctx) {
   const descInput  = $('fDesc');
   const descCounter = $('descCounter');
   const symbolSel  = $('fSymbol');
+  const parchSel   = $('fParchment');
   const sizeSel    = $('fSize');
   const swatchBox  = $('swatches');
   const autofillBtn = $('btn-autofill');
@@ -303,6 +310,13 @@ export function mountEditor(root, ctx) {
     opt.textContent = sz.label;
     sizeSel.appendChild(opt);
   }
+  // Parchment texture options (v0.8.0)
+  for (const t of (parchmentTextures ?? [])) {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.label;
+    parchSel.appendChild(opt);
+  }
   for (const sel of runeChar) {
     for (const r of runes) {
       const opt = document.createElement('option');
@@ -336,6 +350,7 @@ export function mountEditor(root, ctx) {
     propsInput.value = s.props;
     descInput.value  = s.description;
     symbolSel.value  = s.symbol;
+    parchSel.value   = s.parchmentTexture ?? 'gradient';
     sizeSel.value    = s.sizeId;
     colorPicker.value = s.accent;
     for (let i = 0; i < 3; i++) {
@@ -432,6 +447,7 @@ export function mountEditor(root, ctx) {
     counterUpdate(descInput, descCounter, tmpl.descMaxChars);
   });
   symbolSel.addEventListener('change', () => state.set({ symbol: symbolSel.value }));
+  parchSel.addEventListener('change', () => state.set({ parchmentTexture: parchSel.value }));
   sizeSel.addEventListener('change', () => state.set({ sizeId: sizeSel.value }));
 
   runeChar.forEach((sel, i) => {
