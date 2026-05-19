@@ -253,7 +253,7 @@ function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme })
         height:${designH}in;
         transform: scale(${physicalScale});
       ">
-        ${parchmentSvg(theme)}
+        ${parchmentBg(state, theme, fullCtx)}
         ${borderSvg(state.accent, theme, designSize)}
         <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
           ${zonesHtml(state, fullCtx, zones, side)}
