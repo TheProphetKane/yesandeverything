@@ -50,16 +50,19 @@ function parchmentSvg(theme) {
   </svg>`;
 }
 
-// v0.8.0: parchment background may be a raster texture (from data/textures/)
-// or the original SVG gradient. The SVG sits behind the img so missing-file
-// onerror reveals the gradient as graceful fallback.
+// v0.8.2: parchment background is a raster texture (data/textures/parchment-NN.*)
+// layered over the SVG gradient fallback. Each slot's manifest entry may carry
+// an opacity (slots 9-16 in the dark half use 0.80 -> 0.50 to keep text legible).
+// Missing-file onerror reveals the gradient.
 function parchmentBg(state, theme, ctx) {
-  const id = state.parchmentTexture || 'gradient';
+  const id = state.parchmentTexture;
   const textures = ctx.parchmentTextures || [];
   const slot = textures.find(t => t.id === id);
   const svg = parchmentSvg(theme);
   if (!slot || !slot.file) return svg;
-  return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt="" onerror="this.remove()"/>`;
+  const op = (typeof slot.opacity === 'number') ? slot.opacity : 1;
+  const opAttr = op < 1 ? ` style="opacity:${op}"` : '';
+  return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${opAttr} onerror="this.remove()"/>`;
 }
 
 function borderSvg(color, theme, designSize) {
@@ -101,7 +104,7 @@ const ITEM_RENDERERS = {
     const fallback = `data/ingredients/${catSlug}.png`;
     return `<div class="lbl-botanical"><img class="lbl-botanical-img" src="data/ingredients/${slug}.png" alt="" width="44" height="50" data-cat-fallback="${fallback}" onerror="if(this.dataset.catFallback){this.src=this.dataset.catFallback;this.dataset.catFallback='';}else{this.parentElement.style.display='none';}"/></div>`;
   },
-  shop:          (s, ctx) => `<div class="lbl-shop" style="color:${ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
+  shop:          (s, ctx) => `<div class="lbl-shop" style="color:${s.shopColor ?? ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
   'divider-top': (s)      => wavyDivider(s.accent),
   'divider-bot': (s)      => wavyDivider(s.accent),
   'herb-name':   (s)      => `<div class="lbl-herb" data-autofit style="color:${s.accent}">${esc(s.herbName)}</div>`,

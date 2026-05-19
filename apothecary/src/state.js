@@ -93,10 +93,13 @@ export function defaultState() {
     // Field placement (v0.4). Per-item visibility per side.
     placement: structuredClone(DEFAULT_PLACEMENT),
 
-    // Parchment background (v0.8.0). 'gradient' = SVG fallback (the original
-    // theme look). Other values reference a slot in data/textures.js, with
-    // the actual PNG at data/textures/<file>. Missing files fall back to
-    // the SVG gradient via img onerror.
-    parchmentTexture: 'gradient',
+    // Parchment background (v0.8.2). References a slot id in data/textures.js;
+    // missing-file img onerror reveals the SVG gradient as the ultimate fallback.
+    // Default = the lightest parchment after the luminance sort pass.
+    parchmentTexture: 'parchment-01',
+
+    // Shop-name color (v0.8.2). Defaults to the theme's gold-bright. Editable
+    // via the color-picker chip next to the shop-name display.
+    shopColor: '#E8C172',
   };
 }
