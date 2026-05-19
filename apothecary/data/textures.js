@@ -8,9 +8,7 @@
 export const PARCHMENT_TEXTURES = [
   { id: 'gradient',     label: 'Parchment (default gradient)', file: null },
   { id: 'parchment-01', label: 'Parchment 01',                file: 'parchment-01.jpg' },
-  { id: 'parchment-01', label: 'Parchment 01',                file: 'parchment-01.png' },
   { id: 'parchment-02', label: 'Parchment 02',                file: 'parchment-02.jpg' },
-  { id: 'parchment-02', label: 'Parchment 02',                file: 'parchment-02.png' },
   { id: 'parchment-03', label: 'Parchment 03',                file: 'parchment-03.png' },
   { id: 'parchment-04', label: 'Parchment 04',                file: 'parchment-04.jpg' },
   { id: 'parchment-05', label: 'Parchment 05',                file: 'parchment-05.jpg' },
