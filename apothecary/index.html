@@ -56,6 +56,13 @@
 
   <div id="print-stage" data-print-stage></div>
 
-  <script type="module" src="src/main.js"></script>
+  <script type="module">
+    // v0.8.0 cache-bust: release.ps1 stamps a fresh BUILD value on every push.
+    // Both the entry script and all its dynamic imports carry the build as a
+    // ?v= query, so Cloudflare's edge cache can't ever serve a stale module
+    // graph after a deploy — the URLs change with every release.
+    window.__APOTHECARY_BUILD = "20260519133643";
+    await import("./src/main.js?v=" + window.__APOTHECARY_BUILD);
+  </script>
 </body>
 </html>

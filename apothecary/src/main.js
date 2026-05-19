@@ -1,21 +1,55 @@
 // main.js - bootstrap. Wires data -> state -> editor + saved-labels -> preview.
+//
+// v0.8.0 cache-bust: index.html sets window.__APOTHECARY_BUILD before importing
+// this file with the build as a ?v= query. We propagate that query to every
+// dynamic import so each module URL changes on every release; Cloudflare's
+// edge cache can't serve a stale module graph after a deploy.
 
-import { createState, defaultState, DEFAULT_PLACEMENT } from './state.js';
-import { render } from './render.js';
-import { mountEditor } from './ui/editor.js';
-import { mountShopName } from './ui/shop-name.js';
-import { mountSavedLabels } from './ui/saved-labels-ui.js';
-import { makeLookup } from './util/lookup.js';
-import { loadState, saveState, clearState, debounce } from './util/persist.js';
+const V = "?v=" + (typeof window !== "undefined" && window.__APOTHECARY_BUILD ? window.__APOTHECARY_BUILD : "0");
 
-import { SYMBOL_LABELS } from '../data/symbols.js';
-import { THEMES } from '../data/themes.js';
-import { PARCHMENT_TEXTURES } from '../data/textures.js';
-import { categoryDefaultSlug } from '../data/category-defaults.js';
-import { TEMPLATES, DEFAULT_TEMPLATE_ID } from '../data/label-templates.js';
+const [
+  stateMod,
+  renderMod,
+  editorMod,
+  shopMod,
+  savedMod,
+  lookupMod,
+  persistMod,
+  symbolsMod,
+  themesMod,
+  texturesMod,
+  catDefMod,
+  templatesMod,
+] = await Promise.all([
+  import("./state.js" + V),
+  import("./render.js" + V),
+  import("./ui/editor.js" + V),
+  import("./ui/shop-name.js" + V),
+  import("./ui/saved-labels-ui.js" + V),
+  import("./util/lookup.js" + V),
+  import("./util/persist.js" + V),
+  import("../data/symbols.js" + V),
+  import("../data/themes.js" + V),
+  import("../data/textures.js" + V),
+  import("../data/category-defaults.js" + V),
+  import("../data/label-templates.js" + V),
+]);
+
+const { createState, defaultState, DEFAULT_PLACEMENT } = stateMod;
+const { render } = renderMod;
+const { mountEditor } = editorMod;
+const { mountShopName } = shopMod;
+const { mountSavedLabels } = savedMod;
+const { makeLookup } = lookupMod;
+const { loadState, saveState, clearState, debounce } = persistMod;
+const { SYMBOL_LABELS } = symbolsMod;
+const { THEMES } = themesMod;
+const { PARCHMENT_TEXTURES } = texturesMod;
+const { categoryDefaultSlug } = catDefMod;
+const { TEMPLATES, DEFAULT_TEMPLATE_ID } = templatesMod;
 
 async function loadJson(path) {
-  const res = await fetch(path);
+  const res = await fetch(path + V);
   if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`);
   return res.json();
 }
@@ -41,12 +75,10 @@ async function main() {
   for (const k of ['backEnabled', 'descFull', 'historicUses', 'compounds', 'cautions', 'pairings', 'notesSplit']) {
     if (typeof initial[k] === 'undefined') initial[k] = defaults[k];
   }
-  // Migrate v0.5 saved state: old `nutrition` field → new `compounds`.
   if (typeof initial.nutrition === 'string' && !initial.compounds) {
     initial.compounds = initial.nutrition;
   }
   if (!initial.placement) initial.placement = JSON.parse(JSON.stringify(DEFAULT_PLACEMENT));
-  // Migrate v0.5 placement: old `nutrition` slot → `compounds` + `cautions`.
   if (initial.placement.nutrition && !initial.placement.compounds) {
     initial.placement.compounds = { ...initial.placement.nutrition };
     initial.placement.cautions  = { ...initial.placement.nutrition };
@@ -90,10 +122,6 @@ async function main() {
   const debouncedSave = debounce((s) => saveState(s), 200);
   state.subscribe(debouncedSave);
 
-  // v0.8.0: ripple-position tracker. Sets --ripple-x/y CSS vars on each
-  // button click so the .btn-*::after radial-gradient ripple emanates from
-  // the actual click point. Pure CSS handles the animation; this just
-  // captures the coordinate.
   document.addEventListener('pointerdown', (e) => {
     const btn = e.target.closest('.btn-primary, .btn-secondary, .btn-ghost');
     if (!btn) return;
