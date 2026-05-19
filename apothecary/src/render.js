@@ -89,19 +89,10 @@ function ingredientSlug(name) {
 
 const ITEM_RENDERERS = {
   symbol:        (s)      => {
-    // v0.8.2 LOCKED DECISION: zero SVG anywhere in the label. Symbol renders
-    // as an img only; if the PNG is missing, the slot hides. No fallback.
-    // v0.8.2: "none" is a sentinel value the editor exposes so users can
-    // omit a symbol entirely (some labels look better without one).
     if (!s.symbol || s.symbol === 'none') return '';
     return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${s.symbol}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
   },
   botanical:     (s, ctx) => {
-    // v0.8.2 LOCKED DECISION: zero SVG anywhere. The plant slot uses a
-    // PNG-to-PNG onerror chain: per-slug ingredient PNG → category-
-    // representative PNG (from data/category-defaults.js) → hide. No SVG
-    // touches this slot. data-cat-fallback carries the second URL the
-    // browser tries when the first 404s.
     const slug = ingredientSlug(s.herbName);
     const catSlug = ctx.categoryDefaultSlug?.(s.botanical) ?? 'basil';
     const fallback = `data/ingredients/${catSlug}.png`;
@@ -287,7 +278,6 @@ export function render(state, mounts, ctx) {
                       side: 'back', zones: tmpl.backZones, theme, previewScale })] : []),
   ].join('');
 
-  // The wrapper no longer needs an explicit height — children declare their own.
   mounts.preview.style.width = `calc(${phys.wIn}in * ${previewScale})`;
   mounts.preview.style.height = 'auto';
   mounts.preview.innerHTML = previewCards;
@@ -314,4 +304,3 @@ export function render(state, mounts, ctx) {
     });
   }
 }
-                                     
