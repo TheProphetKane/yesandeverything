@@ -91,6 +91,9 @@ const ITEM_RENDERERS = {
   symbol:        (s)      => {
     // v0.8.2 LOCKED DECISION: zero SVG anywhere in the label. Symbol renders
     // as an img only; if the PNG is missing, the slot hides. No fallback.
+    // v0.8.2: "none" is a sentinel value the editor exposes so users can
+    // omit a symbol entirely (some labels look better without one).
+    if (!s.symbol || s.symbol === 'none') return '';
     return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${s.symbol}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
   },
   botanical:     (s, ctx) => {

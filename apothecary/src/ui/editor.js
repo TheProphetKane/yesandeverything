@@ -300,6 +300,13 @@ export function mountEditor(root, ctx) {
   // --- Selects ---
   // v0.8.2: SYMBOLS export retired (zero-SVG lock). Symbol ids now come from
   // symbolLabels keys; the picker is a text-only dropdown.
+  // v0.8.2: prepend a "None" option so users can render labels without a symbol.
+  {
+    const noneOpt = document.createElement('option');
+    noneOpt.value = 'none';
+    noneOpt.textContent = 'None (no symbol)';
+    symbolSel.appendChild(noneOpt);
+  }
   for (const id of Object.keys(symbolLabels)) {
     const opt = document.createElement('option');
     opt.value = id;
