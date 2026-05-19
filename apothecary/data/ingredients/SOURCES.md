@@ -883,3 +883,17 @@ found, retry on next sourcing pass.
 | tandoori-spice | https://commons.wikimedia.org/wiki/File%3ATasty%2C%20juicy%20chicken%20tandoori%20loaded%20with%20all%20spices.jpg | PD-NEAR | 2026-05-19 |
 | zaatar | https://commons.wikimedia.org/wiki/File%3ACommercially%20prepared%20za'atar%20herb%20blend%20in%20USA%20with%20ingredients%20from%20Labanon.jpg | PD-NEAR | 2026-05-19 |
 | vadouvan | https://commons.wikimedia.org/wiki/File%3ACi%20vediamo%20dopo%20pranzo%20(49770816627).jpg | PD-NEAR | 2026-05-19 |
+| yarrow | https://commons.wikimedia.org/wiki/File%3AAchillea%20millefolium%20borealis%20drawing.png | PD | 2026-05-19 |
+| allspice | https://commons.wikimedia.org/wiki/File%3AAllspice%20(PSF).png | PD | 2026-05-19 |
+| borage | https://commons.wikimedia.org/wiki/File%3AAnagallis%20arvensis%20-%20Emily%20Worthington%20(nee%20Clift)%20-%20755%201989%2049.png | PD | 2026-05-19 |
+| brahmi | https://commons.wikimedia.org/wiki/File%3AHerpestis%20monniera%20Blanco1.230.png | PD | 2026-05-19 |
+| cloves | https://commons.wikimedia.org/wiki/File%3ACloves%20-%20unknown%20Southeast%20Asian%20artist%20-%2027%201924%2017.png | PD | 2026-05-19 |
+| paprika | https://commons.wikimedia.org/wiki/File%3APeper%20van%20Indien%20677%20Dodoens%201554.png | PD | 2026-05-19 |
+| fennel | https://commons.wikimedia.org/wiki/File%3AFennel%20(PSF).png | PD | 2026-05-19 |
+| chive | https://commons.wikimedia.org/wiki/File%3AAllium%20schoenoprasum%20sibiricum%20drawing.png | PD | 2026-05-19 |
+| spearmint | https://commons.wikimedia.org/wiki/File%3AMentha%20%C3%97%20villosa%20drawing%201.png | PD | 2026-05-19 |
+| shallot | https://commons.wikimedia.org/wiki/File%3AAllium%20allegheniense%20drawing.png | PD-NEAR | 2026-05-19 |
+| chanterelle | https://commons.wikimedia.org/wiki/File%3ABresadola%20-%20Cantharellus%20cibarius.png | PD | 2026-05-19 |
+| portabella | https://commons.wikimedia.org/wiki/File%3AChampignon%20de%20couche%20Vilmorin-Andrieux%201904.png | PD | 2026-05-19 |
+| chipotle | https://commons.wikimedia.org/wiki/File%3APeper%20van%20Indien%20677%20Dodoens%201554.png | PD | 2026-05-19 |
+| gochugaru | https://commons.wikimedia.org/wiki/File%3APeper%20van%20Indien%20677%20Dodoens%201554.png | PD | 2026-05-19 |
