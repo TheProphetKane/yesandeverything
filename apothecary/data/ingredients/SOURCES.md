@@ -713,3 +713,10 @@ found, retry on next sourcing pass.
 | sumac | https://commons.wikimedia.org/wiki/File%3ARhus%20Coriaria%20261%20-%20DPLA%20-%20e5726301f1093311c344a17c0fd52c03.jpg | PD | 2026-05-19 |
 | milk-thistle | https://commons.wikimedia.org/wiki/File%3AAalbes%20en%20Mariadistel%20Cognoscite%20lilia%20(serietitel)%2C%20RP-P-2012-24-23.jpg | PD | 2026-05-19 |
 | skullcap | https://commons.wikimedia.org/wiki/File%3AScutellaria%20lateriflora%20L.%20Blue%20skullcap.tiff | PD | 2026-05-19 |
+| motherwort | https://commons.wikimedia.org/wiki/File%3ALeonurus%20Cardiaca%20(Common%20Motherwort)%20in%20Billings-Kittredge%20Herbaria%20(e4c11c53-6352-4e58-9b57-16c411033723).tif | PD | 2026-05-19 |
+| angelica | https://commons.wikimedia.org/wiki/File%3AOlaf%20offers%20thyri%20angelica.jpg | PD | 2026-05-19 |
+| black-cohosh | https://commons.wikimedia.org/wiki/File%3AActaea%20racemosa%20racemosa%20drawing.png | PD | 2026-05-19 |
+| california-poppy | https://commons.wikimedia.org/wiki/File%3AEschscholzia%20californica%20illustration%20valentien.jpg | PD | 2026-05-19 |
+| cats-claw | https://commons.wikimedia.org/wiki/File%3AFlorae%20Columbiae%20(Plate%20CLXXX)%20(8205993854).jpg | PD | 2026-05-19 |
+| dong-quai | https://commons.wikimedia.org/wiki/File%3AAngelica%20sinensis%20Bild.png | PD | 2026-05-19 |
+| eleuthero | https://commons.wikimedia.org/wiki/File%3APertinax%20Erfgoedcentrum%20Rozet%20300%20191%20d%206%20C%20(64)%2020171115%200001.jpg | PD-NEAR | 2026-05-19 |

@@ -104,7 +104,7 @@ const ITEM_RENDERERS = {
     const fallback = `data/ingredients/${catSlug}.png`;
     return `<div class="lbl-botanical"><img class="lbl-botanical-img" src="data/ingredients/${slug}.png" alt="" width="44" height="50" data-cat-fallback="${fallback}" onerror="if(this.dataset.catFallback){this.src=this.dataset.catFallback;this.dataset.catFallback='';}else{this.parentElement.style.display='none';}"/></div>`;
   },
-  shop:          (s, ctx) => `<div class="lbl-shop" style="color:${s.shopColor ?? ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
+  shop:          (s, ctx) => `<div class="lbl-shop" style="color:${s.shopColor ?? ctx.theme.shopColor}">${esc(s.shopName)}</div>`,
   'divider-top': (s)      => wavyDivider(s.accent),
   'divider-bot': (s)      => wavyDivider(s.accent),
   'herb-name':   (s)      => `<div class="lbl-herb" data-autofit style="color:${s.accent}">${esc(s.herbName)}</div>`,
