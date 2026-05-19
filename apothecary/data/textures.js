@@ -7,6 +7,24 @@
 
 export const PARCHMENT_TEXTURES = [
   { id: 'gradient',     label: 'Parchment (default gradient)', file: null },
+  { id: 'parchment-01', label: 'Parchment 01',                file: 'parchment-01.jpg' },
+  { id: 'parchment-01', label: 'Parchment 01',                file: 'parchment-01.png' },
+  { id: 'parchment-02', label: 'Parchment 02',                file: 'parchment-02.jpg' },
+  { id: 'parchment-02', label: 'Parchment 02',                file: 'parchment-02.png' },
+  { id: 'parchment-03', label: 'Parchment 03',                file: 'parchment-03.png' },
+  { id: 'parchment-04', label: 'Parchment 04',                file: 'parchment-04.jpg' },
+  { id: 'parchment-05', label: 'Parchment 05',                file: 'parchment-05.jpg' },
+  { id: 'parchment-06', label: 'Parchment 06',                file: 'parchment-06.jpg' },
+  { id: 'parchment-07', label: 'Parchment 07',                file: 'parchment-07.jpg' },
+  { id: 'parchment-08', label: 'Parchment 08',                file: 'parchment-08.jpg' },
+  { id: 'parchment-09', label: 'Parchment 09',                file: 'parchment-09.jpg' },
+  { id: 'parchment-10', label: 'Parchment 10',                file: 'parchment-10.jpg' },
+  { id: 'parchment-11', label: 'Parchment 11',                file: 'parchment-11.jpg' },
+  { id: 'parchment-12', label: 'Parchment 12',                file: 'parchment-12.jpg' },
+  { id: 'parchment-13', label: 'Parchment 13',                file: 'parchment-13.jpg' },
+  { id: 'parchment-14', label: 'Parchment 14',                file: 'parchment-14.jpg' },
+  { id: 'parchment-15', label: 'Parchment 15',                file: 'parchment-15.jpg' },
+  { id: 'parchment-16', label: 'Parchment 16',                file: 'parchment-16.jpg' },
 ];
 
 export const DEFAULT_PARCHMENT = 'gradient';
