@@ -28,7 +28,7 @@ const PLACEMENT_ROWS = [
 ];
 
 export function mountEditor(root, ctx) {
-  const { state, lookupHerb, runes, symbols, symbolLabels, herbDB, aliasMap, templates, parchmentTextures } = ctx;
+  const { state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, parchmentTextures } = ctx;
   const tmpl = templates[state.get().templateId];
 
   root.innerHTML = `
@@ -298,7 +298,9 @@ export function mountEditor(root, ctx) {
   }
 
   // --- Selects ---
-  for (const id of Object.keys(symbols)) {
+  // v0.8.2: SYMBOLS export retired (zero-SVG lock). Symbol ids now come from
+  // symbolLabels keys; the picker is a text-only dropdown.
+  for (const id of Object.keys(symbolLabels)) {
     const opt = document.createElement('option');
     opt.value = id;
     opt.textContent = symbolLabels[id] ?? id;
