@@ -1096,3 +1096,17 @@ found, retry on next sourcing pass.
 | tandoori-spice | https://commons.wikimedia.org/wiki/File%3ATasty%2C%20juicy%20chicken%20tandoori%20loaded%20with%20all%20spices.jpg | PD-NEAR | 2026-05-19 |
 | zaatar | https://commons.wikimedia.org/wiki/File%3ACommercially%20prepared%20za'atar%20herb%20blend%20in%20USA%20with%20ingredients%20from%20Labanon.jpg | PD-NEAR | 2026-05-19 |
 | vadouvan | https://commons.wikimedia.org/wiki/File%3ACi%20vediamo%20dopo%20pranzo%20(49770816627).jpg | PD-NEAR | 2026-05-19 |
+| chamomile | https://commons.wikimedia.org/wiki/File%3AMatricaria%20chamomilla%20flower%20(06).jpg | PD | 2026-05-19 |
+| lavender | https://commons.wikimedia.org/wiki/File%3ALavandula%20spica.jpg | PD | 2026-05-19 |
+| rosemary | https://commons.wikimedia.org/wiki/File%3AHortus%20Eystettensis%2C%201613%20(KU%202894-3%20070)%20-Aestiva%2C12%2C1.jpg | PD | 2026-05-19 |
+| sage | https://commons.wikimedia.org/wiki/File%3AAlternate%20Title(s)-%20Salvia%20(31577964393).jpg | PD | 2026-05-19 |
+| basil | https://commons.wikimedia.org/wiki/File%3AA%20curious%20herbal%20(Plate%20104)%20BHL296379.jpg | PD | 2026-05-19 |
+| mugwort | https://commons.wikimedia.org/wiki/File%3AArtemisia%20vulgaris%20Sturm13035.jpg | PD | 2026-05-19 |
+| lily-flower | https://commons.wikimedia.org/wiki/File%3AJapanese%20Herbal%2C%2017th%20century%20Wellcome%20L0030088.jpg | PD | 2026-05-19 |
+| calendula-flower | https://commons.wikimedia.org/wiki/File%3AMuseum%20of%20Art%20and%20Horticulture%2C%20sixth%20annual%20seed%20catalogue%20-%20floral%20and%20Western%20cultivators%20guide%20(1868)%20(14578085587).jpg | PD | 2026-05-19 |
+| beeswax | https://commons.wikimedia.org/wiki/File%3AChemistry-%20general%2C%20medical%2C%20and%20pharmaceutical%2C%20including%20the%20chemistry%20of%20the%20U.%20S.%20Pharmacopia.%20A%20manual%20on%20the%20general%20principles%20of%20the%20science%2C%20and%20their%20applications%20in%20medicine%20and%20pharmacy%20(14783782792).jpg | PD | 2026-05-19 |
+| cocoa-butter | https://commons.wikimedia.org/wiki/File%3ACacao2%20(PSF).jpg | PD | 2026-05-19 |
+| yarrow | https://commons.wikimedia.org/wiki/File%3AAchillea%20millefolium%20borealis%20drawing.png | PD | 2026-05-19 |
+| elderflower | https://commons.wikimedia.org/wiki/File%3ASambucus%20nigra%20L.%20ssp.%20canadensis%20(L.)%20R.%20Bolli%20American%20black%20elderberry.tiff | PD | 2026-05-19 |
+| peppermint | https://commons.wikimedia.org/wiki/File%3AThe%20family%20flora%20and%20materia%20medica%20botanica%20(No.%2054)%20BHL3608626.jpg | PD | 2026-05-19 |
+| valerian | https://commons.wikimedia.org/wiki/File%3AJapanese%20Herbal%2C%2017th%20century%20Wellcome%20L0030104.jpg | PD | 2026-05-19 |
