@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget — Yes and... Everything</title>
+<meta name="description" content="Yes and... Budget — a local-first personal budget tool. Manual statement import, rule-based categorization, spending insights. Runs on your own machine; no cloud.">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --bg-elev: #11151a;
+    --border: #1f2730;
+    --text: #c8d2dc;
+    --text-dim: #6a7785;
+    --accent: #00ff9c;
+    --accent-dim: #00b06d;
+    --amber: #ffb73d;
+    --red: #ff5c6c;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--mono); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 96px; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent-dim); }
+  a:hover { color: var(--amber); border-bottom-color: var(--amber); }
+  .crumb { color: var(--text-dim); font-size: 13px; margin-bottom: 32px; }
+  .crumb a { color: var(--text-dim); border-bottom-style: dotted; }
+  h1 { color: var(--accent); font-size: 28px; margin: 0 0 4px; letter-spacing: 0.5px; }
+  h1::before { content: "› "; color: var(--accent-dim); }
+  .blurb { color: var(--text); font-size: 15px; line-height: 1.6; margin: 16px 0 28px; max-width: 60ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
+  .pill { padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); }
+  .pill.status::before { content: "● "; color: var(--amber); }
+  .pill.status.live::before { color: var(--accent); }
+  code { font-family: var(--mono); color: var(--accent-dim); font-size: 13px; }
+  hr.dashed { border: none; border-top: 1px dashed var(--border); margin: 32px 0; }
+  h2 { color: var(--accent); font-size: 16px; margin: 32px 0 12px; }
+  h2::before { content: "// "; color: var(--accent-dim); }
+  ul.links { list-style: none; padding: 0; margin: 0; }
+  ul.links li { margin: 8px 0; font-size: 14px; }
+  ul.links li::before { content: "→ "; color: var(--accent-dim); }
+  ul.milestones { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+  ul.milestones li { margin: 6px 0; color: var(--text-dim); }
+  ul.milestones li.done { color: var(--accent-dim); }
+  ul.milestones li.active { color: var(--amber); }
+  ul.milestones li.done::before { content: "[x] "; color: var(--accent); }
+  ul.milestones li.active::before { content: "[~] "; color: var(--amber); }
+  ul.milestones li::before { content: "[ ] "; color: var(--text-dim); }
+  .small { color: var(--text-dim); font-size: 12px; margin-top: 48px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/">yesandeverything</a> / projects / budget</div>
+  <h1>Budget</h1>
+  <div class="meta">
+    <span class="pill status">pre-MVP</span>
+    <span class="pill">v0.1.0</span>
+    <span class="pill">local-only</span>
+  </div>
+  <p class="blurb">
+    A personal budget tool that runs entirely on your own machine. Drop in monthly
+    bank statements, get rule-based categorization, and see where the money is
+    actually going. Designed for solo use and close-friends sharing &mdash; each
+    person runs their own local copy. Bank data never leaves the machine: no
+    cloud, no multi-tenant, no Plaid or Teller, no third-party API touching raw
+    transactions.
+  </p>
+
+  <h2>What it does</h2>
+  <p class="blurb">
+    Upload a CSV (PDF and bank-specific formats coming), pick the destination
+    account, and the parser produces a clean transaction list. A rule engine
+    runs at import and on-demand: first matching rule wins, ordered by priority.
+    Bulk-select uncategorized rows and "save as rule" to teach it. Categories
+    seed with essentials (Housing, Utilities, Groceries, Transport, Insurance,
+    Healthcare, Debt), discretionary (Dining, Entertainment, Shopping, Travel,
+    Subscriptions, Personal Care, Gifts), income, and transfers &mdash;
+    transfers are flagged so they stay out of spend breakdowns.
+  </p>
+
+  <h2>Insight surface (designed)</h2>
+  <p class="blurb">
+    A dashboard with net cash-flow trend over the last twelve months, spend by
+    category with month-over-month delta, top ten merchants for the current
+    month, and an essential-vs-discretionary split. An insights view runs a
+    subscription detector (three or more transactions of similar amount at
+    near-regular intervals), a recurring-spend ranker ordered by annualized
+    cost, and a "candidate cuts" list that combines the most-expensive
+    subscriptions with the categories growing fastest month-over-month.
+  </p>
+
+  <h2>Milestones</h2>
+  <ul class="milestones">
+    <li class="active">M0 &mdash; Scaffold (in progress)</li>
+    <li>M1 &mdash; Import + store</li>
+    <li>M2 &mdash; Categorize</li>
+    <li>M3 &mdash; Dashboard</li>
+    <li>M4 &mdash; Insights</li>
+    <li>M5 &mdash; Multi-format import (PDF, additional bank CSVs)</li>
+    <li>M6 &mdash; Budgets + goals</li>
+  </ul>
+  <p class="blurb" style="margin-top:14px;">MVP = M0 through M4.</p>
+
+  <h2>Stack</h2>
+  <p class="blurb">
+    Vite + React 18 + Tailwind on the frontend (<code>apps/web</code>). Hono on
+    Node with <code>better-sqlite3</code> on the backend (<code>apps/api</code>);
+    SQLite file lives at <code>data/yesandbudget.db</code>, with pre-import
+    backups in <code>data/backups/</code>. Shared transaction types and category
+    enums in <code>packages/shared</code>. Single pnpm workspace. Web on
+    <code>http://localhost:5173</code>, API on <code>http://localhost:8787</code>
+    &mdash; both bound to localhost only.
+  </p>
+
+  <h2>Privacy stance</h2>
+  <p class="blurb">
+    Hard line: raw transactions never leave the machine. The optional LLM
+    categorization fallback (post-MVP) is opt-in and sees only normalized
+    merchant strings &mdash; no amounts, no dates, no account identifiers. No
+    telemetry. No analytics. No outbound calls with bank data.
+  </p>
+
+  <h2>Source</h2>
+  <ul class="links">
+    <li>Private repo, not yet published</li>
+  </ul>
+
+  <hr class="dashed">
+  <p class="small">
+    Part of the Yes and... portfolio. Sibling to
+    <a href="/projects/scheduler/">Scheduler</a>,
+    <a href="/hordes/">Here There Be Hordes</a> (GDD &mdash; password-gated),
+    and <a href="/">others</a>.
+  </p>
+</div>
+</body>
+</html>
