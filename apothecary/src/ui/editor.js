@@ -589,11 +589,12 @@ function mountLayoutDesigner(root, state) {
   }
 
   function zoneCardHtml(zone, side) {
-    const widthControl = side === 'front'
-      ? `<select class="layout-zone-width" data-zone-width="${esc(zone.id)}" aria-label="Zone width">
-           ${ZONE_WIDTHS.map(w => `<option value="${w}" ${w === zone.width ? 'selected' : ''}>${w}%</option>`).join('')}
-         </select>`
-      : '';
+    // v0.9.1: width control on both sides. Front zones live in a row so width
+    // controls horizontal share; back zones live in a column so width controls
+    // the zone's own width and the zone centers within the column.
+    const widthControl = `<select class="layout-zone-width" data-zone-width="${esc(zone.id)}" aria-label="Zone width">
+        ${ZONE_WIDTHS.map(w => `<option value="${w}" ${w === zone.width ? 'selected' : ''}>${w}%</option>`).join('')}
+      </select>`;
     const modeControl = `<select class="layout-zone-mode" data-zone-mode="${esc(zone.id)}" aria-label="Zone layout mode">
         ${ZONE_LAYOUT_MODES.map(m => `<option value="${m}" ${m === (zone.layoutMode || 'stack') ? 'selected' : ''}>${LAYOUT_MODE_LABELS[m]}</option>`).join('')}
       </select>`;
