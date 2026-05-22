@@ -35,7 +35,7 @@ const [
   import("../data/label-templates.js" + V),
 ]);
 
-const { createState, defaultState, DEFAULT_PLACEMENT } = stateMod;
+const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS } = stateMod;
 const { render } = renderMod;
 const { mountEditor } = editorMod;
 const { mountShopName } = shopMod;
@@ -52,6 +52,146 @@ async function loadJson(path) {
   const res = await fetch(path + V);
   if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`);
   return res.json();
+}
+
+// Build a v0.9 layout from a pre-v0.9 saved state. Reads state.placement
+// (per-item front/back booleans) and state.notesSplit (combined vs three-col
+// back-bottom-row) to reconstruct what the user had, then maps onto the new
+// zone shape. Anything not in placement defaults to its canonical home.
+function migrateLayoutFrom(old, defaults) {
+  const baseline = defaultLayout();
+  const placement = old.placement;
+
+  // No old placement to honor -> just hand back the baseline.
+  if (!placement || typeof placement !== 'object') {
+    // Honor notesSplit if it was the only customization.
+    if (old.notesSplit === true) splitNotesZone(baseline);
+    reconcileNotesHidden(baseline);
+    return baseline;
+  }
+
+  // Map old placement keys to the items they correspond to. compounds,
+  // cautions, and notes are intentionally excluded; in v0.8 those three lived
+  // inside the back-bottom-row composite and their placement toggles were
+  // broken (the bug v0.9 fixes). They're now governed by notesSplit alone,
+  // handled separately below.
+  const KEY_TO_ITEM = {
+    shop: 'shop',
+    description: 'description',
+    descFull: 'back-desc-full',
+    props: 'props',
+    symbol: 'symbol',
+    botanical: 'botanical',
+    rune1: 'rune-1',
+    rune2: 'rune-2',
+    rune3: 'rune-3',
+    historicUses: 'historic',
+    pairings: 'pairings',
+  };
+
+  // For each item, decide where it goes based on placement[key].front/back.
+  // both -> appears on both sides. neither -> hidden.
+  const wantFront = new Set();
+  const wantBack  = new Set();
+  for (const [pKey, itemKey] of Object.entries(KEY_TO_ITEM)) {
+    const p = placement[pKey];
+    if (!p) {
+      // No record - leave it wherever the baseline put it. We figure that out
+      // below by inspecting the baseline.
+      continue;
+    }
+    if (p.front) wantFront.add(itemKey);
+    if (p.back)  wantBack.add(itemKey);
+  }
+
+  // Apply wantFront/wantBack to the baseline: remove items the user hid, add
+  // items the user moved to a side that doesn't have them.
+  const allItemsInZones = (zones) => {
+    const set = new Set();
+    zones.forEach(z => z.items.forEach(i => set.add(i)));
+    return set;
+  };
+
+  // Walk PRESENT items in each side; if user marked them hidden on that side,
+  // strip them. If user marked them present on the opposite side, add them.
+  for (const side of ['front', 'back']) {
+    const want = side === 'front' ? wantFront : wantBack;
+    const zones = baseline[side];
+    for (const z of zones) {
+      z.items = z.items.filter(item => {
+        // If this item is in our key map, honor placement. Otherwise (dividers,
+        // back-name, back-latin), keep as-is - those had no placement toggle.
+        const tracked = Object.values(KEY_TO_ITEM).includes(item);
+        if (!tracked) return true;
+        // For tracked items, honor want set IF user actually had a record.
+        // Items not in placement at all are kept where baseline put them.
+        const pKey = Object.entries(KEY_TO_ITEM).find(([, v]) => v === item)?.[0];
+        if (!pKey || !placement[pKey]) return true;
+        return want.has(item);
+      });
+    }
+    // Add items the user explicitly wanted on this side that aren't here yet.
+    const present = allItemsInZones(zones);
+    for (const item of want) {
+      if (present.has(item)) continue;
+      // Append to a sensible zone: front -> center, back -> last zone.
+      const target = side === 'front'
+        ? (zones.find(z => z.id === 'front-center') ?? zones[0])
+        : zones[zones.length - 1];
+      if (target) target.items.push(item);
+    }
+  }
+
+  // notesSplit migration: replace combined "notes" with explicit "compounds"
+  // + "cautions" in the back-bottom zone, set to 3-column layout.
+  if (old.notesSplit === true) splitNotesZone(baseline);
+
+  // Build hidden list: any tracked item the user explicitly turned off on
+  // BOTH sides.
+  const hidden = [];
+  for (const [pKey, itemKey] of Object.entries(KEY_TO_ITEM)) {
+    const p = placement[pKey];
+    if (!p) continue;
+    if (!p.front && !p.back) hidden.push(itemKey);
+  }
+  // Reconcile compounds/cautions/notes against zone presence: whichever isn't
+  // placed lives in hidden so the picker can offer it.
+  const finalPresent = new Set([
+    ...allItemsInZones(baseline.front),
+    ...allItemsInZones(baseline.back),
+  ]);
+  for (const candidate of ['compounds', 'cautions', 'notes']) {
+    if (!finalPresent.has(candidate) && !hidden.includes(candidate)) {
+      hidden.push(candidate);
+    }
+  }
+  baseline.hidden = hidden;
+  return baseline;
+}
+
+// Same reconciliation for the early-return path (no placement object).
+function reconcileNotesHidden(layout) {
+  const present = new Set();
+  layout.front.forEach(z => z.items.forEach(i => present.add(i)));
+  layout.back.forEach(z => z.items.forEach(i => present.add(i)));
+  const hidden = new Set(layout.hidden || []);
+  for (const c of ['compounds', 'cautions', 'notes']) {
+    if (present.has(c)) hidden.delete(c);
+    else hidden.add(c);
+  }
+  layout.hidden = Array.from(hidden);
+}
+
+function splitNotesZone(layout) {
+  // Find the back-bottom zone (or any zone containing 'notes') and replace
+  // 'notes' with ['compounds', 'cautions'] in-place.
+  for (const z of layout.back) {
+    const idx = z.items.indexOf('notes');
+    if (idx >= 0) {
+      z.items.splice(idx, 1, 'compounds', 'cautions');
+      z.layoutMode = 'columns-3';
+    }
+  }
 }
 
 async function main() {
@@ -72,22 +212,27 @@ async function main() {
   if (!initial.sizeId || !tmpl.sizes.find(s => s.id === initial.sizeId)) {
     initial.sizeId = tmpl.defaultSize;
   }
-  for (const k of ['backEnabled', 'descFull', 'historicUses', 'compounds', 'cautions', 'pairings', 'notesSplit']) {
+  for (const k of ['backEnabled', 'descFull', 'historicUses', 'compounds', 'cautions', 'pairings']) {
     if (typeof initial[k] === 'undefined') initial[k] = defaults[k];
   }
   if (typeof initial.nutrition === 'string' && !initial.compounds) {
     initial.compounds = initial.nutrition;
   }
-  if (!initial.placement) initial.placement = JSON.parse(JSON.stringify(DEFAULT_PLACEMENT));
-  if (initial.placement.nutrition && !initial.placement.compounds) {
-    initial.placement.compounds = { ...initial.placement.nutrition };
-    initial.placement.cautions  = { ...initial.placement.nutrition };
-    delete initial.placement.nutrition;
-  }
-  for (const k of Object.keys(DEFAULT_PLACEMENT)) {
-    if (!initial.placement[k]) initial.placement[k] = { ...DEFAULT_PLACEMENT[k] };
-  }
   if (typeof initial.icon === 'undefined') initial.icon = defaults.icon;
+
+  // v0.9 migration: state.layout owns zone composition. Old saved state may
+  // carry state.placement (per-item front/back grid) and state.notesSplit
+  // instead. Build state.layout from those signals + the canonical default,
+  // then drop the retired fields. New users (no persisted state) already have
+  // defaultLayout via defaultState().
+  if (!initial.layout || !Array.isArray(initial.layout.front)) {
+    initial.layout = migrateLayoutFrom(initial, defaults);
+  } else {
+    // Already on v0.9 shape - just ensure hidden array exists.
+    if (!Array.isArray(initial.layout.hidden)) initial.layout.hidden = [];
+  }
+  delete initial.placement;
+  delete initial.notesSplit;
 
   // v0.8.3: validate parchmentTexture against the manifest. Old saved states
   // may reference 'gradient' (retired) or a slot id that no longer exists

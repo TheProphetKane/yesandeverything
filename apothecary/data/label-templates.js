@@ -7,7 +7,7 @@
 //
 // The renderer always lays the label out at `designSize`, then applies
 // `physicalScale = physicalSize / designSize` as a CSS transform. This keeps every
-// internal element — fonts, SVGs, padding, gaps — proportionally identical across
+// internal element (fonts, SVGs, padding, gaps) proportionally identical across
 // all sizes. To support a different aspect ratio (square, tall, wide), add a new
 // template with its own designSize and zone arrangement.
 
@@ -29,11 +29,13 @@ export const TEMPLATES = {
 
     theme: 'parchment-gold',
 
-    // Front side: 3-column layout. label-interior renders zones in a row;
-    // each zone stacks items vertically.
+    // v0.9: zone composition is authoritative in state.layout (see
+    // src/state.js -> defaultLayout). The arrays below are kept as a fallback
+    // the renderer reads only if state.layout is missing. They mirror
+    // defaultLayout exactly so the two never disagree on a fresh page load.
     zones: [
-      { id: 'left',   width: '25%', items: ['symbol', 'botanical'] },
-      { id: 'center', width: '50%', items: [
+      { id: 'front-left',   width: 25, layoutMode: 'stack', items: ['symbol', 'botanical'] },
+      { id: 'front-center', width: 50, layoutMode: 'stack', items: [
         'shop',
         'divider-top',
         'herb-name',
@@ -42,20 +44,17 @@ export const TEMPLATES = {
         'divider-bot',
         'description',
       ]},
-      { id: 'right',  width: '25%', items: ['rune-1', 'rune-2', 'rune-3'] },
+      { id: 'front-right',  width: 25, layoutMode: 'stack', items: ['rune-1', 'rune-2', 'rune-3'] },
     ],
 
-    // Back side: vertical stack of sections. label-interior renders zones in a
-    // column when on the back. Bottom row is a composite item that lays out
-    // notes + pairings side by side.
     backZones: [
-      { id: 'back-header',    items: ['back-name', 'back-latin'] },
-      { id: 'back-div-1',     items: ['back-divider'] },
-      { id: 'back-desc',      items: ['back-desc-full'] },
-      { id: 'back-div-2',     items: ['back-divider'] },
-      { id: 'back-historic',  items: ['back-historic-section'] },
-      { id: 'back-div-3',     items: ['back-divider'] },
-      { id: 'back-bottom',    items: ['back-bottom-row'] },
+      { id: 'back-header',  width: 100, layoutMode: 'stack', items: ['back-name', 'back-latin'] },
+      { id: 'back-div-1',   width: 100, layoutMode: 'stack', items: ['back-divider'] },
+      { id: 'back-desc',    width: 100, layoutMode: 'stack', items: ['back-desc-full'] },
+      { id: 'back-div-2',   width: 100, layoutMode: 'stack', items: ['back-divider'] },
+      { id: 'back-historic',width: 100, layoutMode: 'stack', items: ['historic'] },
+      { id: 'back-div-3',   width: 100, layoutMode: 'stack', items: ['back-divider'] },
+      { id: 'back-bottom',  width: 100, layoutMode: 'row',   items: ['notes', 'pairings'] },
     ],
 
     fields: [

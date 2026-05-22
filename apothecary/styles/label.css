@@ -97,6 +97,9 @@
   justify-content: space-between;
 }
 
+/* v0.9: zone layout modes. The four modes map onto these flex/grid shapes.
+   width is set inline by the renderer (state-driven percent). Front-zones
+   typically live inside a row .label-interior; back-zones inside a column. */
 .label-zone {
   display: flex;
   flex-direction: column;
@@ -104,7 +107,41 @@
   justify-content: center;
   gap: 5px;
 }
-.label-zone.center { gap: 2.5px; overflow: visible; }
+.label-zone--stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.label-zone--row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px;
+}
+.label-zone--columns-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: start;
+  padding: 0 4px;
+}
+.label-zone--columns-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  align-items: start;
+  padding: 0 4px;
+}
+.label-zone--columns-2 .back-section-body,
+.label-zone--columns-3 .back-section-body {
+  font-size: 5.5px;
+  letter-spacing: -0.05px;
+}
+.label-zone--row > * { flex: 1; min-width: 0; }
 .label-interior--back .label-zone { gap: 1px; width: 100%; }
 
 /* --- Front text styles (defaults: original italic IM Fell at v0.4 sizes) --- */
@@ -225,22 +262,9 @@
   margin-top: 1px;
   padding: 0 4px;
 }
-.back-bottom-row {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  width: 100%;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-.back-half { flex: 1; }
-.back-third { flex: 1; min-width: 0; }
-.back-bottom-row--split { gap: 6px; }
-.back-bottom-row--split .back-section-body {
-  font-size: 5.5px;
-  letter-spacing: -0.05px;
-}
+/* v0.9: .back-bottom-row composite removed. Multi-column back layout is now
+   produced by placing items into a .label-zone--columns-2 / --columns-3 zone
+   in the Layout Designer. CSS for those modes lives near .label-zone above. */
 
 /* --- Smaller-size overrides: switch body text to Cinzel non-italic for
        legibility when the physical label drops below the design baseline. --- */

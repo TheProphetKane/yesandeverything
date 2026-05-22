@@ -1,8 +1,18 @@
 // render.js - schema-driven label renderer with front, optional back, a
-// separate print-stage tree, and v0.4 per-side field placement.
+// separate print-stage tree, and v0.9 state-driven layout.
 //
-// Preview cards now live inside a .label-frame sized to post-scale dimensions
-// so flex stacking gives correct layout space (avoids back-over-front overlap).
+// v0.9 architecture: zones are owned by state.layout (per-side), not by
+// template descriptors. Templates only provide initial seeds. Each item is a
+// primitive renderer; composites (e.g. the old back-bottom-row) are gone.
+// Items not placed in any zone live in state.layout.hidden and render nowhere.
+//
+// Zone layoutMode controls inner arrangement:
+//   stack       - vertical column (default for back)
+//   row         - horizontal row,    items share width evenly
+//   columns-2   - 2-column grid
+//   columns-3   - 3-column grid
+//
+// Zone width (front zones only) is one of 25/33/50/66/75/100; ignored on back.
 
 import { autofitText } from './util/autofit.js';
 import { resolveSize } from '../data/label-templates.js';
@@ -78,25 +88,32 @@ function borderSvg(color, theme, designSize) {
   </svg>`;
 }
 
-// v0.7.1: Celtic symbols render in solid black (was accent-tinted, looked anemic
-// at small sizes). Ingredient art switched from inline SVG to PNG sourced into
-// data/ingredients/<slug>.png. Filename slug = herb name lowercased, apostrophes
-// stripped, spaces hyphenated. Missing PNG renders nothing (no error, no broken
-// image icon).
 function ingredientSlug(name) {
   return String(name ?? '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
 }
 
-const ITEM_RENDERERS = {
-  symbol:        (s, ctx) => {
+// Section card factory for back-style labeled text blocks.
+function sectionCard(title, body, titleColor, bodyColor) {
+  return `<div class="back-section">
+    <div class="back-section-title" style="color:${titleColor}">${esc(title)}</div>
+    <div class="back-section-body" style="color:${bodyColor}">${esc(body)}</div>
+  </div>`;
+}
+
+// Each ITEM_RENDERERS entry is a primitive item that can be placed in any zone
+// on any side. Returns an HTML string or '' to render nothing.
+//
+// v0.9: 'back-bottom-row' composite removed. 'notes', 'compounds', 'cautions',
+// 'pairings' now exist as independent primitives. 'historic' renames
+// 'back-historic-section' (alias kept for migration).
+export const ITEM_RENDERERS = {
+  // --- Front primitives (compact styling) ---
+  symbol: (s, ctx) => {
     if (!s.symbol || s.symbol === 'none') return '';
-    // v0.8.5: resolve through SYMBOL_ALIASES so legacy herb symbol ids
-    // (triquetra, celtic-cross, etc.) map onto the actual variant files
-    // (celtic-knot-solid.png, celtic-cross-solid.png, etc.).
     const resolved = ctx.symbolAliases?.[s.symbol] ?? s.symbol;
     return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${resolved}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
   },
-  botanical:     (s, ctx) => {
+  botanical: (s, ctx) => {
     const slug = ingredientSlug(s.herbName);
     const catSlug = ctx.categoryDefaultSlug?.(s.botanical) ?? 'basil';
     const fallback = `data/ingredients/${catSlug}.png`;
@@ -113,65 +130,58 @@ const ITEM_RENDERERS = {
   'rune-2':      (s)      => runeItem(s.runes[1], s.accent),
   'rune-3':      (s)      => runeItem(s.runes[2], s.accent),
 
-  'back-name':            (s)      => `<div class="back-name" style="color:${s.accent}">${esc(s.herbName)}</div>`,
-  'back-latin':           (s, ctx) => `<div class="back-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
-  'back-divider':         (s)      => backDividerSvg(s.accent),
-  'back-desc-full':       (s, ctx) => `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`,
-  'back-historic-section': (s, ctx) => `
-    <div class="back-section">
-      <div class="back-section-title" style="color:${s.accent}">Traditional Uses</div>
-      <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.historicUses)}</div>
-    </div>`,
-  'back-bottom-row':      (s, ctx) => s.notesSplit
-    ? `
-    <div class="back-bottom-row back-bottom-row--split">
-      <div class="back-section back-third">
-        <div class="back-section-title" style="color:${s.accent}">Compounds</div>
-        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.compounds)}</div>
-      </div>
-      <div class="back-section back-third">
-        <div class="back-section-title" style="color:${s.accent}">Cautions</div>
-        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.cautions)}</div>
-      </div>
-      <div class="back-section back-third">
-        <div class="back-section-title" style="color:${s.accent}">Pairings</div>
-        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.pairings)}</div>
-      </div>
-    </div>`
-    : `
-    <div class="back-bottom-row">
-      <div class="back-section back-half">
-        <div class="back-section-title" style="color:${s.accent}">Notes</div>
-        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc([s.compounds, s.cautions].filter(Boolean).join(' '))}</div>
-      </div>
-      <div class="back-section back-half">
-        <div class="back-section-title" style="color:${s.accent}">Pairings</div>
-        <div class="back-section-body" style="color:${ctx.theme.descColor}">${esc(s.pairings)}</div>
-      </div>
-    </div>`,
+  // --- Back primitives (full-card styling with title + body) ---
+  'back-name':     (s)      => `<div class="back-name" style="color:${s.accent}">${esc(s.herbName)}</div>`,
+  'back-latin':    (s, ctx) => `<div class="back-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
+  'back-divider':  (s)      => backDividerSvg(s.accent),
+  'back-desc-full':(s, ctx) => `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`,
+  historic:        (s, ctx) => sectionCard('Traditional Uses', s.historicUses, s.accent, ctx.theme.descColor),
+  notes:           (s, ctx) => sectionCard('Notes', [s.compounds, s.cautions].filter(Boolean).join(' '), s.accent, ctx.theme.descColor),
+  compounds:       (s, ctx) => sectionCard('Compounds', s.compounds, s.accent, ctx.theme.descColor),
+  cautions:        (s, ctx) => sectionCard('Cautions',  s.cautions,  s.accent, ctx.theme.descColor),
+  pairings:        (s, ctx) => sectionCard('Pairings',  s.pairings,  s.accent, ctx.theme.descColor),
 };
 
-function placementKeyFor(itemKey) {
-  if (itemKey === 'shop')          return 'shop';
-  if (itemKey === 'description')   return 'description';
-  if (itemKey === 'back-desc-full') return 'descFull';
-  if (itemKey === 'props')         return 'props';
-  if (itemKey === 'symbol')        return 'symbol';
-  if (itemKey === 'botanical')     return 'botanical';
-  if (itemKey === 'rune-1')        return 'rune1';
-  if (itemKey === 'rune-2')        return 'rune2';
-  if (itemKey === 'rune-3')        return 'rune3';
-  if (itemKey === 'back-historic-section') return 'historicUses';
-  return null;
+// Migration aliases: old item keys still in saved state map to new ones at
+// render time. Keeps v0.8 saved layouts (if any) working through one release.
+const ITEM_ALIAS = {
+  'back-historic-section': 'historic',
+  // 'back-bottom-row' is intentionally not aliased; it expanded into multiple
+  // items, so the migration in main.js handles the split explicitly.
+};
+
+function resolveItemKey(key) {
+  return ITEM_ALIAS[key] ?? key;
 }
 
-function shouldRender(itemKey, side, placement) {
-  const key = placementKeyFor(itemKey);
-  if (!key) return true;
-  const p = placement[key];
-  if (!p) return true;
-  return !!p[side];
-}
+// Display labels for the Layout Designer picker. Keep in sync with
+// ITEM_RENDERERS keys. Exported so editor.js can render the chip labels and
+// the "Add Item" picker without re-listing them.
+export const ITEM_LABELS = {
+  symbol:           'Celtic Symbol',
+  botanical:        'Botanical Icon',
+  shop:             'Shop Name',
+  'divider-top':    'Wavy Divider (top)',
+  'divider-bot':    'Wavy Divider (bottom)',
+  'herb-name':      'Herb Name',
+  latin:            'Latin Name',
+  props:            'Properties',
+  description:      'Short Description',
+  'rune-1':         'Rune 1',
+  'rune-2':         'Rune 2',
+  'rune-3':         'Rune 3',
+  'back-name':      'Back: Herb Name',
+  'back-latin':     'Back: Latin Name',
+  'back-divider':   'Back: Thin Divider',
+  'back-desc-full': 'Full Description',
+  historic:         'Traditional Uses',
+  notes:            'Notes (Compounds + Cautions)',
+  compounds:        'Active Compounds',
+  cautions:         'Cautions',
+  pairings:         'Good Pairings',
+};
+
+export const ALL_ITEM_KEYS = Object.keys(ITEM_RENDERERS);
 
 let fontsReady = false;
 if (document.fonts && document.fonts.ready) {
@@ -196,15 +206,19 @@ function pickPrintLayout({ wIn, hIn }, cardCount, paper = { wIn: 8.5, hIn: 11 },
   return 'layout-separate';
 }
 
-function zonesHtml(state, fullCtx, zonesArray, side) {
-  return zonesArray.map(zone => {
-    const items = zone.items
-      .filter(itemKey => shouldRender(itemKey, side, state.placement))
-      .map(itemKey => ITEM_RENDERERS[itemKey]?.(state, fullCtx) ?? '')
-      .join('');
-    const isCenter = zone.id === 'center';
-    return `<div class="label-zone${isCenter ? ' center' : ''}" style="width:${zone.width ?? '100%'}">${items}</div>`;
+function zoneHtml(zone, state, fullCtx) {
+  const items = (zone.items || []).map(key => {
+    const resolved = resolveItemKey(key);
+    const fn = ITEM_RENDERERS[resolved];
+    return fn ? fn(state, fullCtx) : '';
   }).join('');
+  const mode = zone.layoutMode || 'stack';
+  const width = zone.width ? `${zone.width}%` : '100%';
+  return `<div class="label-zone label-zone--${mode}" data-zone-id="${esc(zone.id)}" style="width:${width}">${items}</div>`;
+}
+
+function zonesHtml(zones, state, fullCtx) {
+  return (zones || []).map(z => zoneHtml(z, state, fullCtx)).join('');
 }
 
 function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme, previewScale }) {
@@ -227,7 +241,7 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
           ${parchmentBg(state, theme, fullCtx)}
           ${borderSvg(state.accent, theme, designSize)}
           <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
-            ${zonesHtml(state, fullCtx, zones, side)}
+            ${zonesHtml(zones, state, fullCtx)}
           </div>
         </div>
       </div>
@@ -251,11 +265,21 @@ function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme })
         ${parchmentBg(state, theme, fullCtx)}
         ${borderSvg(state.accent, theme, designSize)}
         <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
-          ${zonesHtml(state, fullCtx, zones, side)}
+          ${zonesHtml(zones, state, fullCtx)}
         </div>
       </div>
     </div>
   `;
+}
+
+function zonesForSide(state, tmpl, side) {
+  // state.layout is authoritative; template zones only matter as the initial
+  // seed (main.js handles that). If state.layout somehow is missing, fall back
+  // to template defaults so the page still paints.
+  if (state.layout && Array.isArray(state.layout[side])) return state.layout[side];
+  if (side === 'front') return tmpl.zones ?? [];
+  if (side === 'back')  return tmpl.backZones ?? [];
+  return [];
 }
 
 export function render(state, mounts, ctx) {
@@ -271,28 +295,29 @@ export function render(state, mounts, ctx) {
   const phys = resolveSize(tmpl, state.sizeId);
   const previewScale = previewScaleFor(phys.wIn);
 
-  const showBack = !!state.backEnabled && Array.isArray(tmpl.backZones);
+  const frontZones = zonesForSide(state, tmpl, 'front');
+  const backZones  = zonesForSide(state, tmpl, 'back');
+
+  const showBack = !!state.backEnabled && backZones.length > 0;
   const cardCount = showBack ? 2 : 1;
 
-  // Preview tree: frames stack vertically with .label-wrapper gap.
   const previewCards = [
     previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-                      zones: tmpl.zones, theme, previewScale }),
+                      zones: frontZones, theme, previewScale }),
     ...(showBack ? [previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-                      side: 'back', zones: tmpl.backZones, theme, previewScale })] : []),
+                      side: 'back', zones: backZones, theme, previewScale })] : []),
   ].join('');
 
   mounts.preview.style.width = `calc(${phys.wIn}in * ${previewScale})`;
   mounts.preview.style.height = 'auto';
   mounts.preview.innerHTML = previewCards;
 
-  // Print-stage tree: physical-only, no preview transform.
   if (mounts.printStage) {
     const printCards = [
       printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-                      zones: tmpl.zones, theme }),
+                      zones: frontZones, theme }),
       ...(showBack ? [printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-                      side: 'back', zones: tmpl.backZones, theme })] : []),
+                      side: 'back', zones: backZones, theme })] : []),
     ].join('');
     mounts.printStage.innerHTML = printCards;
     mounts.printStage.className = pickPrintLayout(phys, cardCount);

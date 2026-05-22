@@ -1,7 +1,19 @@
-// state.js - tiny observable store.
+// state.js - tiny observable store + layout schema.
 //
 // Single source of truth for the editor. The render layer reads from get();
 // the editor writes via set(); both subscribe for updates.
+//
+// v0.9: layout authority moved from template descriptors into state.layout.
+//   { front: [zone, ...], back: [zone, ...], hidden: ['item-key', ...] }
+// Each zone:
+//   { id, layoutMode: 'stack'|'row'|'columns-2'|'columns-3', width: 25..100,
+//     items: ['item-key', ...] }
+// The renderer iterates state.layout[side] zones in order. Items in `hidden`
+// render nowhere; that's the new "hide this field" mechanism.
+//
+// The previous `state.placement` (per-item front/back checkbox grid) and the
+// `state.notesSplit` flag are retired. main.js migrates old saved state forward
+// by reading those plus the template's seed zones to build state.layout.
 
 export function createState(initial) {
   let state = structuredClone(initial);
@@ -38,25 +50,58 @@ export function createState(initial) {
   return { get, set, patchNested, subscribe };
 }
 
-// Default placement: which side(s) each placeable item appears on.
-// front+back booleans. Both false = hidden. Both true = on both sides.
-// Adding a new placeable item: add an entry here AND a row in editor.js
-// PLACEMENT_ROWS so the user gets a checkbox.
-export const DEFAULT_PLACEMENT = {
-  shop:         { front: true,  back: false },
-  description:  { front: true,  back: false },
-  descFull:     { front: false, back: true  },
-  props:        { front: true,  back: false },
-  symbol:       { front: true,  back: false },
-  botanical:    { front: true,  back: false },
-  rune1:        { front: true,  back: false },
-  rune2:        { front: true,  back: false },
-  rune3:        { front: true,  back: false },
-  historicUses: { front: false, back: true  },
-  compounds:    { front: false, back: true  },
-  cautions:     { front: false, back: true  },
-  pairings:     { front: false, back: true  },
-};
+// --- Layout shape helpers ---------------------------------------------------
+
+export const ZONE_LAYOUT_MODES = ['stack', 'row', 'columns-2', 'columns-3'];
+export const ZONE_WIDTHS       = [25, 33, 50, 66, 75, 100];
+
+let zoneIdCounter = 0;
+export function makeZoneId(prefix = 'zone') {
+  zoneIdCounter += 1;
+  return `${prefix}-${Date.now().toString(36)}-${zoneIdCounter}`;
+}
+
+export function makeZone({ id, layoutMode = 'stack', width = 100, items = [] } = {}) {
+  return {
+    id: id ?? makeZoneId(),
+    layoutMode,
+    width,
+    items: [...items],
+  };
+}
+
+// Default factory: matches the v0.8 baseline so first-time users see the
+// canonical front-left/center/right + back-stack layout. Returns a full
+// state.layout object.
+export function defaultLayout() {
+  return {
+    front: [
+      makeZone({ id: 'front-left',   layoutMode: 'stack', width: 25, items: ['symbol', 'botanical'] }),
+      makeZone({ id: 'front-center', layoutMode: 'stack', width: 50, items: [
+        'shop',
+        'divider-top',
+        'herb-name',
+        'latin',
+        'props',
+        'divider-bot',
+        'description',
+      ]}),
+      makeZone({ id: 'front-right',  layoutMode: 'stack', width: 25, items: ['rune-1', 'rune-2', 'rune-3'] }),
+    ],
+    back: [
+      makeZone({ id: 'back-header',  layoutMode: 'stack', width: 100, items: ['back-name', 'back-latin'] }),
+      makeZone({ id: 'back-div-1',   layoutMode: 'stack', width: 100, items: ['back-divider'] }),
+      makeZone({ id: 'back-desc',    layoutMode: 'stack', width: 100, items: ['back-desc-full'] }),
+      makeZone({ id: 'back-div-2',   layoutMode: 'stack', width: 100, items: ['back-divider'] }),
+      makeZone({ id: 'back-historic',layoutMode: 'stack', width: 100, items: ['historic'] }),
+      makeZone({ id: 'back-div-3',   layoutMode: 'stack', width: 100, items: ['back-divider'] }),
+      makeZone({ id: 'back-bottom',  layoutMode: 'row',   width: 100, items: ['notes', 'pairings'] }),
+    ],
+    hidden: ['compounds', 'cautions'],
+  };
+}
+
+// --- Default state ---------------------------------------------------------
 
 export function defaultState() {
   return {
@@ -77,7 +122,7 @@ export function defaultState() {
       { c: 'ᛜ', m: 'Inner Peace' },
     ],
 
-    // Back-label fields (v0.3, expanded v0.6).
+    // Back-label fields.
     backEnabled: false,
     descFull: "Beloved of the sun and the hearth, chamomile heals the body and stills the restless mind. Ancient Celts honored it as a solar herb, drunk at dawn to greet the light. Sacred to Brigid; gathered on Imbolc for the year's hearth-fires.",
     historicUses: 'Druidic dawn-rite tea. Strewn on Beltane fires. Pressed into salves for sun-burned skin and into pillows for restless children.',
@@ -85,21 +130,10 @@ export function defaultState() {
     cautions: 'Ragweed allergy cross-reaction possible. Avoid therapeutic doses in pregnancy. May potentiate warfarin and CNS depressants.',
     pairings: 'Honey · Lavender · Lemon balm · Vanilla',
 
-    // Back-label display mode (v0.6). false = combined "Notes" cell (compounds
-    // + cautions joined) beside Pairings. true = three columns: Compounds |
-    // Cautions | Pairings.
-    notesSplit: false,
+    // v0.9: zone layout owned by state, not template.
+    layout: defaultLayout(),
 
-    // Field placement (v0.4). Per-item visibility per side.
-    placement: structuredClone(DEFAULT_PLACEMENT),
-
-    // Parchment background (v0.8.2). References a slot id in data/textures.js;
-    // missing-file img onerror reveals the SVG gradient as the ultimate fallback.
-    // Default = the lightest parchment after the luminance sort pass.
     parchmentTexture: 'parchment-01',
-
-    // Shop-name color (v0.8.2). Defaults to the theme's gold-bright. Editable
-    // via the color-picker chip next to the shop-name display.
     shopColor: '#E8C172',
   };
 }

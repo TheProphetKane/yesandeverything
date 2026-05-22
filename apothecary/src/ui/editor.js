@@ -1,31 +1,28 @@
 // editor.js - left panel: form fields, swatches, size picker, back-label
-// toggle and content, field placement table, auto-fill, print, reset, herb
+// toggle and content, layout designer, auto-fill, print, reset, herb
 // autocomplete dropdown.
+//
+// v0.9: the placement-checkbox grid is gone. In its place: the Layout Designer
+// (mountLayoutDesigner) - two columns (Front | Back) of zone cards, each with
+// a layout-mode dropdown, a width control (front only), and draggable item
+// chips. A "Hidden Items" rail at the bottom holds anything not currently
+// placed. Drag-and-drop moves items between zones and between sides.
 
 import { printLabel } from '../util/print.js';
+import { ITEM_LABELS, ALL_ITEM_KEYS } from '../render.js';
+import { makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS } from '../state.js';
 
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
   '#4A3F6B', '#C97BA8', '#C4580A', '#B8860B', '#6B3A2A',
 ];
 
-// Rows in the placement table. Each: { key (matches state.placement), label }.
-// Order = display order in the editor.
-const PLACEMENT_ROWS = [
-  { key: 'shop',         label: 'Shop Name' },
-  { key: 'description',  label: 'Short Description' },
-  { key: 'props',        label: 'Properties' },
-  { key: 'symbol',       label: 'Celtic Symbol' },
-  { key: 'botanical',    label: 'Botanical Icon' },
-  { key: 'rune1',        label: 'Rune 1' },
-  { key: 'rune2',        label: 'Rune 2' },
-  { key: 'rune3',        label: 'Rune 3' },
-  { key: 'descFull',     label: 'Full Description' },
-  { key: 'historicUses', label: 'Traditional Uses' },
-  { key: 'compounds',    label: 'Active Compounds' },
-  { key: 'cautions',     label: 'Cautions' },
-  { key: 'pairings',     label: 'Pairings' },
-];
+const LAYOUT_MODE_LABELS = {
+  'stack':       'Stack (vertical)',
+  'row':         'Row (horizontal)',
+  'columns-2':   '2 Columns',
+  'columns-3':   '3 Columns',
+};
 
 export function mountEditor(root, ctx) {
   const { state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, parchmentTextures } = ctx;
@@ -117,7 +114,7 @@ export function mountEditor(root, ctx) {
           <input id="fBackEnabled" type="checkbox" />
           <span>Print Back Label</span>
         </label>
-        <div class="desc-hint">Optional second label with full description, historic uses, notes, and pairings. Prints alongside the front on a single 8.5x11 sheet.</div>
+        <div class="desc-hint">Optional second label. Prints alongside the front on a single 8.5x11 sheet.</div>
       </div>
 
       <div id="back-fields" class="back-fields" hidden>
@@ -146,34 +143,11 @@ export function mountEditor(root, ctx) {
           <input id="fPairings" class="field-input" type="text" maxlength="${tmpl.pairingsMaxChars}" placeholder="Honey, Lavender, Lemon balm, Vanilla" />
           <div id="pairingsCounter" class="desc-counter">0 / ${tmpl.pairingsMaxChars}</div>
         </div>
-
-        <div class="field back-notes-mode-row">
-          <label class="checkbox-label">
-            <input id="fNotesSplit" type="checkbox" />
-            <span>Split Compounds &amp; Cautions on back label</span>
-          </label>
-          <div class="desc-hint">Off (default): one combined "Notes" section beside Pairings. On: three columns — Compounds, Cautions, Pairings.</div>
-        </div>
       </div>
 
       <div class="gold-divider"></div>
 
-      <div class="placement-panel">
-        <div class="placement-title">
-          Field Placement
-          <span class="placement-title-hint">where each field appears</span>
-        </div>
-        <div class="placement-table">
-          <div class="placement-head">Field</div>
-          <div class="placement-head col">Front</div>
-          <div class="placement-head col">Back</div>
-          ${PLACEMENT_ROWS.map(row => `
-            <div class="placement-row-label">${row.label}</div>
-            <div class="placement-row-cell"><input type="checkbox" data-placement="${row.key}" data-side="front" /></div>
-            <div class="placement-row-cell"><input type="checkbox" data-placement="${row.key}" data-side="back" /></div>
-          `).join('')}
-        </div>
-      </div>
+      <div id="layout-designer" class="layout-designer" data-layout-designer></div>
 
       <button id="btn-print" class="btn-secondary">Print Label</button>
       <button id="btn-reset" class="btn-ghost" type="button">Reset to Defaults</button>
@@ -198,7 +172,6 @@ export function mountEditor(root, ctx) {
   const runeMean = [$('r1Mean'), $('r2Mean'), $('r3Mean')];
 
   const backToggle    = $('fBackEnabled');
-  const notesSplitToggle = $('fNotesSplit');
   const backFieldsBox = $('back-fields');
   const descFullInput = $('fDescFull');
   const historicInput = $('fHistoric');
@@ -211,21 +184,14 @@ export function mountEditor(root, ctx) {
   const cautionsCounter  = $('cautionsCounter');
   const pairingsCounter  = $('pairingsCounter');
 
-  const placementCheckboxes = root.querySelectorAll('[data-placement]');
+  const designerMount = root.querySelector('[data-layout-designer]');
 
-  // --- Herb autocomplete (custom dropdown, v0.8.0) ---
-  // Replaces native <datalist> with styled, real-time-filtered dropdown.
-  // Keyboard nav (ArrowUp/Down/Enter/Escape) + click-to-select + hover
-  // highlight. Filters on every keystroke - no debounce, the index is small
-  // enough that O(n) per keystroke is fine.
+  // --- Herb autocomplete (unchanged from v0.8) ---
   const autocompleteRoot = root.querySelector('[data-herb-autocomplete]');
   const suggestList      = root.querySelector('[data-herb-suggestions]');
   const titleCase = (s) => s.replace(/(^|\s)\w/g, c => c.toUpperCase());
   const escAttr   = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  // Build searchable index from herbDB + aliases. Each entry: display label
-  // (title-cased), canonical herb key for lookup, Latin name for secondary
-  // display and matching, alias flag for the visual tag.
   const searchIndex = [];
   for (const k of Object.keys(herbDB)) {
     searchIndex.push({ display: titleCase(k), canonical: k, latin: herbDB[k].latin ?? '', alias: false });
@@ -257,7 +223,7 @@ export function mountEditor(root, ctx) {
       else if (d.includes(ql))   score = 30;
       else if (l.includes(ql))   score = 20;
       if (score === 0) continue;
-      if (item.alias) score -= 1; // canonical beats alias on tie
+      if (item.alias) score -= 1;
       scored.push({ item, score });
     }
     scored.sort((a, b) => b.score - a.score || a.item.display.localeCompare(b.item.display));
@@ -298,9 +264,6 @@ export function mountEditor(root, ctx) {
   }
 
   // --- Selects ---
-  // v0.8.2: SYMBOLS export retired (zero-SVG lock). Symbol ids now come from
-  // symbolLabels keys; the picker is a text-only dropdown.
-  // v0.8.2: prepend a "None" option so users can render labels without a symbol.
   {
     const noneOpt = document.createElement('option');
     noneOpt.value = 'none';
@@ -319,9 +282,6 @@ export function mountEditor(root, ctx) {
     opt.textContent = sz.label;
     sizeSel.appendChild(opt);
   }
-  // Parchment texture picker (v0.8.1: visual thumbnail grid).
-  // Each tile is a button with the texture as background-image. The gradient
-  // option shows a CSS gradient preview. Click to select.
   for (const t of (parchmentTextures ?? [])) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -368,6 +328,9 @@ export function mountEditor(root, ctx) {
   colorPicker.setAttribute('aria-label', 'Custom accent color');
   swatchBox.appendChild(colorPicker);
 
+  // --- Layout Designer mount ---
+  mountLayoutDesigner(designerMount, state);
+
   function syncFromState() {
     const s = state.get();
     herbInput.value  = s.herbName;
@@ -387,19 +350,12 @@ export function mountEditor(root, ctx) {
       runeMean[i].value = s.runes[i].m;
     }
     backToggle.checked = !!s.backEnabled;
-    notesSplitToggle.checked = !!s.notesSplit;
     backFieldsBox.hidden = !s.backEnabled;
     descFullInput.value  = s.descFull ?? '';
     historicInput.value  = s.historicUses ?? '';
     compoundsInput.value = s.compounds ?? '';
     cautionsInput.value  = s.cautions  ?? '';
     pairingsInput.value  = s.pairings ?? '';
-    // Placement checkboxes
-    placementCheckboxes.forEach(cb => {
-      const key = cb.dataset.placement;
-      const side = cb.dataset.side;
-      cb.checked = !!(s.placement?.[key]?.[side]);
-    });
     updateAllCounters();
     updateSwatchSelection();
   }
@@ -509,9 +465,6 @@ export function mountEditor(root, ctx) {
     state.set({ backEnabled: backToggle.checked });
     backFieldsBox.hidden = !backToggle.checked;
   });
-  notesSplitToggle.addEventListener('change', () => {
-    state.set({ notesSplit: notesSplitToggle.checked });
-  });
   descFullInput.addEventListener('input', () => {
     state.set({ descFull: descFullInput.value });
     counterUpdate(descFullInput, descFullCounter, tmpl.descFullMaxChars);
@@ -531,17 +484,6 @@ export function mountEditor(root, ctx) {
   pairingsInput.addEventListener('input', () => {
     state.set({ pairings: pairingsInput.value });
     counterUpdate(pairingsInput, pairingsCounter, tmpl.pairingsMaxChars);
-  });
-
-  // Placement checkboxes — update state.placement[key][side]
-  placementCheckboxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      const key  = cb.dataset.placement;
-      const side = cb.dataset.side;
-      const cur  = state.get().placement ?? {};
-      const next = { ...cur, [key]: { ...(cur[key] ?? {}), [side]: cb.checked } };
-      state.set({ placement: next });
-    });
   });
 
   autofillBtn.addEventListener('click', () => {
@@ -580,4 +522,374 @@ export function mountEditor(root, ctx) {
 
   syncFromState();
   state.subscribe(syncFromState);
+}
+
+// ============================================================
+// Layout Designer
+// ============================================================
+// Two columns (Front | Back) of zone cards plus a Hidden rail. Each zone:
+//   - layout-mode dropdown (stack/row/columns-2/columns-3)
+//   - width control (front zones only)
+//   - draggable item chips
+//   - "+ Add Item" button -> picker of items not currently placed in this zone
+//   - "× Remove Zone" (only if it has no required items left)
+// Each item chip:
+//   - drag handle (whole chip is draggable)
+//   - label
+//   - × button to send the item to Hidden
+//
+// Drag-and-drop uses HTML5 native. Drop targets: zones (anywhere on zone),
+// the Hidden rail, and between-chip insertion points within a zone.
+
+function mountLayoutDesigner(root, state) {
+  // Drag state lives at module scope - HTML5 dataTransfer is unreliable across
+  // some browsers for non-text data. We track it ourselves and use dataTransfer
+  // only as a signal that a drag is in progress.
+  let dragPayload = null; // { item, fromZoneId } - fromZoneId may be 'hidden'
+
+  function paint() {
+    const s = state.get();
+    const layout = s.layout;
+    if (!layout) {
+      root.innerHTML = '<div class="layout-empty">No layout configured.</div>';
+      return;
+    }
+
+    root.innerHTML = `
+      <div class="layout-title">
+        Layout Designer
+        <span class="layout-title-hint">drag items between zones. add or remove zones per side.</span>
+      </div>
+      <div class="layout-columns">
+        <div class="layout-column" data-side="front">
+          <div class="layout-column-header">Front</div>
+          <div class="layout-zones" data-zones-for="front">
+            ${(layout.front || []).map(z => zoneCardHtml(z, 'front')).join('')}
+          </div>
+          <button type="button" class="layout-add-zone" data-add-zone="front">+ Add Zone</button>
+        </div>
+        <div class="layout-column" data-side="back">
+          <div class="layout-column-header">Back</div>
+          <div class="layout-zones" data-zones-for="back">
+            ${(layout.back || []).map(z => zoneCardHtml(z, 'back')).join('')}
+          </div>
+          <button type="button" class="layout-add-zone" data-add-zone="back">+ Add Zone</button>
+        </div>
+      </div>
+      <div class="layout-hidden" data-hidden-rail>
+        <div class="layout-hidden-label">Hidden Items <span class="layout-hidden-hint">drag here to remove from the label</span></div>
+        <div class="layout-hidden-chips" data-hidden-chips>
+          ${(layout.hidden || []).map(item => itemChipHtml(item, 'hidden')).join('') || '<div class="layout-hidden-empty">(everything is placed)</div>'}
+        </div>
+      </div>
+    `;
+
+    wireDragAndDrop();
+    wireControls();
+  }
+
+  function zoneCardHtml(zone, side) {
+    const widthControl = side === 'front'
+      ? `<select class="layout-zone-width" data-zone-width="${esc(zone.id)}" aria-label="Zone width">
+           ${ZONE_WIDTHS.map(w => `<option value="${w}" ${w === zone.width ? 'selected' : ''}>${w}%</option>`).join('')}
+         </select>`
+      : '';
+    const modeControl = `<select class="layout-zone-mode" data-zone-mode="${esc(zone.id)}" aria-label="Zone layout mode">
+        ${ZONE_LAYOUT_MODES.map(m => `<option value="${m}" ${m === (zone.layoutMode || 'stack') ? 'selected' : ''}>${LAYOUT_MODE_LABELS[m]}</option>`).join('')}
+      </select>`;
+    return `
+      <div class="layout-zone-card" data-zone-id="${esc(zone.id)}" data-zone-side="${side}">
+        <div class="layout-zone-head">
+          <div class="layout-zone-head-controls">
+            ${modeControl}
+            ${widthControl}
+          </div>
+          <button type="button" class="layout-zone-remove" data-remove-zone="${esc(zone.id)}" aria-label="Remove zone">×</button>
+        </div>
+        <div class="layout-zone-chips" data-zone-chips="${esc(zone.id)}">
+          ${(zone.items || []).map(item => itemChipHtml(item, zone.id)).join('')}
+        </div>
+        <button type="button" class="layout-add-item" data-add-item="${esc(zone.id)}">+ Add Item</button>
+      </div>
+    `;
+  }
+
+  function itemChipHtml(item, fromZoneId) {
+    const label = ITEM_LABELS[item] || item;
+    return `<div class="layout-chip" draggable="true" data-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" title="Drag to move">
+      <span class="layout-chip-handle" aria-hidden="true">⋮⋮</span>
+      <span class="layout-chip-label">${esc(label)}</span>
+      <button type="button" class="layout-chip-hide" data-hide-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" aria-label="Hide this item">×</button>
+    </div>`;
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function wireDragAndDrop() {
+    // Chip drag start.
+    root.querySelectorAll('.layout-chip').forEach(chip => {
+      chip.addEventListener('dragstart', (e) => {
+        dragPayload = { item: chip.dataset.item, fromZoneId: chip.dataset.fromZone };
+        chip.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', chip.dataset.item);
+      });
+      chip.addEventListener('dragend', () => {
+        chip.classList.remove('is-dragging');
+        root.querySelectorAll('.is-drop-target, .is-drop-before, .is-drop-after').forEach(el => {
+          el.classList.remove('is-drop-target', 'is-drop-before', 'is-drop-after');
+        });
+        dragPayload = null;
+      });
+    });
+
+    // Drop into a zone's chips container.
+    root.querySelectorAll('[data-zone-chips]').forEach(container => {
+      container.addEventListener('dragover', (e) => {
+        if (!dragPayload) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const overChip = e.target.closest('.layout-chip');
+        // Clear any prior drop hints inside this container.
+        container.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => {
+          el.classList.remove('is-drop-before', 'is-drop-after');
+        });
+        container.classList.add('is-drop-target');
+        if (overChip && overChip.dataset.item !== dragPayload.item) {
+          const rect = overChip.getBoundingClientRect();
+          const after = (e.clientY - rect.top) > rect.height / 2;
+          overChip.classList.add(after ? 'is-drop-after' : 'is-drop-before');
+        }
+      });
+      container.addEventListener('dragleave', (e) => {
+        // Only clear when we actually exit the container (not just moving onto a child).
+        if (!container.contains(e.relatedTarget)) {
+          container.classList.remove('is-drop-target');
+          container.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => {
+            el.classList.remove('is-drop-before', 'is-drop-after');
+          });
+        }
+      });
+      container.addEventListener('drop', (e) => {
+        if (!dragPayload) return;
+        e.preventDefault();
+        const toZoneId = container.dataset.zoneChips;
+        const overChip = e.target.closest('.layout-chip');
+        let insertBefore = null;
+        if (overChip && overChip.dataset.item !== dragPayload.item) {
+          const rect = overChip.getBoundingClientRect();
+          const after = (e.clientY - rect.top) > rect.height / 2;
+          insertBefore = after ? overChip.dataset.item + ':after' : overChip.dataset.item;
+        }
+        moveItem(dragPayload.item, dragPayload.fromZoneId, toZoneId, insertBefore);
+      });
+    });
+
+    // Drop into Hidden rail.
+    const hiddenChips = root.querySelector('[data-hidden-chips]');
+    if (hiddenChips) {
+      hiddenChips.addEventListener('dragover', (e) => {
+        if (!dragPayload) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        hiddenChips.classList.add('is-drop-target');
+      });
+      hiddenChips.addEventListener('dragleave', (e) => {
+        if (!hiddenChips.contains(e.relatedTarget)) {
+          hiddenChips.classList.remove('is-drop-target');
+        }
+      });
+      hiddenChips.addEventListener('drop', (e) => {
+        if (!dragPayload) return;
+        e.preventDefault();
+        moveItem(dragPayload.item, dragPayload.fromZoneId, 'hidden', null);
+      });
+    }
+  }
+
+  function wireControls() {
+    // Zone mode change.
+    root.querySelectorAll('[data-zone-mode]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const zoneId = sel.dataset.zoneMode;
+        updateZone(zoneId, z => ({ ...z, layoutMode: sel.value }));
+      });
+    });
+    // Zone width change.
+    root.querySelectorAll('[data-zone-width]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const zoneId = sel.dataset.zoneWidth;
+        updateZone(zoneId, z => ({ ...z, width: parseInt(sel.value, 10) }));
+      });
+    });
+    // Zone remove.
+    root.querySelectorAll('[data-remove-zone]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const zoneId = btn.dataset.removeZone;
+        removeZone(zoneId);
+      });
+    });
+    // Item hide (X on chip).
+    root.querySelectorAll('[data-hide-item]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moveItem(btn.dataset.hideItem, btn.dataset.fromZone, 'hidden', null);
+      });
+    });
+    // Add zone.
+    root.querySelectorAll('[data-add-zone]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const side = btn.dataset.addZone;
+        addZone(side);
+      });
+    });
+    // Add item -> open picker for items currently in hidden or simply unplaced
+    // on the target side.
+    root.querySelectorAll('[data-add-item]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const zoneId = btn.dataset.addItem;
+        openItemPicker(zoneId, btn);
+      });
+    });
+  }
+
+  function findZone(layout, zoneId) {
+    for (const side of ['front', 'back']) {
+      const idx = (layout[side] || []).findIndex(z => z.id === zoneId);
+      if (idx >= 0) return { side, idx, zone: layout[side][idx] };
+    }
+    return null;
+  }
+
+  function updateZone(zoneId, fn) {
+    const layout = structuredClone(state.get().layout);
+    const found = findZone(layout, zoneId);
+    if (!found) return;
+    layout[found.side][found.idx] = fn(found.zone);
+    state.set({ layout });
+  }
+
+  function removeZone(zoneId) {
+    const layout = structuredClone(state.get().layout);
+    const found = findZone(layout, zoneId);
+    if (!found) return;
+    // Move any items in the doomed zone to hidden, then drop the zone.
+    const items = found.zone.items || [];
+    layout[found.side].splice(found.idx, 1);
+    layout.hidden = [...(layout.hidden || []), ...items.filter(i => !(layout.hidden || []).includes(i))];
+    state.set({ layout });
+  }
+
+  function addZone(side) {
+    const layout = structuredClone(state.get().layout);
+    const newZone = makeZone({ layoutMode: 'stack', width: side === 'front' ? 50 : 100, items: [] });
+    layout[side] = [...(layout[side] || []), newZone];
+    state.set({ layout });
+  }
+
+  function moveItem(item, fromZoneId, toZoneId, insertHint) {
+    const layout = structuredClone(state.get().layout);
+
+    // Remove from source.
+    if (fromZoneId === 'hidden') {
+      layout.hidden = (layout.hidden || []).filter(i => i !== item);
+    } else {
+      const src = findZone(layout, fromZoneId);
+      if (src) {
+        src.zone.items = src.zone.items.filter(i => i !== item);
+      }
+    }
+
+    // Insert into destination.
+    if (toZoneId === 'hidden') {
+      if (!(layout.hidden || []).includes(item)) {
+        layout.hidden = [...(layout.hidden || []), item];
+      }
+    } else {
+      const dst = findZone(layout, toZoneId);
+      if (!dst) return;
+      // Avoid duplicates within a zone (each item one place per zone).
+      dst.zone.items = dst.zone.items.filter(i => i !== item);
+      if (insertHint) {
+        const after = insertHint.endsWith(':after');
+        const target = after ? insertHint.slice(0, -':after'.length) : insertHint;
+        const idx = dst.zone.items.indexOf(target);
+        if (idx >= 0) {
+          dst.zone.items.splice(after ? idx + 1 : idx, 0, item);
+        } else {
+          dst.zone.items.push(item);
+        }
+      } else {
+        dst.zone.items.push(item);
+      }
+    }
+
+    state.set({ layout });
+  }
+
+  function openItemPicker(zoneId, anchorBtn) {
+    // Find items that are NOT in this zone. We allow re-placing an item that
+    // lives in a different zone (moving it). Hidden items are first-class
+    // candidates here.
+    const layout = state.get().layout;
+    const zoneInfo = findZone(layout, zoneId);
+    if (!zoneInfo) return;
+    const inThisZone = new Set(zoneInfo.zone.items);
+
+    // Close any open picker first.
+    root.querySelectorAll('.layout-item-picker').forEach(p => p.remove());
+
+    const picker = document.createElement('div');
+    picker.className = 'layout-item-picker';
+    picker.innerHTML = `
+      <div class="layout-item-picker-title">Add Item</div>
+      <div class="layout-item-picker-list">
+        ${ALL_ITEM_KEYS.filter(k => !inThisZone.has(k)).map(k => {
+          const where = locateItem(layout, k);
+          const hint = where === 'hidden' ? '<span class="layout-pick-hint">(hidden)</span>'
+                     : where ? `<span class="layout-pick-hint">(from ${where})</span>`
+                     : '';
+          return `<button type="button" class="layout-pick" data-pick-item="${esc(k)}">${esc(ITEM_LABELS[k] || k)}${hint}</button>`;
+        }).join('')}
+      </div>
+    `;
+    anchorBtn.parentElement.appendChild(picker);
+
+    picker.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-pick-item]');
+      if (!btn) return;
+      const item = btn.dataset.pickItem;
+      const fromZone = locateItem(state.get().layout, item) || 'hidden';
+      moveItem(item, fromZone, zoneId, null);
+    });
+
+    // Close picker on outside click.
+    setTimeout(() => {
+      const onDocClick = (e) => {
+        if (!picker.contains(e.target) && e.target !== anchorBtn) {
+          picker.remove();
+          document.removeEventListener('click', onDocClick);
+        }
+      };
+      document.addEventListener('click', onDocClick);
+    }, 0);
+  }
+
+  function locateItem(layout, item) {
+    if ((layout.hidden || []).includes(item)) return 'hidden';
+    for (const side of ['front', 'back']) {
+      for (const z of (layout[side] || [])) {
+        if (z.items.includes(item)) return z.id;
+      }
+    }
+    return null;
+  }
+
+  // Initial paint + repaint on every state change. Naive re-render is fine -
+  // the designer is small and state changes here are user-driven, not
+  // continuous.
+  paint();
+  state.subscribe(paint);
 }
