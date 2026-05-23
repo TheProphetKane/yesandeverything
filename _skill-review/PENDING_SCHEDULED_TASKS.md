@@ -4,7 +4,7 @@ All five tasks listed below were created and approved on 2026-05-15. They are li
 
 Status as of 2026-05-15:
 
-- audit-htbh-daily, cron 0 6 * * *. LIVE. First run 2026-05-15 wrote findings to X:\HereThereBeHordes\docs\CANONICAL_AUDIT-2026-05-15.md.
+- audit-hbh-daily, cron 0 6 * * *. LIVE. First run 2026-05-15 wrote findings to X:\HereBeHordes\docs\CANONICAL_AUDIT-2026-05-15.md.
 - audit-yac-twice-weekly, cron 0 6 * * 1,4. LIVE. First run 2026-05-15 wrote findings to X:\YesAndChains\docs\CANONICAL_AUDIT-2026-05-15.md.
 - audit-scheduler-weekly, cron 0 6 * * 2. LIVE. First run on next Tuesday.
 - audit-yae-weekly, cron 0 6 * * 0. LIVE. First run on next Sunday.

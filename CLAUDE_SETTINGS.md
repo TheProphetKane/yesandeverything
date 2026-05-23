@@ -1,7 +1,7 @@
 Working with Nick
 =================
 
-Personal Claude settings. Paste any section of this into Claude's custom-instructions slot, or use the whole file as a user-level CLAUDE.md. Reviewed across HTBH, YaC, Scheduler, YaE on 2026-05-14. This file is the source of truth for personal-Claude preferences. Project-level CLAUDE.md files at each repo root override on the specifics they own.
+Personal Claude settings. Paste any section of this into Claude's custom-instructions slot, or use the whole file as a user-level CLAUDE.md. Reviewed across HBH, YaC, Scheduler, YaE on 2026-05-14. This file is the source of truth for personal-Claude preferences. Project-level CLAUDE.md files at each repo root override on the specifics they own.
 
 
 Who I am, what I work on
@@ -11,17 +11,17 @@ I'm a solo dev. No team to defer to, no PM to ask. When something looks like it 
 
 Four projects in flight.
 
-HereThereBeHordes (HTBH) lives at X:\HereThereBeHordes. Godot 4.6 RTS survival game. Public-facing GDD mirror at yesandeverything.com/hordes. Most active repo, 5 to 15 commits per day.
+HereBeHordes (HBH) lives at X:\HereBeHordes. Godot 4.6 RTS survival game. Public-facing GDD mirror at yesandeverything.com/hordes. Most active repo, 5 to 15 commits per day.
 
 YesAndChains (YaC) lives at X:\YesAndChains. Disc-golf caddy PWA at yesandchains.com. Pre-1.0 launch. Vanilla TypeScript plus Supabase plus Cloudflare Worker.
 
 Scheduler lives at X:\Scheduler. Employee-scheduling web app. pnpm workspaces, Vite plus React plus Tailwind on web, Cloudflare Worker plus D1 plus Hono on API.
 
-YesAndEverything (YaE) lives at X:\YesAndEverything. Static umbrella site at yesandeverything.com. Lists the other projects plus the password-gated HTBH GDD mirror plus the apothecary subdir mirror.
+YesAndEverything (YaE) lives at X:\YesAndEverything. Static umbrella site at yesandeverything.com. Lists the other projects plus the password-gated HBH GDD mirror plus the apothecary subdir mirror.
 
 YesAndApothecary (YaApothecary) lives at X:\YesAndApothecary. Browser-based Celtic apothecary label designer at yesandeverything.com/apothecary. Vanilla JS, native ES modules, no build step, no framework. Currently at v0.3.0. Deploys by mirroring static files into X:\YesAndEverything\apothecary\ via the repo's deploy.ps1, then pushing YaE.
 
-Each project has a CLAUDE.md at its root. Read that first when opening a session in any of these folders. It tells you the canonical source of truth. docs/GDD.html for HTBH. docs/DESIGN.md for Scheduler. The multi-file canonical layer for YaC. DEPLOY.md plus index.html for YaE. PROJECT_SPEC.md for YaApothecary.
+Each project has a CLAUDE.md at its root. Read that first when opening a session in any of these folders. It tells you the canonical source of truth. docs/GDD.html for HBH. docs/DESIGN.md for Scheduler. The multi-file canonical layer for YaC. DEPLOY.md plus index.html for YaE. PROJECT_SPEC.md for YaApothecary.
 
 
 How I want you to communicate
@@ -69,7 +69,7 @@ Use the skills. I have a personal skill library staged at X:\YesAndEverything\_s
 
 project-canonical-audit for any doc-vs-code drift check.
 
-htbh-changelog-entry for any HTBH commit. Daily driver.
+htbh-changelog-entry for any HBH commit. Daily driver.
 
 version-bump-and-publish for any release across the four repos.
 
@@ -93,7 +93,7 @@ The cost of overtriggering a skill is near zero. I just say no. The cost of skip
 
 Track progress in tasks, not chat. Use TaskCreate liberally for any multi-step work. Don't recite the task list back at me. The widget renders it.
 
-HTBH GDD update is non-negotiable. Final action of every assistant reply on HTBH is bringing docs/GDD.html up to date. Version pill bump in the header (around lines 584 to 585) plus a changelog entry at the top of the changelog footer. Entries go in descending-version order, new ones just below the Changelog label. If the work was trivial enough to not warrant a bump, say so and skip. Don't silently leave the GDD behind the code.
+HBH GDD update is non-negotiable. Final action of every assistant reply on HBH is bringing docs/GDD.html up to date. Version pill bump in the header (around lines 584 to 585) plus a changelog entry at the top of the changelog footer. Entries go in descending-version order, new ones just below the Changelog label. If the work was trivial enough to not warrant a bump, say so and skip. Don't silently leave the GDD behind the code.
 
 Semver discipline. MINOR for cohesive features or systems (new building, new enemy, new mechanic, new endpoint, new screen). PATCH for tweaks, fixes, tuning, and doc-only changes. Apply the milestone test before every bump. If it's part of an in-flight feature and not yet user-visible, it's a PATCH.
 
@@ -101,11 +101,11 @@ Lock signals. If I say "perfect" or "ideal" or "exactly how I want it" about a v
 
 Check memory before asking. My memory has 20-plus entries covering project preferences, recurring quirks, voice rules, lock signals. The index is at the top of MEMORY.md. If a topic seems familiar, search memory before asking. If memory contradicts the current code, trust the code and update memory.
 
-Use the project's release script, do not reinvent it. Every project has its own scripts/release.ps1 (HTBH, YaC, Scheduler, YaE, YaApothecary all on the same pattern). When the task is "ship this" or "commit and push", invoke .\scripts\release.ps1 (YaApothecary takes -Message). Do not hand-roll git add plus commit plus push. The scripts encode each project's index.lock clearing, version-pill bumping, integrity guards (canonical doc ends with closing tag, CNAME is right, conflict markers absent), Discord posting with version-or-commit dedupe via scripts/.discord_last_posted.txt, GDD publishing, worker deploy, mirror flows, and any other ceremony I have wired up. The Discord dedupe means re-running release on an unchanged version is safe (it just skips the duplicate Discord post). Override via $env:DISCORD_FORCE = "1" to repost. Raw git is only correct in two cases. First, bootstrapping the release script itself into a new project (one-time). Second, the script genuinely does not cover what is needed (rare, surface as a queue item rather than skipping). The old root push.ps1 / deploy.ps1 files in YaApothecary are tombstoned (they exit 1 with a redirect message); do not invoke them, do not document them, do not write replacements for them.
+Use the project's release script, do not reinvent it. Every project has its own scripts/release.ps1 (HBH, YaC, Scheduler, YaE, YaApothecary all on the same pattern). When the task is "ship this" or "commit and push", invoke .\scripts\release.ps1 (YaApothecary takes -Message). Do not hand-roll git add plus commit plus push. The scripts encode each project's index.lock clearing, version-pill bumping, integrity guards (canonical doc ends with closing tag, CNAME is right, conflict markers absent), Discord posting with version-or-commit dedupe via scripts/.discord_last_posted.txt, GDD publishing, worker deploy, mirror flows, and any other ceremony I have wired up. The Discord dedupe means re-running release on an unchanged version is safe (it just skips the duplicate Discord post). Override via $env:DISCORD_FORCE = "1" to repost. Raw git is only correct in two cases. First, bootstrapping the release script itself into a new project (one-time). Second, the script genuinely does not cover what is needed (rare, surface as a queue item rather than skipping). The old root push.ps1 / deploy.ps1 files in YaApothecary are tombstoned (they exit 1 with a redirect message); do not invoke them, do not document them, do not write replacements for them.
 
 Prompt for release after every substantive change, unless I said otherwise. At the end of any reply that landed a real change in a project (edited code, edited canonical doc, fixed a bug, shipped a feature, anything I would normally commit), surface the release script invocation as the next step. Concrete form: a one-line "ready to ship: `cd X:\<project>; .\scripts\release.ps1`" at the end of the response. Skip it if I explicitly said "don't ship yet" / "hold off" / "queue it" / "I'll commit later," or if the change was purely meta (memory edit, queue update, CLAUDE.md tweak that I would not commit). The cost of an unprompted skip (my work sits uncommitted overnight, FUSE eats it on the next mount cycle, the project drifts further from canonical) is real. The cost of an unwanted prompt is one ignored sentence.
 
-Commit after every patch on HTBH, no exceptions. Run release.ps1 after every version bump, even mid-session. Stacking versions without commits compounds FUSE write-truncation risk. The May 2026 incident stacked eight versions (v0.61.0 through v0.61.8) without commits and lost the v0.61.4-v0.61.6 settings polish work to FUSE truncation. Memory entry: commit_per_patch_on_htbh. If a multi-version polish session feels iterative-not-shippable, commit each step anyway.
+Commit after every patch on HBH, no exceptions. Run release.ps1 after every version bump, even mid-session. Stacking versions without commits compounds FUSE write-truncation risk. The May 2026 incident stacked eight versions (v0.61.0 through v0.61.8) without commits and lost the v0.61.4-v0.61.6 settings polish work to FUSE truncation. Memory entry: commit_per_patch_on_htbh. If a multi-version polish session feels iterative-not-shippable, commit each step anyway.
 
 
 When something goes wrong
@@ -119,7 +119,7 @@ Watch for recurring patterns. If a bug pattern shows up twice, treat it as a kno
 
 The .git/index.lock file survives between sessions on the FUSE-mounted repos. Clear it before every git op in any script.
 
-FUSE write-truncation eats large file writes silently on these mounts. Multiple files have been chopped mid-statement during sed-i and Edit operations on HTBH (project.godot lost its [display] section, settings.gd / global.gd / 30-plus other files got truncated during v0.61.x batches, the GDD itself shipped truncated in v0.61.8 and broke yesandeverything.com tabs). Mitigations. Prefer Write tool over sed-i for files that matter. Use Python atomic write-with-read-back-verify-retry for batch edits. After every multi-file change, audit tails for syntactic cleanliness before committing. Recovery scripts live in HTBH outputs/v0_61_8_recover.py and outputs/v0_61_10_gdd_tail_recover.py from the May 2026 incident.
+FUSE write-truncation eats large file writes silently on these mounts. Multiple files have been chopped mid-statement during sed-i and Edit operations on HBH (project.godot lost its [display] section, settings.gd / global.gd / 30-plus other files got truncated during v0.61.x batches, the GDD itself shipped truncated in v0.61.8 and broke yesandeverything.com tabs). Mitigations. Prefer Write tool over sed-i for files that matter. Use Python atomic write-with-read-back-verify-retry for batch edits. After every multi-file change, audit tails for syntactic cleanliness before committing. Recovery scripts live in HBH outputs/v0_61_8_recover.py and outputs/v0_61_10_gdd_tail_recover.py from the May 2026 incident.
 
 The GDD must end with </html> before publishing. publish-gdd.ps1 injects the GDD payload into the gate page without validating the tail. v0.61.8 shipped a truncated GDD that broke the live site's tab switcher silently. Add a Test-GddIntegrity guard to publish-gdd.ps1 as a backlog item. Memory entry: gdd_truncation_guard.
 
@@ -149,7 +149,7 @@ Continuous work
 
 I want work rolling continuously when possible. The setup.
 
-Per-project canonical audits run on schedule. HTBH daily at 06:00. YaC Mon plus Thu at 06:00. Scheduler Tue at 06:00. YaE Sun at 06:00. They use the project-canonical-audit skill, write findings to each repo's docs/CANONICAL_AUDIT-YYYY-MM-DD.md, and queue auto-safe drift fixes via work-queue-runner add.
+Per-project canonical audits run on schedule. HBH daily at 06:00. YaC Mon plus Thu at 06:00. Scheduler Tue at 06:00. YaE Sun at 06:00. They use the project-canonical-audit skill, write findings to each repo's docs/CANONICAL_AUDIT-YYYY-MM-DD.md, and queue auto-safe drift fixes via work-queue-runner add.
 
 Weekly cross-project digest runs Monday at 08:00 and lands in outputs.
 
@@ -204,6 +204,43 @@ The pattern in one line. Claude is a reasoning engine over curated knowledge, no
 Concretely. Every project has a single canonical source of truth, one doc or a multi-file canonical layer with one doc per role. Every project has a CLAUDE.md at its root that bootstraps a new session with project-local context. Recurring work routes through skills, not chat. Status pages, dashboards, and digests are artifacts or scheduled tasks, not repeated chat queries. Memory is the cross-project layer. CLAUDE.md is the project-local layer. Canonical docs are the per-domain truth.
 
 If you're starting work on something that doesn't fit this pattern, ask whether it should be made to fit before doing the work the old way.
+
+
+Debugging discipline
+====================
+
+After two failed fix attempts on the same symptom, stop shipping fixes. No more speculation, no more "this should work" commits. Step back. Apply the four checks below before another patch lands.
+
+This rule exists because the HBH v0.74.22-v0.74.32 cycle burned 11 patches and roughly 75% of a month's tokens chasing one bug (enemy movement) by hallucinating root causes instead of observing them. The pattern repeats across projects whenever a system has parallel implementations, silent guards, or async timing. The checks below short-circuit that loop.
+
+1. Did I actually identify the root cause, or am I guessing?
+
+Signs you are guessing. The fix is on a code path you have not traced end-to-end this session. You have not observed actual runtime state (prints, logs, profiler). Your reasoning has more than two "this should" steps in it. If guessing, do not ship. Add a diagnostic flag and ask me to reproduce.
+
+2. Does the system have parallel implementations?
+
+Every active project has at least one fork point selecting between implementations. HBH per-Node enemy_base.gd vs data-pool enemy_pool.gd, gated by `debug_flags.use_multimesh_<type>`. YaC client TypeScript vs Cloudflare Worker vs Supabase. Scheduler Vite/React web vs Hono Worker vs D1 API. YaE static gate page vs base64-injected GDD content. A fix on path A is invisible to path B. Enumerate the paths and name the active one BEFORE proposing a fix.
+
+3. Does the bug match a silent-guard pattern?
+
+Defensive guards that bail without logging hide bugs. `if not ("field" in node): return` in GDScript. `if (!user?.id) return;` in JS. `except Exception: pass` in Python. When the system reports "everything ran fine" but the visible behaviour is broken, grep entry points for these patterns. Each is a candidate silent no-op. Convert to warn-plus-fallback, not silent bail.
+
+4. Did I verify the fix, or am I claiming it works?
+
+"This should fix it" is not verification. Before saying a patch lands. Trace the code path showing the bug must now resolve, line by line. Or run a test that exercises the exact failure mode. Or describe what I will see when I test. Or ship a diagnostic flag that lets me verify on my next run.
+
+The escalation ladder
+---------------------
+
+One failed fix. Add a diagnostic print behind a `verbose_*` flag. Ship the diagnostic. Ask me to reproduce with the flag on.
+
+Two failed fixes on the same symptom. Stop shipping fixes entirely. Re-read the relevant code from scratch, ignoring prior assumptions. Look for the silent guards, parallel paths, async timing. Write a one-line "the bug is here because X" statement. If you cannot write it, you do not know yet. Keep investigating, do not patch.
+
+Three failed fixes. Explicit pause. Tell me "I have shipped three speculative fixes; none have worked. Before another commit, I want to add instrumentation or trace one code path or read one source you have not shown me." Get sign-off on the next step before burning more commits.
+
+Never ship a fourth speculative fix on the same symptom. That is the failure mode this rule exists to prevent.
+
+Memory entries [[debugging-discipline]] and [[parallel-implementation-trap]] carry the same rules and load every session.
 
 
 Quick reference

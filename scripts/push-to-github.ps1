@@ -29,8 +29,8 @@ function Assert-GitOk($step) {
 #    most visible artifact; a truncated index.html is silent breakage.
 # 2. CNAME must contain exactly "yesandeverything.com". A blank or
 #    altered CNAME breaks the custom domain on next Pages deploy.
-# 3. hordes/index.html must still have the var ENCODED line (HTBH GDD
-#    mirror's password-gate payload). HTBH's publish-gdd.ps1 injects
+# 3. hordes/index.html must still have the var ENCODED line (HBH GDD
+#    mirror's password-gate payload). HBH's publish-gdd.ps1 injects
 #    into this line every publish; if the line shape changed, that
 #    pipeline breaks silently next time it fires.
 $indexPath = Join-Path $repoRoot "index.html"
@@ -57,7 +57,7 @@ if (Test-Path $hordesPath) {
     $hordesContent = Get-Content $hordesPath -Raw
     if ($hordesContent -notmatch '(?:var|let|const)\s+ENCODED\s*=') {
         Write-Host "INTEGRITY FAIL: hordes/index.html no longer has the var ENCODED line." -ForegroundColor Red
-        Write-Host "HTBH's publish-gdd.ps1 needs this line to inject the GDD payload." -ForegroundColor Yellow
+        Write-Host "HBH's publish-gdd.ps1 needs this line to inject the GDD payload." -ForegroundColor Yellow
         exit 1
     }
 }

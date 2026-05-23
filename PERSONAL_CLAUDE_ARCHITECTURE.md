@@ -21,7 +21,7 @@ The single insight that carries across: **Claude is a reasoning engine over cura
 
 | Project | Canonical doc | `CLAUDE.md` handler |
 |---|---|---|
-| **HereThereBeHordes** | `docs/GDD.html` | ✓ Created — encodes memory rules (GDD-every-reply, solo-dev voice, no accuracy, no agency removal, version-control standard) + repo-specific gotchas (git index.lock, path-extends quirk) |
+| **HereBeHordes** | `docs/GDD.html` | ✓ Created — encodes memory rules (GDD-every-reply, solo-dev voice, no accuracy, no agency removal, version-control standard) + repo-specific gotchas (git index.lock, path-extends quirk) |
 | **Scheduler** | `docs/DESIGN.md` | ✓ Already existed — the template the other handlers were modeled on |
 | **YesAndEverything** | `index.html` + `DEPLOY.md` | ✓ Created — covers the static-site monorepo, GitHub Pages deploy, `hordes/` injection rule |
 | **YesAndChains** | `PROJECT_SPEC.md` + `CONTEXT.md` + `ROADMAP.md` + `BACKLOG.md` + `DECISIONS_NEEDED.md` (multi-file canonical) | ✓ Created — acts as the index into the multi-file layer, telling future sessions which doc owns which slice |
@@ -32,7 +32,7 @@ Every project now self-bootstraps a new Claude session with project-local contex
 
 The org proposal calls this the highest-leverage move. Personal status:
 
-- **HTBH** — `docs/GDD.html` is mature; memory rule keeps it current every reply.
+- **HBH** — `docs/GDD.html` is mature; memory rule keeps it current every reply.
 - **Scheduler** — `docs/DESIGN.md` is the spec; `MILESTONE-PROMPTS.md` carries the operating rules.
 - **YaC** — multi-file canonical layer (PROJECT_SPEC / CONTEXT / ROADMAP / BACKLOG / DECISIONS_NEEDED). New audit at `docs/CANONICAL_AUDIT.md` confirms the structure is healthier than it looks; cleanup items are housekeeping only.
 - **YaE** — DEPLOY.md + index.html are the de facto canonical for a static site this small. Doesn't need more.
@@ -45,11 +45,11 @@ See `outputs/SKILL_CANDIDATES.md`. Highest leverage:
 2. **`version-bump-and-publish`** — release flow, project-aware
 3. **`canonical-doc-handler-init`** — scaffold for the next project you start
 
-Recommend starting with #1 because today's HTBH audit is the reference implementation.
+Recommend starting with #1 because today's HBH audit is the reference implementation.
 
 ### Memory layer — already strong
 
-15+ memory entries in place covering version control, voice, project overview, recurring quirks, lock signals, asset rules, midjourney standard. The new `CLAUDE.md` files in HTBH / YaE / YaC mostly *pin* memory rules to disk so they survive memory wipes or new sessions. Memory remains the cross-project layer; CLAUDE.md is the project-local layer; canonical docs are the per-domain truth.
+15+ memory entries in place covering version control, voice, project overview, recurring quirks, lock signals, asset rules, midjourney standard. The new `CLAUDE.md` files in HBH / YaE / YaC mostly *pin* memory rules to disk so they survive memory wipes or new sessions. Memory remains the cross-project layer; CLAUDE.md is the project-local layer; canonical docs are the per-domain truth.
 
 ## How this changes day-to-day
 
@@ -98,13 +98,24 @@ Since Claude is the only AI tool, the architecture has to handle both "reasoning
 |---|---|---|
 | P0 | Read the new `CLAUDE.md` in each repo. Tweak phrasing/wording to your voice. | 15 min |
 | P0 | Cleanup pass on YaC per `docs/CANONICAL_AUDIT.md` action items (remove tombstoned `NEXT_SESSION_QUEUE.md`, fix the `PRIORITY_QUEUE.md` phantom reference) | 5 min |
-| P1 | Build `project-canonical-audit` skill via `/skill-creator`. Use today's HTBH audit as the reference run. | ~1 evening |
+| P1 | Build `project-canonical-audit` skill via `/skill-creator`. Use today's HBH audit as the reference run. | ~1 evening |
 | P2 | Set up one scheduled task as a proof: weekly "what's changed across all 4 projects" digest. | 30 min |
 | P2 | Try one artifact: a live "current state across all canonical docs" page that pulls version pills + current milestone from each. | 1 hour |
 | P3 | Build `version-bump-and-publish` skill once you've shipped a few more releases and the pattern is fully stable. | ~3 hours |
 
 ## The honest version
 
-This isn't a transformation; it's recognizing what you've already been doing and giving it structure. HTBH was already a canonical-doc-first project. Scheduler already had a handler. The new work pins the pattern down for YaE and YaC, makes the routing explicit, and clears the road for the skills layer.
+This isn't a transformation; it's recognizing what you've already been doing and giving it structure. HBH was already a canonical-doc-first project. Scheduler already had a handler. The new work pins the pattern down for YaE and YaC, makes the routing explicit, and clears the road for the skills layer.
 
 The proposal's 93% cost reduction at work doesn't translate one-to-one (you're not paying per token), but the productivity equivalent does: less time re-explaining, less context lost between sessions, more time on actual work.
+
+Debugging discipline
+====================
+
+Layered with the architecture above. Memory entries `debugging-discipline` and `parallel-implementation-trap` load every session and carry the full rule set. `CLAUDE_SETTINGS.md` has the prose version. Per-project `CLAUDE.md` files (HBH, YaC, Scheduler, YaE) carry the project-specific hazards. Together they short-circuit the speculate-ship-fail loop that ate 75% of one month's token budget across the HBH v0.74.22-v0.74.32 cycle.
+
+The two cross-project rules in one sentence each.
+
+Two-failed-fix rule. After two failed fix attempts on the same symptom, stop shipping fixes; instrument and trace instead.
+
+Parallel-implementation trap. Every active project has fork points (debug flags, env vars, route conditions, mirror copies); enumerate paths before patching, or the fix lands on the wrong path and the bug stays alive.

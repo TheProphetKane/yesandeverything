@@ -5,7 +5,7 @@
 # Usage from the YaE repo root:
 #   .\scripts\release.ps1
 #
-# Note: HTBH's publish-gdd.ps1 already pushes to this repo from the HTBH
+# Note: HBH's publish-gdd.ps1 already pushes to this repo from the HBH
 # side. THIS script is for direct YaE edits (landing-page changes, new
 # project cards, apothecary mirror updates that didn't come from
 # X:\YesAndApothecary\deploy.ps1, etc).

@@ -10,14 +10,14 @@ If you only do five minutes of setup, do these.
 
 2. **Install the four highest-leverage skills.** Drag these `.skill` files from `X:\YesAndEverything\_skill-review\` into Cowork (or your Claude.ai plugins panel):
 
-   - `htbh-changelog-entry.skill` — fires on every HTBH commit
+   - `htbh-changelog-entry.skill` — fires on every HBH commit
    - `project-canonical-audit.skill` — the audit pattern
    - `work-queue-runner.skill` — the continuous-work mechanism
    - `git-unstick.skill` — when git misbehaves on the FUSE mount
 
    The other 10 are useful but optional. Add them when you hit the workflow they cover.
 
-3. **Verify the scheduled tasks ran.** Tomorrow morning (or after your next Cowork open), check `X:\HereThereBeHordes\docs\` for a fresh `CANONICAL_AUDIT-YYYY-MM-DD.md`. If it's there, the loop is alive.
+3. **Verify the scheduled tasks ran.** Tomorrow morning (or after your next Cowork open), check `X:\HereBeHordes\docs\` for a fresh `CANONICAL_AUDIT-YYYY-MM-DD.md`. If it's there, the loop is alive.
 
 That's the floor. Everything below is the full picture.
 
@@ -25,7 +25,7 @@ That's the floor. Everything below is the full picture.
 
 These run themselves. You don't need to invoke anything.
 
-- **Daily HTBH canonical audit.** 06:01 local. Writes to `X:\HereThereBeHordes\docs\CANONICAL_AUDIT-YYYY-MM-DD.md`. Queues auto-safe drift fixes.
+- **Daily HBH canonical audit.** 06:01 local. Writes to `X:\HereBeHordes\docs\CANONICAL_AUDIT-YYYY-MM-DD.md`. Queues auto-safe drift fixes.
 - **Twice-weekly YaC audit.** Mon + Thu 06:07. Writes to `X:\YesAndChains\docs\CANONICAL_AUDIT-YYYY-MM-DD.md`.
 - **Weekly Scheduler audit.** Tue 06:06.
 - **Weekly YaE audit.** Sun 06:06.
@@ -41,8 +41,8 @@ These trigger from natural phrasings you'd use anyway. The skill description gra
 
 | What you say | What fires |
 |---|---|
-| `ship v0.37.9`, `bump GDD`, `log this`, `cut a version`, `PATCH bump for X` (any HTBH context) | `htbh-changelog-entry` |
-| `release this`, `ship YaC`, `cut a version` (in non-HTBH context) | `version-bump-and-publish` |
+| `ship v0.37.9`, `bump GDD`, `log this`, `cut a version`, `PATCH bump for X` (any HBH context) | `htbh-changelog-entry` |
+| `release this`, `ship YaC`, `cut a version` (in non-HBH context) | `version-bump-and-publish` |
 | `audit my repo`, `is the GDD still accurate`, `do the docs match the code` | `project-canonical-audit` (chains into `backlog-hygiene`) |
 | `apply the fixes`, `do the safe drift fixes`, `close the audit loop` | `drift-auto-fix` (chains into `work-queue-runner`) |
 | `what's the state of the projects`, `weekly digest`, `cross-project status` | `cross-project-status-digest` (chains into `work-queue-runner`) |
@@ -62,7 +62,7 @@ You don't have to memorize these. The triggers are designed to catch what you'd 
 
 The everyday loop is simpler than it sounds.
 
-**Working on HTBH.** Open Cowork in `X:\HereThereBeHordes`. The handler `CLAUDE.md` auto-loads. Code, talk, code. When the work is done say `bump GDD` or `log this` and the version pill + changelog entry happens. If you want to actually push to GitHub, add `ship it` or `release`.
+**Working on HBH.** Open Cowork in `X:\HereBeHordes`. The handler `CLAUDE.md` auto-loads. Code, talk, code. When the work is done say `bump GDD` or `log this` and the version pill + changelog entry happens. If you want to actually push to GitHub, add `ship it` or `release`.
 
 **Working on YaC.** Open Cowork in `X:\YesAndChains`. The handler `CLAUDE.md` auto-loads, including the index of which canonical doc owns what. When you ship, say `release` and `version-bump-and-publish` handles the project's `release.ps1` flow.
 
@@ -86,16 +86,16 @@ The audits run themselves but the structural findings need your eyes.
 
 - [ ] Paste `CLAUDE_SETTINGS.md` into Claude.ai custom-instructions or Cowork user-level slot
 - [ ] Install at least the 4 high-leverage `.skill` files
-- [ ] Open Cowork in `X:\HereThereBeHordes` once to verify `CLAUDE.md` auto-loads
+- [ ] Open Cowork in `X:\HereBeHordes` once to verify `CLAUDE.md` auto-loads
 - [ ] On the Cowork Scheduled sidebar, click `Run now` on each task once to pre-approve the tools each task uses (Read, Write, Edit, Bash). Subsequent runs won't pause for permission prompts.
-- [ ] Verify tomorrow morning that `audit-htbh-daily` produced `X:\HereThereBeHordes\docs\CANONICAL_AUDIT-YYYY-MM-DD.md`. If not, the scheduled-tasks subsystem isn't firing — check the Scheduled sidebar for errors.
+- [ ] Verify tomorrow morning that `audit-htbh-daily` produced `X:\HereBeHordes\docs\CANONICAL_AUDIT-YYYY-MM-DD.md`. If not, the scheduled-tasks subsystem isn't firing — check the Scheduled sidebar for errors.
 - [ ] Optional: install the remaining 10 skills as you hit workflows that need them
 
 ## How to know the loop is working
 
 Three signals.
 
-1. **A `CANONICAL_AUDIT-YYYY-MM-DD.md` file lands in each project's `docs/` on the audit cadence.** If you don't see one for HTBH within 24 hours, the scheduled task isn't firing.
+1. **A `CANONICAL_AUDIT-YYYY-MM-DD.md` file lands in each project's `docs/` on the audit cadence.** If you don't see one for HBH within 24 hours, the scheduled task isn't firing.
 
 2. **`X:\YesAndEverything\.work-queue.json` gains items and then drains them.** Read the file or open the artifact. After a morning audit, expect 2-8 new items. By the next day, the auto-safe ones should be done.
 

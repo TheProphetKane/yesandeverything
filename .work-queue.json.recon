@@ -1,8 +1,8 @@
 {
   "version": 1,
   "created": "2026-05-15",
-  "last_repair": "2026-05-23",
-  "_note": "Completed items pruned 2026-05-23 to stay under FUSE 25KB write limit (pruned 5 done items pre-2026-05-22). See git log for history.",
+  "last_repair": "2026-05-22",
+  "_note": "Completed items pruned 2026-05-22 to stay under FUSE 25KB write limit. See git log for history.",
   "items": [
     {
       "id": "anti-drift-htbh-numbers-tab-autogen-017",
@@ -13,6 +13,19 @@
       "priority": "P2",
       "status": "pending",
       "prompt": "HBH Numbers tab in docs/GDD.html hand-encodes HP, cost, defense, worker counts, footprint for every v1 building. The .gd files in source/buildings/ are the actual truth. Today caught 3 rows drifted (Manor, House, Research Lab). Structural fix: add a build-time pre-processor to publish-gdd.ps1 that reads source/buildings/*.gd, extracts the @export and const values, and rewrites the Numbers tab rows. Same pattern applies to the Walls + Towers table and Units + Enemies stat tables.",
+      "source": "2026-05-15 anti-drift analysis"
+    },
+    {
+      "id": "anti-drift-yac-release-package-bump-018",
+      "added": "2026-05-15",
+      "project": "yac",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P3",
+      "status": "done",
+      "completed": "2026-05-21",
+      "result": "Added Sync-PackageJsonVersion function to scripts/release.ps1: reads BUILD_VERSION from src/profile.ts and rewrites package.json to match before each push. Runs ahead of Test-YacIntegrity which then verifies they match. package.json bumped 0.26.0 -> 0.28.6 in the same ship to backfill the drift. Shipped in 0.28.6.",
+      "prompt": "YaC has two version sources, CONTEXT.md and package.json. They drift because release.ps1 only touches CONTEXT.md. Add a step to release.ps1 (or push-to-github.ps1) that reads CONTEXT.md current version pill, parses X.Y.Z, runs pnpm version <ver> --no-git-tag-version so package.json moves in lockstep. The 2026-05-15 bump to 0.26.0 was hand-applied; future bumps should be automatic.",
       "source": "2026-05-15 anti-drift analysis"
     },
     {
@@ -37,6 +50,32 @@
       "status": "pending",
       "prompt": "GDD section 9 Tier 4 Wonders Effect column drifts from shipped code on every row and needs author judgement on which design wins. Cornucopia: GDD says +5.0 Provisions/s + cap halo, code is 4.0 Provisions/s no cap halo. Perpetual Engine: GDD says +50 Power capacity, code is 5.0 Power/s + 60 Coal seed. Pyre: GDD says noise emitter, 5000 HP, emergency wave; code is -6/min Terror credit, 1200 HP. Sanctum: GDD says -20/min Terror, code is +1 HP/s/unit map-wide heal. Decision needed: amend section 9 to match code, or rewrite code to match section 9.",
       "source": "2026-05-16 canonical audit"
+    },
+    {
+      "id": "yac-next-session-queue-tombstone-rm-029",
+      "added": "2026-05-18",
+      "project": "yac",
+      "kind": "shell",
+      "auto_safe": false,
+      "priority": "P3",
+      "status": "done",
+      "completed": "2026-05-21",
+      "result": "Deleted via Cowork file-delete permission grant. release.ps1 will pick up the rm in its git add -A on next push and commit the tombstone removal. Shipped in 0.28.6.",
+      "prompt": "Delete X:\\YesAndChains\\NEXT_SESSION_QUEUE.md -- 267-byte tombstone redirect to docs/launch-checklist-1.0.md, flagged by 4 consecutive canonical audits (2026-05-14, -05-15, -05-18). Shell op because git rm needs to run inside the YaC repo. Use the release.ps1 pipeline rather than raw git per use_release_scripts memory.",
+      "source": "2026-05-18 canonical audit"
+    },
+    {
+      "id": "yac-verify-31-1-29-1-shipped-031",
+      "added": "2026-05-18",
+      "project": "yac",
+      "kind": "structural",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "done",
+      "completed": "2026-05-21",
+      "result": "Verified both shipped via code grep. setShotWizardAimPoint exported + window-wired in main.ts; puttingComfortFt field present on disc draft + render in render-views.ts. ROADMAP \u00a731.1 + \u00a729.1 moved from 'Tier A next' to 'What's live'.",
+      "prompt": "ROADMAP Tier A lists \u00a731.1 (Aim-point capture) and \u00a729.1 (Per-disc putting-comfort) as 'next, can ship anytime' but code grep finds both substantially wired. Need Nick's read on whether these are shipped (move to What's live) or only partially shipped. See docs/audits/CANONICAL_AUDIT-2026-05-18.md M1 + M2.",
+      "source": "2026-05-18 canonical audit"
     },
     {
       "id": "yaa-spec-11-renumber-032",
@@ -94,6 +133,19 @@
       "source": "2026-05-18 canonical audit"
     },
     {
+      "id": "yac-integrity-guard-audit",
+      "added": "2026-05-18",
+      "project": "yac",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "done",
+      "completed": "2026-05-21",
+      "result": "Added Test-YacIntegrity to scripts/release.ps1: (a) CONTEXT.md tail ends in '.', ')', ']', or '>' (catches FUSE truncation); (b) app.js exists and >100KB; (c) no git conflict markers in tracked files; (d) package.json version matches BUILD_VERSION. Runs after Sync-PackageJsonVersion, before the push step. Aborts the release with the error list when any check fails. Shipped in 0.28.6.",
+      "prompt": "YaC has release.ps1 + push-to-github.ps1 + discord-notify.ps1 but the publish-side integrity guard is unclear. Audit scripts/release.ps1 and push-to-github.ps1 for what they verify before pushing. If missing, add a Test-YacIntegrity function mirroring the HBH publish-gdd.ps1 Test-GddIntegrity pattern. Checks: CONTEXT.md ends cleanly, app.js exists and >100KB, no conflict markers in tracked files, package.json version matches CONTEXT.md version pill.",
+      "source": "2026-05-18 cross-project release-pipeline review"
+    },
+    {
       "id": "yapothecary-integrity-guard",
       "added": "2026-05-18",
       "project": "yapothecary",
@@ -124,26 +176,20 @@
       "kind": "drift-fix",
       "auto_safe": true,
       "priority": "P3",
-      "status": "done",
+      "status": "pending",
       "prompt": "DESIGN.md \u00a75.3 names the bootstrap env var INITIAL_ADMIN_EMAIL. v0.2.0 renamed it to INITIAL_SUPER_ADMIN_EMAIL (old name still accepted as fallback per CHANGELOG). Auto-safe text edit: update \u00a75.3 to show INITIAL_SUPER_ADMIN_EMAIL and note INITIAL_ADMIN_EMAIL is still accepted as a fallback during the v0.1.x migration window. File: X:\\Scheduler\\docs\\DESIGN.md.",
-      "source": "2026-05-19 scheduler canonical audit",
-      "completed": "2026-05-23",
-      "result": "Edited X:\\Scheduler\\docs\\DESIGN.md \u00a75.3 line 150: 'INITIAL_ADMIN_EMAIL' -> 'INITIAL_SUPER_ADMIN_EMAIL' as primary, with sentence appended noting 'INITIAL_ADMIN_EMAIL is still accepted as a fallback during the v0.1.x migration window.' Single-edit doc-only change. Uncommitted; will land in next Scheduler push via release.ps1."
+      "source": "2026-05-19 scheduler canonical audit"
     },
     {
       "id": "scheduler-design-security-section-041",
       "added": "2026-05-19",
-      "completed": "2026-05-23",
       "project": "scheduler",
       "kind": "drift-fix",
       "auto_safe": true,
       "priority": "P3",
-      "status": "done",
-      "attempts": 1,
+      "status": "pending",
       "prompt": "DESIGN.md \u00a720 Security says 'Passwords are bcrypt-hashed at cost 12. Sessions are HttpOnly secure cookies.' The app uses magic-link auth -- no passwords, no session cookies. Auto-safe text edit: replace bcrypt/cookie sentences with: 'Identity is delegated to Supabase Auth (magic-link). No passwords are stored. Sessions live in browser storage as Supabase JWTs; each request carries the JWT as a Bearer token verified by the Worker. CSRF protection via SameSite=Lax plus Origin-header check on state-changing routes. SQL is parameterized.' File: X:\\Scheduler\\docs\\DESIGN.md.",
-      "source": "2026-05-19 scheduler canonical audit",
-      "result_path": "X:\\YesAndEverything\\.work-queue-results\\scheduler-design-security-section-041.md",
-      "result": "Edited X:\\Scheduler\\docs\\DESIGN.md line 507. Replaced bcrypt/cookie sentence with magic-link/JWT sentence; preserved trailing 'no string concat into queries' clause. Followup: line 503 still mentions 'hashed password' and labels email as optional; should be queued as a sibling drift-fix."
+      "source": "2026-05-19 scheduler canonical audit"
     },
     {
       "id": "scheduler-design-preference-log-decision-042",
@@ -159,15 +205,13 @@
     {
       "id": "yae-scheduler-subpage-version",
       "added": "2026-05-19",
-      "completed": "2026-05-23",
       "project": "yae",
       "kind": "drift-fix",
       "auto_safe": true,
       "priority": "P3",
-      "status": "done",
+      "status": "pending",
       "prompt": "Two fixes in X:\\YesAndEverything\\projects\\scheduler\\. (1) index.html line 50 carries a 'v1.0' pill - change to the current Scheduler version. (2) design.html header reads 'vv0.1.0' (double-v typo) - change to single-v. Both are doc-only edits. Re-check both files at run time before editing.",
-      "source": "2026-05-17 canonical audit (backfilled 2026-05-19)",
-      "result": "Both fixes applied. index.html line 50 pill 'v1.0' -> 'v0.2.0' (current Scheduler version per package.json). design.html line 50 'vv0.1.0' -> 'v0.2.0' (typo fixed, bumped to current). Uncommitted; will land in next YaE push."
+      "source": "2026-05-17 canonical audit (backfilled 2026-05-19)"
     },
     {
       "id": "yae-htbh-preview-republish",
@@ -309,6 +353,21 @@
       "result_path": null,
       "prompt": "In docs/GDD.html Progress tab JS array, find the entry with id 'code-reinforced-wall'. Currently s: 'progress', n: 'v0.40.0 reinstated; building exists, art pending'. Update to s: 'done' and update n to: 'v0.40.0 reinstated; code wired, art pending'. The code is complete (reinforced_wall.gd + .tscn exist with full cost/HP/defense values). Art-pending is a separate art backlog item. File: X:\\HereBeHordes\\docs\\GDD.html.",
       "notes": "Caught by 2026-05-21 canonical audit. L-01."
+    },
+    {
+      "id": "yac-checklist-anchor-0.28.1-054",
+      "added": "2026-05-21",
+      "project": "yac",
+      "kind": "drift-fix",
+      "auto_safe": true,
+      "priority": "P3",
+      "status": "done",
+      "completed": "2026-05-21",
+      "attempts": 1,
+      "result": "Bumped docs/launch-checklist-1.0.md line 3 anchor from '2026-05-15, anchored to 0.26.0' to '2026-05-21, anchored to 0.28.1'.",
+      "result_path": null,
+      "prompt": "docs/launch-checklist-1.0.md line 3 reads 'Last refresh: 2026-05-15, anchored to `0.26.0`.' Three releases have shipped since (0.26.1, 0.27.x, 0.28.x). The 1.0 requirements themselves are unchanged but the anchor should reflect reality. Auto-safe fix: change line 3 to 'Last refresh: 2026-05-21, anchored to `0.28.1`.' File: X:\\YesAndChains\\docs\\launch-checklist-1.0.md.",
+      "notes": "Caught by 2026-05-21 canonical audit. M2."
     },
     {
       "id": "yae-handler-project-list-add-apothecary-budget-056",
