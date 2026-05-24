@@ -507,23 +507,38 @@
   -webkit-print-color-adjust: exact;
 }
 
-/* v0.8.2 LOCKED DECISION: zero SVG. Symbol slot renders the PNG only;
-   missing PNGs hide their parent. No fallback art. */
-.lbl-symbol { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
-.lbl-symbol-img { width: 28px; height: 28px; object-fit: contain; display: block; }
-
-/* v0.15: when the symbol renders as a masked div, the PNG silhouette becomes
-   the alpha mask and background-color paints the shape - any color works.
-   Inline style applies the mask url + color + optional glow filter. */
-.lbl-symbol-img--masked {
+/* v0.15.2: symbol slot is a 28x28 positioned box. Inside it: the visible
+   <img> PNG underneath (so we always get a guaranteed-rendering silhouette),
+   and an absolutely-positioned masked tint overlay on top that recolors via
+   background-color when the user picks one. The tint inherits its mask URL
+   from the --symbol-url custom property set on inline style. */
+.lbl-symbol {
   width: 28px;
   height: 28px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lbl-symbol-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+.lbl-symbol-tint {
+  position: absolute;
+  inset: 0;
+  width: 28px;
+  height: 28px;
+  -webkit-mask-image: var(--symbol-url);
+  mask-image: var(--symbol-url);
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
-  display: block;
+  pointer-events: none;
 }
 

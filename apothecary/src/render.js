@@ -200,16 +200,22 @@ export const ITEM_RENDERERS = {
   symbol: (s, ctx, inst) => {
     if (!s.symbol || s.symbol === 'none') return '';
     const resolved = ctx.symbolAliases?.[s.symbol] ?? s.symbol;
-    const color = instanceColor(s, inst);
+    const customColor = inst && inst.color;       // explicit user pick, or null
     const glow  = instanceGlow(inst);
-    // v0.15: symbols render as a masked div so they tint to any color. The
-    // PNG silhouette becomes the alpha mask; background-color paints the
-    // shape. Drop-shadow filter handles glow.
     const url = `data/symbols/${resolved}.png`;
-    const style = `background-color:${color};` +
-      `-webkit-mask-image:url('${url}');mask-image:url('${url}');` +
-      (glow ? `filter:${imageGlow(glow)};` : '');
-    return `<div class="lbl-symbol"><div class="lbl-symbol-img lbl-symbol-img--masked" style="${style}"></div></div>`;
+    // v0.15.2: symbol always renders the <img> as the guaranteed-visible
+    // silhouette (black, the original look). When the user EXPLICITLY picks
+    // a color (inst.color set), an additional masked tint overlay paints on
+    // top to recolor. Without an explicit color the tint is omitted so we
+    // never replace a working black silhouette with a possibly-broken mask.
+    const filterStyle = glow ? ` style="filter:${imageGlow(glow)}"` : '';
+    const tint = customColor
+      ? `<div class="lbl-symbol-tint" style="--symbol-url:url('${url}');background-color:${customColor}"></div>`
+      : '';
+    return `<div class="lbl-symbol"${filterStyle}>
+      <img class="lbl-symbol-img" src="${url}" alt="" onerror="this.parentElement.style.display='none'"/>
+      ${tint}
+    </div>`;
   },
   botanical: (s, ctx, inst) => {
     // v0.15 resolution order for the botanical slot - library ONLY (no Köhler
