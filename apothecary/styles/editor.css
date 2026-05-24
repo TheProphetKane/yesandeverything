@@ -1555,3 +1555,417 @@ select.field-input:focus {
   opacity: 0;
   pointer-events: none;
 }
+
+/* ============================================================
+   v0.11 Editor surfaces
+   Collapsible Content / Style / Layout / Output accordion sections.
+   Inline section title editor.
+   Custom items editor.
+   Layout presets row.
+   Border style picker.
+   Per-zone alignment select.
+   Glass on saved-panel.
+   ============================================================ */
+
+/* --- Accordion sections --- */
+.ed-section {
+  border-top: 1px solid var(--moss-dark);
+  margin-top: 8px;
+}
+.ed-section:first-of-type { border-top: none; margin-top: 0; }
+
+.ed-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  transition:
+    background var(--dur-fast) var(--ease-snap),
+    color var(--dur-fast) var(--ease-snap);
+}
+.ed-section-head:hover {
+  background: rgba(232, 193, 114, 0.06);
+  color: var(--gold-bright);
+}
+.ed-section-head:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: -4px;
+  border-radius: var(--radius-sm);
+}
+
+.ed-section-title { flex: 1; }
+.ed-section-chevron {
+  display: inline-block;
+  font-size: 18px;
+  color: var(--gold);
+  transform: rotate(90deg);
+  transition: transform var(--dur-base) var(--ease-spring);
+  line-height: 1;
+}
+.ed-section--open .ed-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.ed-section-body {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    max-height var(--dur-slow) var(--ease-snap),
+    padding var(--dur-slow) var(--ease-snap),
+    opacity var(--dur-base) var(--ease-snap),
+    transform var(--dur-base) var(--ease-snap);
+}
+.ed-section--open .ed-section-body {
+  max-height: 4000px;
+  padding: 6px 0 18px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Section title editor panel --- */
+.title-editor-panel {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin: 14px 0 12px;
+}
+.title-editor-head {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--gold-bright);
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.title-editor-hint {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 10px;
+  color: var(--moss-light);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.title-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.title-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+  align-items: center;
+}
+.title-editor-label {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--cream-dim);
+  letter-spacing: 0.3px;
+}
+.title-editor-input {
+  background: var(--field);
+  color: var(--cream);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-sm);
+  padding: 6px 9px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  transition:
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap),
+    background var(--dur-fast) var(--ease-snap);
+}
+.title-editor-input::placeholder {
+  color: var(--moss);
+  font-style: italic;
+}
+.title-editor-input:hover { border-color: var(--gold-fade); }
+.title-editor-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: var(--field-hi);
+  box-shadow: 0 0 0 3px var(--gold-halo);
+}
+
+/* --- Custom items editor panel --- */
+.custom-items-panel {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+.custom-items-head {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--gold-bright);
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.custom-items-hint {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 10px;
+  color: var(--moss-light);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.custom-items-empty {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--moss);
+  padding: 6px 0;
+  text-align: center;
+}
+.custom-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.custom-item-card {
+  background: linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--sheen-top), var(--shadow-1);
+  animation: customItemIn var(--dur-base) var(--ease-spring) both;
+}
+@keyframes customItemIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.custom-item-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.custom-item-title {
+  flex: 1;
+  padding: 6px 9px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--gold-bright);
+}
+.custom-item-body {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 12px;
+  min-height: 50px;
+  resize: vertical;
+}
+.custom-item-remove {
+  background: transparent;
+  color: var(--moss-light);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  width: 28px; height: 28px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 160ms, background 160ms, border-color 160ms;
+}
+.custom-item-remove:hover {
+  color: var(--warn);
+  background: rgba(196, 88, 10, 0.12);
+  border-color: var(--warn);
+}
+
+/* --- Layout presets --- */
+.preset-panel {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin: 4px 0 12px;
+}
+.preset-head {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--gold-bright);
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.preset-hint {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 10px;
+  color: var(--moss-light);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.preset-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  align-items: stretch;
+}
+.preset-row .field-input { padding: 7px 11px; font-size: 12px; }
+.preset-save-btn {
+  width: auto;
+  margin: 0;
+  padding: 6px 14px;
+  font-size: 11.5px;
+  min-height: 0;
+  white-space: nowrap;
+}
+.preset-actions {
+  margin-top: 6px;
+}
+.preset-delete-btn {
+  width: auto;
+  margin: 0;
+  padding: 5px 12px;
+  font-size: 11px;
+  min-height: 0;
+  color: var(--warn);
+  border-color: rgba(196, 88, 10, 0.4);
+}
+.preset-delete-btn:hover {
+  color: var(--warn-hover);
+  border-color: var(--warn);
+  background: rgba(196, 88, 10, 0.08);
+}
+
+/* --- Border style picker --- */
+.border-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+.border-tile {
+  position: relative;
+  background: linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
+  border: 1.5px solid var(--moss-dark);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap);
+}
+.border-tile-preview {
+  width: 60px;
+  height: 36px;
+  display: block;
+}
+.border-tile-label {
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  color: var(--moss-light);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.border-tile:hover {
+  transform: translateY(-1px) scale(1.02);
+  border-color: var(--gold-fade);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4);
+}
+.border-tile:active { transform: scale(0.96); }
+.border-tile.is-selected {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 2px var(--gold-bright), 0 0 18px var(--gold-glow);
+}
+.border-tile.is-selected .border-tile-label { color: var(--gold-bright); }
+
+/* --- Per-zone alignment select (lives in the Layout Designer zone-card head) --- */
+.layout-zone-align {
+  background: linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
+  color: var(--cream);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-sm);
+  padding: 4px 22px 4px 8px;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--gold-fade) 50%),
+    linear-gradient(135deg, var(--gold-fade) 50%, transparent 50%),
+    linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%, 0 0;
+  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  width: 84px;
+  flex-shrink: 0;
+  transition:
+    background var(--dur-fast) var(--ease-snap),
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap);
+}
+.layout-zone-align:hover { border-color: var(--gold-fade); }
+.layout-zone-align:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 3px var(--gold-halo);
+}
+
+/* --- Custom item chips get a slightly distinct treatment in the Layout Designer --- */
+.layout-chip--custom {
+  background: linear-gradient(180deg, #6b4f8a 0%, #4a3a6b 100%);
+  border-color: #4a3a6b;
+}
+.layout-chip--custom .layout-chip-handle { color: rgba(232, 193, 114, 0.5); }
+
+/* --- Glass surface on the Saved Labels panel --- */
+.saved-panel {
+  /* Override the v0.10 card-raised treatment with a glass variant. The
+     backdrop-filter only kicks in when there's something behind it; on solid
+     bg fallback to the gradient that was already there. */
+  background: linear-gradient(180deg, rgba(26, 45, 28, 0.62), rgba(35, 58, 38, 0.55));
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(209, 161, 74, 0.18);
+}
+.saved-panel::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%);
+}

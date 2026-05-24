@@ -1,16 +1,15 @@
-// editor.js - left panel: form fields, swatches, size picker, back-label
-// toggle and content, layout designer, auto-fill, print, reset, herb
-// autocomplete dropdown.
+// editor.js - left panel: accordion sections (Content / Style / Layout /
+// Output), layout designer, herb autocomplete, section title editor, custom
+// section editor, layout presets, border style picker.
 //
-// v0.9: the placement-checkbox grid is gone. In its place: the Layout Designer
-// (mountLayoutDesigner) - two columns (Front | Back) of zone cards, each with
-// a layout-mode dropdown, a width control (front only), and draggable item
-// chips. A "Hidden Items" rail at the bottom holds anything not currently
-// placed. Drag-and-drop moves items between zones and between sides.
+// v0.11: editor reorganized into four collapsible accordion sections so the
+// UI scales. New customization surface area: per-section title editing +
+// visibility, user-defined custom items, per-zone alignment, border style
+// picker, layout presets.
 
 import { printLabel } from '../util/print.js';
-import { ITEM_LABELS, ALL_ITEM_KEYS } from '../render.js';
-import { makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS } from '../state.js';
+import { ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS } from '../render.js';
+import { makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES } from '../state.js';
 
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
@@ -24,6 +23,69 @@ const LAYOUT_MODE_LABELS = {
   'columns-3':   '3 Columns',
 };
 
+const ZONE_ALIGN_LABELS = {
+  'left':   'Left',
+  'center': 'Center',
+  'right':  'Right',
+};
+
+// The five editable section titles + the optional one (back-desc-full).
+const TITLE_FIELDS = [
+  { key: 'historic',        label: 'Traditional Uses' },
+  { key: 'notes',           label: 'Notes (combined)' },
+  { key: 'compounds',       label: 'Compounds' },
+  { key: 'cautions',        label: 'Cautions' },
+  { key: 'pairings',        label: 'Pairings' },
+  { key: 'back-desc-full',  label: 'Full Description (optional title)' },
+];
+
+// Factory layout presets shipped with the app. Each preset is a frozen layout
+// shape that the user can recall via the preset picker. State.layoutPresets
+// adds user-saved presets on top of these.
+const FACTORY_PRESETS = [
+  {
+    id: 'preset-standard',
+    name: 'Standard (two-sided)',
+    layout: () => defaultLayout(),
+    sectionTitles: { ...DEFAULT_SECTION_TITLES },
+  },
+  {
+    id: 'preset-three-col',
+    name: 'Three-column back',
+    layout: () => {
+      const l = defaultLayout();
+      // Swap the back-bottom row to 3-col Compounds | Cautions | Pairings.
+      const bb = l.back.find(z => z.id === 'back-bottom');
+      if (bb) {
+        bb.items = ['compounds', 'cautions', 'pairings'];
+        bb.layoutMode = 'columns-3';
+      }
+      l.hidden = l.hidden.filter(k => !['compounds', 'cautions'].includes(k));
+      if (!l.hidden.includes('notes')) l.hidden.push('notes');
+      return l;
+    },
+    sectionTitles: { ...DEFAULT_SECTION_TITLES },
+  },
+  {
+    id: 'preset-minimal-front',
+    name: 'Front-only minimal',
+    layout: () => ({
+      front: [
+        makeZone({ id: 'front-left',   layoutMode: 'stack', width: 25, items: ['symbol'] }),
+        makeZone({ id: 'front-center', layoutMode: 'stack', width: 50, items: [
+          'herb-name', 'latin', 'divider-bot', 'description',
+        ]}),
+        makeZone({ id: 'front-right',  layoutMode: 'stack', width: 25, items: ['botanical'] }),
+      ],
+      back: [],
+      hidden: ['shop', 'props', 'divider-top', 'rune-1', 'rune-2', 'rune-3',
+               'back-name', 'back-latin', 'back-divider', 'back-desc-full',
+               'historic', 'notes', 'compounds', 'cautions', 'pairings'],
+    }),
+    sectionTitles: { ...DEFAULT_SECTION_TITLES },
+  },
+];
+
 export function mountEditor(root, ctx) {
   const { state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, parchmentTextures } = ctx;
   const tmpl = templates[state.get().templateId];
@@ -31,19 +93,17 @@ export function mountEditor(root, ctx) {
   root.innerHTML = `
     <h2 class="editor-title">Label Editor</h2>
 
-    <div class="field">
-      <label class="field-label" for="herbName">Herb / Ingredient Name</label>
-      <div class="herb-autocomplete" data-herb-autocomplete>
-        <input id="herbName" class="field-input" type="text" autocomplete="off" placeholder="e.g. Chamomile, Lavender, Ginger..." aria-autocomplete="list" aria-controls="herb-suggestions" />
-        <ul id="herb-suggestions" class="herb-suggestions" data-herb-suggestions hidden role="listbox"></ul>
+    ${section('content', 'Content', `
+      <div class="field">
+        <label class="field-label" for="herbName">Herb / Ingredient Name</label>
+        <div class="herb-autocomplete" data-herb-autocomplete>
+          <input id="herbName" class="field-input" type="text" autocomplete="off" placeholder="e.g. Chamomile, Lavender, Ginger..." aria-autocomplete="list" aria-controls="herb-suggestions" />
+          <ul id="herb-suggestions" class="herb-suggestions" data-herb-suggestions hidden role="listbox"></ul>
+        </div>
       </div>
-    </div>
-    <button id="btn-autofill" class="btn-primary">Auto-Fill Label</button>
-    <div id="status-msg" class="status-msg">&nbsp;</div>
+      <button id="btn-autofill" class="btn-primary">Auto-Fill Label</button>
+      <div id="status-msg" class="status-msg">&nbsp;</div>
 
-    <div class="gold-divider"></div>
-
-    <div class="section">
       <div class="field">
         <label class="field-label" for="fLatin">Latin Name</label>
         <input id="fLatin" class="field-input italic-input" type="text" placeholder="Botanical Latin name" />
@@ -61,60 +121,12 @@ export function mountEditor(root, ctx) {
         <div class="desc-hint">Label fits ${tmpl.descLineHint}. Keep it concise.</div>
       </div>
 
-      <div class="field">
-        <label class="field-label">Accent Color</label>
-        <div id="swatches" class="swatches"></div>
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="fSymbol">Celtic Symbol</label>
-        <select id="fSymbol" class="field-input"></select>
-      </div>
-
-      <div class="field">
-        <label class="field-label">Parchment Texture</label>
-        <div id="parchmentPicker" class="parchment-picker" data-parchment-picker role="radiogroup" aria-label="Parchment texture"></div>
-        <div class="desc-hint">Click a tile. Missing textures fall back to the SVG gradient.</div>
-      </div>
-
-      <div class="field">
-        <label class="field-label">Rune 1</label>
-        <div class="field-row">
-          <select id="r1Char" class="field-input"></select>
-          <input id="r1Mean" class="field-input" type="text" placeholder="Meaning" />
-        </div>
-      </div>
-      <div class="field">
-        <label class="field-label">Rune 2</label>
-        <div class="field-row">
-          <select id="r2Char" class="field-input"></select>
-          <input id="r2Mean" class="field-input" type="text" placeholder="Meaning" />
-        </div>
-      </div>
-      <div class="field">
-        <label class="field-label">Rune 3</label>
-        <div class="field-row">
-          <select id="r3Char" class="field-input"></select>
-          <input id="r3Mean" class="field-input" type="text" placeholder="Meaning" />
-        </div>
-      </div>
-
-      <div class="gold-divider"></div>
-
-      <div class="field">
-        <label class="field-label" for="fSize">Label Size</label>
-        <select id="fSize" class="field-input"></select>
-        <div class="desc-hint">All sizes share the same proportions. Print scales the layout uniformly.</div>
-      </div>
-
-      <div class="gold-divider"></div>
-
       <div class="field back-toggle-row">
         <label class="checkbox-label">
           <input id="fBackEnabled" type="checkbox" />
-          <span>Print Back Label</span>
+          <span>Enable Back Label</span>
         </label>
-        <div class="desc-hint">Optional second label. Prints alongside the front on a single 8.5x11 sheet.</div>
+        <div class="desc-hint">Optional second label that prints alongside the front on a single 8.5x11 sheet.</div>
       </div>
 
       <div id="back-fields" class="back-fields" hidden>
@@ -144,14 +156,98 @@ export function mountEditor(root, ctx) {
           <div id="pairingsCounter" class="desc-counter">0 / ${tmpl.pairingsMaxChars}</div>
         </div>
       </div>
+    `)}
 
-      <div class="gold-divider"></div>
+    ${section('style', 'Style', `
+      <div class="field">
+        <label class="field-label">Accent Color</label>
+        <div id="swatches" class="swatches"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="fSymbol">Celtic Symbol</label>
+        <select id="fSymbol" class="field-input"></select>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Parchment Texture</label>
+        <div id="parchmentPicker" class="parchment-picker" data-parchment-picker role="radiogroup" aria-label="Parchment texture"></div>
+        <div class="desc-hint">Click a tile. Missing textures fall back to the SVG gradient.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Border Style</label>
+        <div id="borderPicker" class="border-picker" data-border-picker role="radiogroup" aria-label="Border style"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Rune 1</label>
+        <div class="field-row">
+          <select id="r1Char" class="field-input"></select>
+          <input id="r1Mean" class="field-input" type="text" placeholder="Meaning" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Rune 2</label>
+        <div class="field-row">
+          <select id="r2Char" class="field-input"></select>
+          <input id="r2Mean" class="field-input" type="text" placeholder="Meaning" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Rune 3</label>
+        <div class="field-row">
+          <select id="r3Char" class="field-input"></select>
+          <input id="r3Mean" class="field-input" type="text" placeholder="Meaning" />
+        </div>
+      </div>
+
+      <div class="title-editor-panel">
+        <div class="title-editor-head">
+          Section Titles
+          <span class="title-editor-hint">empty = hide the title</span>
+        </div>
+        <div class="title-editor-list" data-title-editor></div>
+      </div>
+
+      <div class="custom-items-panel">
+        <div class="custom-items-head">
+          Custom Sections
+          <span class="custom-items-hint">make your own section with a title and body</span>
+        </div>
+        <div class="custom-items-list" data-custom-items></div>
+        <button type="button" class="layout-add-zone" data-add-custom>+ New Custom Section</button>
+      </div>
+    `)}
+
+    ${section('layout', 'Layout', `
+      <div class="preset-panel">
+        <div class="preset-head">
+          Layout Presets
+          <span class="preset-hint">snapshot your zone arrangement and recall it later</span>
+        </div>
+        <div class="preset-row">
+          <select id="presetSelect" class="field-input">
+            <option value="">Load a preset...</option>
+          </select>
+          <button type="button" id="btnPresetSave" class="btn-ghost preset-save-btn">Save current</button>
+        </div>
+        <div id="presetActions" class="preset-actions" hidden></div>
+      </div>
 
       <div id="layout-designer" class="layout-designer" data-layout-designer></div>
+    `)}
+
+    ${section('output', 'Output', `
+      <div class="field">
+        <label class="field-label" for="fSize">Label Size</label>
+        <select id="fSize" class="field-input"></select>
+        <div class="desc-hint">All sizes share the same proportions. Print scales the layout uniformly.</div>
+      </div>
 
       <button id="btn-print" class="btn-secondary">Print Label</button>
       <button id="btn-reset" class="btn-ghost" type="button">Reset to Defaults</button>
-    </div>
+    `)}
   `;
 
   const $ = (id) => root.querySelector('#' + id);
@@ -162,6 +258,7 @@ export function mountEditor(root, ctx) {
   const descCounter = $('descCounter');
   const symbolSel  = $('fSymbol');
   const parchPicker = $('parchmentPicker');
+  const borderPicker = $('borderPicker');
   const sizeSel    = $('fSize');
   const swatchBox  = $('swatches');
   const autofillBtn = $('btn-autofill');
@@ -184,9 +281,17 @@ export function mountEditor(root, ctx) {
   const cautionsCounter  = $('cautionsCounter');
   const pairingsCounter  = $('pairingsCounter');
 
-  const designerMount = root.querySelector('[data-layout-designer]');
+  const titleEditorMount  = root.querySelector('[data-title-editor]');
+  const customItemsMount  = root.querySelector('[data-custom-items]');
+  const addCustomBtn      = root.querySelector('[data-add-custom]');
+  const presetSelect      = $('presetSelect');
+  const presetSaveBtn     = $('btnPresetSave');
+  const presetActions     = $('presetActions');
+  const designerMount     = root.querySelector('[data-layout-designer]');
 
-  // --- Herb autocomplete (unchanged from v0.8) ---
+  wireAccordion(root);
+
+  // --- Herb autocomplete (unchanged from v0.10) ---
   const autocompleteRoot = root.querySelector('[data-herb-autocomplete]');
   const suggestList      = root.querySelector('[data-herb-suggestions]');
   const titleCase = (s) => s.replace(/(^|\s)\w/g, c => c.toUpperCase());
@@ -302,6 +407,30 @@ export function mountEditor(root, ctx) {
     if (!tile) return;
     state.set({ parchmentTexture: tile.dataset.parchmentId });
   });
+
+  // Border style picker (v0.11).
+  for (const id of BORDER_STYLES) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'border-tile';
+    btn.dataset.borderStyle = id;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-label', BORDER_STYLE_LABELS[id]);
+    btn.setAttribute('title', BORDER_STYLE_LABELS[id]);
+    btn.innerHTML = `
+      <svg viewBox="0 0 60 36" class="border-tile-preview" aria-hidden="true">
+        ${borderTilePreview(id)}
+      </svg>
+      <div class="border-tile-label">${BORDER_STYLE_LABELS[id]}</div>
+    `;
+    borderPicker.appendChild(btn);
+  }
+  borderPicker.addEventListener('click', (e) => {
+    const tile = e.target.closest('.border-tile');
+    if (!tile) return;
+    state.set({ borderStyle: tile.dataset.borderStyle });
+  });
+
   for (const sel of runeChar) {
     for (const r of runes) {
       const opt = document.createElement('option');
@@ -328,8 +457,21 @@ export function mountEditor(root, ctx) {
   colorPicker.setAttribute('aria-label', 'Custom accent color');
   swatchBox.appendChild(colorPicker);
 
-  // --- Layout Designer mount ---
+  // --- Mounts for the v0.11 surfaces ---
   mountLayoutDesigner(designerMount, state);
+  mountTitleEditor(titleEditorMount, state);
+  mountCustomItems(customItemsMount, state);
+  mountPresets({ select: presetSelect, saveBtn: presetSaveBtn, actions: presetActions }, state);
+
+  addCustomBtn.addEventListener('click', () => {
+    const layout = structuredClone(state.get().layout);
+    const items = [...(state.get().customItems || [])];
+    const id = 'custom-' + Math.random().toString(36).slice(2, 9);
+    items.push({ id, title: 'Custom Section', body: 'Your text here.' });
+    // Drop the new custom item into hidden so the user can drag it where they want.
+    layout.hidden = [...(layout.hidden || []), id];
+    state.set({ customItems: items, layout });
+  });
 
   function syncFromState() {
     const s = state.get();
@@ -342,6 +484,10 @@ export function mountEditor(root, ctx) {
     parchPicker.querySelectorAll('.parchment-tile').forEach(tile => {
       tile.classList.toggle('is-selected', tile.dataset.parchmentId === currentParch);
       tile.setAttribute('aria-checked', tile.dataset.parchmentId === currentParch ? 'true' : 'false');
+    });
+    borderPicker.querySelectorAll('.border-tile').forEach(tile => {
+      tile.classList.toggle('is-selected', tile.dataset.borderStyle === (s.borderStyle ?? 'celtic'));
+      tile.setAttribute('aria-checked', tile.dataset.borderStyle === (s.borderStyle ?? 'celtic') ? 'true' : 'false');
     });
     sizeSel.value    = s.sizeId;
     colorPicker.value = s.accent;
@@ -525,27 +671,244 @@ export function mountEditor(root, ctx) {
 }
 
 // ============================================================
-// Layout Designer
+// Accordion section helper
 // ============================================================
-// Two columns (Front | Back) of zone cards plus a Hidden rail. Each zone:
-//   - layout-mode dropdown (stack/row/columns-2/columns-3)
-//   - width control (front zones only)
-//   - draggable item chips
-//   - "+ Add Item" button -> picker of items not currently placed in this zone
-//   - "× Remove Zone" (only if it has no required items left)
-// Each item chip:
-//   - drag handle (whole chip is draggable)
-//   - label
-//   - × button to send the item to Hidden
-//
-// Drag-and-drop uses HTML5 native. Drop targets: zones (anywhere on zone),
-// the Hidden rail, and between-chip insertion points within a zone.
+// One reusable wrapper. Each editor section gets a header (clickable to
+// toggle) and a body. Defaults to open. State of which sections are open
+// stays in DOM (and localStorage via the persist subscriber if we add it
+// later). For now: ephemeral, all-open on every load.
+
+function section(id, title, innerHtml) {
+  return `
+    <section class="ed-section ed-section--open" data-section="${id}">
+      <button class="ed-section-head" type="button" aria-expanded="true">
+        <span class="ed-section-title">${title}</span>
+        <span class="ed-section-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="ed-section-body">${innerHtml}</div>
+    </section>
+  `;
+}
+
+function wireAccordion(root) {
+  root.querySelectorAll('.ed-section').forEach(sec => {
+    const head = sec.querySelector('.ed-section-head');
+    head.addEventListener('click', () => {
+      const open = sec.classList.toggle('ed-section--open');
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+}
+
+// ============================================================
+// Section title editor
+// ============================================================
+// Per-section inline text input. Empty value = no title rendered. The
+// historic / notes / compounds / cautions / pairings keys are always
+// shown. back-desc-full is shown too as an "optional title" so the user
+// can opt into wrapping the Full Description in a section card.
+
+function mountTitleEditor(root, state) {
+  function paint() {
+    const s = state.get();
+    const titles = s.sectionTitles ?? {};
+    root.innerHTML = TITLE_FIELDS.map(field => {
+      const v = titles[field.key] ?? '';
+      return `
+        <div class="title-editor-row">
+          <span class="title-editor-label">${field.label}</span>
+          <input type="text" class="title-editor-input" data-title-key="${field.key}" value="${escAttr(v)}" placeholder="${escAttr(field.key === 'back-desc-full' ? '(no title)' : '(hidden)')}" />
+        </div>
+      `;
+    }).join('');
+    root.querySelectorAll('[data-title-key]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const next = { ...(state.get().sectionTitles ?? {}) };
+        next[inp.dataset.titleKey] = inp.value;
+        state.set({ sectionTitles: next });
+      });
+    });
+  }
+  function escAttr(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  paint();
+  state.subscribe(paint);
+}
+
+// ============================================================
+// Custom items editor
+// ============================================================
+// Each custom item shows a title input + a body textarea + a Delete chip.
+// Adding a new custom item is handled by the "+ New Custom Section" button
+// in the main editor template (which adds the item to state.customItems and
+// drops the new key into layout.hidden).
+
+function mountCustomItems(root, state) {
+  function paint() {
+    const items = state.get().customItems ?? [];
+    if (items.length === 0) {
+      root.innerHTML = '<div class="custom-items-empty">No custom sections yet. Click below to add one.</div>';
+      return;
+    }
+    root.innerHTML = items.map(item => `
+      <div class="custom-item-card" data-custom-id="${escAttr(item.id)}">
+        <div class="custom-item-head">
+          <input type="text" class="custom-item-title field-input" data-custom-title value="${escAttr(item.title)}" placeholder="Section title" />
+          <button type="button" class="custom-item-remove" data-custom-remove aria-label="Delete custom section">×</button>
+        </div>
+        <textarea class="custom-item-body field-input" data-custom-body rows="2" placeholder="Section body text">${escAttr(item.body)}</textarea>
+      </div>
+    `).join('');
+
+    root.querySelectorAll('.custom-item-card').forEach(card => {
+      const id = card.dataset.customId;
+      const titleInp = card.querySelector('[data-custom-title]');
+      const bodyInp  = card.querySelector('[data-custom-body]');
+      const rmBtn    = card.querySelector('[data-custom-remove]');
+      titleInp.addEventListener('input', () => updateCustom(id, c => ({ ...c, title: titleInp.value })));
+      bodyInp.addEventListener('input',  () => updateCustom(id, c => ({ ...c, body:  bodyInp.value  })));
+      rmBtn.addEventListener('click',    () => removeCustom(id));
+    });
+  }
+  function updateCustom(id, fn) {
+    const items = (state.get().customItems ?? []).map(c => c.id === id ? fn(c) : c);
+    state.set({ customItems: items });
+  }
+  function removeCustom(id) {
+    if (!confirm('Delete this custom section?')) return;
+    const items = (state.get().customItems ?? []).filter(c => c.id !== id);
+    // Also strip from layout (front/back/hidden).
+    const layout = structuredClone(state.get().layout);
+    for (const side of ['front', 'back']) {
+      for (const z of (layout[side] || [])) {
+        z.items = z.items.filter(k => k !== id);
+      }
+    }
+    layout.hidden = (layout.hidden || []).filter(k => k !== id);
+    state.set({ customItems: items, layout });
+  }
+  function escAttr(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  paint();
+  state.subscribe(paint);
+}
+
+// ============================================================
+// Layout presets
+// ============================================================
+// Factory presets + user-saved presets. User can save the current layout +
+// section titles as a named preset, recall any preset, and delete user
+// presets (factory presets are read-only).
+
+function mountPresets({ select, saveBtn, actions }, state) {
+  function allPresets() {
+    return [
+      ...FACTORY_PRESETS.map(p => ({ ...p, kind: 'factory' })),
+      ...(state.get().layoutPresets ?? []).map(p => ({ ...p, kind: 'user' })),
+    ];
+  }
+
+  function paint() {
+    const presets = allPresets();
+    select.innerHTML = '<option value="">Load a preset...</option>' +
+      presets.map(p => `<option value="${escAttr(p.id)}">${escAttr(p.name)}${p.kind === 'user' ? ' (saved)' : ''}</option>`).join('');
+
+    // Show delete button only if the currently-selected preset is a user one.
+    const cur = select.value;
+    const curPreset = presets.find(p => p.id === cur);
+    if (curPreset && curPreset.kind === 'user') {
+      actions.hidden = false;
+      actions.innerHTML = `<button type="button" class="btn-ghost preset-delete-btn" data-delete-preset>Delete "${escAttr(curPreset.name)}"</button>`;
+      actions.querySelector('[data-delete-preset]').addEventListener('click', () => {
+        if (!confirm(`Delete preset "${curPreset.name}"?`)) return;
+        const next = (state.get().layoutPresets ?? []).filter(p => p.id !== cur);
+        state.set({ layoutPresets: next });
+        select.value = '';
+        paint();
+      });
+    } else {
+      actions.hidden = true;
+      actions.innerHTML = '';
+    }
+  }
+
+  select.addEventListener('change', () => {
+    const presets = allPresets();
+    const p = presets.find(x => x.id === select.value);
+    if (!p) return;
+    const layout = typeof p.layout === 'function' ? p.layout() : structuredClone(p.layout);
+    const sectionTitles = { ...DEFAULT_SECTION_TITLES, ...(p.sectionTitles ?? {}) };
+    state.set({ layout, sectionTitles });
+    paint();
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const name = prompt('Name this preset:');
+    if (!name) return;
+    const id = 'user-' + Math.random().toString(36).slice(2, 9);
+    const layout = structuredClone(state.get().layout);
+    const sectionTitles = { ...(state.get().sectionTitles ?? {}) };
+    const next = [...(state.get().layoutPresets ?? []), { id, name, layout, sectionTitles }];
+    state.set({ layoutPresets: next });
+    select.value = id;
+    paint();
+  });
+
+  function escAttr(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  paint();
+  state.subscribe(paint);
+}
+
+// ============================================================
+// Border tile preview SVG fragments
+// ============================================================
+// Tiny inline SVG renders for each border style so the picker tiles show
+// what each option looks like. 60x36 viewBox.
+
+function borderTilePreview(style) {
+  const c = 'var(--gold-bright)';
+  if (style === 'simple') {
+    return `<rect x="2" y="2" width="56" height="32" rx="3" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.7"/>`;
+  }
+  if (style === 'beveled') {
+    return `
+      <rect x="2" y="2" width="56" height="32" rx="1" fill="none" stroke="${c}" stroke-width="1" opacity="0.7"/>
+      <rect x="5" y="5" width="50" height="26" rx="0.5" fill="none" stroke="${c}" stroke-width="0.4" opacity="0.5"/>
+    `;
+  }
+  if (style === 'ornate') {
+    return `
+      <rect x="2" y="2" width="56" height="32" rx="3" fill="none" stroke="${c}" stroke-width="1" opacity="0.7"/>
+      <rect x="5" y="5" width="50" height="26" rx="2" fill="none" stroke="${c}" stroke-width="0.4" opacity="0.5"/>
+      <circle cx="5" cy="5" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+      <circle cx="55" cy="5" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+      <circle cx="5" cy="31" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+      <circle cx="55" cy="31" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+      <path d="M 3 8 Q 6 5, 9 3" stroke="${c}" stroke-width="0.4" fill="none" opacity="0.6"/>
+      <path d="M 57 8 Q 54 5, 51 3" stroke="${c}" stroke-width="0.4" fill="none" opacity="0.6"/>
+    `;
+  }
+  // celtic (default)
+  return `
+    <rect x="2" y="2" width="56" height="32" rx="3" fill="none" stroke="${c}" stroke-width="1" opacity="0.7"/>
+    <rect x="5" y="5" width="50" height="26" rx="2" fill="none" stroke="${c}" stroke-width="0.4" opacity="0.5"/>
+    <circle cx="5" cy="5" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+    <circle cx="55" cy="5" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+    <circle cx="5" cy="31" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+    <circle cx="55" cy="31" r="1.2" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.7"/>
+  `;
+}
+
+// ============================================================
+// Layout Designer (v0.9 + v0.11 alignment selector)
+// ============================================================
 
 function mountLayoutDesigner(root, state) {
-  // Drag state lives at module scope - HTML5 dataTransfer is unreliable across
-  // some browsers for non-text data. We track it ourselves and use dataTransfer
-  // only as a signal that a drag is in progress.
-  let dragPayload = null; // { item, fromZoneId } - fromZoneId may be 'hidden'
+  let dragPayload = null;
 
   function paint() {
     const s = state.get();
@@ -564,14 +927,14 @@ function mountLayoutDesigner(root, state) {
         <div class="layout-column" data-side="front">
           <div class="layout-column-header">Front</div>
           <div class="layout-zones" data-zones-for="front">
-            ${(layout.front || []).map(z => zoneCardHtml(z, 'front')).join('')}
+            ${(layout.front || []).map(z => zoneCardHtml(z, 'front', s.customItems)).join('')}
           </div>
           <button type="button" class="layout-add-zone" data-add-zone="front">+ Add Zone</button>
         </div>
         <div class="layout-column" data-side="back">
           <div class="layout-column-header">Back</div>
           <div class="layout-zones" data-zones-for="back">
-            ${(layout.back || []).map(z => zoneCardHtml(z, 'back')).join('')}
+            ${(layout.back || []).map(z => zoneCardHtml(z, 'back', s.customItems)).join('')}
           </div>
           <button type="button" class="layout-add-zone" data-add-zone="back">+ Add Zone</button>
         </div>
@@ -579,7 +942,7 @@ function mountLayoutDesigner(root, state) {
       <div class="layout-hidden" data-hidden-rail>
         <div class="layout-hidden-label">Hidden Items <span class="layout-hidden-hint">drag here to remove from the label</span></div>
         <div class="layout-hidden-chips" data-hidden-chips>
-          ${(layout.hidden || []).map(item => itemChipHtml(item, 'hidden')).join('') || '<div class="layout-hidden-empty">(everything is placed)</div>'}
+          ${(layout.hidden || []).map(item => itemChipHtml(item, 'hidden', s.customItems)).join('') || '<div class="layout-hidden-empty">(everything is placed)</div>'}
         </div>
       </div>
     `;
@@ -588,36 +951,46 @@ function mountLayoutDesigner(root, state) {
     wireControls();
   }
 
-  function zoneCardHtml(zone, side) {
-    // v0.9.1: width control on both sides. Front zones live in a row so width
-    // controls horizontal share; back zones live in a column so width controls
-    // the zone's own width and the zone centers within the column.
+  function labelFor(itemKey, customItems) {
+    if (itemKey.startsWith('custom-')) {
+      const c = (customItems || []).find(x => x.id === itemKey);
+      return c ? (c.title || 'Custom Section') : 'Custom (missing)';
+    }
+    return ITEM_LABELS[itemKey] || itemKey;
+  }
+
+  function zoneCardHtml(zone, side, customItems) {
     const widthControl = `<select class="layout-zone-width" data-zone-width="${esc(zone.id)}" aria-label="Zone width">
         ${ZONE_WIDTHS.map(w => `<option value="${w}" ${w === zone.width ? 'selected' : ''}>${w}%</option>`).join('')}
       </select>`;
     const modeControl = `<select class="layout-zone-mode" data-zone-mode="${esc(zone.id)}" aria-label="Zone layout mode">
         ${ZONE_LAYOUT_MODES.map(m => `<option value="${m}" ${m === (zone.layoutMode || 'stack') ? 'selected' : ''}>${LAYOUT_MODE_LABELS[m]}</option>`).join('')}
       </select>`;
+    const alignControl = `<select class="layout-zone-align" data-zone-align="${esc(zone.id)}" aria-label="Zone text alignment">
+        ${Object.entries(ZONE_ALIGN_LABELS).map(([v, l]) => `<option value="${v}" ${v === (zone.align || 'center') ? 'selected' : ''}>${l}</option>`).join('')}
+      </select>`;
     return `
       <div class="layout-zone-card" data-zone-id="${esc(zone.id)}" data-zone-side="${side}">
         <div class="layout-zone-head">
           <div class="layout-zone-head-controls">
             ${modeControl}
+            ${alignControl}
             ${widthControl}
           </div>
           <button type="button" class="layout-zone-remove" data-remove-zone="${esc(zone.id)}" aria-label="Remove zone">×</button>
         </div>
         <div class="layout-zone-chips" data-zone-chips="${esc(zone.id)}">
-          ${(zone.items || []).map(item => itemChipHtml(item, zone.id)).join('')}
+          ${(zone.items || []).map(item => itemChipHtml(item, zone.id, customItems)).join('')}
         </div>
         <button type="button" class="layout-add-item" data-add-item="${esc(zone.id)}">+ Add Item</button>
       </div>
     `;
   }
 
-  function itemChipHtml(item, fromZoneId) {
-    const label = ITEM_LABELS[item] || item;
-    return `<div class="layout-chip" draggable="true" data-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" title="Drag to move">
+  function itemChipHtml(item, fromZoneId, customItems) {
+    const label = labelFor(item, customItems);
+    const customCls = item.startsWith('custom-') ? ' layout-chip--custom' : '';
+    return `<div class="layout-chip${customCls}" draggable="true" data-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" title="Drag to move">
       <span class="layout-chip-handle" aria-hidden="true">⋮⋮</span>
       <span class="layout-chip-label">${esc(label)}</span>
       <button type="button" class="layout-chip-hide" data-hide-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" aria-label="Hide this item">×</button>
@@ -629,7 +1002,6 @@ function mountLayoutDesigner(root, state) {
   }
 
   function wireDragAndDrop() {
-    // Chip drag start.
     root.querySelectorAll('.layout-chip').forEach(chip => {
       chip.addEventListener('dragstart', (e) => {
         dragPayload = { item: chip.dataset.item, fromZoneId: chip.dataset.fromZone };
@@ -646,14 +1018,12 @@ function mountLayoutDesigner(root, state) {
       });
     });
 
-    // Drop into a zone's chips container.
     root.querySelectorAll('[data-zone-chips]').forEach(container => {
       container.addEventListener('dragover', (e) => {
         if (!dragPayload) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         const overChip = e.target.closest('.layout-chip');
-        // Clear any prior drop hints inside this container.
         container.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => {
           el.classList.remove('is-drop-before', 'is-drop-after');
         });
@@ -665,7 +1035,6 @@ function mountLayoutDesigner(root, state) {
         }
       });
       container.addEventListener('dragleave', (e) => {
-        // Only clear when we actually exit the container (not just moving onto a child).
         if (!container.contains(e.relatedTarget)) {
           container.classList.remove('is-drop-target');
           container.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => {
@@ -688,7 +1057,6 @@ function mountLayoutDesigner(root, state) {
       });
     });
 
-    // Drop into Hidden rail.
     const hiddenChips = root.querySelector('[data-hidden-chips]');
     if (hiddenChips) {
       hiddenChips.addEventListener('dragover', (e) => {
@@ -711,48 +1079,38 @@ function mountLayoutDesigner(root, state) {
   }
 
   function wireControls() {
-    // Zone mode change.
     root.querySelectorAll('[data-zone-mode]').forEach(sel => {
       sel.addEventListener('change', () => {
         const zoneId = sel.dataset.zoneMode;
         updateZone(zoneId, z => ({ ...z, layoutMode: sel.value }));
       });
     });
-    // Zone width change.
     root.querySelectorAll('[data-zone-width]').forEach(sel => {
       sel.addEventListener('change', () => {
         const zoneId = sel.dataset.zoneWidth;
         updateZone(zoneId, z => ({ ...z, width: parseInt(sel.value, 10) }));
       });
     });
-    // Zone remove.
-    root.querySelectorAll('[data-remove-zone]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const zoneId = btn.dataset.removeZone;
-        removeZone(zoneId);
+    root.querySelectorAll('[data-zone-align]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const zoneId = sel.dataset.zoneAlign;
+        updateZone(zoneId, z => ({ ...z, align: sel.value }));
       });
     });
-    // Item hide (X on chip).
+    root.querySelectorAll('[data-remove-zone]').forEach(btn => {
+      btn.addEventListener('click', () => removeZone(btn.dataset.removeZone));
+    });
     root.querySelectorAll('[data-hide-item]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         moveItem(btn.dataset.hideItem, btn.dataset.fromZone, 'hidden', null);
       });
     });
-    // Add zone.
     root.querySelectorAll('[data-add-zone]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const side = btn.dataset.addZone;
-        addZone(side);
-      });
+      btn.addEventListener('click', () => addZone(btn.dataset.addZone));
     });
-    // Add item -> open picker for items currently in hidden or simply unplaced
-    // on the target side.
     root.querySelectorAll('[data-add-item]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const zoneId = btn.dataset.addItem;
-        openItemPicker(zoneId, btn);
-      });
+      btn.addEventListener('click', () => openItemPicker(btn.dataset.addItem, btn));
     });
   }
 
@@ -776,7 +1134,6 @@ function mountLayoutDesigner(root, state) {
     const layout = structuredClone(state.get().layout);
     const found = findZone(layout, zoneId);
     if (!found) return;
-    // Move any items in the doomed zone to hidden, then drop the zone.
     const items = found.zone.items || [];
     layout[found.side].splice(found.idx, 1);
     layout.hidden = [...(layout.hidden || []), ...items.filter(i => !(layout.hidden || []).includes(i))];
@@ -792,18 +1149,12 @@ function mountLayoutDesigner(root, state) {
 
   function moveItem(item, fromZoneId, toZoneId, insertHint) {
     const layout = structuredClone(state.get().layout);
-
-    // Remove from source.
     if (fromZoneId === 'hidden') {
       layout.hidden = (layout.hidden || []).filter(i => i !== item);
     } else {
       const src = findZone(layout, fromZoneId);
-      if (src) {
-        src.zone.items = src.zone.items.filter(i => i !== item);
-      }
+      if (src) src.zone.items = src.zone.items.filter(i => i !== item);
     }
-
-    // Insert into destination.
     if (toZoneId === 'hidden') {
       if (!(layout.hidden || []).includes(item)) {
         layout.hidden = [...(layout.hidden || []), item];
@@ -811,7 +1162,6 @@ function mountLayoutDesigner(root, state) {
     } else {
       const dst = findZone(layout, toZoneId);
       if (!dst) return;
-      // Avoid duplicates within a zone (each item one place per zone).
       dst.zone.items = dst.zone.items.filter(i => i !== item);
       if (insertHint) {
         const after = insertHint.endsWith(':after');
@@ -826,33 +1176,33 @@ function mountLayoutDesigner(root, state) {
         dst.zone.items.push(item);
       }
     }
-
     state.set({ layout });
   }
 
   function openItemPicker(zoneId, anchorBtn) {
-    // Find items that are NOT in this zone. We allow re-placing an item that
-    // lives in a different zone (moving it). Hidden items are first-class
-    // candidates here.
     const layout = state.get().layout;
+    const customItems = state.get().customItems ?? [];
     const zoneInfo = findZone(layout, zoneId);
     if (!zoneInfo) return;
     const inThisZone = new Set(zoneInfo.zone.items);
 
-    // Close any open picker first.
     root.querySelectorAll('.layout-item-picker').forEach(p => p.remove());
+
+    // Build the full available list: all built-in keys + all custom items.
+    const allKeys = [...ALL_ITEM_KEYS, ...customItems.map(c => c.id)];
 
     const picker = document.createElement('div');
     picker.className = 'layout-item-picker';
     picker.innerHTML = `
       <div class="layout-item-picker-title">Add Item</div>
       <div class="layout-item-picker-list">
-        ${ALL_ITEM_KEYS.filter(k => !inThisZone.has(k)).map(k => {
+        ${allKeys.filter(k => !inThisZone.has(k)).map(k => {
           const where = locateItem(layout, k);
           const hint = where === 'hidden' ? '<span class="layout-pick-hint">(hidden)</span>'
                      : where ? `<span class="layout-pick-hint">(from ${where})</span>`
                      : '';
-          return `<button type="button" class="layout-pick" data-pick-item="${esc(k)}">${esc(ITEM_LABELS[k] || k)}${hint}</button>`;
+          const label = labelFor(k, customItems);
+          return `<button type="button" class="layout-pick" data-pick-item="${esc(k)}">${esc(label)}${hint}</button>`;
         }).join('')}
       </div>
     `;
@@ -866,7 +1216,6 @@ function mountLayoutDesigner(root, state) {
       moveItem(item, fromZone, zoneId, null);
     });
 
-    // Close picker on outside click.
     setTimeout(() => {
       const onDocClick = (e) => {
         if (!picker.contains(e.target) && e.target !== anchorBtn) {
@@ -888,9 +1237,6 @@ function mountLayoutDesigner(root, state) {
     return null;
   }
 
-  // Initial paint + repaint on every state change. Naive re-render is fine -
-  // the designer is small and state changes here are user-driven, not
-  // continuous.
   paint();
   state.subscribe(paint);
 }

@@ -35,7 +35,7 @@ const [
   import("../data/label-templates.js" + V),
 ]);
 
-const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS } = stateMod;
+const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
 const { render } = renderMod;
 const { mountEditor } = editorMod;
 const { mountShopName } = shopMod;
@@ -233,6 +233,26 @@ async function main() {
   }
   delete initial.placement;
   delete initial.notesSplit;
+
+  // v0.11 backfill: section titles, custom items, layout presets, border style.
+  if (!initial.sectionTitles || typeof initial.sectionTitles !== 'object') {
+    initial.sectionTitles = { ...DEFAULT_SECTION_TITLES };
+  } else {
+    // Add any new default keys that didn't exist when this state was saved.
+    for (const k of Object.keys(DEFAULT_SECTION_TITLES)) {
+      if (!(k in initial.sectionTitles)) initial.sectionTitles[k] = DEFAULT_SECTION_TITLES[k];
+    }
+  }
+  if (!Array.isArray(initial.customItems))   initial.customItems = [];
+  if (!Array.isArray(initial.layoutPresets)) initial.layoutPresets = [];
+  if (typeof initial.borderStyle !== 'string') initial.borderStyle = 'celtic';
+
+  // v0.11: backfill zone.align (default 'center') on any pre-existing layout.
+  for (const side of ['front', 'back']) {
+    for (const z of (initial.layout?.[side] ?? [])) {
+      if (!z.align) z.align = 'center';
+    }
+  }
 
   // v0.8.3: validate parchmentTexture against the manifest. Old saved states
   // may reference 'gradient' (retired) or a slot id that no longer exists

@@ -61,11 +61,12 @@ export function makeZoneId(prefix = 'zone') {
   return `${prefix}-${Date.now().toString(36)}-${zoneIdCounter}`;
 }
 
-export function makeZone({ id, layoutMode = 'stack', width = 100, items = [] } = {}) {
+export function makeZone({ id, layoutMode = 'stack', width = 100, align = 'center', items = [] } = {}) {
   return {
     id: id ?? makeZoneId(),
     layoutMode,
     width,
+    align,
     items: [...items],
   };
 }
@@ -101,6 +102,22 @@ export function defaultLayout() {
   };
 }
 
+// --- Section title defaults (v0.11) ----------------------------------------
+// Per-section-card item, the canonical title text. Empty string = no title
+// rendered. state.sectionTitles overrides these so users can rename or hide
+// any section title without touching the renderer.
+
+export const DEFAULT_SECTION_TITLES = {
+  historic:        'Traditional Uses',
+  notes:           'Notes',
+  compounds:       'Compounds',
+  cautions:        'Cautions',
+  pairings:        'Pairings',
+  'back-desc-full': '', // intentionally empty - the full description renders
+                        // as a flowing paragraph by default. Users who want a
+                        // section card around it can set a title here.
+};
+
 // --- Default state ---------------------------------------------------------
 
 export function defaultState() {
@@ -132,6 +149,13 @@ export function defaultState() {
 
     // v0.9: zone layout owned by state, not template.
     layout: defaultLayout(),
+
+    // v0.11: per-section title overrides + user-defined custom items +
+    // border ornament style + saved layout presets.
+    sectionTitles: { ...DEFAULT_SECTION_TITLES },
+    customItems:   [],   // [{ id: 'custom-xxx', title, body }]
+    layoutPresets: [],   // [{ id, name, layout, sectionTitles, customItems }]
+    borderStyle:   'celtic',  // 'simple' | 'beveled' | 'celtic' | 'ornate'
 
     parchmentTexture: 'parchment-01',
     shopColor: '#E8C172',

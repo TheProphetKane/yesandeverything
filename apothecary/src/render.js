@@ -75,29 +75,87 @@ function parchmentBg(state, theme, ctx) {
   return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${opAttr} onerror="this.remove()"/>`;
 }
 
-function borderSvg(color, theme, designSize) {
+// v0.11: border style variants. The 'celtic' style is the canonical v0.8
+// look (double-rect plus four corner circles). Three new variants:
+//   - simple:  single hairline only, no corner ornaments
+//   - beveled: double rect, no corner circles, slightly tighter inner
+//   - ornate:  double rect + corner circles + corner knots (small + shapes)
+function borderSvg(color, theme, designSize, style = 'celtic') {
   const w = designSize.wIn * 96;
   const h = designSize.hIn * 96;
-  return `<svg class="border-overlay" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 ${w} ${h}">
-    <rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="4" fill="none" stroke="${color}" stroke-width="1" opacity="${theme.borderOpacityOuter}"/>
-    <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="3" fill="none" stroke="${color}" stroke-width="0.5" opacity="${theme.borderOpacityInner}"/>
+  const oOuter = theme.borderOpacityOuter;
+  const oInner = theme.borderOpacityInner;
+
+  const cornerCircles = `
     <circle cx="6" cy="6" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
     <circle cx="${w - 6}" cy="6" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
     <circle cx="6" cy="${h - 6}" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
     <circle cx="${w - 6}" cy="${h - 6}" r="2" fill="none" stroke="${color}" stroke-width="0.6" opacity="0.6"/>
-  </svg>`;
+  `;
+
+  const cornerKnots = `
+    <path d="M 4 12 Q 8 8, 12 4 M 4 8 Q 8 8, 8 4" stroke="${color}" stroke-width="0.5" fill="none" opacity="0.5"/>
+    <path d="M ${w - 4} 12 Q ${w - 8} 8, ${w - 12} 4 M ${w - 4} 8 Q ${w - 8} 8, ${w - 8} 4" stroke="${color}" stroke-width="0.5" fill="none" opacity="0.5"/>
+    <path d="M 4 ${h - 12} Q 8 ${h - 8}, 12 ${h - 4} M 4 ${h - 8} Q 8 ${h - 8}, 8 ${h - 4}" stroke="${color}" stroke-width="0.5" fill="none" opacity="0.5"/>
+    <path d="M ${w - 4} ${h - 12} Q ${w - 8} ${h - 8}, ${w - 12} ${h - 4} M ${w - 4} ${h - 8} Q ${w - 8} ${h - 8}, ${w - 8} ${h - 4}" stroke="${color}" stroke-width="0.5" fill="none" opacity="0.5"/>
+  `;
+
+  let body = '';
+  if (style === 'simple') {
+    body = `<rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="4" fill="none" stroke="${color}" stroke-width="0.8" opacity="${oOuter}"/>`;
+  } else if (style === 'beveled') {
+    body = `
+      <rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="2" fill="none" stroke="${color}" stroke-width="1" opacity="${oOuter}"/>
+      <rect x="7" y="7" width="${w - 14}" height="${h - 14}" rx="1" fill="none" stroke="${color}" stroke-width="0.4" opacity="${oInner}"/>
+    `;
+  } else if (style === 'ornate') {
+    body = `
+      <rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="4" fill="none" stroke="${color}" stroke-width="1" opacity="${oOuter}"/>
+      <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="3" fill="none" stroke="${color}" stroke-width="0.5" opacity="${oInner}"/>
+      ${cornerCircles}
+      ${cornerKnots}
+    `;
+  } else {
+    // 'celtic' (default v0.8 look)
+    body = `
+      <rect x="3" y="3" width="${w - 6}" height="${h - 6}" rx="4" fill="none" stroke="${color}" stroke-width="1" opacity="${oOuter}"/>
+      <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="3" fill="none" stroke="${color}" stroke-width="0.5" opacity="${oInner}"/>
+      ${cornerCircles}
+    `;
+  }
+
+  return `<svg class="border-overlay" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 ${w} ${h}">${body}</svg>`;
 }
+
+export const BORDER_STYLES = ['simple', 'beveled', 'celtic', 'ornate'];
+export const BORDER_STYLE_LABELS = {
+  simple:  'Simple',
+  beveled: 'Beveled',
+  celtic:  'Celtic (default)',
+  ornate:  'Ornate',
+};
 
 function ingredientSlug(name) {
   return String(name ?? '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
 }
 
 // Section card factory for back-style labeled text blocks.
+// v0.11: title is optional - when empty, just the body renders (no title row).
+// This lets users hide section titles without losing the content.
 function sectionCard(title, body, titleColor, bodyColor) {
-  return `<div class="back-section">
-    <div class="back-section-title" style="color:${titleColor}">${esc(title)}</div>
+  const titleHtml = title
+    ? `<div class="back-section-title" style="color:${titleColor}">${esc(title)}</div>`
+    : '';
+  return `<div class="back-section${title ? '' : ' back-section--no-title'}">
+    ${titleHtml}
     <div class="back-section-body" style="color:${bodyColor}">${esc(body)}</div>
   </div>`;
+}
+
+// Resolve a section title from state, falling back to the canonical default.
+function titleFor(state, key) {
+  const overrides = state.sectionTitles ?? {};
+  return overrides[key] !== undefined ? overrides[key] : '';
 }
 
 // Each ITEM_RENDERERS entry is a primitive item that can be placed in any zone
@@ -134,12 +192,18 @@ export const ITEM_RENDERERS = {
   'back-name':     (s)      => `<div class="back-name" style="color:${s.accent}">${esc(s.herbName)}</div>`,
   'back-latin':    (s, ctx) => `<div class="back-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
   'back-divider':  (s)      => backDividerSvg(s.accent),
-  'back-desc-full':(s, ctx) => `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`,
-  historic:        (s, ctx) => sectionCard('Traditional Uses', s.historicUses, s.accent, ctx.theme.descColor),
-  notes:           (s, ctx) => sectionCard('Notes', [s.compounds, s.cautions].filter(Boolean).join(' '), s.accent, ctx.theme.descColor),
-  compounds:       (s, ctx) => sectionCard('Compounds', s.compounds, s.accent, ctx.theme.descColor),
-  cautions:        (s, ctx) => sectionCard('Cautions',  s.cautions,  s.accent, ctx.theme.descColor),
-  pairings:        (s, ctx) => sectionCard('Pairings',  s.pairings,  s.accent, ctx.theme.descColor),
+  'back-desc-full':(s, ctx) => {
+    // v0.11: if user gave a title, wrap as a section card; otherwise render
+    // as the flowing italic paragraph (the original behavior).
+    const t = titleFor(s, 'back-desc-full');
+    if (t) return sectionCard(t, s.descFull, s.accent, ctx.theme.descColor);
+    return `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`;
+  },
+  historic:        (s, ctx) => sectionCard(titleFor(s, 'historic'),  s.historicUses, s.accent, ctx.theme.descColor),
+  notes:           (s, ctx) => sectionCard(titleFor(s, 'notes'),     [s.compounds, s.cautions].filter(Boolean).join(' '), s.accent, ctx.theme.descColor),
+  compounds:       (s, ctx) => sectionCard(titleFor(s, 'compounds'), s.compounds, s.accent, ctx.theme.descColor),
+  cautions:        (s, ctx) => sectionCard(titleFor(s, 'cautions'),  s.cautions,  s.accent, ctx.theme.descColor),
+  pairings:        (s, ctx) => sectionCard(titleFor(s, 'pairings'),  s.pairings,  s.accent, ctx.theme.descColor),
 };
 
 // Migration aliases: old item keys still in saved state map to new ones at
@@ -152,6 +216,16 @@ const ITEM_ALIAS = {
 
 function resolveItemKey(key) {
   return ITEM_ALIAS[key] ?? key;
+}
+
+// v0.11: render a custom user-defined item by looking it up in state.customItems.
+// Custom keys have shape 'custom-XXXX'. If the lookup fails (item was deleted
+// but still referenced in a zone), render nothing rather than crashing.
+function renderCustomItem(key, state, ctx) {
+  const items = state.customItems ?? [];
+  const item = items.find(i => i.id === key);
+  if (!item) return '';
+  return sectionCard(item.title || '', item.body || '', state.accent, ctx.theme.descColor);
 }
 
 // Display labels for the Layout Designer picker. Keep in sync with
@@ -208,13 +282,16 @@ function pickPrintLayout({ wIn, hIn }, cardCount, paper = { wIn: 8.5, hIn: 11 },
 
 function zoneHtml(zone, state, fullCtx) {
   const items = (zone.items || []).map(key => {
+    // v0.11: custom items dispatch through the state lookup.
+    if (key.startsWith('custom-')) return renderCustomItem(key, state, fullCtx);
     const resolved = resolveItemKey(key);
     const fn = ITEM_RENDERERS[resolved];
     return fn ? fn(state, fullCtx) : '';
   }).join('');
-  const mode = zone.layoutMode || 'stack';
+  const mode  = zone.layoutMode || 'stack';
   const width = zone.width ? `${zone.width}%` : '100%';
-  return `<div class="label-zone label-zone--${mode}" data-zone-id="${esc(zone.id)}" style="width:${width}">${items}</div>`;
+  const align = zone.align || 'center';
+  return `<div class="label-zone label-zone--${mode} label-zone--align-${align}" data-zone-id="${esc(zone.id)}" style="width:${width}">${items}</div>`;
 }
 
 function zonesHtml(zones, state, fullCtx) {
@@ -239,7 +316,7 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
           transform: scale(${physicalScale});
         ">
           ${parchmentBg(state, theme, fullCtx)}
-          ${borderSvg(state.accent, theme, designSize)}
+          ${borderSvg(state.accent, theme, designSize, state.borderStyle)}
           <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
             ${zonesHtml(zones, state, fullCtx)}
           </div>
@@ -263,7 +340,7 @@ function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme })
         transform: scale(${physicalScale});
       ">
         ${parchmentBg(state, theme, fullCtx)}
-        ${borderSvg(state.accent, theme, designSize)}
+        ${borderSvg(state.accent, theme, designSize, state.borderStyle)}
         <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
           ${zonesHtml(zones, state, fullCtx)}
         </div>
