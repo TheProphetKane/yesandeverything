@@ -36,7 +36,7 @@ const [
 ]);
 
 const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
-const { render } = renderMod;
+const { render, ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS } = renderMod;
 const { mountEditor } = editorMod;
 const { mountShopName } = shopMod;
 const { mountSavedLabels } = savedMod;
@@ -274,6 +274,10 @@ async function main() {
     symbolLabels: SYMBOL_LABELS,
     templates: TEMPLATES,
     parchmentTextures: PARCHMENT_TEXTURES,
+    // v0.11.1: forwarded so editor.js doesn't need static imports of upstream
+    // modules. Keeps the v0.8.0 cache-bust contract intact.
+    ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
+    makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
     onReset: () => {
       clearState();
       state.set(defaultState());

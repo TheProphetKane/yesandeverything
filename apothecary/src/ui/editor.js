@@ -8,8 +8,11 @@
 // picker, layout presets.
 
 import { printLabel } from '../util/print.js';
-import { ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS } from '../render.js';
-import { makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES } from '../state.js';
+// v0.11.1: cross-module references for cache-bust safety travel through ctx,
+// not static imports. main.js owns the versioned dynamic-import graph; any
+// static import here would fetch an un-versioned URL that Cloudflare may
+// serve stale, breaking the editor whenever the upstream module ships new
+// exports. So we destructure from ctx in mountEditor instead.
 
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
@@ -39,56 +42,59 @@ const TITLE_FIELDS = [
   { key: 'back-desc-full',  label: 'Full Description (optional title)' },
 ];
 
-// Factory layout presets shipped with the app. Each preset is a frozen layout
-// shape that the user can recall via the preset picker. State.layoutPresets
-// adds user-saved presets on top of these.
-const FACTORY_PRESETS = [
-  {
-    id: 'preset-standard',
-    name: 'Standard (two-sided)',
-    layout: () => defaultLayout(),
-    sectionTitles: { ...DEFAULT_SECTION_TITLES },
-  },
-  {
-    id: 'preset-three-col',
-    name: 'Three-column back',
-    layout: () => {
-      const l = defaultLayout();
-      // Swap the back-bottom row to 3-col Compounds | Cautions | Pairings.
-      const bb = l.back.find(z => z.id === 'back-bottom');
-      if (bb) {
-        bb.items = ['compounds', 'cautions', 'pairings'];
-        bb.layoutMode = 'columns-3';
-      }
-      l.hidden = l.hidden.filter(k => !['compounds', 'cautions'].includes(k));
-      if (!l.hidden.includes('notes')) l.hidden.push('notes');
-      return l;
-    },
-    sectionTitles: { ...DEFAULT_SECTION_TITLES },
-  },
-  {
-    id: 'preset-minimal-front',
-    name: 'Front-only minimal',
-    layout: () => ({
-      front: [
-        makeZone({ id: 'front-left',   layoutMode: 'stack', width: 25, items: ['symbol'] }),
-        makeZone({ id: 'front-center', layoutMode: 'stack', width: 50, items: [
-          'herb-name', 'latin', 'divider-bot', 'description',
-        ]}),
-        makeZone({ id: 'front-right',  layoutMode: 'stack', width: 25, items: ['botanical'] }),
-      ],
-      back: [],
-      hidden: ['shop', 'props', 'divider-top', 'rune-1', 'rune-2', 'rune-3',
-               'back-name', 'back-latin', 'back-divider', 'back-desc-full',
-               'historic', 'notes', 'compounds', 'cautions', 'pairings'],
-    }),
-    sectionTitles: { ...DEFAULT_SECTION_TITLES },
-  },
-];
-
 export function mountEditor(root, ctx) {
-  const { state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, parchmentTextures } = ctx;
+  const {
+    state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, parchmentTextures,
+    // v0.11.1: forwarded from main.js's versioned dynamic imports.
+    ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
+    makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
+  } = ctx;
   const tmpl = templates[state.get().templateId];
+
+  // FACTORY_PRESETS uses defaultLayout/makeZone/DEFAULT_SECTION_TITLES, so
+  // it has to be built inside mountEditor where those are in scope.
+  const FACTORY_PRESETS = [
+    {
+      id: 'preset-standard',
+      name: 'Standard (two-sided)',
+      layout: () => defaultLayout(),
+      sectionTitles: { ...DEFAULT_SECTION_TITLES },
+    },
+    {
+      id: 'preset-three-col',
+      name: 'Three-column back',
+      layout: () => {
+        const l = defaultLayout();
+        const bb = l.back.find(z => z.id === 'back-bottom');
+        if (bb) {
+          bb.items = ['compounds', 'cautions', 'pairings'];
+          bb.layoutMode = 'columns-3';
+        }
+        l.hidden = l.hidden.filter(k => !['compounds', 'cautions'].includes(k));
+        if (!l.hidden.includes('notes')) l.hidden.push('notes');
+        return l;
+      },
+      sectionTitles: { ...DEFAULT_SECTION_TITLES },
+    },
+    {
+      id: 'preset-minimal-front',
+      name: 'Front-only minimal',
+      layout: () => ({
+        front: [
+          makeZone({ id: 'front-left',   layoutMode: 'stack', width: 25, items: ['symbol'] }),
+          makeZone({ id: 'front-center', layoutMode: 'stack', width: 50, items: [
+            'herb-name', 'latin', 'divider-bot', 'description',
+          ]}),
+          makeZone({ id: 'front-right',  layoutMode: 'stack', width: 25, items: ['botanical'] }),
+        ],
+        back: [],
+        hidden: ['shop', 'props', 'divider-top', 'rune-1', 'rune-2', 'rune-3',
+                 'back-name', 'back-latin', 'back-divider', 'back-desc-full',
+                 'historic', 'notes', 'compounds', 'cautions', 'pairings'],
+      }),
+      sectionTitles: { ...DEFAULT_SECTION_TITLES },
+    },
+  ];
 
   root.innerHTML = `
     <h2 class="editor-title">Label Editor</h2>
@@ -458,10 +464,16 @@ export function mountEditor(root, ctx) {
   swatchBox.appendChild(colorPicker);
 
   // --- Mounts for the v0.11 surfaces ---
-  mountLayoutDesigner(designerMount, state);
-  mountTitleEditor(titleEditorMount, state);
-  mountCustomItems(customItemsMount, state);
-  mountPresets({ select: presetSelect, saveBtn: presetSaveBtn, actions: presetActions }, state);
+  // Bundle of cross-module deps each mounter needs. Avoids re-passing every arg.
+  const deps = {
+    ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
+    makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
+    FACTORY_PRESETS,
+  };
+  mountLayoutDesigner(designerMount, state, deps);
+  mountTitleEditor(titleEditorMount, state, deps);
+  mountCustomItems(customItemsMount, state, deps);
+  mountPresets({ select: presetSelect, saveBtn: presetSaveBtn, actions: presetActions }, state, deps);
 
   addCustomBtn.addEventListener('click', () => {
     const layout = structuredClone(state.get().layout);
@@ -708,7 +720,7 @@ function wireAccordion(root) {
 // shown. back-desc-full is shown too as an "optional title" so the user
 // can opt into wrapping the Full Description in a section card.
 
-function mountTitleEditor(root, state) {
+function mountTitleEditor(root, state, _deps) {
   function paint() {
     const s = state.get();
     const titles = s.sectionTitles ?? {};
@@ -744,7 +756,7 @@ function mountTitleEditor(root, state) {
 // in the main editor template (which adds the item to state.customItems and
 // drops the new key into layout.hidden).
 
-function mountCustomItems(root, state) {
+function mountCustomItems(root, state, _deps) {
   function paint() {
     const items = state.get().customItems ?? [];
     if (items.length === 0) {
@@ -802,7 +814,8 @@ function mountCustomItems(root, state) {
 // section titles as a named preset, recall any preset, and delete user
 // presets (factory presets are read-only).
 
-function mountPresets({ select, saveBtn, actions }, state) {
+function mountPresets({ select, saveBtn, actions }, state, deps) {
+  const { FACTORY_PRESETS, DEFAULT_SECTION_TITLES } = deps;
   function allPresets() {
     return [
       ...FACTORY_PRESETS.map(p => ({ ...p, kind: 'factory' })),
@@ -907,7 +920,8 @@ function borderTilePreview(style) {
 // Layout Designer (v0.9 + v0.11 alignment selector)
 // ============================================================
 
-function mountLayoutDesigner(root, state) {
+function mountLayoutDesigner(root, state, deps) {
+  const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone } = deps;
   let dragPayload = null;
 
   function paint() {
