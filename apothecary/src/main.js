@@ -195,12 +195,16 @@ function splitNotesZone(layout) {
 }
 
 async function main() {
-  const [herbDB, runes, aliasMap, runeMeanings] = await Promise.all([
+  const [herbDB, runes, aliasMap, runeMeanings, illustrationsManifest, herbToIllustration] = await Promise.all([
     loadJson('data/herbs.json'),
     loadJson('data/runes.json'),
     loadJson('data/aliases.json'),
     loadJson('data/rune-meanings.json'),
+    loadJson('data/illustrations.json'),
+    loadJson('data/herb-to-illustration.json'),
   ]);
+  const illustrations = illustrationsManifest.illustrations || [];
+  const herbAutoMatch = herbToIllustration.autoMatch || {};
 
   const lookupHerb = makeLookup(herbDB, aliasMap);
 
@@ -246,6 +250,8 @@ async function main() {
   if (!Array.isArray(initial.customItems))   initial.customItems = [];
   if (!Array.isArray(initial.layoutPresets)) initial.layoutPresets = [];
   if (typeof initial.borderStyle !== 'string') initial.borderStyle = 'celtic';
+  // v0.14: illustration override field. Default null = auto-match.
+  if (initial.illustration === undefined) initial.illustration = null;
 
   // v0.11: backfill zone.align (default 'center') on any pre-existing layout.
   for (const side of ['front', 'back']) {
@@ -278,6 +284,8 @@ async function main() {
     // modules. Keeps the v0.8.0 cache-bust contract intact.
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
+    // v0.14: illustration library + auto-match table for the picker UI.
+    illustrations, herbAutoMatch,
     onReset: () => {
       clearState();
       state.set(defaultState());
@@ -292,6 +300,9 @@ async function main() {
     parchmentTextures: PARCHMENT_TEXTURES,
     categoryDefaultSlug,
     symbolAliases: SYMBOL_ALIASES,
+    // v0.14: illustration library + per-herb auto-match.
+    illustrations,
+    herbAutoMatch,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);

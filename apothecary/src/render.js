@@ -172,10 +172,37 @@ export const ITEM_RENDERERS = {
     return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${resolved}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
   },
   botanical: (s, ctx) => {
+    // v0.14 resolution order for the botanical slot:
+    //   1. state.illustration override -> data/illustrations/<keyword>.png
+    //   2. herb-name auto-match via ctx.herbAutoMatch -> same dir
+    //   3. legacy data/ingredients/<herb-slug>.png (the Köhler library)
+    //   4. category default -> data/ingredients/<cat-slug>.png
+    //   5. hide the slot
+    //
+    // The img onerror walks the chain, so a missing illustration falls back
+    // to ingredients without a flicker on the user's end.
     const slug = ingredientSlug(s.herbName);
     const catSlug = ctx.categoryDefaultSlug?.(s.botanical) ?? 'basil';
-    const fallback = `data/ingredients/${catSlug}.png`;
-    return `<div class="lbl-botanical"><img class="lbl-botanical-img" src="data/ingredients/${slug}.png" alt="" width="44" height="50" data-cat-fallback="${fallback}" onerror="if(this.dataset.catFallback){this.src=this.dataset.catFallback;this.dataset.catFallback='';}else{this.parentElement.style.display='none';}"/></div>`;
+    const ingredientPath = `data/ingredients/${slug}.png`;
+    const categoryFallback = `data/ingredients/${catSlug}.png`;
+
+    let primary = null;
+    if (s.illustration && typeof s.illustration === 'string') {
+      primary = `data/illustrations/${s.illustration}.png`;
+    } else if (ctx.herbAutoMatch) {
+      const key = String(s.herbName ?? '').toLowerCase().trim();
+      const auto = ctx.herbAutoMatch[key];
+      if (auto) primary = `data/illustrations/${auto}.png`;
+    }
+
+    // Build the cascade as a JSON list the img can walk through onerror.
+    const cascade = [];
+    if (primary) cascade.push(primary);
+    cascade.push(ingredientPath);
+    cascade.push(categoryFallback);
+    const cascadeAttr = encodeURIComponent(JSON.stringify(cascade.slice(1))); // remaining after the initial src
+
+    return `<div class="lbl-botanical"><img class="lbl-botanical-img" src="${cascade[0]}" alt="" width="44" height="50" data-cascade="${cascadeAttr}" onerror="(function(img){try{var c=JSON.parse(decodeURIComponent(img.dataset.cascade||'%5B%5D'));if(c.length){img.src=c.shift();img.dataset.cascade=encodeURIComponent(JSON.stringify(c));}else{img.parentElement.style.display='none';}}catch(e){img.parentElement.style.display='none';}})(this)"/></div>`;
   },
   shop:          (s, ctx) => `<div class="lbl-shop" style="color:${s.shopColor ?? ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
   'divider-top': (s)      => wavyDivider(s.accent),

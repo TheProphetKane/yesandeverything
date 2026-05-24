@@ -157,6 +157,12 @@ export function defaultState() {
     layoutPresets: [],   // [{ id, name, layout, sectionTitles, customItems }]
     borderStyle:   'celtic',  // 'simple' | 'beveled' | 'celtic' | 'ornate'
 
+    // v0.14: illustration override. null = auto-match herb name to library
+    // keyword (data/herb-to-illustration.json), then fall back to legacy
+    // data/ingredients/<slug>.png. String = explicit keyword from
+    // data/illustrations.json.
+    illustration:  null,
+
     parchmentTexture: 'parchment-01',
     shopColor: '#E8C172',
   };

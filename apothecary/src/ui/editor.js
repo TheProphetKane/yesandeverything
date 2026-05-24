@@ -48,6 +48,8 @@ export function mountEditor(root, ctx) {
     // v0.11.1: forwarded from main.js's versioned dynamic imports.
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
+    // v0.14: illustration library + auto-match.
+    illustrations = [], herbAutoMatch = {},
   } = ctx;
   const tmpl = templates[state.get().templateId];
 
@@ -187,6 +189,12 @@ export function mountEditor(root, ctx) {
       </div>
 
       <div class="field">
+        <label class="field-label">Botanical Illustration</label>
+        <div id="illustrationPicker" class="illustration-picker" data-illustration-picker></div>
+        <div class="desc-hint">Auto-picks based on the herb name. Click to choose any illustration from the library.</div>
+      </div>
+
+      <div class="field">
         <label class="field-label">Rune 1</label>
         <div class="field-row">
           <select id="r1Char" class="field-input"></select>
@@ -294,6 +302,7 @@ export function mountEditor(root, ctx) {
   const presetSaveBtn     = $('btnPresetSave');
   const presetActions     = $('presetActions');
   const designerMount     = root.querySelector('[data-layout-designer]');
+  const illustrationMount = root.querySelector('[data-illustration-picker]');
 
   wireAccordion(root);
 
@@ -474,6 +483,7 @@ export function mountEditor(root, ctx) {
   mountTitleEditor(titleEditorMount, state, deps);
   mountCustomItems(customItemsMount, state, deps);
   mountPresets({ select: presetSelect, saveBtn: presetSaveBtn, actions: presetActions }, state, deps);
+  mountIllustrationPicker(illustrationMount, state, { illustrations, herbAutoMatch });
 
   addCustomBtn.addEventListener('click', () => {
     const layout = structuredClone(state.get().layout);
@@ -1249,6 +1259,119 @@ function mountLayoutDesigner(root, state, deps) {
       }
     }
     return null;
+  }
+
+  paint();
+  state.subscribe(paint);
+}
+
+// ============================================================
+// Illustration picker (v0.14)
+// ============================================================
+// Reusable line-art library scraped from spicejungle.com. Each entry has
+// { keyword, label, file }. The user can:
+//   - Stay on auto (default): herb name maps to keyword via herbAutoMatch
+//   - Click any thumbnail to override: state.illustration = keyword
+//   - Click "Back to Auto" to clear the override
+
+function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) {
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function currentResolution() {
+    const s = state.get();
+    if (s.illustration) return { kind: 'override', keyword: s.illustration };
+    const key = String(s.herbName ?? '').toLowerCase().trim();
+    const auto = herbAutoMatch?.[key];
+    if (auto) return { kind: 'auto', keyword: auto };
+    return { kind: 'none', keyword: null };
+  }
+
+  let searchTerm = '';
+  let gridOpen = false;
+
+  function paint() {
+    const res = currentResolution();
+    const label = res.keyword
+      ? (illustrations.find(i => i.keyword === res.keyword)?.label || res.keyword)
+      : '(none)';
+    const statusClass = res.kind === 'override' ? 'is-locked' : res.kind === 'auto' ? 'is-auto' : 'is-none';
+    const statusText = res.kind === 'override'
+      ? `Locked to "${label}"`
+      : res.kind === 'auto'
+      ? `Auto from herb name: "${label}"`
+      : 'No match (will use the Köhler fallback)';
+
+    root.innerHTML = `
+      <div class="illu-current ${statusClass}">
+        <div class="illu-current-thumb">
+          ${res.keyword
+            ? `<img src="data/illustrations/${esc(res.keyword)}.png" alt="${esc(label)}" />`
+            : '<div class="illu-current-thumb-empty">no art</div>'}
+        </div>
+        <div class="illu-current-meta">
+          <div class="illu-current-label">${esc(label)}</div>
+          <div class="illu-current-status">${esc(statusText)}</div>
+          <div class="illu-current-actions">
+            <button type="button" class="illu-toggle-grid" data-illu-toggle>${gridOpen ? 'Close library' : 'Browse library'}</button>
+            ${res.kind === 'override'
+              ? '<button type="button" class="illu-reset-auto" data-illu-reset>Back to Auto</button>'
+              : ''}
+          </div>
+        </div>
+      </div>
+      <div class="illu-grid-wrap" ${gridOpen ? '' : 'hidden'}>
+        <input type="search" class="illu-search field-input" placeholder="Filter (e.g. lobster, chiles, peppercorns)..." data-illu-search value="${esc(searchTerm)}" />
+        <div class="illu-grid" data-illu-grid>
+          ${buildGridHtml(res.keyword)}
+        </div>
+      </div>
+    `;
+
+    root.querySelector('[data-illu-toggle]').addEventListener('click', () => {
+      gridOpen = !gridOpen;
+      paint();
+    });
+    const resetBtn = root.querySelector('[data-illu-reset]');
+    if (resetBtn) resetBtn.addEventListener('click', () => state.set({ illustration: null }));
+
+    const searchInput = root.querySelector('[data-illu-search]');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        searchTerm = searchInput.value;
+        const grid = root.querySelector('[data-illu-grid]');
+        grid.innerHTML = buildGridHtml(res.keyword);
+        wireTiles();
+      });
+      if (gridOpen) setTimeout(() => searchInput.focus(), 30);
+    }
+    wireTiles();
+  }
+
+  function buildGridHtml(currentKeyword) {
+    const q = searchTerm.toLowerCase().trim();
+    const filtered = q
+      ? illustrations.filter(i => i.keyword.includes(q) || i.label.toLowerCase().includes(q))
+      : illustrations;
+    if (filtered.length === 0) {
+      return '<div class="illu-grid-empty">No matches</div>';
+    }
+    return filtered.map(it => `
+      <button type="button" class="illu-tile${it.keyword === currentKeyword ? ' is-selected' : ''}"
+              data-illu-pick="${esc(it.keyword)}" title="${esc(it.label)}">
+        <img src="data/illustrations/${esc(it.file)}" alt="${esc(it.label)}" loading="lazy"/>
+        <span class="illu-tile-label">${esc(it.label)}</span>
+      </button>
+    `).join('');
+  }
+
+  function wireTiles() {
+    root.querySelectorAll('[data-illu-pick]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.set({ illustration: btn.dataset.illuPick });
+      });
+    });
   }
 
   paint();
