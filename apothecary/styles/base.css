@@ -1,8 +1,10 @@
 /* base.css - global resets, garden palette, body, layout shell.
  *
- * Palette evolution (v0.4): deeper forest base, warmer moss cards, soft gold
- * glows on interactive elements. Subtle radial-gradient bg gives the page
- * depth without distracting from the parchment label preview.
+ * Palette: deep moss-green base, warm gold accents, parchment label inside.
+ * v0.10 polish pass: design tokens aligned with YaC/YaB v2 vocabulary (snap-
+ * out + spring easings, layered shadow ladder, duration scale, focus halo,
+ * mesh-drift background). Older `--easing-soft` is now the snap-out curve so
+ * every legacy reference picks up the upgrade for free.
  */
 
 :root {
@@ -16,9 +18,11 @@
 
   --gold:         #D1A14A;
   --gold-bright:  #E8C172;
+  --gold-deep:    #B5862C;
   --gold-fade:    rgba(209, 161, 74, 0.32);
   --gold-glow:    rgba(232, 193, 114, 0.18);
   --gold-focus:   rgba(209, 161, 74, 0.45);
+  --gold-halo:    rgba(232, 193, 114, 0.16);
 
   --cream:        #EFDDB0;
   --cream-dim:    #C4B388;
@@ -37,16 +41,53 @@
   --font-display: 'Cinzel Decorative', 'Cinzel', serif;
   --font-body:    'Cinzel', serif;
   --font-italic:  'IM Fell English', serif;
+  --font-mono:    ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
-  --radius-sm: 4px;
-  --radius:    8px;
-  --radius-lg: 14px;
+  /* --- v0.10 design tokens ---------------------------------------------- */
 
-  --easing-soft: cubic-bezier(0.4, 0, 0.2, 1);
-  --easing-pop:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --radius-sm:    4px;
+  --radius:       8px;
+  --radius-md:    10px;
+  --radius-lg:    14px;
+  --radius-xl:    18px;
 
-  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.25);
-  --shadow-glow: 0 0 0 1px var(--gold-fade), 0 0 12px var(--gold-glow);
+  /* Duration ladder matching the cross-project v2 vocabulary. */
+  --dur-instant:  90ms;
+  --dur-fast:    140ms;
+  --dur-base:    220ms;
+  --dur-slow:    360ms;
+  --dur-ambient: 18s;
+
+  /* Two-easing system: snap-out for transitions and exits; spring for
+     press feedback, chevrons, and overshoot micro-motion. */
+  --ease-snap:    cubic-bezier(0.16, 1, 0.30, 1);
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-snap: cubic-bezier(0.40, 0, 0.20, 1);
+
+  /* Legacy aliases. Upgraded to the new snap-out curve so old usages
+     pick up the polish without code churn. */
+  --easing-soft:  var(--ease-snap);
+  --easing-pop:   var(--ease-spring);
+  --press-curve:  var(--ease-spring);
+  --bounce-curve: var(--ease-spring);
+
+  /* Shadow ladder. shadow-1 = tight key, shadow-2 = adds ambient,
+     shadow-3 = adds lift for hover state. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.30),
+              0 6px 14px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 2px 4px rgba(0, 0, 0, 0.30),
+              0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-glow-gold: 0 0 0 1px var(--gold-fade), 0 0 22px var(--gold-glow);
+  --shadow-glow-moss: 0 0 0 1px rgba(107, 149, 121, 0.25), 0 0 22px var(--moss-glow);
+
+  /* Legacy shadow names map to the new ladder. */
+  --shadow-soft: var(--shadow-2);
+  --shadow-glow: var(--shadow-glow-gold);
+
+  /* Inset highlight strip used on raised cards and gradient buttons. */
+  --sheen-top:    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --sheen-button: inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
 * { box-sizing: border-box; }
@@ -56,10 +97,11 @@ html, body {
   padding: 0;
 }
 
+/* Layered background: deep radial center, two warm/cool mesh blobs, then a
+   subtle drift on the mesh layer so the page breathes. The mesh is its own
+   pseudo so the body itself can keep print + screen styles separate. */
 body {
   background:
-    radial-gradient(ellipse at 20% 8%,  rgba(74, 120, 88, 0.18), transparent 55%),
-    radial-gradient(ellipse at 80% 92%, rgba(209, 161, 74, 0.08), transparent 55%),
     radial-gradient(ellipse at 50% 50%, var(--bg) 40%, var(--bg-deep) 100%);
   color: var(--cream);
   font-family: var(--font-body);
@@ -67,62 +109,104 @@ body {
   font-feature-settings: 'liga' 1, 'kern' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--field); }
-::-webkit-scrollbar-thumb {
-  background: var(--gold-fade);
-  border-radius: 4px;
-  transition: background 220ms var(--easing-soft);
+body::after {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(40vmax 30vmax at 18% 12%, rgba(74, 120, 88, 0.22), transparent 60%),
+    radial-gradient(38vmax 28vmax at 82% 88%, rgba(209, 161, 74, 0.10), transparent 60%),
+    radial-gradient(30vmax 22vmax at 92% 18%, rgba(107, 149, 121, 0.10), transparent 60%);
+  animation: meshDrift var(--dur-ambient) ease-in-out infinite alternate;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+@keyframes meshDrift {
+  0%   { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+  50%  { transform: translate3d( 1.5%,  1%, 0) scale(1.04); }
+  100% { transform: translate3d(-1%,    2%, 0) scale(1.02); }
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--field); border-radius: 6px; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--moss), var(--moss-dark));
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background var(--dur-base) var(--ease-snap);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--gold-fade), var(--moss));
+  background-clip: padding-box;
+}
 
 input, select, textarea {
   outline: none;
-  transition: border-color 200ms var(--easing-soft),
-              box-shadow 200ms var(--easing-soft),
-              background 200ms var(--easing-soft);
+  transition:
+    border-color var(--dur-base) var(--ease-snap),
+    box-shadow   var(--dur-base) var(--ease-snap),
+    background   var(--dur-base) var(--ease-snap);
 }
 input:focus, select:focus, textarea:focus {
   border-color: var(--gold) !important;
-  box-shadow: 0 0 0 2px var(--gold-glow);
+  box-shadow: 0 0 0 3px var(--gold-halo), 0 0 14px var(--gold-glow);
   background: var(--field-hi);
 }
 
 a {
   color: var(--gold);
-  transition: color 180ms var(--easing-soft);
+  transition: color var(--dur-fast) var(--ease-snap);
 }
 a:hover { color: var(--gold-bright); }
 
 button { font-family: var(--font-body); }
 
+::selection { background: var(--gold-fade); color: var(--cream); }
+
 /* Layout shell */
 .app {
   display: flex;
   flex-direction: column;
-  animation: appReveal 600ms var(--easing-soft) both;
+  position: relative;
+  z-index: 1;
+  animation: appReveal var(--dur-slow) var(--ease-snap) both;
 }
 
 @keyframes appReveal {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .app-header {
   text-align: center;
   padding: 28px 16px 14px;
+  animation: appReveal var(--dur-slow) var(--ease-snap) both;
+  animation-delay: 40ms;
 }
 
 .app-main {
   display: flex;
   flex-direction: row;
-  gap: 22px;
+  gap: 24px;
   padding: 0 24px 36px;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
+}
+.editor-panel, .preview-panel {
+  animation: fadeUp var(--dur-slow) var(--ease-snap) both;
+}
+.editor-panel  { animation-delay: 110ms; }
+.preview-panel { animation-delay: 180ms; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 900px) {
@@ -136,16 +220,32 @@ button { font-family: var(--font-body); }
   color: var(--moss-light);
   opacity: 0.7;
   letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  position: relative;
+  z-index: 1;
 }
 .app-footer a {
   color: var(--moss-light);
   border-bottom: 1px dashed var(--moss-dark);
   text-decoration: none;
   padding-bottom: 1px;
+  transition: color var(--dur-fast) var(--ease-snap), border-color var(--dur-fast) var(--ease-snap);
 }
 .app-footer a:hover { color: var(--gold); border-bottom-color: var(--gold-fade); }
 
-/* Subtle floating-particle layer (firefly drift). Static, just SVG. */
+.version-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-left: 14px;
+  opacity: 0.6;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--moss-dark);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Firefly drift layer kept as a separate ambient touch on top of the mesh. */
 body::before {
   content: '';
   position: fixed;
@@ -162,7 +262,6 @@ body::before {
   animation: fireflyDrift 14s ease-in-out infinite alternate;
   z-index: 0;
 }
-.app, .app-footer, #print-stage { position: relative; z-index: 1; }
 
 @keyframes fireflyDrift {
   0%   { transform: translate(0, 0); opacity: 0.55; }
@@ -170,6 +269,50 @@ body::before {
   100% { transform: translate(-4px, 6px); opacity: 0.55; }
 }
 
+/* --- Reusable polish utilities, used across editor + preview chrome ---- */
+
+.card-raised {
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--sheen-top), var(--shadow-2);
+  position: relative;
+  isolation: isolate;
+}
+.card-raised::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 32%);
+  pointer-events: none;
+  z-index: 0;
+}
+.card-raised > * { position: relative; z-index: 1; }
+
+.hover-lift {
+  transition:
+    transform   var(--dur-base) var(--ease-snap),
+    box-shadow  var(--dur-base) var(--ease-snap),
+    border-color var(--dur-base) var(--ease-snap);
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sheen-top), var(--shadow-3);
+  border-color: var(--gold-fade);
+}
+
+.focus-halo:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--gold-halo), 0 0 22px var(--gold-glow);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  body::before, .app { animation: none; }
+  body::before, body::after, .app, .app-header, .editor-panel, .preview-panel { animation: none !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

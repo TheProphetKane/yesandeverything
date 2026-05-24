@@ -92,14 +92,26 @@
 @media (max-width: 1100px) { .editor-panel { width: 100%; } }
 
 .editor-card {
-  background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
   border: 1px solid var(--moss-dark);
   border-radius: var(--radius-lg);
   padding: 22px;
   overflow-y: auto;
   max-height: calc(100vh - 120px);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--sheen-top), var(--shadow-2);
+  position: relative;
+  isolation: isolate;
 }
+.editor-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 28%);
+  pointer-events: none;
+  z-index: 0;
+}
+.editor-card > * { position: relative; z-index: 1; }
 
 .editor-title {
   text-align: center;
@@ -120,14 +132,26 @@
 }
 
 .saved-panel {
-  background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
   border: 1px solid var(--moss-dark);
   border-radius: var(--radius-lg);
   padding: 16px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--sheen-top), var(--shadow-2);
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  position: relative;
+  isolation: isolate;
 }
+.saved-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%);
+  pointer-events: none;
+  z-index: 0;
+}
+.saved-panel > * { position: relative; z-index: 1; }
 
 .saved-header { margin-bottom: 12px; }
 .saved-title {
@@ -503,36 +527,89 @@ textarea.field-input {
   opacity: 0.7;
 }
 
+/* v0.10: buttons follow the cross-project pattern.
+   - Gradient fill, inset sheen highlight at the top.
+   - Hover bumps brightness via filter (not gradient swap), lifts -1px,
+     and adds a colored glow shadow.
+   - Active scales down 3%.
+   - Focus halo on keyboard nav. */
 .btn-primary, .btn-secondary, .btn-ghost {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 13.5px;
   letter-spacing: 0.6px;
-  border: none;
-  border-radius: var(--radius);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   padding: 11px 14px;
   width: 100%;
+  min-height: 42px;
   cursor: pointer;
-  transition: background 240ms var(--easing-soft), transform 160ms var(--easing-pop), box-shadow 240ms var(--easing-soft), color 240ms var(--easing-soft);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    filter var(--dur-base) var(--ease-snap),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-base) var(--ease-snap),
+    border-color var(--dur-base) var(--ease-snap);
   margin-top: 6px;
 }
-.btn-primary {
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 100%);
-  color: var(--bg-deep);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+.btn-primary:active, .btn-secondary:active, .btn-ghost:active {
+  transform: scale(0.97);
+  filter: brightness(0.94);
+  transition-duration: var(--dur-instant);
 }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(232, 193, 114, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.15) inset; }
-.btn-primary:active { transform: translateY(0) scale(0.98); }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 100%);
+  color: var(--bg-deep);
+  border-color: var(--gold);
+  box-shadow: var(--sheen-button), var(--shadow-1);
+}
+.btn-primary:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--sheen-button),
+    0 0 0 1px var(--gold-focus),
+    0 10px 26px -8px rgba(232, 193, 114, 0.45);
+}
 
 .btn-secondary {
-  background: linear-gradient(135deg, var(--green) 0%, var(--moss) 100%);
+  background: linear-gradient(180deg, var(--green-hover) 0%, var(--green) 100%);
   color: var(--cream);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border-color: var(--moss);
+  box-shadow: var(--sheen-button), var(--shadow-1);
 }
-.btn-secondary:hover { background: linear-gradient(135deg, var(--green-hover) 0%, var(--moss-light) 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(107, 149, 121, 0.35); }
+.btn-secondary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--sheen-button),
+    0 0 0 1px rgba(107, 149, 121, 0.45),
+    0 10px 26px -8px rgba(107, 149, 121, 0.40);
+}
 
-.btn-ghost { background: transparent; color: var(--gold); border: 1px solid var(--gold-fade); }
-.btn-ghost:hover { background: var(--moss-glow); border-color: var(--gold); color: var(--gold-bright); }
+.btn-ghost {
+  background: transparent;
+  color: var(--gold);
+  border-color: var(--gold-fade);
+}
+.btn-ghost:hover {
+  background: rgba(209, 161, 74, 0.08);
+  border-color: var(--gold);
+  color: var(--gold-bright);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -8px var(--gold-glow);
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--gold-halo), 0 0 22px var(--gold-glow);
+}
 
 .status-msg {
   font-family: var(--font-body);
@@ -588,13 +665,35 @@ textarea.field-input {
    Replaces the v0.4 placement-checkbox grid.
    ============================================================ */
 
+/* v0.10: Layout Designer signature treatment.
+   - Card-raised body with the same sheen-top + shadow ladder as the editor card.
+   - Side columns get a subtle bg tint matching the inset feel.
+   - Zone cards become first-class hover-lift surfaces with a gradient and
+     a left-edge accent strip when active.
+   - Chips look 3D: gradient fill, sheen, drop shadow, scale on hover.
+   - Drop targets glow cohesively in gold.
+   - Hidden rail has a parking-lot striped pattern so it reads as "off-canvas". */
+
 .layout-designer {
-  background: var(--field);
+  background: linear-gradient(180deg, rgba(11, 24, 16, 0.85), rgba(11, 24, 16, 0.7));
   border: 1px solid var(--moss-dark);
-  border-radius: var(--radius);
-  padding: 12px;
-  margin: 4px 0 12px;
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin: 6px 0 14px;
+  position: relative;
+  isolation: isolate;
+  box-shadow: var(--sheen-top), 0 1px 3px rgba(0, 0, 0, 0.4) inset, var(--shadow-1);
 }
+.layout-designer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%);
+  pointer-events: none;
+  z-index: 0;
+}
+.layout-designer > * { position: relative; z-index: 1; }
 
 .layout-title {
   font-family: var(--font-body);
@@ -623,16 +722,20 @@ textarea.field-input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  min-width: 0;
 }
 
 .layout-column {
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px dashed var(--moss-dark);
-  border-radius: var(--radius-sm);
-  padding: 8px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.30) 0%, rgba(0, 0, 0, 0.18) 100%);
+  border: 1px solid rgba(74, 120, 88, 0.35);
+  border-radius: var(--radius-md);
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), inset 0 0 18px rgba(0, 0, 0, 0.25);
 }
 
 .layout-column-header {
@@ -640,10 +743,22 @@ textarea.field-input {
   font-size: 10.5px;
   color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.6px;
   text-align: center;
-  padding-bottom: 4px;
-  border-bottom: 1px dashed var(--moss-dark);
+  padding: 2px 0 6px;
+  border-bottom: 1px solid var(--moss-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.layout-column-header::before,
+.layout-column-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-fade), transparent);
+  opacity: 0.6;
 }
 
 .layout-zones {
@@ -654,16 +769,40 @@ textarea.field-input {
 }
 
 .layout-zone-card {
-  background: var(--field-hi, rgba(0, 0, 0, 0.25));
+  background: linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
   border: 1px solid var(--moss-dark);
-  border-radius: var(--radius-sm);
-  padding: 8px;
+  border-radius: var(--radius-md);
+  padding: 9px 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: border-color 180ms var(--easing-soft), box-shadow 180ms var(--easing-soft);
+  min-width: 0;
+  position: relative;
+  isolation: isolate;
+  box-shadow: var(--sheen-top), var(--shadow-1);
+  transition:
+    transform var(--dur-base) var(--ease-snap),
+    border-color var(--dur-base) var(--ease-snap),
+    box-shadow var(--dur-base) var(--ease-snap);
 }
-.layout-zone-card:hover { border-color: var(--gold-fade); }
+.layout-zone-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, transparent, var(--gold-fade), transparent);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-snap);
+}
+.layout-zone-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--gold-fade);
+  box-shadow: var(--sheen-top), var(--shadow-2);
+}
+.layout-zone-card:hover::before { opacity: 1; }
 
 .layout-zone-head {
   display: flex;
@@ -680,21 +819,38 @@ textarea.field-input {
 
 .layout-zone-mode,
 .layout-zone-width {
-  background: var(--field);
+  background: linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
   color: var(--cream);
   border: 1px solid var(--moss-dark);
   border-radius: var(--radius-sm);
-  padding: 3px 6px;
+  padding: 4px 22px 4px 8px;
   font-family: var(--font-body);
   font-size: 10.5px;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--gold-fade) 50%),
+    linear-gradient(135deg, var(--gold-fade) 50%, transparent 50%),
+    linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%, 0 0;
+  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    background var(--dur-fast) var(--ease-snap),
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap);
 }
 .layout-zone-mode { flex: 1; min-width: 0; }
-.layout-zone-width { width: 64px; }
+.layout-zone-width { width: 70px; flex-shrink: 0; }
+.layout-zone-mode:hover,
+.layout-zone-width:hover { border-color: var(--gold-fade); }
 .layout-zone-mode:focus,
 .layout-zone-width:focus {
-  outline: 2px solid var(--gold-bright);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 3px var(--gold-halo);
 }
 
 .layout-zone-remove {
@@ -718,58 +874,92 @@ textarea.field-input {
 .layout-zone-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  min-height: 28px;
-  padding: 4px;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px;
   border-radius: var(--radius-sm);
   border: 1px dashed transparent;
-  transition: border-color 180ms, background 180ms;
+  background: rgba(0, 0, 0, 0.20);
+  transition:
+    border-color var(--dur-base) var(--ease-snap),
+    background var(--dur-base) var(--ease-snap),
+    box-shadow var(--dur-base) var(--ease-snap);
+}
+.layout-zone-chips:empty::after {
+  content: 'empty zone — drag items here';
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 10.5px;
+  color: var(--moss);
+  align-self: center;
+  margin: 2px auto;
 }
 .layout-zone-chips.is-drop-target {
   border-color: var(--gold-bright);
-  background: rgba(196, 146, 42, 0.08);
+  background: rgba(232, 193, 114, 0.10);
+  box-shadow: inset 0 0 18px rgba(232, 193, 114, 0.10), 0 0 0 1px var(--gold-fade);
 }
 
 .layout-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: var(--moss-dark);
+  gap: 5px;
+  background: linear-gradient(180deg, var(--moss) 0%, var(--moss-dark) 100%);
   color: var(--cream);
-  border: 1px solid var(--moss);
-  border-radius: 12px;
-  padding: 3px 4px 3px 6px;
+  border: 1px solid var(--moss-dark);
+  border-radius: 999px;
+  padding: 4px 6px 4px 8px;
   font-family: var(--font-body);
   font-size: 11px;
+  font-weight: 600;
   cursor: grab;
   user-select: none;
-  transition: transform 160ms var(--press-curve), background 160ms, border-color 160ms, box-shadow 160ms;
+  max-width: 100%;
+  min-width: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    background var(--dur-fast) var(--ease-snap),
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap),
+    filter var(--dur-fast) var(--ease-snap);
 }
 .layout-chip:hover {
-  background: var(--moss);
+  filter: brightness(1.15);
   border-color: var(--gold-fade);
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 4px 12px -4px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--gold-fade);
 }
-.layout-chip:active { cursor: grabbing; }
+.layout-chip:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
 .layout-chip.is-dragging {
-  opacity: 0.4;
+  opacity: 0.35;
+  transform: scale(0.95);
 }
 .layout-chip.is-drop-before {
-  box-shadow: -3px 0 0 var(--gold-bright);
+  box-shadow: -3px 0 0 var(--gold-bright), inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
 .layout-chip.is-drop-after {
-  box-shadow: 3px 0 0 var(--gold-bright);
+  box-shadow: 3px 0 0 var(--gold-bright), inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
 .layout-chip-handle {
-  color: var(--moss-light);
+  color: var(--gold-fade);
   font-size: 10px;
   letter-spacing: -1px;
   cursor: grab;
+  line-height: 1;
 }
 .layout-chip-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .layout-chip-hide {
   background: transparent;
@@ -790,36 +980,54 @@ textarea.field-input {
 
 .layout-add-item,
 .layout-add-zone {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.20);
   color: var(--gold-fade);
   border: 1px dashed var(--moss);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-family: var(--font-body);
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: color 160ms, border-color 160ms, background 160ms;
+  transition:
+    color var(--dur-fast) var(--ease-snap),
+    border-color var(--dur-fast) var(--ease-snap),
+    background var(--dur-fast) var(--ease-snap),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast) var(--ease-snap);
 }
 .layout-add-item:hover,
 .layout-add-zone:hover {
   color: var(--gold-bright);
   border-color: var(--gold);
-  background: rgba(196, 146, 42, 0.08);
+  border-style: solid;
+  background: rgba(209, 161, 74, 0.10);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -6px var(--gold-glow);
 }
+.layout-add-item:active,
+.layout-add-zone:active { transform: scale(0.97); }
 .layout-add-zone {
   width: 100%;
-  padding: 6px;
+  padding: 7px;
 }
 
 .layout-item-picker {
   position: relative;
-  margin-top: 4px;
-  background: var(--bg-card-hi, var(--field));
+  margin-top: 6px;
+  background: linear-gradient(180deg, var(--bg-card-hi) 0%, var(--bg-card) 100%);
   border: 1px solid var(--gold-fade);
-  border-radius: var(--radius-sm);
-  padding: 6px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--sheen-top), 0 12px 32px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--gold-fade);
   z-index: 10;
+  animation: pickerDropIn var(--dur-base) var(--ease-spring) both;
+  transform-origin: top right;
+}
+@keyframes pickerDropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .layout-item-picker-title {
   font-family: var(--font-body);
@@ -865,17 +1073,23 @@ textarea.field-input {
 }
 
 .layout-hidden {
-  margin-top: 10px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px dashed var(--moss-dark);
-  border-radius: var(--radius-sm);
+  margin-top: 12px;
+  padding: 10px;
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(0, 0, 0, 0.18) 0,
+      rgba(0, 0, 0, 0.18) 8px,
+      rgba(0, 0, 0, 0.28) 8px,
+      rgba(0, 0, 0, 0.28) 16px);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), inset 0 0 18px rgba(0, 0, 0, 0.3);
 }
 .layout-hidden-label {
   font-family: var(--font-body);
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.4px;
   color: var(--moss-light);
   margin-bottom: 6px;
   display: flex;
@@ -894,16 +1108,21 @@ textarea.field-input {
 .layout-hidden-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  min-height: 28px;
-  padding: 4px;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px;
   border-radius: var(--radius-sm);
   border: 1px dashed transparent;
-  transition: border-color 180ms, background 180ms;
+  background: rgba(0, 0, 0, 0.30);
+  transition:
+    border-color var(--dur-base) var(--ease-snap),
+    background var(--dur-base) var(--ease-snap),
+    box-shadow var(--dur-base) var(--ease-snap);
 }
 .layout-hidden-chips.is-drop-target {
   border-color: var(--warn);
-  background: rgba(196, 88, 10, 0.10);
+  background: rgba(196, 88, 10, 0.12);
+  box-shadow: inset 0 0 18px rgba(196, 88, 10, 0.10), 0 0 0 1px rgba(196, 88, 10, 0.35);
 }
 .layout-hidden-empty {
   font-family: var(--font-italic);
@@ -911,6 +1130,17 @@ textarea.field-input {
   font-size: 10.5px;
   color: var(--moss);
   padding: 4px;
+}
+/* Hidden chips are visually de-emphasized to read as "parked". */
+.layout-hidden-chips .layout-chip {
+  background: linear-gradient(180deg, var(--field-hi) 0%, var(--field) 100%);
+  color: var(--moss-light);
+  border-color: var(--moss-dark);
+  opacity: 0.85;
+}
+.layout-hidden-chips .layout-chip:hover {
+  opacity: 1;
+  color: var(--cream);
 }
 
 /* ============================================================

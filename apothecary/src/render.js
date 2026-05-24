@@ -170,15 +170,15 @@ export const ITEM_LABELS = {
   'rune-1':         'Rune 1',
   'rune-2':         'Rune 2',
   'rune-3':         'Rune 3',
-  'back-name':      'Back: Herb Name',
-  'back-latin':     'Back: Latin Name',
-  'back-divider':   'Back: Thin Divider',
+  'back-name':      'Herb Name (back)',
+  'back-latin':     'Latin Name (back)',
+  'back-divider':   'Thin Divider',
   'back-desc-full': 'Full Description',
   historic:         'Traditional Uses',
-  notes:            'Notes (Compounds + Cautions)',
-  compounds:        'Active Compounds',
+  notes:            'Notes (combined)',
+  compounds:        'Compounds',
   cautions:         'Cautions',
-  pairings:         'Good Pairings',
+  pairings:         'Pairings',
 };
 
 export const ALL_ITEM_KEYS = Object.keys(ITEM_RENDERERS);
