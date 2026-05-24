@@ -395,19 +395,25 @@ function zonesHtml(zones, state, fullCtx) {
   return (zones || []).map(z => zoneHtml(z, state, fullCtx)).join('');
 }
 
-// v0.14.2: collapsible wrapper around each preview card. Header has a
-// chevron + side label that's clickable to toggle. Body holds the actual
-// card HTML. The 'open' arg drives both the class and the chevron rotation.
+// v0.14.2 + v0.15.1: collapsible wrapper around each preview card. When
+// collapsed, the body is OMITTED from the HTML entirely (not just hidden via
+// CSS) so the fixed-dimension label-frame inside doesn't fight the layout.
+// Cleaner than CSS height tricks, simpler reflow, no flash during transition.
+// Cost: re-paint on every expand, but render() already runs on every state
+// change so the marginal work is small.
 function previewSection(side, label, open, cardHtml) {
   const openCls = open ? ' preview-section--open' : '';
   const aria = open ? 'true' : 'false';
+  const body = open
+    ? `<div class="preview-section-body">${cardHtml}</div>`
+    : '';
   return `
     <div class="preview-section${openCls}" data-preview-side="${side}">
       <button class="preview-section-head" type="button" data-preview-toggle="${side}" aria-expanded="${aria}">
         <span class="preview-section-title">${esc(label)}</span>
         <span class="preview-section-chevron" aria-hidden="true">›</span>
       </button>
-      <div class="preview-section-body">${cardHtml}</div>
+      ${body}
     </div>
   `;
 }
@@ -492,17 +498,23 @@ export function render(state, mounts, ctx) {
   const showBack = !!state.backEnabled && backZones.length > 0;
   const cardCount = showBack ? 2 : 1;
 
-  // v0.14.2: wrap each preview card in a collapsible section so the user can
-  // hide front or back independently. Open state lives in state.previewCollapse
-  // and persists across re-renders. Click handler is wired below.
+  // v0.14.2 + v0.15.1: wrap each preview card in a collapsible section. When
+  // collapsed, the card HTML isn't even generated - cheaper and avoids fighting
+  // the fixed-dimension label-frame layout.
   const collapse = state.previewCollapse ?? { front: false, back: false };
+  const frontOpen = !collapse.front;
+  const backOpen  = !collapse.back;
+  const frontCard = frontOpen
+    ? previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+                        zones: frontZones, theme, previewScale })
+    : '';
+  const backCard = (showBack && backOpen)
+    ? previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+                        side: 'back', zones: backZones, theme, previewScale })
+    : '';
   const previewCards = [
-    previewSection('front', 'Front', !collapse.front,
-      previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-                        zones: frontZones, theme, previewScale })),
-    ...(showBack ? [previewSection('back', 'Back', !collapse.back,
-      previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-                        side: 'back', zones: backZones, theme, previewScale }))] : []),
+    previewSection('front', 'Front', frontOpen, frontCard),
+    ...(showBack ? [previewSection('back', 'Back', backOpen, backCard)] : []),
   ].join('');
 
   // Preview wrapper sizes itself off the design width when at least one

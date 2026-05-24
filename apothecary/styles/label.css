@@ -160,25 +160,19 @@
 }
 .preview-section--open .preview-section-chevron { transform: rotate(-90deg); }
 
+/* v0.15.1: body is omitted from the DOM entirely when collapsed (handled
+   in render.js -> previewSection). When it reappears, fade + slide in for
+   a soft transition. No max-height animation; the body's intrinsic size
+   wins, no fighting with the inner fixed-dimension label-frame. */
 .preview-section-body {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-4px);
-  margin-top: 0;
   display: flex;
   justify-content: center;
-  transition:
-    max-height var(--dur-slow) var(--ease-snap),
-    opacity var(--dur-base) var(--ease-snap),
-    transform var(--dur-base) var(--ease-snap),
-    margin-top var(--dur-slow) var(--ease-snap);
-}
-.preview-section--open .preview-section-body {
-  max-height: 1800px;
-  opacity: 1;
-  transform: translateY(0);
   margin-top: 12px;
+  animation: previewSectionIn var(--dur-base) var(--ease-snap) both;
+}
+@keyframes previewSectionIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .preview-gap { height: 0; }
