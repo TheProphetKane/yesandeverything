@@ -866,6 +866,36 @@
       font-weight: 600;
       margin-bottom: 6px;
     }
+    .gate-clause-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .gate-clause-head .heading { margin-bottom: 0; }
+    .ghost-btn {
+      appearance: none;
+      background: transparent;
+      border: 1px solid var(--ink-3);
+      color: var(--fg-2);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.04em;
+      padding: 3px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+    }
+    .ghost-btn:hover {
+      border-color: rgba(245, 165, 36, 0.45);
+      color: var(--warn);
+      background: rgba(245, 165, 36, 0.05);
+    }
+    .ghost-btn:focus-visible {
+      outline: 2px solid var(--warn);
+      outline-offset: 2px;
+    }
     .gate-clause .rate {
       font-family: var(--mono);
       color: var(--fg-0);
@@ -1130,6 +1160,77 @@
     }
 
     /* -----------------------------------------------------------
+       Narrow-screen polish — modal stays usable on small phones
+       ----------------------------------------------------------- */
+
+    @media (max-width: 480px) {
+      .gate { padding: 12px; }
+      .gate-intro { padding: 18px 18px 12px; }
+      .gate-scroll { padding: 12px 18px; }
+      .gate-actions {
+        padding: 12px 18px;
+        flex-direction: column-reverse;  /* button above fine print */
+        align-items: stretch;
+        gap: 10px;
+      }
+      .gate-actions .fine {
+        text-align: center;
+        font-size: 10px;
+      }
+      .gate-btn {
+        justify-content: center;
+        width: 100%;
+      }
+      .gate-title { font-size: 18px; }
+      .gate-title::before { width: 22px; height: 22px; font-size: 14px; }
+      .gate-clause > details > div { padding-left: 30px; padding-right: 0; }
+    }
+
+    /* -----------------------------------------------------------
+       Print — black-on-white, all terms expanded, no modal
+       ----------------------------------------------------------- */
+
+    @media print {
+      html, body {
+        background: white !important;
+        color: black !important;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 11pt;
+        line-height: 1.4;
+      }
+      .bg-mesh, .bg-grid, .bg-spot, .bg-noise,
+      .gate, .skip, .window .titlebar,
+      .stats, .projects, .reveal-stagger,
+      footer .build, .spark {
+        display: none !important;
+      }
+      .wrap { max-width: 100%; padding: 0; }
+      .window {
+        background: none; border: none; box-shadow: none;
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+      }
+      .hero h1, h2 { color: black !important; text-shadow: none !important; }
+      .hero h1 .type { width: auto !important; border-right: none !important; animation: none !important; }
+      a { color: black !important; text-decoration: underline; }
+      .notice {
+        background: none !important; border: 1px solid #888;
+        border-left: 3px solid #555; color: black !important;
+        page-break-inside: avoid;
+      }
+      .notice .clause .rate {
+        background: none; border: 1px solid #999;
+        color: black !important;
+        padding: 0 4px;
+      }
+      .notice .clause ol li::before { color: #555 !important; }
+      .notice .clause ol li, .notice .clause ol li strong {
+        color: black !important;
+      }
+      .section-label::before { color: black !important; }
+      .section-label::after { background: #888 !important; }
+    }
+
+    /* -----------------------------------------------------------
        Reduced motion — turn everything off
        ----------------------------------------------------------- */
 
@@ -1182,7 +1283,10 @@
       <!-- Scrollable middle: clause with collapsible sections -->
       <div class="gate-scroll">
         <div class="gate-clause" role="note">
-          <span class="heading">Terms of engagement &mdash; binding on contact</span>
+          <div class="gate-clause-head">
+            <span class="heading">Terms of engagement &mdash; binding on contact</span>
+            <button type="button" id="gate-expand-toggle" class="ghost-btn">Expand all</button>
+          </div>
 
           <details>
             <summary>
@@ -1377,7 +1481,7 @@
           </p>
           <p class="project-meta">
             <span class="status live">Live</span>
-            <span class="dot"></span><span>v0.26.x &rarr; 1.0</span>
+            <span class="dot"></span><span>v0.32.x &rarr; 1.0</span>
             <span class="dot"></span><a href="https://yesandchains.com" class="meta-link" rel="noopener">yesandchains.com &rarr;</a>
           </p>
         </article>
@@ -1404,7 +1508,7 @@
           </p>
           <p class="project-meta">
             <span class="status alpha">Pre-alpha</span>
-            <span class="dot"></span><span>v0.70.x</span>
+            <span class="dot"></span><span>v0.74.x</span>
             <span class="dot"></span><a href="hordes/" class="meta-link">GDD &rarr;</a>
           </p>
         </article>
@@ -1416,23 +1520,27 @@
           </svg>
           <div class="project-head">
             <h2 class="project-name">Scheduler</h2>
-            <span class="badge">Web App · Cloudflare</span>
+            <span class="badge">Multi-tenant · Cloudflare</span>
           </div>
           <p class="project-blurb">
-            An employee-scheduling web app, built first for an Aquatics department
-            (Lifeguard + Swim Instructor sub-departments) and architected to grow into
-            more departments without code changes. Employees sign in with a magic link
-            and set Preferred / Available / Unavailable on a rolling six-week shift
-            window; an auto-fill round-robins through the roster, honoring preferences
-            first, then availability, then min-hours. Managers run a review queue for
-            change requests, shift swaps, time-off, and an open-shift board; admins
-            manage users, org tree, settings, and an append-only audit log. Mobile-first.
-            Tech: Cloudflare Workers + D1 SQLite, Vite + React + Tailwind on Pages,
-            Supabase magic-link.
+            A multi-tenant employee-scheduling SaaS. Each client company gets its own
+            isolated organization on the same instance &mdash; cross-org access
+            returns 404, never 403, so tenant existence never leaks. Employees sign
+            in with a magic link and set Preferred / Available / Unavailable on a
+            rolling six-week shift window; an auto-fill round-robins through the
+            roster, honoring preferences first, then availability, then min-hours.
+            Managers run a review queue for change requests, swaps, time-off, and an
+            open-shift board; admins manage users, org tree, settings, and an
+            append-only audit log; admins can own multiple orgs and switch via a
+            header dropdown. A super-admin role observes every org and invites new
+            admins. One-click shareable invite links pre-fill the recipient's
+            login. Mobile-first &mdash; verified at 360px. Tech: Cloudflare Workers
+            + D1 SQLite, Vite + React + Tailwind on Pages, Supabase magic-link with
+            JWT verification.
           </p>
           <p class="project-meta">
-            <span class="status launching">Launching</span>
-            <span class="dot"></span><span>v1.0</span>
+            <span class="status live">Live</span>
+            <span class="dot"></span><span>v0.2.0 &mdash; multi-tenant</span>
             <span class="dot"></span><a href="projects/scheduler/" class="meta-link">project &rarr;</a>
           </p>
         </article>
@@ -1460,7 +1568,7 @@
           </p>
           <p class="project-meta">
             <span class="status live">Live</span>
-            <span class="dot"></span><span>v0.3.0</span>
+            <span class="dot"></span><span>v0.5.0 &mdash; saved labels + PNG export</span>
             <span class="dot"></span><a href="apothecary/" class="meta-link">launch &rarr;</a>
           </p>
         </article>
@@ -1475,21 +1583,28 @@
             <span class="badge">Local-first · SQLite</span>
           </div>
           <p class="project-blurb">
-            A personal budget tool that runs entirely on your own machine. Drop in monthly
-            bank statements, get rule-based categorization across essentials /
-            discretionary / income / transfers, and see where the money is actually going.
-            Dashboard with cash-flow trend, spend-by-category with month-over-month delta,
-            top merchants, essential-vs-discretionary split. Insights surface a
-            subscription detector (3+ similar amounts at monthly cadence), a
-            recurring-spend ranker by annualized cost, and a candidate-cuts list.
-            <em>Bank data never leaves the machine</em>: no cloud, no Plaid, no
-            third-party API touching raw transactions. Vite + React + Tailwind on the
-            front, Hono + better-sqlite3 on the back, pnpm workspace, one importer file
-            per bank format.
+            A personal budget tool that runs entirely on your own machine. Drop in
+            monthly bank statements, get rule-based categorization across essentials,
+            discretionary, income, and transfers, and see where the money is actually
+            going. Dashboard with cash-flow trend, spend-by-category with
+            month-over-month delta, top merchants, essential-vs-discretionary split,
+            largest charges, day-of-week heatmap, money-left-this-month tile, forecast.
+            Insights surface a subscription detector (3+ similar amounts at monthly
+            cadence), a per-category MAD outlier classifier, a recurring-spend ranker
+            by annualized cost, a candidate-cuts list, &ldquo;already cut&rdquo; and
+            &ldquo;won't cut&rdquo; flags with a running money-saved hero. Budgets,
+            account balances, net worth, streaks, calendar heatmap, reconcile, CSV
+            export, and a Cmd-K palette round out the surface. <em>Bank data never
+            leaves the machine</em>: no cloud, no Plaid, no third-party API touching
+            raw transactions; an optional opt-in LLM fallback for categorization
+            sees only normalized merchant strings. Vite + React + Tailwind (OKLCH
+            palette, variable fonts, mesh hero, glass surfaces) on the front, Hono
+            on Node with better-sqlite3 on the back, single pnpm workspace, one
+            importer file per bank format.
           </p>
           <p class="project-meta">
-            <span class="status premvp">Pre-MVP</span>
-            <span class="dot"></span><span>v0.1.0</span>
+            <span class="status live">Post-MVP</span>
+            <span class="dot"></span><span>v0.7.x &mdash; M0&ndash;M4 shipped</span>
             <span class="dot"></span><a href="projects/budget/" class="meta-link cyan">project &rarr;</a>
           </p>
         </article>
@@ -1610,12 +1725,16 @@
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       // ---- Acknowledge gate ---------------------------------------------
-      // Appears on load, blocks the page until accepted. Sticks for the
-      // browser session via sessionStorage; new tab / new session shows
-      // it again. Acceptance is mandatory: ESC does nothing, you must
-      // click the button (or press Enter while it has focus).
+      // Appears on load, blocks the page until accepted. Persists across
+      // sessions via localStorage so return visitors aren't re-prompted
+      // unless they explicitly clear site data. Versioned ACK_KEY means
+      // if the terms change materially we can bump the version to force
+      // a fresh acknowledgement.
+      // Acceptance is mandatory: ESC does nothing, you must click the
+      // button (or press Enter while it has focus). The summary toggle
+      // for §1–§6 has its own Expand-all / Collapse-all control.
       (function gate() {
-        const ACK_KEY = 'yae.acknowledgedNotice';
+        const ACK_KEY = 'yae.acknowledgedNotice.v1';
         const root = document.documentElement;
         const body = document.body;
         const el = document.getElementById('gate');
@@ -1623,12 +1742,32 @@
         if (!el || !btn) return;
 
         let alreadyAcknowledged = false;
-        try { alreadyAcknowledged = sessionStorage.getItem(ACK_KEY) === '1'; }
+        try { alreadyAcknowledged = localStorage.getItem(ACK_KEY) === '1'; }
         catch (_) { /* private mode etc. — show anyway */ }
 
         if (alreadyAcknowledged) {
           el.hidden = true;
           return;
+        }
+
+        // Expand all / collapse all the §1–§6 details
+        const toggle = el.querySelector('#gate-expand-toggle');
+        if (toggle) {
+          const all = () => el.querySelectorAll('.gate-clause > details');
+          toggle.addEventListener('click', () => {
+            const list = all();
+            const anyClosed = Array.from(list).some(d => !d.open);
+            list.forEach(d => { d.open = anyClosed; });
+            toggle.textContent = anyClosed ? 'Collapse all' : 'Expand all';
+          });
+          // Keep the label in sync when individual details are toggled
+          el.querySelectorAll('.gate-clause > details').forEach((d) => {
+            d.addEventListener('toggle', () => {
+              const list = all();
+              const allOpen = Array.from(list).every(x => x.open);
+              toggle.textContent = allOpen ? 'Collapse all' : 'Expand all';
+            });
+          });
         }
 
         // Show: unhide, lock scroll, animate in, focus the button.
@@ -1665,7 +1804,7 @@
         document.addEventListener('keydown', trap, true);
 
         function dismiss() {
-          try { sessionStorage.setItem(ACK_KEY, '1'); } catch (_) {}
+          try { localStorage.setItem(ACK_KEY, '1'); } catch (_) {}
           el.classList.remove('on');
           root.classList.remove('gated');
           body.classList.remove('gated');

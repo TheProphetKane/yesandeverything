@@ -1,22 +1,137 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>404 &mdash; yesandeverything</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="refresh" content="3; url=/" />
-  <style>
-    html, body { margin: 0; height: 100%; background: #0b0d10; color: #d6dde6; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-    body { display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 24px; text-align: center; }
-    h1 { color: #00ff9c; margin: 0 0 12px; font-size: 32px; }
-    p { color: #7a8696; margin: 4px 0; }
-    a { color: #00ff9c; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-  </style>
+<meta charset="utf-8">
+<title>404 &mdash; yesandeverything</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#06080b">
+<meta http-equiv="refresh" content="5; url=/">
+<style>
+  :root {
+    --ink-0: #06080b;
+    --ink-1: #0d1117;
+    --ink-3: #1f2632;
+    --fg-0:  #ecf0f5;
+    --fg-1:  #a4aeba;
+    --fg-2:  #697381;
+    --fg-3:  #4a5563;
+    --accent: #00ff9c;
+    --accent-glow: rgba(0, 255, 156, 0.28);
+    --cyan: #62d2f3;
+    --warn: #f5a524;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--ink-0);
+    color: var(--fg-0);
+    font-family: var(--mono);
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 24px;
+    text-align: center;
+    background-image:
+      radial-gradient(circle at 30% 0%, rgba(0, 255, 156, 0.05), transparent 45%),
+      radial-gradient(circle at 70% 100%, rgba(98, 210, 243, 0.04), transparent 45%);
+  }
+  .code {
+    font-size: clamp(96px, 18vw, 168px);
+    font-weight: 700;
+    line-height: 1;
+    margin: 0;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+    text-shadow: 0 0 40px var(--accent-glow);
+    font-variant-numeric: tabular-nums;
+  }
+  .title {
+    font-size: 18px;
+    color: var(--fg-1);
+    margin: 18px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .path {
+    font-size: 12.5px;
+    color: var(--fg-2);
+    margin: 0 0 22px;
+    background: var(--ink-1);
+    border: 1px solid var(--ink-3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    max-width: 90vw;
+    overflow-wrap: anywhere;
+  }
+  .hint {
+    color: var(--fg-3);
+    font-size: 12px;
+    margin: 24px 0 8px;
+    font-family: var(--sans);
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13.5px;
+    padding: 8px 16px;
+    border: 1px solid rgba(0, 255, 156, 0.3);
+    border-radius: 6px;
+    background: rgba(0, 255, 156, 0.05);
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  a:hover {
+    background: rgba(0, 255, 156, 0.12);
+    border-color: var(--accent);
+    color: #5fffba;
+  }
+  a.ghost {
+    color: var(--fg-1);
+    border-color: var(--ink-3);
+    background: transparent;
+  }
+  a.ghost:hover { color: var(--cyan); border-color: var(--cyan); }
+  .blink {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--accent);
+    vertical-align: middle;
+    margin-left: 4px;
+    animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+  @media (prefers-reduced-motion: reduce) {
+    .blink { animation: none; }
+  }
+</style>
 </head>
 <body>
-  <h1>404</h1>
-  <p>that path does not exist.</p>
-  <p><a href="/">→ back to index</a></p>
+  <p class="code">404</p>
+  <p class="title">that path does not exist<span class="blink"></span></p>
+  <p class="path" id="path">/</p>
+  <p class="hint">redirecting home in 5 seconds</p>
+  <div class="actions">
+    <a href="/">&rarr; back to index</a>
+    <a href="/projects/budget/" class="ghost">budget</a>
+    <a href="/projects/scheduler/" class="ghost">scheduler</a>
+    <a href="/hordes/" class="ghost">hordes (gated)</a>
+  </div>
+  <script>
+    var p = document.getElementById('path');
+    if (p) p.textContent = location.pathname || '/';
+  </script>
 </body>
 </html>
