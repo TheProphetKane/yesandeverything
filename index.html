@@ -731,6 +731,9 @@
 
     .gate-card {
       width: min(560px, 100%);
+      max-height: min(92vh, 740px);
+      display: flex;
+      flex-direction: column;
       background: linear-gradient(180deg, var(--ink-1) 0%, var(--ink-2) 100%);
       border: 1px solid var(--ink-4);
       border-radius: 14px;
@@ -779,12 +782,37 @@
       font-weight: 600;
     }
 
-    .gate-body { padding: 26px 28px 22px; }
+    /* Zone layout inside the card:
+         gate-bar    (fixed top, titlebar — already styled above)
+         gate-intro  (fixed top — title + intro paragraph, always visible)
+         gate-scroll (middle — clause with collapsible §1-§6, scrolls if expanded)
+         gate-actions(fixed bottom — button always visible)
+    */
+    .gate-intro {
+      padding: 22px 26px 14px;
+      flex: 0 0 auto;
+      border-bottom: 1px dashed var(--ink-3);
+    }
+    .gate-scroll {
+      padding: 14px 26px 14px;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      min-height: 0;
+      scrollbar-color: var(--ink-4) transparent;
+    }
+    .gate-scroll::-webkit-scrollbar { width: 10px; }
+    .gate-scroll::-webkit-scrollbar-thumb {
+      background: var(--ink-4);
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
 
     .gate-title {
-      margin: 0 0 14px;
+      margin: 0 0 12px;
       font-family: var(--mono);
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--fg-0);
@@ -797,23 +825,23 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px; height: 28px;
+      width: 26px; height: 26px;
       border-radius: 6px;
       background: rgba(245, 165, 36, 0.12);
       color: var(--warn);
       font-weight: 700;
-      font-size: 18px;
+      font-size: 17px;
       flex: 0 0 auto;
     }
 
-    .gate-body p {
-      margin: 0 0 12px;
+    .gate-intro p {
+      margin: 0;
       font-family: var(--sans);
-      font-size: 14.5px;
-      line-height: 1.6;
+      font-size: 14px;
+      line-height: 1.55;
       color: var(--fg-1);
     }
-    .gate-body p strong { color: var(--fg-0); font-family: var(--mono); font-weight: 600; }
+    .gate-intro p strong { color: var(--fg-0); font-family: var(--mono); font-weight: 600; }
 
     .gate-clause {
       margin: 16px 0 0;
@@ -888,15 +916,85 @@
     }
     .notice .clause ol li { font-size: 13px; }
 
+    /* Modal collapsible sections (replaces ol/li inside .gate-clause) */
+    .gate-clause > details {
+      border-top: 1px dashed var(--ink-3);
+      padding: 0;
+    }
+    .gate-clause > details:first-of-type {
+      margin-top: 10px;
+    }
+    .gate-clause > details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 9px 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--fg-1);
+      user-select: none;
+      transition: color 140ms ease;
+    }
+    .gate-clause > details > summary::-webkit-details-marker { display: none; }
+    .gate-clause > details > summary::before {
+      content: "+";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      background: rgba(245, 165, 36, 0.10);
+      border: 1px solid rgba(245, 165, 36, 0.35);
+      color: var(--warn);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      flex: 0 0 auto;
+      transition: transform 200ms var(--ease-spring), background 160ms ease;
+    }
+    .gate-clause > details[open] > summary::before {
+      content: "−";
+      background: rgba(245, 165, 36, 0.18);
+    }
+    .gate-clause > details > summary:hover { color: var(--fg-0); }
+    .gate-clause > details > summary .secnum {
+      font-family: var(--mono);
+      color: var(--warn);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      min-width: 24px;
+    }
+    .gate-clause > details > summary strong {
+      color: var(--fg-0);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .gate-clause > details > div {
+      padding: 0 4px 12px 50px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--fg-1);
+    }
+    .gate-clause > details > div strong {
+      color: var(--fg-0);
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+
     .gate-actions {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 14px;
       flex-wrap: wrap;
-      margin-top: 22px;
-      padding-top: 18px;
-      border-top: 1px dashed var(--ink-3);
+      padding: 16px 26px;
+      border-top: 1px solid var(--ink-3);
+      background:
+        linear-gradient(180deg, rgba(13, 17, 23, 0.4) 0%, var(--ink-1) 100%);
     }
     .gate-actions .fine {
       font-family: var(--mono);
@@ -1069,82 +1167,126 @@
         <span>~/yesandeverything &mdash; notice required</span>
         <span class="tag">read me</span>
       </div>
-      <div class="gate-body">
+
+      <!-- Fixed top: title + intro (always visible) -->
+      <div class="gate-intro" id="gate-desc">
         <h2 class="gate-title" id="gate-title">Before you proceed</h2>
-        <div id="gate-desc">
-          <p>
-            <strong>This site is not seeking solicitations.</strong> I am not entertaining
-            sales pitches, recruiting outreach, agency proposals, or &ldquo;quick chats&rdquo;
-            about tools, services, or partnerships. Cold messages on these bases will
-            not receive a reply.
-          </p>
-          <div class="gate-clause" role="note">
-            <span class="heading">Terms of engagement &mdash; binding on contact</span>
-            <ol>
-              <li>
-                <strong>Scope.</strong> Any unsolicited outreach to the operator of
-                this site &mdash; by email, telephone call (live or pre-recorded),
-                SMS, voicemail, web form, direct message on any social platform,
-                postal mail, or any other channel &mdash; proposing to perform work,
-                services, or modifications on or for the domain
-                <span class="rate">yesandeverything.com</span> or any of its
-                associated projects constitutes a binding offer to retain the
-                operator for a paid evaluation engagement. Covered categories
-                include, without limitation: SEO, web development, redesign,
-                optimization, marketing, advertising, content production, audits,
-                hosting, link-building, lead generation, brand or identity work,
-                and any other paid service the sender intends to perform on the
-                domain or any of its projects.
-              </li>
-              <li>
-                <strong>Rate.</strong>
-                <span class="rate">US&nbsp;$1,000.00 per hour</span>,
-                one&#8209;hour minimum, non-refundable, plus any applicable taxes.
-              </li>
-              <li>
-                <strong>Acceptance.</strong> Transmitting any outreach of the type
-                described in &sect;1 &mdash; by message, by call, or by any other
-                channel &mdash; constitutes your affirmative acceptance of these
-                terms in full, on behalf of yourself and any entity you represent,
-                and your warranty that you have authority to bind that entity. No
-                language contained within the outreach (including but not limited
-                to &ldquo;this is not a solicitation,&rdquo; opt-out footers, or
-                similar disclaimers) modifies or supersedes this agreement.
-              </li>
-              <li>
-                <strong>Invoice &amp; payment.</strong> An invoice will be issued
-                to the reply-to address and to any entity identified in the
-                outreach. Payment is due net thirty (30) days from issuance.
-                Unpaid balances accrue interest at the lesser of 1.5% per month or
-                the maximum rate permitted by applicable law. Reasonable costs of
-                collection, including attorneys' fees, are additionally
-                recoverable.
-              </li>
-              <li>
-                <strong>Severability &amp; governing law.</strong> If any portion
-                of these terms is held unenforceable, the remainder shall remain
-                in full force. These terms are governed by the laws of the
-                operator's principal place of residence, and disputes shall be
-                resolved exclusively in the courts of competent jurisdiction
-                therein.
-              </li>
-              <li>
-                <strong>Notice.</strong> These terms are displayed conspicuously
-                on first load of <span class="rate">yesandeverything.com</span>
-                and require affirmative acknowledgement before page content is
-                accessible. Continued use of any contact information published in
-                association with this domain constitutes additional, repeated
-                notice of these terms.
-              </li>
-            </ol>
-          </div>
+        <p>
+          <strong>This site is not seeking solicitations.</strong> I am not entertaining
+          sales pitches, recruiting outreach, agency proposals, or &ldquo;quick chats&rdquo;
+          about tools, services, or partnerships. Cold messages on these bases will
+          not receive a reply. Full terms below &mdash; expand any section to read.
+        </p>
+      </div>
+
+      <!-- Scrollable middle: clause with collapsible sections -->
+      <div class="gate-scroll">
+        <div class="gate-clause" role="note">
+          <span class="heading">Terms of engagement &mdash; binding on contact</span>
+
+          <details>
+            <summary>
+              <span class="secnum">&sect;1</span>
+              <strong>Scope</strong>
+            </summary>
+            <div>
+              Any unsolicited outreach to the operator of this site &mdash; by
+              email, telephone call (live or pre-recorded), SMS, voicemail, web
+              form, direct message on any social platform, postal mail, or any
+              other channel &mdash; proposing to perform work, services, or
+              modifications on or for the domain
+              <span class="rate">yesandeverything.com</span> or any of its
+              associated projects constitutes a binding offer to retain the
+              operator for a paid evaluation engagement. Covered categories
+              include, without limitation: SEO, web development, redesign,
+              optimization, marketing, advertising, content production, audits,
+              hosting, link-building, lead generation, brand or identity work,
+              and any other paid service the sender intends to perform on the
+              domain or any of its projects.
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="secnum">&sect;2</span>
+              <strong>Rate</strong>
+            </summary>
+            <div>
+              <span class="rate">US&nbsp;$1,000.00 per hour</span>,
+              one&#8209;hour minimum, non-refundable, plus any applicable taxes.
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="secnum">&sect;3</span>
+              <strong>Acceptance</strong>
+            </summary>
+            <div>
+              Transmitting any outreach of the type described in &sect;1 &mdash;
+              by message, by call, or by any other channel &mdash; constitutes
+              your affirmative acceptance of these terms in full, on behalf of
+              yourself and any entity you represent, and your warranty that you
+              have authority to bind that entity. No language contained within
+              the outreach (including but not limited to &ldquo;this is not a
+              solicitation,&rdquo; opt-out footers, or similar disclaimers)
+              modifies or supersedes this agreement.
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="secnum">&sect;4</span>
+              <strong>Invoice &amp; payment</strong>
+            </summary>
+            <div>
+              An invoice will be issued to the reply-to address and to any
+              entity identified in the outreach. Payment is due net thirty (30)
+              days from issuance. Unpaid balances accrue interest at the lesser
+              of 1.5% per month or the maximum rate permitted by applicable
+              law. Reasonable costs of collection, including attorneys' fees,
+              are additionally recoverable.
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="secnum">&sect;5</span>
+              <strong>Severability &amp; governing law</strong>
+            </summary>
+            <div>
+              If any portion of these terms is held unenforceable, the remainder
+              shall remain in full force. These terms are governed by the laws
+              of the operator's principal place of residence, and disputes shall
+              be resolved exclusively in the courts of competent jurisdiction
+              therein.
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="secnum">&sect;6</span>
+              <strong>Notice</strong>
+            </summary>
+            <div>
+              These terms are displayed conspicuously on first load of
+              <span class="rate">yesandeverything.com</span> and require
+              affirmative acknowledgement before page content is accessible.
+              Continued use of any contact information published in association
+              with this domain constitutes additional, repeated notice of these
+              terms.
+            </div>
+          </details>
+
         </div>
-        <div class="gate-actions">
-          <span class="fine">clicking constitutes affirmative acceptance under &sect;3</span>
-          <button class="gate-btn" id="gate-accept" type="button" autofocus>
-            I agree to these terms <span class="kbd">Enter</span>
-          </button>
-        </div>
+      </div>
+
+      <!-- Sticky bottom: actions (always visible) -->
+      <div class="gate-actions">
+        <span class="fine">clicking constitutes affirmative acceptance under &sect;3</span>
+        <button class="gate-btn" id="gate-accept" type="button" autofocus>
+          I agree to these terms <span class="kbd">Enter</span>
+        </button>
       </div>
     </div>
   </div>
