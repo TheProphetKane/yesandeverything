@@ -164,7 +164,7 @@ export function mountEditor(root, ctx) {
           <div id="pairingsCounter" class="desc-counter">0 / ${tmpl.pairingsMaxChars}</div>
         </div>
       </div>
-    `)}
+    `, true)}
 
     ${section('style', 'Style', `
       <div class="field">
@@ -700,10 +700,12 @@ export function mountEditor(root, ctx) {
 // stays in DOM (and localStorage via the persist subscriber if we add it
 // later). For now: ephemeral, all-open on every load.
 
-function section(id, title, innerHtml) {
+function section(id, title, innerHtml, open = false) {
+  const openCls = open ? ' ed-section--open' : '';
+  const aria    = open ? 'true' : 'false';
   return `
-    <section class="ed-section ed-section--open" data-section="${id}">
-      <button class="ed-section-head" type="button" aria-expanded="true">
+    <section class="ed-section${openCls}" data-section="${id}">
+      <button class="ed-section-head" type="button" aria-expanded="${aria}">
         <span class="ed-section-title">${title}</span>
         <span class="ed-section-chevron" aria-hidden="true">›</span>
       </button>
@@ -966,7 +968,7 @@ function mountLayoutDesigner(root, state, deps) {
       <div class="layout-hidden" data-hidden-rail>
         <div class="layout-hidden-label">Hidden Items <span class="layout-hidden-hint">drag here to remove from the label</span></div>
         <div class="layout-hidden-chips" data-hidden-chips>
-          ${(layout.hidden || []).map(item => itemChipHtml(item, 'hidden', s.customItems)).join('') || '<div class="layout-hidden-empty">(everything is placed)</div>'}
+          ${(layout.hidden || []).map((item, i) => itemChipHtml(item, 'hidden', i, s.customItems)).join('') || '<div class="layout-hidden-empty">(everything is placed)</div>'}
         </div>
       </div>
     `;
@@ -1004,20 +1006,44 @@ function mountLayoutDesigner(root, state, deps) {
           <button type="button" class="layout-zone-remove" data-remove-zone="${esc(zone.id)}" aria-label="Remove zone">×</button>
         </div>
         <div class="layout-zone-chips" data-zone-chips="${esc(zone.id)}">
-          ${(zone.items || []).map(item => itemChipHtml(item, zone.id, customItems)).join('')}
+          ${(zone.items || []).map((item, i) => itemChipHtml(item, zone.id, i, customItems)).join('')}
         </div>
         <button type="button" class="layout-add-item" data-add-item="${esc(zone.id)}">+ Add Item</button>
       </div>
     `;
   }
 
-  function itemChipHtml(item, fromZoneId, customItems) {
-    const label = labelFor(item, customItems);
-    const customCls = item.startsWith('custom-') ? ' layout-chip--custom' : '';
-    return `<div class="layout-chip${customCls}" draggable="true" data-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" title="Drag to move">
+  function itemChipHtml(item, fromZoneId, fromIndex, customItems) {
+    // v0.15: items can be { key, color, glow } objects or legacy bare strings.
+    const inst = (typeof item === 'string') ? { key: item } : (item || { key: '' });
+    const key  = inst.key;
+    const label = labelFor(key, customItems);
+    const customCls = key.startsWith('custom-') ? ' layout-chip--custom' : '';
+    const colorDot = inst.color
+      ? `style="background:${esc(inst.color)}"`
+      : 'data-default';
+    const glowDot = inst.glow
+      ? `style="background:${esc(inst.glow)}"`
+      : 'data-default';
+    // Color + glow dots only appear in zones (not in the hidden rail) since
+    // they're per-instance settings. Hidden chips are just key carriers.
+    const dots = (fromZoneId === 'hidden') ? '' : `
+      <button type="button" class="layout-chip-dot layout-chip-dot--color"
+              data-color-pick data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
+              title="Set color (current: ${esc(inst.color || 'default')})" ${colorDot}>&nbsp;</button>
+      <button type="button" class="layout-chip-dot layout-chip-dot--glow"
+              data-glow-pick data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
+              title="Set glow (current: ${esc(inst.glow || 'none')})" ${glowDot}>*</button>
+    `;
+    return `<div class="layout-chip${customCls}" draggable="true"
+                 data-item="${esc(key)}" data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
+                 title="Drag to move">
       <span class="layout-chip-handle" aria-hidden="true">⋮⋮</span>
       <span class="layout-chip-label">${esc(label)}</span>
-      <button type="button" class="layout-chip-hide" data-hide-item="${esc(item)}" data-from-zone="${esc(fromZoneId)}" aria-label="Hide this item">×</button>
+      ${dots}
+      <button type="button" class="layout-chip-hide"
+              data-hide-item="${esc(key)}" data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
+              aria-label="Hide this item">×</button>
     </div>`;
   }
 
@@ -1028,7 +1054,11 @@ function mountLayoutDesigner(root, state, deps) {
   function wireDragAndDrop() {
     root.querySelectorAll('.layout-chip').forEach(chip => {
       chip.addEventListener('dragstart', (e) => {
-        dragPayload = { item: chip.dataset.item, fromZoneId: chip.dataset.fromZone };
+        dragPayload = {
+          item: chip.dataset.item,
+          fromZoneId: chip.dataset.fromZone,
+          fromIndex: parseInt(chip.dataset.fromIndex, 10),
+        };
         chip.classList.add('is-dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', chip.dataset.item);
@@ -1071,13 +1101,19 @@ function mountLayoutDesigner(root, state, deps) {
         e.preventDefault();
         const toZoneId = container.dataset.zoneChips;
         const overChip = e.target.closest('.layout-chip');
-        let insertBefore = null;
-        if (overChip && overChip.dataset.item !== dragPayload.item) {
-          const rect = overChip.getBoundingClientRect();
-          const after = (e.clientY - rect.top) > rect.height / 2;
-          insertBefore = after ? overChip.dataset.item + ':after' : overChip.dataset.item;
+        let insertHint = null;
+        if (overChip) {
+          // v0.15: insertHint is now the DOM index of overChip in the destination
+          // zone (string form), with optional :after suffix. Index-based so it
+          // works even when the dragged item shares a key with overChip.
+          const overIdx = overChip.dataset.fromIndex;
+          if (overIdx != null) {
+            const rect = overChip.getBoundingClientRect();
+            const after = (e.clientY - rect.top) > rect.height / 2;
+            insertHint = after ? `${overIdx}:after` : overIdx;
+          }
         }
-        moveItem(dragPayload.item, dragPayload.fromZoneId, toZoneId, insertBefore);
+        moveItem(dragPayload.item, dragPayload.fromZoneId, dragPayload.fromIndex, toZoneId, insertHint);
       });
     });
 
@@ -1097,7 +1133,7 @@ function mountLayoutDesigner(root, state, deps) {
       hiddenChips.addEventListener('drop', (e) => {
         if (!dragPayload) return;
         e.preventDefault();
-        moveItem(dragPayload.item, dragPayload.fromZoneId, 'hidden', null);
+        moveItem(dragPayload.item, dragPayload.fromZoneId, dragPayload.fromIndex, 'hidden', null);
       });
     }
   }
@@ -1127,7 +1163,25 @@ function mountLayoutDesigner(root, state, deps) {
     root.querySelectorAll('[data-hide-item]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        moveItem(btn.dataset.hideItem, btn.dataset.fromZone, 'hidden', null);
+        const fromIdx = parseInt(btn.dataset.fromIndex, 10);
+        moveItem(btn.dataset.hideItem, btn.dataset.fromZone, fromIdx, 'hidden', null);
+      });
+    });
+    // v0.15: color + glow dots.
+    root.querySelectorAll('[data-color-pick]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const zoneId = btn.dataset.fromZone;
+        const idx    = parseInt(btn.dataset.fromIndex, 10);
+        openColorPopover(btn, 'color', zoneId, idx);
+      });
+    });
+    root.querySelectorAll('[data-glow-pick]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const zoneId = btn.dataset.fromZone;
+        const idx    = parseInt(btn.dataset.fromIndex, 10);
+        openColorPopover(btn, 'glow', zoneId, idx);
       });
     });
     root.querySelectorAll('[data-add-zone]').forEach(btn => {
@@ -1171,48 +1225,84 @@ function mountLayoutDesigner(root, state, deps) {
     state.set({ layout });
   }
 
-  function moveItem(item, fromZoneId, toZoneId, insertHint) {
+  // v0.15: items are now { key, color?, glow? } instances. Drag identifies
+  // an instance by its (zone, index) coordinate, not just by key, so we can
+  // support multiple instances of the same key in the same zone. Hidden rail
+  // continues to dedupe by key (no point hiding the same item twice).
+  function itemKey(it) { return typeof it === 'string' ? it : (it && it.key) || ''; }
+  function itemMatches(it, key) { return itemKey(it) === key; }
+
+  function moveItem(itemKeyStr, fromZoneId, fromIndex, toZoneId, insertHint) {
     const layout = structuredClone(state.get().layout);
+    let movedInstance = null;
+
     if (fromZoneId === 'hidden') {
-      layout.hidden = (layout.hidden || []).filter(i => i !== item);
+      // Remove first matching key from hidden.
+      const idx = (layout.hidden || []).findIndex(it => itemMatches(it, itemKeyStr));
+      if (idx >= 0) {
+        movedInstance = layout.hidden[idx];
+        layout.hidden.splice(idx, 1);
+      }
     } else {
       const src = findZone(layout, fromZoneId);
-      if (src) src.zone.items = src.zone.items.filter(i => i !== item);
-    }
-    if (toZoneId === 'hidden') {
-      if (!(layout.hidden || []).includes(item)) {
-        layout.hidden = [...(layout.hidden || []), item];
+      if (src) {
+        const i = (typeof fromIndex === 'number' && fromIndex >= 0)
+          ? fromIndex
+          : src.zone.items.findIndex(it => itemMatches(it, itemKeyStr));
+        if (i >= 0) {
+          movedInstance = src.zone.items[i];
+          src.zone.items.splice(i, 1);
+        }
       }
+    }
+
+    // Normalize: if the moved instance was a bare string from legacy state,
+    // promote it to an object so future color/glow edits work.
+    if (typeof movedInstance === 'string') movedInstance = { key: movedInstance };
+    if (!movedInstance) movedInstance = { key: itemKeyStr };
+
+    if (toZoneId === 'hidden') {
+      // Hidden rail dedupes - never two of the same key in there.
+      const present = (layout.hidden || []).some(it => itemMatches(it, itemKeyStr));
+      if (!present) layout.hidden = [...(layout.hidden || []), movedInstance];
     } else {
       const dst = findZone(layout, toZoneId);
       if (!dst) return;
-      dst.zone.items = dst.zone.items.filter(i => i !== item);
+      // v0.15: zones now ALLOW duplicates. Don't strip existing entries with
+      // the same key - place the moved instance next to insertHint.
       if (insertHint) {
         const after = insertHint.endsWith(':after');
-        const target = after ? insertHint.slice(0, -':after'.length) : insertHint;
-        const idx = dst.zone.items.indexOf(target);
-        if (idx >= 0) {
-          dst.zone.items.splice(after ? idx + 1 : idx, 0, item);
+        const target = parseInt(after ? insertHint.slice(0, -':after'.length) : insertHint, 10);
+        if (Number.isFinite(target)) {
+          dst.zone.items.splice(after ? target + 1 : target, 0, movedInstance);
         } else {
-          dst.zone.items.push(item);
+          dst.zone.items.push(movedInstance);
         }
       } else {
-        dst.zone.items.push(item);
+        dst.zone.items.push(movedInstance);
       }
     }
+    state.set({ layout });
+  }
+
+  function updateInstance(zoneId, index, patch) {
+    const layout = structuredClone(state.get().layout);
+    const z = findZone(layout, zoneId);
+    if (!z) return;
+    let cur = z.zone.items[index];
+    if (typeof cur === 'string') cur = { key: cur };
+    z.zone.items[index] = { ...cur, ...patch };
     state.set({ layout });
   }
 
   function openItemPicker(zoneId, anchorBtn) {
     const layout = state.get().layout;
     const customItems = state.get().customItems ?? [];
-    const zoneInfo = findZone(layout, zoneId);
-    if (!zoneInfo) return;
-    const inThisZone = new Set(zoneInfo.zone.items);
 
     root.querySelectorAll('.layout-item-picker').forEach(p => p.remove());
 
-    // Build the full available list: all built-in keys + all custom items.
+    // v0.15: picker no longer excludes items already in the zone - clicking
+    // adds a fresh instance. Duplicates allowed.
     const allKeys = [...ALL_ITEM_KEYS, ...customItems.map(c => c.id)];
 
     const picker = document.createElement('div');
@@ -1220,13 +1310,9 @@ function mountLayoutDesigner(root, state, deps) {
     picker.innerHTML = `
       <div class="layout-item-picker-title">Add Item</div>
       <div class="layout-item-picker-list">
-        ${allKeys.filter(k => !inThisZone.has(k)).map(k => {
-          const where = locateItem(layout, k);
-          const hint = where === 'hidden' ? '<span class="layout-pick-hint">(hidden)</span>'
-                     : where ? `<span class="layout-pick-hint">(from ${where})</span>`
-                     : '';
+        ${allKeys.map(k => {
           const label = labelFor(k, customItems);
-          return `<button type="button" class="layout-pick" data-pick-item="${esc(k)}">${esc(label)}${hint}</button>`;
+          return `<button type="button" class="layout-pick" data-pick-item="${esc(k)}">${esc(label)}</button>`;
         }).join('')}
       </div>
     `;
@@ -1235,15 +1321,82 @@ function mountLayoutDesigner(root, state, deps) {
     picker.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-pick-item]');
       if (!btn) return;
-      const item = btn.dataset.pickItem;
-      const fromZone = locateItem(state.get().layout, item) || 'hidden';
-      moveItem(item, fromZone, zoneId, null);
+      // v0.15: append a fresh instance to the target zone. We don't move
+      // any existing instance - duplicates are intentional.
+      const itemKeyStr = btn.dataset.pickItem;
+      const layoutNow = structuredClone(state.get().layout);
+      const z = findZone(layoutNow, zoneId);
+      if (!z) return;
+      z.zone.items.push({ key: itemKeyStr });
+      state.set({ layout: layoutNow });
     });
 
     setTimeout(() => {
       const onDocClick = (e) => {
         if (!picker.contains(e.target) && e.target !== anchorBtn) {
           picker.remove();
+          document.removeEventListener('click', onDocClick);
+        }
+      };
+      document.addEventListener('click', onDocClick);
+    }, 0);
+  }
+
+  // v0.15: color/glow picker popover. Opens above the clicked dot, has
+  // preset swatches + a native color wheel + a "Clear" action. Field is
+  // either 'color' or 'glow'.
+  const PRESET_COLORS = [
+    '#E8A03A', '#F5C842', '#C84A1A', '#8B4A2A',
+    '#4A7858', '#6B9579', '#EFDDB0', '#000000',
+  ];
+
+  function openColorPopover(anchorBtn, field, zoneId, idx) {
+    root.querySelectorAll('.layout-color-popover').forEach(p => p.remove());
+
+    const layout = state.get().layout;
+    const z = findZone(layout, zoneId);
+    if (!z) return;
+    const cur = z.zone.items[idx];
+    const currentVal = (cur && typeof cur === 'object') ? (cur[field] || '') : '';
+
+    const pop = document.createElement('div');
+    pop.className = 'layout-color-popover';
+    pop.innerHTML = `
+      <div class="layout-color-popover-title">${field === 'glow' ? 'Glow' : 'Color'}</div>
+      <div class="layout-color-popover-swatches">
+        ${PRESET_COLORS.map(c => `
+          <button type="button" class="layout-color-swatch${currentVal.toLowerCase() === c.toLowerCase() ? ' is-selected' : ''}"
+                  data-color-val="${c}" style="background:${c}" title="${c}">&nbsp;</button>
+        `).join('')}
+      </div>
+      <div class="layout-color-popover-custom">
+        <label>
+          <span>Custom</span>
+          <input type="color" value="${currentVal || '#E8A03A'}" data-color-custom />
+        </label>
+        <button type="button" class="layout-color-clear" data-color-clear>Clear (use default)</button>
+      </div>
+    `;
+    anchorBtn.parentElement.appendChild(pop);
+
+    pop.querySelectorAll('[data-color-val]').forEach(sw => {
+      sw.addEventListener('click', () => {
+        updateInstance(zoneId, idx, { [field]: sw.dataset.colorVal });
+        pop.remove();
+      });
+    });
+    pop.querySelector('[data-color-custom]').addEventListener('input', (e) => {
+      updateInstance(zoneId, idx, { [field]: e.target.value });
+    });
+    pop.querySelector('[data-color-clear]').addEventListener('click', () => {
+      updateInstance(zoneId, idx, { [field]: null });
+      pop.remove();
+    });
+
+    setTimeout(() => {
+      const onDocClick = (e) => {
+        if (!pop.contains(e.target) && e.target !== anchorBtn) {
+          pop.remove();
           document.removeEventListener('click', onDocClick);
         }
       };

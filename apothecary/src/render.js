@@ -35,11 +35,12 @@ function backDividerSvg(color) {
   </svg>`;
 }
 
-function runeItem(rune, color) {
+function runeItem(rune, color, glow) {
   if (!rune) return '';
+  const shadowStyle = glow ? `;text-shadow:${textGlow(glow)}` : '';
   return `<div class="rune-item">
-    <span class="rune-char" style="color:${color}">${esc(rune.c)}</span>
-    <span class="rune-name" style="color:${color}">${esc(rune.m)}</span>
+    <span class="rune-char" style="color:${color}${shadowStyle}">${esc(rune.c)}</span>
+    <span class="rune-name" style="color:${color}${shadowStyle}">${esc(rune.m)}</span>
   </div>`;
 }
 
@@ -71,8 +72,15 @@ function parchmentBg(state, theme, ctx) {
   const svg = parchmentSvg(theme);
   if (!slot || !slot.file) return svg;
   const op = (typeof slot.opacity === 'number') ? slot.opacity : 1;
-  const opAttr = op < 1 ? ` style="opacity:${op}"` : '';
-  return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${opAttr} onerror="this.remove()"/>`;
+  // v0.15: per-slot scale override for textures that sit too narrow inside
+  // the label and leak white on the edges. scale > 1 overruns the box;
+  // overflow on the parent clips it cleanly. Default 1.
+  const scale = (typeof slot.scale === 'number') ? slot.scale : 1;
+  const styleParts = [];
+  if (op < 1) styleParts.push(`opacity:${op}`);
+  if (scale !== 1) styleParts.push(`transform:scale(${scale})`);
+  const styleAttr = styleParts.length ? ` style="${styleParts.join(';')}"` : '';
+  return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${styleAttr} onerror="this.remove()"/>`;
 }
 
 // v0.11: border style variants. The 'celtic' style is the canonical v0.8
@@ -141,15 +149,34 @@ function ingredientSlug(name) {
 
 // Section card factory for back-style labeled text blocks.
 // v0.11: title is optional - when empty, just the body renders (no title row).
-// This lets users hide section titles without losing the content.
-function sectionCard(title, body, titleColor, bodyColor) {
+// v0.15: instance carries optional per-instance color + glow.
+function sectionCard(title, body, titleColor, bodyColor, glow) {
   const titleHtml = title
-    ? `<div class="back-section-title" style="color:${titleColor}">${esc(title)}</div>`
+    ? `<div class="back-section-title" style="color:${titleColor}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(title)}</div>`
     : '';
+  const bodyStyle = `color:${bodyColor}${glow ? `;text-shadow:${textGlow(glow)}` : ''}`;
   return `<div class="back-section${title ? '' : ' back-section--no-title'}">
     ${titleHtml}
-    <div class="back-section-body" style="color:${bodyColor}">${esc(body)}</div>
+    <div class="back-section-body" style="${bodyStyle}">${esc(body)}</div>
   </div>`;
+}
+
+// v0.15: glow recipes. textGlow paints text-shadow halos; imageGlow paints
+// a drop-shadow filter chain. Both take the user-chosen glow color.
+function textGlow(color) {
+  return `0 0 6px ${color}, 0 0 14px ${color}`;
+}
+function imageGlow(color) {
+  return `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 10px ${color})`;
+}
+
+// Resolve color/glow from an item instance, falling back to state.accent for
+// color and undefined for glow (which means no glow rendered).
+function instanceColor(state, instance) {
+  return (instance && instance.color) || state.accent;
+}
+function instanceGlow(instance) {
+  return (instance && instance.glow) || null;
 }
 
 // Resolve a section title from state, falling back to the canonical default.
@@ -164,73 +191,100 @@ function titleFor(state, key) {
 // v0.9: 'back-bottom-row' composite removed. 'notes', 'compounds', 'cautions',
 // 'pairings' now exist as independent primitives. 'historic' renames
 // 'back-historic-section' (alias kept for migration).
+// v0.15: every renderer takes (state, ctx, instance) where instance is the
+// normalized item config { key, color?, glow? }. instance may be null when
+// the item came from a legacy string entry. Colors fall back to state.accent;
+// glow is null by default.
 export const ITEM_RENDERERS = {
   // --- Front primitives (compact styling) ---
-  symbol: (s, ctx) => {
+  symbol: (s, ctx, inst) => {
     if (!s.symbol || s.symbol === 'none') return '';
     const resolved = ctx.symbolAliases?.[s.symbol] ?? s.symbol;
-    return `<div class="lbl-symbol"><img class="lbl-symbol-img" src="data/symbols/${resolved}.png" alt="" onerror="this.parentElement.style.display='none'"/></div>`;
+    const color = instanceColor(s, inst);
+    const glow  = instanceGlow(inst);
+    // v0.15: symbols render as a masked div so they tint to any color. The
+    // PNG silhouette becomes the alpha mask; background-color paints the
+    // shape. Drop-shadow filter handles glow.
+    const url = `data/symbols/${resolved}.png`;
+    const style = `background-color:${color};` +
+      `-webkit-mask-image:url('${url}');mask-image:url('${url}');` +
+      (glow ? `filter:${imageGlow(glow)};` : '');
+    return `<div class="lbl-symbol"><div class="lbl-symbol-img lbl-symbol-img--masked" style="${style}"></div></div>`;
   },
-  botanical: (s, ctx) => {
-    // v0.14 resolution order for the botanical slot:
+  botanical: (s, ctx, inst) => {
+    // v0.15 resolution order for the botanical slot - library ONLY (no Köhler
+    // fallback). Order:
     //   1. state.illustration override -> data/illustrations/<keyword>.png
     //   2. herb-name auto-match via ctx.herbAutoMatch -> same dir
-    //   3. legacy data/ingredients/<herb-slug>.png (the Köhler library)
-    //   4. category default -> data/ingredients/<cat-slug>.png
-    //   5. hide the slot
-    //
-    // The img onerror walks the chain, so a missing illustration falls back
-    // to ingredients without a flicker on the user's end.
-    const slug = ingredientSlug(s.herbName);
-    const catSlug = ctx.categoryDefaultSlug?.(s.botanical) ?? 'basil';
-    const ingredientPath = `data/ingredients/${slug}.png`;
-    const categoryFallback = `data/ingredients/${catSlug}.png`;
-
-    let primary = null;
+    //   3. hide the slot
+    let keyword = null;
     if (s.illustration && typeof s.illustration === 'string') {
-      primary = `data/illustrations/${s.illustration}.png`;
+      keyword = s.illustration;
     } else if (ctx.herbAutoMatch) {
       const key = String(s.herbName ?? '').toLowerCase().trim();
-      const auto = ctx.herbAutoMatch[key];
-      if (auto) primary = `data/illustrations/${auto}.png`;
+      keyword = ctx.herbAutoMatch[key] || null;
     }
-
-    // Build the cascade as a JSON list the img can walk through onerror.
-    const cascade = [];
-    if (primary) cascade.push(primary);
-    cascade.push(ingredientPath);
-    cascade.push(categoryFallback);
-    const cascadeAttr = encodeURIComponent(JSON.stringify(cascade.slice(1))); // remaining after the initial src
-
-    return `<div class="lbl-botanical"><img class="lbl-botanical-img" src="${cascade[0]}" alt="" width="44" height="50" data-cascade="${cascadeAttr}" onerror="(function(img){try{var c=JSON.parse(decodeURIComponent(img.dataset.cascade||'%5B%5D'));if(c.length){img.src=c.shift();img.dataset.cascade=encodeURIComponent(JSON.stringify(c));}else{img.parentElement.style.display='none';}}catch(e){img.parentElement.style.display='none';}})(this)"/></div>`;
+    if (!keyword) return '';
+    const glow = instanceGlow(inst);
+    const style = glow ? ` style="filter:${imageGlow(glow)}"` : '';
+    return `<div class="lbl-botanical"${style}><img class="lbl-botanical-img" src="data/illustrations/${keyword}.png" alt="" width="44" height="50" onerror="this.parentElement.style.display='none'"/></div>`;
   },
-  shop:          (s, ctx) => `<div class="lbl-shop" style="color:${s.shopColor ?? ctx.theme.shopColor}; text-shadow:${ctx.theme.shopShadow}">${esc(s.shopName)}</div>`,
-  'divider-top': (s)      => wavyDivider(s.accent),
-  'divider-bot': (s)      => wavyDivider(s.accent),
-  'herb-name':   (s)      => `<div class="lbl-herb" data-autofit style="color:${s.accent}">${esc(s.herbName)}</div>`,
-  latin:         (s, ctx) => `<div class="lbl-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
-  props:         (s)      => `<div class="lbl-props" style="color:${s.accent}">${esc(s.props)}</div>`,
-  description:   (s, ctx) => `<div class="lbl-desc" style="color:${ctx.theme.descColor}">${esc(s.description)}</div>`,
-  'rune-1':      (s)      => runeItem(s.runes[0], s.accent),
-  'rune-2':      (s)      => runeItem(s.runes[1], s.accent),
-  'rune-3':      (s)      => runeItem(s.runes[2], s.accent),
+  shop: (s, ctx, inst) => {
+    const color = (inst && inst.color) || s.shopColor || ctx.theme.shopColor;
+    const glow  = instanceGlow(inst);
+    const shadow = glow ? textGlow(glow) : ctx.theme.shopShadow;
+    return `<div class="lbl-shop" style="color:${color}; text-shadow:${shadow}">${esc(s.shopName)}</div>`;
+  },
+  'divider-top': (s, ctx, inst) => wavyDivider(instanceColor(s, inst)),
+  'divider-bot': (s, ctx, inst) => wavyDivider(instanceColor(s, inst)),
+  'herb-name':   (s, ctx, inst) => {
+    const color = instanceColor(s, inst);
+    const glow  = instanceGlow(inst);
+    return `<div class="lbl-herb" data-autofit style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.herbName)}</div>`;
+  },
+  latin: (s, ctx, inst) => {
+    const color = (inst && inst.color) || ctx.theme.latinColor;
+    const glow  = instanceGlow(inst);
+    return `<div class="lbl-latin" style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.latin)}</div>`;
+  },
+  props: (s, ctx, inst) => {
+    const color = instanceColor(s, inst);
+    const glow  = instanceGlow(inst);
+    return `<div class="lbl-props" style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.props)}</div>`;
+  },
+  description: (s, ctx, inst) => {
+    const color = (inst && inst.color) || ctx.theme.descColor;
+    const glow  = instanceGlow(inst);
+    return `<div class="lbl-desc" style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.description)}</div>`;
+  },
+  'rune-1': (s, ctx, inst) => runeItem(s.runes[0], instanceColor(s, inst), instanceGlow(inst)),
+  'rune-2': (s, ctx, inst) => runeItem(s.runes[1], instanceColor(s, inst), instanceGlow(inst)),
+  'rune-3': (s, ctx, inst) => runeItem(s.runes[2], instanceColor(s, inst), instanceGlow(inst)),
 
   // --- Back primitives (full-card styling with title + body) ---
-  'back-name':     (s)      => `<div class="back-name" style="color:${s.accent}">${esc(s.herbName)}</div>`,
-  'back-latin':    (s, ctx) => `<div class="back-latin" style="color:${ctx.theme.latinColor}">${esc(s.latin)}</div>`,
-  'back-divider':  (s)      => backDividerSvg(s.accent),
-  'back-desc-full':(s, ctx) => {
-    // v0.11: if user gave a title, wrap as a section card; otherwise render
-    // as the flowing italic paragraph (the original behavior).
-    const t = titleFor(s, 'back-desc-full');
-    if (t) return sectionCard(t, s.descFull, s.accent, ctx.theme.descColor);
-    return `<div class="back-desc-full" style="color:${ctx.theme.descColor}">${esc(s.descFull)}</div>`;
+  'back-name': (s, ctx, inst) => {
+    const color = instanceColor(s, inst);
+    const glow  = instanceGlow(inst);
+    return `<div class="back-name" style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.herbName)}</div>`;
   },
-  historic:        (s, ctx) => sectionCard(titleFor(s, 'historic'),  s.historicUses, s.accent, ctx.theme.descColor),
-  notes:           (s, ctx) => sectionCard(titleFor(s, 'notes'),     [s.compounds, s.cautions].filter(Boolean).join(' '), s.accent, ctx.theme.descColor),
-  compounds:       (s, ctx) => sectionCard(titleFor(s, 'compounds'), s.compounds, s.accent, ctx.theme.descColor),
-  cautions:        (s, ctx) => sectionCard(titleFor(s, 'cautions'),  s.cautions,  s.accent, ctx.theme.descColor),
-  pairings:        (s, ctx) => sectionCard(titleFor(s, 'pairings'),  s.pairings,  s.accent, ctx.theme.descColor),
+  'back-latin': (s, ctx, inst) => {
+    const color = (inst && inst.color) || ctx.theme.latinColor;
+    const glow  = instanceGlow(inst);
+    return `<div class="back-latin" style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.latin)}</div>`;
+  },
+  'back-divider': (s, ctx, inst) => backDividerSvg(instanceColor(s, inst)),
+  'back-desc-full': (s, ctx, inst) => {
+    const t = titleFor(s, 'back-desc-full');
+    const color = (inst && inst.color) || ctx.theme.descColor;
+    const glow  = instanceGlow(inst);
+    if (t) return sectionCard(t, s.descFull, instanceColor(s, inst), color, glow);
+    return `<div class="back-desc-full" style="color:${color}${glow ? `;text-shadow:${textGlow(glow)}` : ''}">${esc(s.descFull)}</div>`;
+  },
+  historic:  (s, ctx, inst) => sectionCard(titleFor(s, 'historic'),  s.historicUses, instanceColor(s, inst), ctx.theme.descColor, instanceGlow(inst)),
+  notes:     (s, ctx, inst) => sectionCard(titleFor(s, 'notes'),     [s.compounds, s.cautions].filter(Boolean).join(' '), instanceColor(s, inst), ctx.theme.descColor, instanceGlow(inst)),
+  compounds: (s, ctx, inst) => sectionCard(titleFor(s, 'compounds'), s.compounds, instanceColor(s, inst), ctx.theme.descColor, instanceGlow(inst)),
+  cautions:  (s, ctx, inst) => sectionCard(titleFor(s, 'cautions'),  s.cautions,  instanceColor(s, inst), ctx.theme.descColor, instanceGlow(inst)),
+  pairings:  (s, ctx, inst) => sectionCard(titleFor(s, 'pairings'),  s.pairings,  instanceColor(s, inst), ctx.theme.descColor, instanceGlow(inst)),
 };
 
 // Migration aliases: old item keys still in saved state map to new ones at
@@ -246,13 +300,18 @@ function resolveItemKey(key) {
 }
 
 // v0.11: render a custom user-defined item by looking it up in state.customItems.
-// Custom keys have shape 'custom-XXXX'. If the lookup fails (item was deleted
-// but still referenced in a zone), render nothing rather than crashing.
-function renderCustomItem(key, state, ctx) {
+// v0.15: per-instance color + glow honored.
+function renderCustomItem(key, state, ctx, inst) {
   const items = state.customItems ?? [];
   const item = items.find(i => i.id === key);
   if (!item) return '';
-  return sectionCard(item.title || '', item.body || '', state.accent, ctx.theme.descColor);
+  return sectionCard(
+    item.title || '',
+    item.body  || '',
+    instanceColor(state, inst),
+    ctx.theme.descColor,
+    instanceGlow(inst)
+  );
 }
 
 // Display labels for the Layout Designer picker. Keep in sync with
@@ -307,13 +366,24 @@ function pickPrintLayout({ wIn, hIn }, cardCount, paper = { wIn: 8.5, hIn: 11 },
   return 'layout-separate';
 }
 
+// v0.15: an item entry is either a bare string (legacy) or an object
+// { key, color?, glow? }. Normalize before dispatching so renderers always
+// see the instance shape.
+function normalizeItem(it) {
+  if (typeof it === 'string') return { key: it };
+  return it || { key: '' };
+}
+
 function zoneHtml(zone, state, fullCtx) {
-  const items = (zone.items || []).map(key => {
+  const items = (zone.items || []).map(raw => {
+    const inst = normalizeItem(raw);
+    const key  = inst.key;
+    if (!key) return '';
     // v0.11: custom items dispatch through the state lookup.
-    if (key.startsWith('custom-')) return renderCustomItem(key, state, fullCtx);
+    if (key.startsWith('custom-')) return renderCustomItem(key, state, fullCtx, inst);
     const resolved = resolveItemKey(key);
     const fn = ITEM_RENDERERS[resolved];
-    return fn ? fn(state, fullCtx) : '';
+    return fn ? fn(state, fullCtx, inst) : '';
   }).join('');
   const mode  = zone.layoutMode || 'stack';
   const width = zone.width ? `${zone.width}%` : '100%';
@@ -323,6 +393,23 @@ function zoneHtml(zone, state, fullCtx) {
 
 function zonesHtml(zones, state, fullCtx) {
   return (zones || []).map(z => zoneHtml(z, state, fullCtx)).join('');
+}
+
+// v0.14.2: collapsible wrapper around each preview card. Header has a
+// chevron + side label that's clickable to toggle. Body holds the actual
+// card HTML. The 'open' arg drives both the class and the chevron rotation.
+function previewSection(side, label, open, cardHtml) {
+  const openCls = open ? ' preview-section--open' : '';
+  const aria = open ? 'true' : 'false';
+  return `
+    <div class="preview-section${openCls}" data-preview-side="${side}">
+      <button class="preview-section-head" type="button" data-preview-toggle="${side}" aria-expanded="${aria}">
+        <span class="preview-section-title">${esc(label)}</span>
+        <span class="preview-section-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="preview-section-body">${cardHtml}</div>
+    </div>
+  `;
 }
 
 function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme, previewScale }) {
@@ -405,16 +492,41 @@ export function render(state, mounts, ctx) {
   const showBack = !!state.backEnabled && backZones.length > 0;
   const cardCount = showBack ? 2 : 1;
 
+  // v0.14.2: wrap each preview card in a collapsible section so the user can
+  // hide front or back independently. Open state lives in state.previewCollapse
+  // and persists across re-renders. Click handler is wired below.
+  const collapse = state.previewCollapse ?? { front: false, back: false };
   const previewCards = [
-    previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-                      zones: frontZones, theme, previewScale }),
-    ...(showBack ? [previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-                      side: 'back', zones: backZones, theme, previewScale })] : []),
+    previewSection('front', 'Front', !collapse.front,
+      previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+                        zones: frontZones, theme, previewScale })),
+    ...(showBack ? [previewSection('back', 'Back', !collapse.back,
+      previewCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+                        side: 'back', zones: backZones, theme, previewScale }))] : []),
   ].join('');
 
+  // Preview wrapper sizes itself off the design width when at least one
+  // section is open. When both are collapsed (or only back is shown and
+  // collapsed) it still needs enough width to host the headers.
   mounts.preview.style.width = `calc(${phys.wIn}in * ${previewScale})`;
+  mounts.preview.style.minWidth = '240px';
   mounts.preview.style.height = 'auto';
   mounts.preview.innerHTML = previewCards;
+
+  // Wire collapse toggles. Each click flips state.previewCollapse[side] and
+  // triggers a re-render via the existing state.subscribe wiring.
+  mounts.preview.querySelectorAll('[data-preview-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const side = btn.dataset.previewToggle;
+      const cur = state.previewCollapse ?? { front: false, back: false };
+      const next = { ...cur, [side]: !cur[side] };
+      // ctx.setState is provided by main.js as a hook into the state setter so
+      // render.js doesn't need to know about the createState API directly.
+      if (typeof ctx.setPreviewCollapse === 'function') {
+        ctx.setPreviewCollapse(next);
+      }
+    });
+  });
 
   if (mounts.printStage) {
     const printCards = [

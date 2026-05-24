@@ -163,6 +163,10 @@ export function defaultState() {
     // data/illustrations.json.
     illustration:  null,
 
+    // v0.14.2: per-side preview collapse. Drives the wrapper around each
+    // preview card in render.js. UI preference, persists across reloads.
+    previewCollapse: { front: false, back: false },
+
     parchmentTexture: 'parchment-01',
     shopColor: '#E8C172',
   };

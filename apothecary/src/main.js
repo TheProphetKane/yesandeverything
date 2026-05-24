@@ -252,6 +252,12 @@ async function main() {
   if (typeof initial.borderStyle !== 'string') initial.borderStyle = 'celtic';
   // v0.14: illustration override field. Default null = auto-match.
   if (initial.illustration === undefined) initial.illustration = null;
+  // v0.14.2: preview-collapse persistence. Both open on first load.
+  if (!initial.previewCollapse || typeof initial.previewCollapse !== 'object') {
+    initial.previewCollapse = { front: false, back: false };
+  }
+  if (typeof initial.previewCollapse.front !== 'boolean') initial.previewCollapse.front = false;
+  if (typeof initial.previewCollapse.back  !== 'boolean') initial.previewCollapse.back  = false;
 
   // v0.11: backfill zone.align (default 'center') on any pre-existing layout.
   for (const side of ['front', 'back']) {
@@ -303,6 +309,10 @@ async function main() {
     // v0.14: illustration library + per-herb auto-match.
     illustrations,
     herbAutoMatch,
+    // v0.14.2: hook for render.js to update preview-collapse state.
+    setPreviewCollapse(next) {
+      state.set({ previewCollapse: next });
+    },
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);

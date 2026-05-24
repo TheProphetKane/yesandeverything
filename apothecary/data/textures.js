@@ -18,7 +18,7 @@ export const PARCHMENT_TEXTURES = [
   { id: 'parchment-07', label: 'Parchment 07',                file: 'parchment-07.jpg', opacity: 1.00 },
   { id: 'parchment-08', label: 'Parchment 08',                file: 'parchment-08.jpg', opacity: 1.00 },
   { id: 'parchment-09', label: 'Parchment 09',                file: 'parchment-09.jpg', opacity: 1.00 },
-  { id: 'parchment-10', label: 'Parchment 10',                file: 'parchment-10.jpg', opacity: 1.00 },
+  { id: 'parchment-10', label: 'Parchment 10',                file: 'parchment-10.jpg', opacity: 1.00, scale: 1.05 },
   { id: 'parchment-11', label: 'Parchment 11',                file: 'parchment-11.jpg', opacity: 1.00 },
   { id: 'parchment-12', label: 'Parchment 12',                file: 'parchment-12.jpg', opacity: 0.80 },
   { id: 'parchment-13', label: 'Parchment 13',                file: 'parchment-13.jpg', opacity: 0.70 },

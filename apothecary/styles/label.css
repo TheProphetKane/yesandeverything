@@ -102,7 +102,83 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+}
+
+/* v0.14.2: collapsible per-side preview sections (front / back). The header
+   is a clickable button with a rotating chevron + the side label; the body
+   holds the actual label-frame card and animates max-height + opacity on
+   toggle. Open state is driven by the .preview-section--open class. */
+.preview-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.preview-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  transition:
+    background var(--dur-fast) var(--ease-snap),
+    color var(--dur-fast) var(--ease-snap),
+    border-color var(--dur-fast) var(--ease-snap);
+}
+.preview-section-head:hover {
+  background: rgba(232, 160, 58, 0.08);
+  color: var(--gold-bright);
+  border-color: var(--gold-fade);
+}
+.preview-section-head:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+.preview-section-title { flex: 0 0 auto; }
+
+.preview-section-chevron {
+  display: inline-block;
+  font-size: 16px;
+  color: var(--gold);
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.preview-section--open .preview-section-chevron { transform: rotate(-90deg); }
+
+.preview-section-body {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-4px);
+  margin-top: 0;
+  display: flex;
+  justify-content: center;
+  transition:
+    max-height var(--dur-slow) var(--ease-snap),
+    opacity var(--dur-base) var(--ease-snap),
+    transform var(--dur-base) var(--ease-snap),
+    margin-top var(--dur-slow) var(--ease-snap);
+}
+.preview-section--open .preview-section-body {
+  max-height: 1800px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-top: 12px;
 }
 
 .preview-gap { height: 0; }
@@ -441,4 +517,19 @@
    missing PNGs hide their parent. No fallback art. */
 .lbl-symbol { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
 .lbl-symbol-img { width: 28px; height: 28px; object-fit: contain; display: block; }
+
+/* v0.15: when the symbol renders as a masked div, the PNG silhouette becomes
+   the alpha mask and background-color paints the shape - any color works.
+   Inline style applies the mask url + color + optional glow filter. */
+.lbl-symbol-img--masked {
+  width: 28px;
+  height: 28px;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  display: block;
+}
 

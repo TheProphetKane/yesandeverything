@@ -928,6 +928,7 @@ textarea.field-input {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  position: relative;
   background: linear-gradient(180deg, var(--moss) 0%, var(--moss-dark) 100%);
   color: var(--cream);
   border: 1px solid var(--moss-dark);
@@ -1000,6 +1001,145 @@ textarea.field-input {
 .layout-chip-hide:hover {
   color: var(--warn);
   background: rgba(196, 88, 10, 0.18);
+}
+
+/* v0.15: color + glow dots on each Layout Designer chip. Click to open the
+   color popover. Dots show the current color (or a checkerboard "default"
+   pattern if unset). */
+.layout-chip-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  padding: 0;
+  border: 1.5px solid var(--moss-light);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    border-color var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-snap);
+  font-size: 8px;
+  color: var(--bg-deep);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.layout-chip-dot[data-default] {
+  background-image:
+    linear-gradient(45deg, var(--moss-dark) 25%, transparent 25%, transparent 75%, var(--moss-dark) 75%),
+    linear-gradient(45deg, var(--moss-dark) 25%, transparent 25%, transparent 75%, var(--moss-dark) 75%);
+  background-size: 6px 6px;
+  background-position: 0 0, 3px 3px;
+  background-color: var(--field);
+}
+.layout-chip-dot:hover {
+  transform: scale(1.20);
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 2px var(--gold-halo);
+}
+.layout-chip-dot--color { /* default styling fine; explicit class for future tuning */ }
+.layout-chip-dot--glow {
+  position: relative;
+}
+.layout-chip-dot--glow::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px dotted currentColor;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Color popover. Anchored at the chip; shows preset swatches + native picker
+   + clear action. */
+.layout-color-popover {
+  position: absolute;
+  z-index: 50;
+  margin-top: 4px;
+  background: linear-gradient(180deg, var(--bg-card-hi) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--gold-fade);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--sheen-top), 0 12px 32px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--gold-fade);
+  animation: pickerDropIn var(--dur-base) var(--ease-spring) both;
+  min-width: 168px;
+}
+.layout-color-popover-title {
+  font-family: var(--font-body);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--gold-bright);
+  margin-bottom: 6px;
+}
+.layout-color-popover-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.layout-color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid var(--moss-dark);
+  cursor: pointer;
+  padding: 0;
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    border-color var(--dur-fast) var(--ease-snap);
+}
+.layout-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--gold-bright);
+}
+.layout-color-swatch.is-selected {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--gold-bright);
+}
+.layout-color-popover-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--moss-dark);
+}
+.layout-color-popover-custom label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--cream-dim);
+}
+.layout-color-popover-custom input[type="color"] {
+  width: 36px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: transparent;
+}
+.layout-color-clear {
+  background: transparent;
+  color: var(--moss-light);
+  border: 1px solid var(--moss-dark);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: color 140ms, border-color 140ms, background 140ms;
+}
+.layout-color-clear:hover {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: rgba(196, 88, 10, 0.08);
 }
 
 .layout-add-item,
