@@ -732,8 +732,18 @@ function wireAccordion(root) {
 // shown. back-desc-full is shown too as an "optional title" so the user
 // can opt into wrapping the Full Description in a section card.
 
+// v0.15.4: shared helper. State changes trigger re-paints that rebuild
+// innerHTML; without scroll preservation, the editor-card resets to the top
+// every time. Each mount paint wraps its body with preserveScroll().
+function preserveScroll(root, fn) {
+  const host = root.closest('.editor-card');
+  const top = host ? host.scrollTop : 0;
+  fn();
+  if (host) host.scrollTop = top;
+}
+
 function mountTitleEditor(root, state, _deps) {
-  function paint() {
+  function paint() { preserveScroll(root, () => {
     const s = state.get();
     const titles = s.sectionTitles ?? {};
     root.innerHTML = TITLE_FIELDS.map(field => {
@@ -752,7 +762,7 @@ function mountTitleEditor(root, state, _deps) {
         state.set({ sectionTitles: next });
       });
     });
-  }
+  }); }
   function escAttr(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
@@ -769,7 +779,7 @@ function mountTitleEditor(root, state, _deps) {
 // drops the new key into layout.hidden).
 
 function mountCustomItems(root, state, _deps) {
-  function paint() {
+  function paint() { preserveScroll(root, () => {
     const items = state.get().customItems ?? [];
     if (items.length === 0) {
       root.innerHTML = '<div class="custom-items-empty">No custom sections yet. Click below to add one.</div>';
@@ -794,7 +804,7 @@ function mountCustomItems(root, state, _deps) {
       bodyInp.addEventListener('input',  () => updateCustom(id, c => ({ ...c, body:  bodyInp.value  })));
       rmBtn.addEventListener('click',    () => removeCustom(id));
     });
-  }
+  }); }
   function updateCustom(id, fn) {
     const items = (state.get().customItems ?? []).map(c => c.id === id ? fn(c) : c);
     state.set({ customItems: items });
@@ -936,7 +946,7 @@ function mountLayoutDesigner(root, state, deps) {
   const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone } = deps;
   let dragPayload = null;
 
-  function paint() {
+  function paint() { preserveScroll(root, () => {
     const s = state.get();
     const layout = s.layout;
     if (!layout) {
@@ -975,7 +985,7 @@ function mountLayoutDesigner(root, state, deps) {
 
     wireDragAndDrop();
     wireControls();
-  }
+  }); }
 
   function labelFor(itemKey, customItems) {
     if (itemKey.startsWith('custom-')) {
@@ -1466,7 +1476,7 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
   let searchTerm = '';
   let gridOpen = false;
 
-  function paint() {
+  function paint() { preserveScroll(root, () => {
     const res = currentResolution();
     const label = res.keyword
       ? (illustrations.find(i => i.keyword === res.keyword)?.label || res.keyword)
@@ -1522,7 +1532,7 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
       if (gridOpen) setTimeout(() => searchInput.focus(), 30);
     }
     wireTiles();
-  }
+  }); }
 
   function buildGridHtml(currentKeyword) {
     const q = searchTerm.toLowerCase().trim();
