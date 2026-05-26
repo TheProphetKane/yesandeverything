@@ -119,3 +119,20 @@ The two cross-project rules in one sentence each.
 Two-failed-fix rule. After two failed fix attempts on the same symptom, stop shipping fixes; instrument and trace instead.
 
 Parallel-implementation trap. Every active project has fork points (debug flags, env vars, route conditions, mirror copies); enumerate paths before patching, or the fix lands on the wrong path and the bug stays alive.
+
+
+
+## Bar-raise pipeline (2026-05-26)
+
+Periodic deep-review skill + static dashboard at `yesandeverything.com/status/`. Adds a daily per-project bar-raise + weekly portfolio constellation review to the existing audit-loop pattern.
+
+- Skill source: `_skill-review/personal-skills-src/skills/bar-raise/`. SKILL.md + README.md + two orchestrators (`per_project.md`, `constellation.md`) + five waves (portfolio overview, per-project discovery, 11 Tier-1 lenses, 42 domain lenses across 9 domains, meta synthesis).
+- Dashboard: `status/index.html` reads `status/data/<project>.json` per project + `status/data/constellation.json`. Static page, no backend.
+- Release-time JSON writer: each project's `scripts/write-dashboard-status.ps1` writes its own JSON during `release.ps1`. Self-contained commit + push to YaE.
+- Schedule: Windows Task Scheduler entries at `scripts/schedule/`. Six daily per-project runs at 06:00-06:25 staggered; one weekly constellation Monday 07:00.
+- Build plan: `docs/BAR_RAISE_ROADMAP.md`. Phase status table at the bottom.
+- Operator manual: `docs/BAR_RAISE_HANDOVER.md`. First-stop when something feels off.
+
+Domain lens domains: `game-design`, `static-site`, `cloud-edge`, `finance-product`, `generative-art`, `PWA`, `orchestration`, `release-pipeline`, `public-voice`. Each project's `tags` array in its dashboard JSON selects which domain lenses apply.
+
+Cross-cutting: every project's `release.ps1` ends by calling `write-dashboard-status.ps1`. The bar-raise skill never modifies code; it produces Markdown findings + JSON status only. Drift-fix and work-queue-runner consume the findings downstream.
