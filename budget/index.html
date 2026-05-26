@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YesAndBudget &mdash; launcher</title>
+  <meta name="description" content="Gated launcher for the local-first YesAndBudget app." />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#06080b" />
+  <style>
+    :root {
+      --ink-0: #06080b;
+      --ink-1: #0d1117;
+      --ink-2: #141a22;
+      --ink-3: #1f2632;
+      --ink-5: #3b465a;
+      --fg-0: #e6edf3;
+      --fg-1: #c9d1d9;
+      --fg-2: #8b949e;
+      --accent: #00ff9c;
+      --accent-warn: #f59e0b;
+      --accent-bad: #f87171;
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: var(--ink-0); color: var(--fg-1);
+      font-family: var(--sans); font-size: 15px; line-height: 1.5;
+    }
+    main {
+      max-width: 560px; margin: 6vh auto; padding: 0 20px;
+    }
+    .kicker {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--fg-2);
+    }
+    h1 {
+      font-family: var(--mono); font-weight: 600; font-size: 28px;
+      color: var(--fg-0); margin: 6px 0 4px;
+    }
+    h1 .amp { color: var(--accent); }
+    .lede {
+      color: var(--fg-2); margin: 0 0 28px;
+    }
+    .card {
+      background: var(--ink-1);
+      border: 1px solid var(--ink-3);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      font-family: var(--mono); font-size: 14px; font-weight: 600;
+      color: var(--fg-0); margin: 0 0 10px;
+      letter-spacing: 0.02em;
+    }
+    label {
+      display: block; font-size: 13px; color: var(--fg-2); margin-bottom: 6px;
+      font-family: var(--mono);
+    }
+    input[type=password] {
+      width: 100%;
+      background: var(--ink-0); color: var(--fg-0);
+      border: 1px solid var(--ink-3);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: var(--mono); font-size: 14px;
+    }
+    input[type=password]:focus {
+      outline: none; border-color: var(--accent);
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent); color: var(--ink-0);
+      font-family: var(--mono); font-weight: 600; font-size: 14px;
+      border: none; border-radius: 6px;
+      padding: 10px 16px;
+      transition: transform 0.05s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button.secondary {
+      background: transparent; color: var(--fg-1);
+      border: 1px solid var(--ink-3);
+    }
+    button.secondary:hover { border-color: var(--ink-5); }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .row .grow { flex: 1; }
+    .status {
+      font-family: var(--mono); font-size: 12px;
+      padding: 8px 12px; border-radius: 6px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .status .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--fg-2);
+    }
+    .status.ok { background: rgba(0, 255, 156, 0.08); color: var(--accent); }
+    .status.ok .dot { background: var(--accent); animation: pulse 1.8s ease-in-out infinite; }
+    .status.down { background: rgba(248, 113, 113, 0.08); color: var(--accent-bad); }
+    .status.down .dot { background: var(--accent-bad); }
+    .status.checking { background: rgba(245, 158, 11, 0.08); color: var(--accent-warn); }
+    .status.checking .dot { background: var(--accent-warn); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    code {
+      font-family: var(--mono); font-size: 13px;
+      background: var(--ink-2); padding: 1px 6px; border-radius: 3px;
+      color: var(--fg-0);
+    }
+    pre {
+      background: var(--ink-2); border: 1px solid var(--ink-3);
+      border-radius: 6px; padding: 12px;
+      font-family: var(--mono); font-size: 12px;
+      overflow-x: auto;
+      color: var(--fg-1);
+    }
+    .footer {
+      margin-top: 32px; padding-top: 16px;
+      border-top: 1px solid var(--ink-3);
+      font-family: var(--mono); font-size: 11px; color: var(--fg-2);
+    }
+    .footer a { color: var(--fg-1); text-decoration: none; }
+    .footer a:hover { color: var(--accent); }
+    .gate-error {
+      font-family: var(--mono); font-size: 12px;
+      color: var(--accent-bad); margin-top: 8px;
+      min-height: 16px;
+    }
+    .hidden { display: none; }
+    ol { padding-left: 18px; margin: 0; }
+    ol li { margin: 8px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="kicker">launcher</div>
+  <h1>YesAnd<span class="amp">Budget</span></h1>
+  <p class="lede">Local-first personal budget tool. Bank data never leaves the machine. This page is a bookmark to launch your local copy.</p>
+
+  <section id="gate" class="card">
+    <h2>passphrase</h2>
+    <p style="margin: 0 0 16px; color: var(--fg-2); font-size: 13px;">Soft gate. Same pattern as the GDD mirror. Not real security.</p>
+    <div class="row">
+      <div class="grow">
+        <input type="password" id="pw" placeholder="enter passphrase" autofocus autocomplete="off" />
+      </div>
+      <button id="gate-submit">enter</button>
+    </div>
+    <div class="gate-error" id="gate-err"></div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="card">
+      <h2>local api</h2>
+      <div class="row" style="margin-bottom: 12px;">
+        <div class="grow">
+          <span class="status checking" id="api-status">
+            <span class="dot"></span><span id="api-status-text">checking http://localhost:8787 ...</span>
+          </span>
+        </div>
+        <button class="secondary" id="recheck">recheck</button>
+      </div>
+      <div id="api-up" class="hidden">
+        <p style="color: var(--fg-2); font-size: 13px; margin: 0 0 12px;">The api is running. Click below to open the app in a new tab.</p>
+        <button id="launch">launch budget &rarr;</button>
+      </div>
+      <div id="api-down" class="hidden">
+        <p style="color: var(--fg-2); font-size: 13px; margin: 0 0 12px;">The api is not reachable on <code>localhost:8787</code>. Either it is not running yet, or it is bound to a different port.</p>
+        <p style="color: var(--fg-2); font-size: 13px; margin: 0 0 8px;"><strong style="color: var(--fg-1);">Quickest path:</strong> double-click <code>scripts\yab.cmd</code> from the install directory. That boots both the api and the web app and opens the browser.</p>
+        <p style="color: var(--fg-2); font-size: 13px; margin: 12px 0 8px;"><strong style="color: var(--fg-1);">From scratch:</strong></p>
+        <ol style="color: var(--fg-2); font-size: 13px;">
+          <li>Clone <code>github.com/TheProphetKane/yesandbudget</code></li>
+          <li>Run <code>pnpm install</code></li>
+          <li>Run <code>pnpm dev</code> (or double-click <code>scripts\yab.cmd</code>)</li>
+          <li>Come back here and click recheck.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <a href="/">&larr; yesandeverything.com</a>
+    &nbsp;&middot;&nbsp;
+    Bank data stays on your machine. D-001/D-002/D-006/D-007.
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var GATE_KEY = "yab-launcher-unlocked";
+  var PASSPHRASE = "MoneyMaker"; // D-005
+  var API_BASE = "http://localhost:8787";
+  var WEB_BASE = "http://localhost:5173";
+
+  var gateEl = document.getElementById("gate");
+  var appEl = document.getElementById("app");
+  var pwEl = document.getElementById("pw");
+  var gateSubmit = document.getElementById("gate-submit");
+  var gateErr = document.getElementById("gate-err");
+  var statusEl = document.getElementById("api-status");
+  var statusText = document.getElementById("api-status-text");
+  var upEl = document.getElementById("api-up");
+  var downEl = document.getElementById("api-down");
+  var launchEl = document.getElementById("launch");
+  var recheckEl = document.getElementById("recheck");
+
+  function showApp() {
+    gateEl.classList.add("hidden");
+    appEl.classList.remove("hidden");
+    probeApi();
+  }
+
+  function tryUnlock() {
+    var pw = pwEl.value.trim();
+    if (pw === PASSPHRASE) {
+      try { sessionStorage.setItem(GATE_KEY, "1"); } catch (e) { /* sessionStorage may be unavailable */ }
+      gateErr.textContent = "";
+      showApp();
+    } else {
+      gateErr.textContent = "wrong passphrase";
+      pwEl.select();
+    }
+  }
+
+  gateSubmit.addEventListener("click", tryUnlock);
+  pwEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") tryUnlock();
+  });
+
+  // Already-unlocked path (sessionStorage survives reloads in the same tab).
+  try {
+    if (sessionStorage.getItem(GATE_KEY) === "1") {
+      showApp();
+    }
+  } catch (e) { /* noop */ }
+
+  // Probe the local api. Use a short timeout so a wedged port returns "down"
+  // instead of spinning forever. The api exposes GET / as a JSON health check.
+  function probeApi() {
+    setStatus("checking", "checking " + API_BASE + " ...");
+    upEl.classList.add("hidden");
+    downEl.classList.add("hidden");
+
+    var ctrl = new AbortController();
+    var to = setTimeout(function () { ctrl.abort(); }, 2500);
+
+    fetch(API_BASE + "/", { signal: ctrl.signal, cache: "no-store" })
+      .then(function (r) {
+        clearTimeout(to);
+        if (!r.ok) throw new Error("status " + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        var ver = (j && j.version) ? " v" + j.version : "";
+        setStatus("ok", "api up" + ver);
+        upEl.classList.remove("hidden");
+      })
+      .catch(function () {
+        clearTimeout(to);
+        setStatus("down", "api unreachable on " + API_BASE);
+        downEl.classList.remove("hidden");
+      });
+  }
+
+  function setStatus(cls, text) {
+    statusEl.className = "status " + cls;
+    statusText.textContent = text;
+  }
+
+  launchEl.addEventListener("click", function () {
+    window.open(WEB_BASE, "_blank", "noopener");
+  });
+
+  recheckEl.addEventListener("click", probeApi);
+})();
+</script>
+</body>
+</html>
