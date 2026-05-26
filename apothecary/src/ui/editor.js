@@ -1351,7 +1351,11 @@ function mountLayoutDesigner(root, state, deps) {
   ];
 
   function openColorPopover(anchorBtn, field, zoneId, idx) {
-    root.querySelectorAll('.layout-color-popover').forEach(p => p.remove());
+    // v0.15.3: popover appends to document.body (not the chip) so it escapes
+    // the chip's transform / z-index stacking context and is guaranteed to
+    // render on top of every other chip + button. Position-fixed anchored
+    // to the clicked dot via getBoundingClientRect.
+    document.querySelectorAll('.layout-color-popover').forEach(p => p.remove());
 
     const layout = state.get().layout;
     const z = findZone(layout, zoneId);
@@ -1362,6 +1366,7 @@ function mountLayoutDesigner(root, state, deps) {
     const pop = document.createElement('div');
     pop.className = 'layout-color-popover';
     pop.innerHTML = `
+      <button type="button" class="layout-color-popover-close" data-color-close aria-label="Close">×</button>
       <div class="layout-color-popover-title">${field === 'glow' ? 'Glow' : 'Color'}</div>
       <div class="layout-color-popover-swatches">
         ${PRESET_COLORS.map(c => `
@@ -1377,7 +1382,21 @@ function mountLayoutDesigner(root, state, deps) {
         <button type="button" class="layout-color-clear" data-color-clear>Clear (use default)</button>
       </div>
     `;
-    anchorBtn.parentElement.appendChild(pop);
+    document.body.appendChild(pop);
+
+    // Anchor below the clicked dot. If it would clip past the right edge,
+    // shift it left so it stays on screen.
+    const rect = anchorBtn.getBoundingClientRect();
+    pop.style.position = 'fixed';
+    pop.style.top = `${rect.bottom + 6}px`;
+    // After append we know the popover's width; clamp inside the viewport.
+    const popWidth = pop.offsetWidth;
+    let left = rect.left;
+    if (left + popWidth > window.innerWidth - 8) {
+      left = window.innerWidth - popWidth - 8;
+    }
+    if (left < 8) left = 8;
+    pop.style.left = `${left}px`;
 
     pop.querySelectorAll('[data-color-val]').forEach(sw => {
       sw.addEventListener('click', () => {
@@ -1390,6 +1409,9 @@ function mountLayoutDesigner(root, state, deps) {
     });
     pop.querySelector('[data-color-clear]').addEventListener('click', () => {
       updateInstance(zoneId, idx, { [field]: null });
+      pop.remove();
+    });
+    pop.querySelector('[data-color-close]').addEventListener('click', () => {
       pop.remove();
     });
 
