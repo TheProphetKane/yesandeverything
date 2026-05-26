@@ -299,7 +299,7 @@ If you are a Claude session opening this file fresh, here is how to continue.
 | 1 - static dashboard reading existing signals (BR + YaC pilot) | DONE | 2026-05-26 |
 | 1b - extend dashboard to HBH / Scheduler / YaA / YaB | DONE | 2026-05-26 |
 | 2 - per-project bar-raise skill (SKILL.md + orchestrator + Waves 2/3/5 + Wave 4 dir scaffolded) | DONE | 2026-05-26 |
-| 3 - constellation orchestrator | pending | |
+| 3 - constellation orchestrator (Wave 1 + constellation orchestrator filled, JSON contract locked) | DONE | 2026-05-26 |
 | 4 - domain lens set | pending | |
 | 5 - scheduling | pending | |
 | 6 - polish + handover | pending | |
