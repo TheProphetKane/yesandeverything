@@ -1475,6 +1475,8 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
 
   let searchTerm = '';
   let gridOpen = false;
+  let justOpened = false;  // v0.15.5: latch so we focus the search input
+                            // only on the click-to-open, not on every paint
 
   function paint() { preserveScroll(root, () => {
     const res = currentResolution();
@@ -1516,6 +1518,7 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
 
     root.querySelector('[data-illu-toggle]').addEventListener('click', () => {
       gridOpen = !gridOpen;
+      justOpened = gridOpen;   // only when transitioning to OPEN
       paint();
     });
     const resetBtn = root.querySelector('[data-illu-reset]');
@@ -1523,13 +1526,24 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
 
     const searchInput = root.querySelector('[data-illu-search]');
     if (searchInput) {
+      // v0.15.5: filtering the grid changes its height which would yank
+      // the editor-card scroll. Wrap each filter update in preserveScroll
+      // so the user's scroll position stays put while they type.
       searchInput.addEventListener('input', () => {
         searchTerm = searchInput.value;
-        const grid = root.querySelector('[data-illu-grid]');
-        grid.innerHTML = buildGridHtml(res.keyword);
-        wireTiles();
+        preserveScroll(root, () => {
+          const grid = root.querySelector('[data-illu-grid]');
+          grid.innerHTML = buildGridHtml(res.keyword);
+          wireTiles();
+        });
       });
-      if (gridOpen) setTimeout(() => searchInput.focus(), 30);
+      // v0.15.5: focus only on the click-to-open transition, not on every
+      // re-paint. Without the latch, typing in any other editor input would
+      // re-paint this picker and steal focus down here.
+      if (gridOpen && justOpened) {
+        setTimeout(() => searchInput.focus(), 30);
+        justOpened = false;
+      }
     }
     wireTiles();
   }); }
