@@ -24,7 +24,9 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
 | `CLAUDE_SETTINGS.md` | Cross-project personal-Claude settings doc (the how-to-work-with-Nick rules). Source of truth for tone, pushback, voice. |
 | `PERSONAL_CLAUDE_ARCHITECTURE.md` | The handler-and-canonical pattern spec applied to all six personal projects. Companion to CLAUDE_SETTINGS. |
-| `docs/` | Per-project audit findings live here as `CANONICAL_AUDIT-YYYY-MM-DD.md` (written by the scheduled audit tasks). Handler audits land here too as `HANDLER_AUDIT-YYYY-MM-DD.md`. |
+| `docs/` | Per-project audit findings live here as `CANONICAL_AUDIT-YYYY-MM-DD.md` (written by the scheduled audit tasks). Handler audits land here too as `HANDLER_AUDIT-YYYY-MM-DD.md`. Cross-portfolio CONSTELLATION bar-raise reports also land here once Phase 3 of the bar-raise buildout ships. |
+| `docs/BAR_RAISE_ROADMAP.md` | Active build plan for the periodic-review skill + status dashboard. Multi-session; check phase status table before resuming. Source of truth for the JSON contract and URL slugs. |
+| `status/` | Static status dashboard at `yesandeverything.com/status/`. Reads per-project JSON files at `status/data/<project>.json` and renders cards. See BAR_RAISE_ROADMAP.md Phase 1+. Each project's release.ps1 writes its own dashboard JSON. |
 | `.work-queue.json` | Cross-project drain queue. Items get added by audits, processed by `work-queue-runner` skill on the every-4-hours `queue-drain-frequent` scheduled task. |
 | `_skill-review/` | Staged personal `.skill` files (installable) plus their review viewer. |
 
