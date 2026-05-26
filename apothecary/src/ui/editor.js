@@ -1479,6 +1479,13 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
                             // only on the click-to-open, not on every paint
 
   function paint() { preserveScroll(root, () => {
+    // v0.15.7: also preserve the library grid's internal scrollTop. Picking a
+    // tile rebuilds the picker innerHTML, which destroys the existing grid
+    // and resets its own overflow-y scroll to 0. Capture before rebuild,
+    // restore after.
+    const gridBefore = root.querySelector('[data-illu-grid]');
+    const gridScroll = gridBefore ? gridBefore.scrollTop : 0;
+
     const res = currentResolution();
     const label = res.keyword
       ? (illustrations.find(i => i.keyword === res.keyword)?.label || res.keyword)
@@ -1546,6 +1553,10 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
       }
     }
     wireTiles();
+    // v0.15.7: restore the grid's internal scrollTop after rebuild so picking
+    // an item doesn't kick the library list back to the top.
+    const gridAfter = root.querySelector('[data-illu-grid]');
+    if (gridAfter && gridScroll) gridAfter.scrollTop = gridScroll;
   }); }
 
   function buildGridHtml(currentKeyword) {
