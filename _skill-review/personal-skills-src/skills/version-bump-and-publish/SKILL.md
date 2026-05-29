@@ -3,6 +3,20 @@ name: version-bump-and-publish
 description: Bump a project's version everywhere it's tracked and run its release flow. Use whenever the user asks to ship a release, cut a version, bump and push, publish a new build, do a release, tag a version, or run the release script. Also trigger on phrases like `release v0.27.0`, `patch bump`, `minor bump`, `ship it`, `publish the GDD`, `cut a release`, `version up and push`, or any request that combines version-bumping with commit/push/publish. Auto-detects project type (Godot, Node/web, static site, multi-file canonical) and updates every tracked version location in lockstep so they never drift. On HBH specifically, defers the per-commit GDD changelog-entry authoring to htbh-changelog-entry then resumes for the release.ps1 execution. The split — htbh-changelog-entry owns `bump pill + write entry` (5-15x daily), version-bump-and-publish owns `execute the project release script + push` (1x per release). Defaults to dry-run staging; only executes the release when the user explicitly says ship it or release.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `release_script` — which script to invoke
+- `preship_script` — verify it ran (or invoke directly)
+- `version_pill_locations` — all must agree before release
+- `release_message_format` — the commit message shape
+- `publish_script` + `publish_target` — separate publish step if present
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Version bump and publish
 
 Bump a project's version across every tracked location, draft a changelog entry in the project's voice, and (on explicit go-ahead) run its release flow. Keeps version pills, package files, and changelogs aligned so the project's source of truth never drifts from its public artifacts.

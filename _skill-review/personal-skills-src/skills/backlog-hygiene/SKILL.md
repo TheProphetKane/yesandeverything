@@ -3,6 +3,17 @@ name: backlog-hygiene
 description: Maintain a project's backlog file by marking shipped items DONE, surfacing stale cross-references, and flagging redundant or superseded rows. Use whenever the user asks to clean up the backlog, mark backlog items done, scan for stale references, audit the backlog, do backlog hygiene, sweep the BACKLOG, reconcile the backlog against recent commits, ask "what backlog items have shipped", or otherwise wants the backlog file aligned with what's actually been done. Works on both markdown-table backlogs (YaC `BACKLOG.md` style with priority emojis) and JS-object-array backlogs (HBH `docs/GDD.html` backlog tab style). Defaults to report-only — never edits without an explicit "go" / "apply" from the user.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `backlog_path` — which file to sweep
+- `changelog_path` — cross-reference for DONE marks
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Backlog hygiene
 
 Walk a project's backlog file, cross-reference it against recent git activity, and surface what's shipped, what's stale, and what's redundant. Optionally apply the fixes once the user signs off.

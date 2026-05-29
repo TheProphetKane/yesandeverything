@@ -3,6 +3,20 @@ name: bar-raise
 description: Run a periodic deep-review against one project or the whole portfolio. Use whenever the user says "bar-raise", "deep audit", "weekly review", "constellation review", "run the lenses", "raise the bar on X", or when a scheduled task fires with a `bar-raise-*` task name. Produces a Markdown findings report at `<project>/docs/BAR_RAISE-YYYY-MM-DD.md` and updates `X:\YesAndEverything\status\data\<project>.json` with the bar-raise fields. Five-wave structure modeled on a friend's `/bar-raise-*` skill: portfolio overview (Wave 1, constellation only), per-project discovery (Wave 2), Tier-1 lenses (Wave 3, 11 lenses applied to every project), domain lenses (Wave 4, ~22 lenses tag-matched per project, populated in Phase 4 of the bar-raise buildout), and meta-synthesis (Wave 5, collapses everything to verdict + actions). Two orchestrators: `per_project.md` runs Waves 2+3+4+5 against one project; `constellation.md` runs Waves 1+2(xN)+3+4+5 across the whole portfolio. Driven by `X:\YesAndEverything\docs\BAR_RAISE_ROADMAP.md`.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `tags` — which domain lenses apply to this project
+- `canonical_docs`, `backlog_path`, `changelog_path` — what to walk
+- `hazard_catalog` — load the per-project hazards file
+- `hard_rules` — flag any code that violates a hard rule as BLOCK
+- `scheduled_tasks` + `scheduled_tasks_external` — verify the audit-loop is wired
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Bar-raise (periodic deep review)
 
 The bar-raise is a structured, lens-driven review of one project (or the whole portfolio) that produces a Markdown findings report plus a JSON status update for the dashboard at `yesandeverything.com/status/`. Per-project review runs daily; constellation review runs weekly. Output is read-only: the skill never modifies code. The drift-auto-fix and work-queue-runner skills handle that downstream.

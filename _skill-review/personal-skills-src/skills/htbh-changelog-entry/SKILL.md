@@ -3,6 +3,18 @@ name: htbh-changelog-entry
 description: Bump the HBH GDD version pill and write a new changelog entry in solo-dev voice. Use on every single HBH commit. Implements the update_gdd_every_reply hard rule. Scope is HBH per-commit GDD work specifically — the release-script execution is delegated to version-bump-and-publish on explicit ship-it. Trigger LIBERALLY when HBH work is done. Triggers include `log this`, `bump GDD`, `add changelog entry`, `version bump`, `PATCH bump`, `MINOR bump`, `bump HBH`, `GDD update`. On HBH specifically also takes phrases that overlap with version-bump-and-publish (`release v0.X.Y`, `cut a version`, `tag a version`) for the changelog portion, then hands off to version-bump-and-publish for the actual release.ps1 execution. Trigger proactively at end of any HBH code change. False-positive cost is near-zero; false-negative cost is Nick authoring the entry by hand. Defaults to draft-only; ships only on explicit ship-it or release or go.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `version_pill_locations` — which files get the bump
+- `changelog_path` — where the entry lands
+- `release_message_format` — commit message shape
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # HBH changelog entry
 
 Bump the HBH GDD version pill and author one changelog entry for the day's work, in the solo-dev voice the project uses. This skill runs on every HBH commit Nick ships — it is the operational form of the `update_gdd_every_reply` hard rule.

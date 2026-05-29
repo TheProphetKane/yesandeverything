@@ -3,6 +3,18 @@ name: solo-dev-voice-audit
 description: Scan public-facing artifacts (GDD changelog, README, in-code comments, recruitment posts, landing pages) for voice violations that reveal AI collaboration. Catches em dashes, "per Nick", first-person pronouns, AI vocabulary ("let me", "I'll", "as an AI"), and AI tool names (Midjourney, Claude, GPT) before they ship. Use whenever the user asks to "check voice", "audit my changelog", "scan for em dashes", "solo dev voice check", "is this writing AI-flavored", "voice audit before commit", "ready to commit, scan first", or similar. Also trigger proactively after any large doc edit on HBH (the GDD changelog is the most-public artifact and has the strictest enforcement). Reports HIGH/MEDIUM/LOW severity hits with suggested rewrites; can auto-apply HIGH-severity fixes on request.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `voice_strictness` — `standard` -> HIGH severity, `strict` -> BLOCK
+- `voice_scope` — which contexts the voice rule applies to
+- `public_artifact_globs` — which files to scan
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Solo-dev voice audit
 
 Scan public-facing writing for tell-tale AI-collaboration signals before it ships. The canonical rule is memory `solo_dev_voice` (project #2 priority on HBH): all public-facing artifacts read as a solo dev tracking own work, never as AI collaboration. This skill enforces that rule mechanically.

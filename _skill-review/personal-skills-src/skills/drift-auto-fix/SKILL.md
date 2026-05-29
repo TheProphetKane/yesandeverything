@@ -3,6 +3,18 @@ name: drift-auto-fix
 description: Close the loop on project-canonical-audit by applying the low-risk fixes it surfaced, then chain the structural items into work-queue-runner so nothing dies on the floor. Use whenever the user asks to apply audit fixes, fix the drift, apply the suggested fixes, close the audit loop, auto-fix from audit, or make the drift fixes. Also trigger on phrases like `go ahead and apply the easy ones`, `do the safe audit fixes`, `land the low-risk drift fixes`, or any request to take a recent audit findings report and act on it. The skill is the executor half of the audit pair — project-canonical-audit reports, drift-auto-fix applies, work-queue-runner picks up what couldn't be auto-applied. After applying safe fixes, automatically enqueue any structural items via work-queue-runner add before exiting. Refuses to operate without an audit findings file in hand.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `canonical_docs` — which files the safe text fixes apply to
+- `hard_rules` — never auto-fix anything that violates a hard rule
+- `critical_files_for_python_atomic_write` — use atomic-write for these, never the Edit tool
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Drift auto-fix
 
 Take a recent `project-canonical-audit` findings report and apply the items it tagged as low-risk. Surface the structural ones for the user to decide. Log every change to a dated diff file so the run is reviewable.

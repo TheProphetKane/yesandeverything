@@ -3,6 +3,18 @@ name: handler-audit
 description: Audit the four project-level CLAUDE.md handler files (HBH, YaC, Scheduler, YaE) against the current state of each project to surface stale paths, stale version pills, stale email or URL references, stale convention claims, and cross-handler inconsistency. Use whenever the user says "audit the handlers", "check CLAUDE.md drift", "verify the handler files", "audit my CLAUDE.md", "are the handlers still accurate", "do the handler files match reality", "sweep the CLAUDE.md files", or any request to validate that what the per-project handler primers claim still matches the project they describe. The skill walks all four handlers, harvests every concrete claim, verifies each against the project, and writes a dated findings report to X:\YesAndEverything\docs\. Report-only by default; auto-fixes safe items only when the user says "fix as you go".
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `handler` — which CLAUDE.md file to audit
+- `hard_rules` + `locked_decisions_summary` — verify they match the prose
+- All fields — cross-check that the prose in CLAUDE.md doesn't claim something contradicted by the structured fields
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Handler audit (CLAUDE.md drift sweep)
 
 Audit the four project-level CLAUDE.md handler files against the current state of each project they describe. Surface stale paths, stale version pills, stale email/URL references, stale convention claims, and cross-handler inconsistency. Optionally apply low-risk text fixes.

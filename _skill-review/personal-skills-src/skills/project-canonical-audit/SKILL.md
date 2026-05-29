@@ -3,6 +3,19 @@ name: project-canonical-audit
 description: Cross-reference a project's canonical design doc against its actual code to surface stale claims, missing implementations, and version drift. Chains into backlog-hygiene so the BACKLOG side of the same project gets audited in one pass. Use whenever the user asks to audit a repo, verify the GDD/DESIGN/PROJECT_SPEC matches reality, check for documentation drift, confirm the roadmap against what's built, or validate descriptions and product plans against the codebase. Also trigger on `is the design doc still accurate`, `do the docs match the code`, `what's stale in the GDD`, `audit X`, or any request to walk a canonical doc against the code. Auto-detects project type (Godot, web app, static site, library) for which doc is canonical. After writing findings, hands off to backlog-hygiene for BACKLOG sweep. The audit report includes a queue-these section so drift-auto-fix and work-queue-runner can pick up the fixes.
 ---
 
+## Step 0: Load project context (schema v1)
+
+Before doing anything project-specific, read `<project-path>/.project-context.json` (schema v1; see `X:\YesAndEverything\PERSONAL_CLAUDE_ARCHITECTURE.md` for the full schema).
+
+Use it to drive:
+- `canonical_docs` — which doc files to walk
+- `locked_decisions_log` — where decisions live for cross-reference
+- `backlog_path` — feeds the backlog-hygiene hand-off
+- `version_pill_locations` — version-drift check
+
+If the file is missing or its `schema_version` is unsupported, fall back to reading the project's `CLAUDE.md` prose. Log a queue item asking Nick to add or migrate the context file.
+
+
 # Project canonical-doc audit
 
 Audit a project's canonical design doc against its actual code state. Find what's stale, what's contradicted, what's missing, and what's correctly aligned. Optionally apply low-risk text fixes.
@@ -202,4 +215,3 @@ After enqueueing, list every item added (id + project + auto_safe) at the bottom
 By default, write the findings report to the project's own `docs/` folder (or root if no `docs/` exists) as `CANONICAL_AUDIT-YYYY-MM-DD.md`. The user can move it, but landing it in the repo means the next session sees the previous audit's results and can build on them.
 
 If the project already has a `CANONICAL_AUDIT.md`, *append* a new dated entry rather than overwriting — audit history is itself useful.
-                                                                                                                                                                                                       

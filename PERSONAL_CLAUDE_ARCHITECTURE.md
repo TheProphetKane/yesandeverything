@@ -136,3 +136,109 @@ Periodic deep-review skill + static dashboard at `yesandeverything.com/status/`.
 Domain lens domains: `game-design`, `static-site`, `cloud-edge`, `finance-product`, `generative-art`, `PWA`, `orchestration`, `release-pipeline`, `public-voice`. Each project's `tags` array in its dashboard JSON selects which domain lenses apply.
 
 Cross-cutting: every project's `release.ps1` ends by calling `write-dashboard-status.ps1`. The bar-raise skill never modifies code; it produces Markdown findings + JSON status only. Drift-fix and work-queue-runner consume the findings downstream.
+
+---
+
+## Project-context layer (added 2026-05-29)
+
+### What it is
+
+Each project repo now ships a `.project-context.json` at its root. Schema version 1. This file is the **machine-readable** per-project metadata that any skill can load in one step, replacing the LLM-driven "re-derive everything from CLAUDE.md prose" pattern.
+
+### Schema (v1)
+
+```json
+{
+  "$schema": "https://yesandeverything.com/schema/project-context-v1.json",
+  "schema_version": 1,
+  "name": "ProjectName",           // canonical name (matches repo dir + scheduled-task target)
+  "short": "PN",                   // abbreviation used in commit messages, status JSON
+  "display_name": "Pretty Name",
+  "path": "X:\\Project",          // absolute Windows path
+  "type": "godot-game | node-web-app | browser-pwa | browser-app | static-site | multi-canonical",
+  "engine": "Godot 4.6",           // optional, game projects only
+  "stack": ["Vite", "React", ...], // optional, web projects only
+  "primary_language": "GDScript | TypeScript | JavaScript | HTML",
+
+  "canonical_docs": ["docs/DESIGN.md", ...],
+  "handler": "CLAUDE.md",
+  "locked_decisions_log": "docs/DECISIONS.md",
+  "changelog_path": "CHANGELOG.md",
+  "backlog_path": "BACKLOG.md",
+  "decisions_log_format": "appended-DECISIONS.md | in-GDD | in-DESIGN-section | in-PROJECT_SPEC-section | none",
+
+  "version_pill_locations": [
+    {"file": "package.json", "pattern": "...regex with one capture group...", "label": "..."},
+    ...
+  ],
+
+  "release_script": "scripts/release.ps1",
+  "preship_script": "scripts/preship.ps1",
+  "publish_script": "scripts/publish-gdd.ps1",   // optional
+  "publish_target": "X:\\YesAndEverything\\...", // optional
+
+  "voice_strictness": "standard | strict",
+  "voice_scope": ["changelog", "readme", ...],
+  "public_artifact_globs": ["CHANGELOG.md", ...],
+
+  "secret_exposure_paths": [".finances/**", ".env", ...],
+  "critical_files_for_python_atomic_write": [...],
+  "skip_files_too_large": ["CONTEXT.md", ...],  // optional
+
+  "hazard_catalog": "personal-skills-src/skills/code-audit/hazards/per-project/<NAME>.md",
+  "scheduled_tasks": ["audit-X-weekly", ...],
+  "scheduled_tasks_external": ["audit-X-daily (Windows Task Scheduler)", ...],
+
+  "repo_url": "https://github.com/TheProphetKane/...",
+  "tags": ["...", ...],
+
+  "hard_rules": ["...", ...],            // one-line strings, matched by the hazard catalog
+  "locked_decisions_summary": ["...", ...],
+  "release_message_format": "feat(name): vX.Y.Z - <summary>",
+  "notes": ["...", ...]
+}
+```
+
+### How skills should consume it
+
+**Step 0 of every skill that operates on a specific project:**
+
+```
+Read <project-path>/.project-context.json. Use it to drive:
+- which canonical doc(s) to walk
+- which files to flag for voice violations (public_artifact_globs)
+- which files to use Python atomic-write on (critical_files_for_python_atomic_write)
+- which hazard catalog to load (hazard_catalog)
+- which voice severity rubric (voice_strictness: standard -> HIGH, strict -> BLOCK)
+- which release script to invoke (release_script)
+- which version pills to keep in sync (version_pill_locations)
+
+If .project-context.json is missing or its schema_version is unsupported, fall back to reading CLAUDE.md prose. Log a queue item asking Nick to add or migrate the context file.
+```
+
+The CLAUDE.md handler remains the human-readable narrative. The `.project-context.json` is the structured-data complement; both stay in sync via the `handler-audit` skill.
+
+### When to update each
+
+- **CLAUDE.md** — when conventions, hazards, or the why-it-exists narrative changes
+- **.project-context.json** — when paths, scripts, version-pill locations, or hard-rule lists change; also when a new locked decision is added (mirror into `locked_decisions_summary`)
+- Both whenever the project type or stack shifts
+
+### Migration notes (schema v1 → v2)
+
+Reserved for future. Any field rename / removal increments `schema_version` and ships with a migration recipe in this doc.
+
+### Skills currently consuming v1
+
+- `project-canonical-audit` (canonical_docs, locked_decisions_log)
+- `drift-auto-fix` (canonical_docs, hard_rules)
+- `bar-raise` (everything; this is the heaviest consumer)
+- `backlog-hygiene` (backlog_path)
+- `handler-audit` (handler, hard_rules, locked_decisions_summary)
+- `htbh-changelog-entry` (version_pill_locations, changelog_path)
+- `version-bump-and-publish` (release_script, version_pill_locations, release_message_format)
+- `cross-project-status-digest` (path, tags, scheduled_tasks)
+- `solo-dev-voice-audit` (voice_strictness, public_artifact_globs)
+- `code-audit` (critical_files_for_python_atomic_write, hazard_catalog, voice_strictness, public_artifact_globs, secret_exposure_paths)
+
+Future skills should consume `.project-context.json` first and CLAUDE.md prose only as fallback.
