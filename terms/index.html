@@ -81,43 +81,6 @@
       color: var(--accent); margin: 6px 0;
     }
     .big-rate .sub { font-size: 14px; color: var(--fg-2); font-weight: 400; }
-    .acceptance {
-      background: var(--ink-2);
-      border: 1px solid var(--ink-5);
-      border-radius: 10px;
-      padding: 20px 24px;
-      margin-top: 28px;
-    }
-    .acceptance label {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: 14px; color: var(--fg-1); cursor: pointer;
-      margin-bottom: 14px;
-    }
-    .acceptance input[type=checkbox] {
-      margin: 4px 0 0; width: 16px; height: 16px;
-      accent-color: var(--accent); cursor: pointer;
-    }
-    .acceptance button {
-      cursor: pointer;
-      background: var(--accent); color: var(--ink-0);
-      font-family: var(--mono); font-weight: 700; font-size: 14px;
-      border: none; border-radius: 6px;
-      padding: 11px 18px;
-      transition: opacity 0.15s, transform 0.05s ease;
-    }
-    .acceptance button:disabled {
-      background: var(--ink-3); color: var(--fg-2);
-      cursor: not-allowed; opacity: 0.7;
-    }
-    .acceptance button:not(:disabled):hover { transform: translateY(-1px); }
-    .acceptance-status {
-      font-family: var(--mono); font-size: 12px;
-      color: var(--fg-2); margin-top: 12px;
-      min-height: 18px;
-    }
-    .acceptance-status.recorded {
-      color: var(--accent);
-    }
     .footer {
       margin-top: 36px; padding-top: 18px;
       border-top: 1px solid var(--ink-3);
@@ -125,7 +88,6 @@
     }
     .footer a { color: var(--fg-1); text-decoration: none; }
     .footer a:hover { color: var(--accent); }
-    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -134,8 +96,9 @@
   <h1>YesAnd<span class="amp">Everything</span>. Consultation</h1>
   <p class="lede">
     Engagement Terms for a paid telephone consultation with Nicholas Loynd.
-    Read them. Accept them. Then place the call. By calling after acceptance,
-    you incur the fee described below.
+    Acceptance occurs automatically on loading yesandeverything.com: a notice
+    appears that cannot be dismissed without acknowledgment. Placing a call to
+    me after that acknowledgment incurs the fee described below.
   </p>
 
   <section class="card warn">
@@ -171,8 +134,10 @@
       consultation ("Call") between Nicholas Loynd ("I", "me") and any firm,
       organisation, or individual ("Firm" or "you") that calls me after
       accepting them. You are deemed to have <strong>accepted</strong> the
-      Terms at the time and date you complete the acceptance flow below (the
-      "Acceptance Time"). By placing a Call after the Acceptance Time, you
+      Terms at the time and date you acknowledged the consultation notice
+      presented automatically on yesandeverything.com (the "Acceptance Time").
+      The notice is presented on page load and cannot be dismissed without
+      acknowledgment. By placing a Call after the Acceptance Time, you
       reconfirm acceptance and incur the liability described below.
     </p>
 
@@ -266,81 +231,11 @@
     </ol>
   </section>
 
-  <section class="acceptance" id="acceptance">
-    <h2 style="font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--fg-0); margin: 0 0 14px;">Acceptance</h2>
-    <label>
-      <input type="checkbox" id="agree" />
-      <span>
-        I have read and accept the Engagement Terms above. I understand that
-        placing a call to Nicholas Loynd after this acceptance will incur a
-        non-refundable, non-cancellable fee of <strong>$1,000.00 USD</strong>
-        (one hour at $1,000.00/hour), even if the call lasts only seconds, and
-        that any duration over one hour is billed in additional whole-hour
-        increments at $1,000.00/hour.
-      </span>
-    </label>
-    <button id="accept-btn" type="button" disabled>Record acceptance</button>
-    <div class="acceptance-status" id="status">Tick the box, then click to record your acceptance.</div>
-  </section>
-
   <div class="footer">
     <a href="/">&larr; yesandeverything.com</a>
     &nbsp;&middot;&nbsp;
     Nicholas Loynd. Missouri, USA. Kane@yesandeverything.com.
   </div>
 </main>
-
-<script>
-(function () {
-  "use strict";
-
-  var STORAGE_KEY = "yae-terms-acceptance-v1";
-
-  var agreeEl = document.getElementById("agree");
-  var btnEl = document.getElementById("accept-btn");
-  var statusEl = document.getElementById("status");
-
-  function fmt(ts) {
-    var d = new Date(ts);
-    return d.toISOString().replace("T", " ").slice(0, 19) + " UTC";
-  }
-
-  function showRecorded(ts) {
-    statusEl.classList.add("recorded");
-    statusEl.textContent = "Acceptance recorded at " + fmt(ts) + ". You may now place the call.";
-    btnEl.textContent = "Acceptance recorded";
-    btnEl.disabled = true;
-    agreeEl.disabled = true;
-    agreeEl.checked = true;
-  }
-
-  // Restore prior acceptance on this device, if any.
-  try {
-    var prior = localStorage.getItem(STORAGE_KEY);
-    if (prior) {
-      var rec = JSON.parse(prior);
-      if (rec && rec.ts) showRecorded(rec.ts);
-    }
-  } catch (e) { /* noop */ }
-
-  agreeEl.addEventListener("change", function () {
-    btnEl.disabled = !agreeEl.checked;
-    if (agreeEl.checked) {
-      statusEl.classList.remove("recorded");
-      statusEl.textContent = "Click 'Record acceptance' to lock in the time and date.";
-    } else {
-      statusEl.textContent = "Tick the box, then click to record your acceptance.";
-    }
-  });
-
-  btnEl.addEventListener("click", function () {
-    if (!agreeEl.checked) return;
-    var ts = Date.now();
-    var record = { ts: ts, ua: navigator.userAgent || "", url: location.href };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(record)); } catch (e) { /* noop */ }
-    showRecorded(ts);
-  });
-})();
-</script>
 </body>
 </html>
