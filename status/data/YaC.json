@@ -1,40 +1,40 @@
 {
-    "project":  "YaC",
-    "displayName":  "YesAndChains",
-    "version":  "0.33.1",
-    "lastReleaseAt":  "2026-05-26T00:00:00Z",
-    "lastReleaseMessage":  "Course-refresh cron moved off GitHub Actions onto local Task Scheduler.",
-    "milestone":  {
-                      "id":  "1.0-launch-prep",
-                      "label":  "Launch checklist (docs/launch-checklist-1.0.md)",
-                      "status":  "in-progress"
-                  },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandchains",
-    "workTreeClean":  false,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-05-25.md",
-                  "latestReportAt":  "2026-05-25T06:00:00Z",
-                  "findings":  {
-                                   "high":  0,
-                                   "medium":  1,
-                                   "low":  4
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-05-28.md",
-                     "latestReportAt":  "2026-05-28T11:15:42Z",
-                     "verdict":  "at-risk",
-                     "topFinding":  "Doc-currency drift accelerated overnight and now competes with the pin-completeness gap for top spot. Today\u0027s docs/CANONICAL_AUDIT-2026-05-28.md opened two new HIGH items and one MED-HIGH: PROJECT_SPEC.md line 142 still cross-references \u0027pending Decision 26 capture\u0027 for the monetization pivot, but slot 26 was claimed on 2026-05-26 by the course-refresh cron host change. docs/launch-checklist-1.0.md still reads \u0027Last refresh 2026-05-21, anchored to 0.28.1\u0027 five MINOR ships after the code moved on. And the 0.33.1 release-cut has been sitting uncommitted in the working tree for ~3 days with CONTEXT.md, package.json, PROJECT_SPEC.md, and ten more files modified, which is the exact FUSE-truncation risk window the project\u0027s own runbook warns against. The pin-completeness HIGH from yesterday is unchanged: still no N6 in the launch checklist, still 499/500 sampled courses flagged.",
-                     "actionsOpen":  7,
-                     "actionsClosed":  1
-                 },
-    "workQueueDepth":  0,
-    "stale":  false,
-    "tags":  [
-                 "cloud-edge",
-                 "PWA",
-                 "orchestration",
-                 "release-pipeline",
-                 "public-voice"
-             ]
+    "project": "YaC",
+    "displayName": "YesAndChains",
+    "version": "0.33.1",
+    "lastReleaseAt": "2026-05-26T00:00:00Z",
+    "lastReleaseMessage": "Course-refresh cron moved off GitHub Actions onto local Task Scheduler.",
+    "milestone": {
+        "id": "1.0-launch-prep",
+        "label": "Launch checklist (docs/launch-checklist-1.0.md)",
+        "status": "in-progress"
+    },
+    "repoUrl": "https://github.com/TheProphetKane/yesandchains",
+    "workTreeClean": false,
+    "audit": {
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-05-25.md",
+        "latestReportAt": "2026-05-25T06:00:00Z",
+        "findings": {
+            "high": 0,
+            "medium": 1,
+            "low": 4
+        }
+    },
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-05-29.md",
+        "latestReportAt": "2026-05-29T11:17:17Z",
+        "verdict": "at-risk",
+        "topFinding": "The working tree has become a holding pen and it is now actively dangerous. Two full version cuts sit authored-but-uncommitted (the 0.33.1 cron patch and a new 0.34.0 MINOR that touches real worker code in worker/src/index.js plus src/profile.ts and a new force_refresh_courses.py), while HEAD is still v0.33.0 from 2026-05-25, so roughly four days of work sit on the FUSE mount in the exact silent-truncation window Test-YacIntegrity exists to catch. Worse, the action that flushes that risk also breaks the dashboard: scripts/write-dashboard-status.ps1 rebuilds the status JSON from scratch and hardcodes audit.findings to 0/0/0 (line 98) while nulling the entire barRaise block (lines 103-110), so running release.ps1 will silently erase this bar-raise and zero the audit counts on the dashboard. Fix the dashboard writer to merge, then ship the release. Separately, the Decision 26 slot collision relocated rather than closing: DECISIONS_NEEDED.md now holds two competing Decision 27 headings.",
+        "actionsOpen": 6,
+        "actionsClosed": 1
+    },
+    "workQueueDepth": 0,
+    "stale": false,
+    "tags": [
+        "cloud-edge",
+        "PWA",
+        "orchestration",
+        "release-pipeline",
+        "public-voice"
+    ]
 }
