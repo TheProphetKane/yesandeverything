@@ -36,7 +36,7 @@ $repos = @(
   @{
     slug = 'here-be-hordes'
     display = 'Here Be Hordes'
-    description = "Industrial-era horror RTS survival in Godot 4.6. Hand-painted grim-dark, true 2:1 isometric. Build a portal-anchored colony on a distant exoplanet, hold the native undead at bay."
+    description = "Exoplanet colony defense RTS in Godot 4.6. Portal-anchored outpost extracting resources for a depleted Earth while the native undead refuse to stay buried. Hand-painted, true 2:1 isometric."
     homepage = 'https://yesandeverything.com/hordes/'
     topics = 'godot,godot4,gdscript,rts,survival-game,isometric,tower-defense,game-development,indie-game,horror-game'
     labelSet = 'game'
