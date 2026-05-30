@@ -21,12 +21,12 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-05-29.md",
-        "latestReportAt": "2026-05-29T11:17:17Z",
-        "verdict": "at-risk",
-        "topFinding": "The working tree has become a holding pen and it is now actively dangerous. Two full version cuts sit authored-but-uncommitted (the 0.33.1 cron patch and a new 0.34.0 MINOR that touches real worker code in worker/src/index.js plus src/profile.ts and a new force_refresh_courses.py), while HEAD is still v0.33.0 from 2026-05-25, so roughly four days of work sit on the FUSE mount in the exact silent-truncation window Test-YacIntegrity exists to catch. Worse, the action that flushes that risk also breaks the dashboard: scripts/write-dashboard-status.ps1 rebuilds the status JSON from scratch and hardcodes audit.findings to 0/0/0 (line 98) while nulling the entire barRaise block (lines 103-110), so running release.ps1 will silently erase this bar-raise and zero the audit counts on the dashboard. Fix the dashboard writer to merge, then ship the release. Separately, the Decision 26 slot collision relocated rather than closing: DECISIONS_NEEDED.md now holds two competing Decision 27 headings.",
+        "latestReportPath": "docs/BAR_RAISE-2026-05-30.md",
+        "latestReportAt": "2026-05-30T11:15:08Z",
+        "verdict": "stalled",
+        "topFinding": "The release pipeline has seized. For a fourth straight bar-raise the same four HIGH findings stand unremediated, and since the 2026-05-29 review not one file in the release-blocking set has changed: the working tree still holds the full 0.33.1 + 0.34.0 cut (real code in worker/src/index.js, src/profile.ts, tools/force_refresh_courses.py) uncommitted for five days, the last version commit is still 2d0ef0f v0.33.0 from 2026-05-25, and the only commit since the last review (896fcd4, .project-context.json) is orthogonal scaffolding. The fix that unblocks the ship is small and known: scripts/write-dashboard-status.ps1 still hardcodes audit.findings to 0/0/0 (line 98) and nulls the entire barRaise block (lines 103-110), so running release.ps1 before that fix lands erases this report and zeroes the dashboard. The path is unchanged from three days ago: make the dashboard writer merge-aware, then run release.ps1. The verdict is stalled not because the project is dead (the course-refresh cron drained on schedule at 04:00 today and bar-raises run daily) but because the at-risk remediation has not moved at all.",
         "actionsOpen": 6,
-        "actionsClosed": 1
+        "actionsClosed": 0
     },
     "workQueueDepth": 0,
     "stale": false,
