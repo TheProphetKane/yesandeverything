@@ -21,12 +21,12 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-05-30.md",
-        "latestReportAt": "2026-05-30T06:00:00Z",
-        "verdict": "at-risk",
-        "topFinding": "The v0.80.0 far-colony rename was executed as a pure file-move, but two systems identify buildings by their script filename and neither was updated: fog_of_war._vision_for_compute now returns default vision for every tower and housing tier (shipped live), and save_load reloads buildings by the persisted filename so pre-2026-05-29 saves silently drop every renamed building with no version migration. Both share one root: building identity keyed off the filename. The four-cycle version-pill drift closed this run (config/version synced, release.ps1 Step 0 guard shipped) and the canonical-audit chain recovered, but the rename traded a closed process-HIGH for two code-correctness HIGHs.",
-        "actionsOpen": 8,
-        "actionsClosed": 2
+        "latestReportPath": "docs/BAR_RAISE-2026-05-31.md",
+        "latestReportAt": "2026-05-31T11:08:29Z",
+        "verdict": "stalled",
+        "topFinding": "Both code-correctness HIGHs from the 2026-05-30 review are still shipping live and zero commits landed since, so the verdict escalates from at-risk to stalled. fog_of_war._vision_for_compute still dispatches on ballista_tower / mortar_tower / repeater_tower and tent / cottage (source/systems/fog_of_war.gd:483,487-489), filenames the v0.80.0 rename deleted, so every tower and housing tier falls through to VISION_STRUCTURE_DEFAULT and ships the wrong fog radius. save_load still persists the script basename as the class key with no save_version field (source/autoloads/save_load.gd:347,502), so pre-rename saves silently drop renamed buildings on load. The S-34 Phase B / multimesh decision is unmade for a fifth cycle (all eight use_multimesh_* flags false). Newly surfaced this run: the YaE landing card still pitches HBH as an 'industrial nightmare in oil paint' with Mines / lumberyards / farms (index.html:1490), contradicting the far-colony canonical the GDD locked in v0.74.0. The project was highly active through 2026-05-29 (~15 releases that day); this is a single-cycle stall on the criticals, not abandonment, but the warned-about bugs are reaching the running game.",
+        "actionsOpen": 9,
+        "actionsClosed": 0
     },
     "workQueueDepth": 0,
     "stale": false,
