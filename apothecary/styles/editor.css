@@ -2253,15 +2253,18 @@ select.field-input:focus {
 .illu-grid {
   display: grid;
   /* v0.15.11: tiles are now ~110px floor so each illustration shows large
-     enough to actually see the detail. Combined with the wider gap below, the
-     library reads as a proper card grid, not a packed mosaic. Auto-fill still
-     fills the available width; typical editor-panel widths get 3-4 columns. */
+     enough to actually see the detail. */
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  /* v0.15.12: force explicit row height. Without this, grid rows fall to
+     auto, the tile's aspect-ratio doesn't always resolve, and the image
+     overflows downward into the next row. 150px gives a full-height card
+     that comfortably fits a ~110-150px wide illustration. */
+  grid-auto-rows: 150px;
   gap: 12px;
   /* v0.15.5: fixed height (not max-height) so the grid never shrinks while
      the user types into the filter. Editor-card content height stays
      constant; scroll position stays put. */
-  height: 420px;
+  height: 480px;
   overflow-y: auto;
   padding: 4px;
   min-width: 0;
@@ -2278,11 +2281,11 @@ select.field-input:focus {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  /* v0.15.11: tile aspect matches the SpiceJungle source images (~0.85 wide-
-     to-tall) so each illustration fills the tile cleanly with minimal
-     letterbox whitespace. Combined with the larger minmax floor, every tile
-     shows the full art at a legible size. */
-  aspect-ratio: 5 / 6;
+  /* v0.15.12: explicit height from grid-auto-rows on the parent. Aspect-ratio
+     was overridden by flex auto-sizing on at least some browsers, causing
+     tiles to collapse short and images to leak into the next row. */
+  height: 100%;
+  width: 100%;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   /* v0.15.9: zero out min-width so the grid track sizing respects our
