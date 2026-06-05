@@ -20,15 +20,22 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a 3-line meta-refresh stub that redirects to `/hordes/` so any old bookmark still lands on the gate. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
 | `projects/scheduler/{index,design}.html` | Scheduler project landing + design preview. |
 | `apothecary/` | Celtic apothecary label designer — multi-file ES-module app, deployed by mirroring from `X:\YesAndApothecary` via that repo's `scripts/release.ps1` (which calls `scripts/deploy-to-yae.ps1` then commits + pushes this side). Multi-file by design; the "one file per page" convention does not apply to this subdir (it's a project mirror, same as `hordes/`). Do not edit files in `apothecary/` directly; edit in the source repo and run release. |
+| `brackish-rising/` | Password-gated Brackish Rising GDD mirror. Same base64-inlined gate pattern as `hordes/`; generated from the BR repo, not hand-edited. |
+| `budget/` | Budget project landing page. Single self-contained file; project mirror. |
+| `terms/` | Terms / legal page. Single self-contained file. |
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
+| `scripts/` | Release tooling. `release.ps1` runs the integrity guards then commit + push + Discord; `push-to-github.ps1`, `discord-notify.ps1`, plus repo-parity and branch-protection helpers. |
 | `CLAUDE_SETTINGS.md` | Cross-project personal-Claude settings doc (the how-to-work-with-Nick rules). Source of truth for tone, pushback, voice. |
 | `PERSONAL_CLAUDE_ARCHITECTURE.md` | The handler-and-canonical pattern spec applied to all six personal projects. Companion to CLAUDE_SETTINGS. |
+| `IMPLEMENTATION_GUIDE.md` | How-to for the personal-Claude setup. Pairs with `CLAUDE_SETTINGS.md` (the rules) and `PERSONAL_CLAUDE_ARCHITECTURE.md` (the why). |
 | `docs/` | Per-project audit findings live here as `CANONICAL_AUDIT-YYYY-MM-DD.md` (written by the scheduled audit tasks). Handler audits land here too as `HANDLER_AUDIT-YYYY-MM-DD.md`. Cross-portfolio CONSTELLATION bar-raise reports also land here once Phase 3 of the bar-raise buildout ships. |
 | `docs/BAR_RAISE_ROADMAP.md` | Active build plan for the periodic-review skill + status dashboard. Multi-session; check phase status table before resuming. Source of truth for the JSON contract and URL slugs. |
 | `status/` | Static status dashboard at `yesandeverything.com/status/`. Reads per-project JSON files at `status/data/<project>.json` and renders cards. See BAR_RAISE_ROADMAP.md Phase 1+. Each project's release.ps1 writes its own dashboard JSON. |
 | `.work-queue.json` | Cross-project drain queue. Items get added by audits, processed by `work-queue-runner` skill on the every-4-hours `queue-drain-frequent` scheduled task. |
 | `_skill-review/` | Staged personal `.skill` files (installable) plus their review viewer. |
+| `invoices/` | Generated contract-drafting invoices and email templates (md + pdf + txt). Working files, not part of the public site. |
+| `digest-2026-05-15.md` | Archived cross-project weekly digest snapshot from 2026-05-15. Output of the digest task; superseded by later runs. |
 
 ## The hordes/ injection rule (critical)
 
@@ -36,17 +43,19 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 
 ## Deploy flow
 
-GitHub Pages auto-deploys from `main` root. There is no CI. Push to `main`, wait ~30s, refreshed in production. Hard-refresh (Ctrl+Shift+R) to bust the CDN cache if needed.
+Direct YaE edits ship through the release script, not raw git. From the repo root:
 
 ```powershell
 cd X:\YesAndEverything
 # edit index.html or per-project page
-git add .
-git commit -m "<concise description>"
-git push
+.\scripts\release.ps1
 ```
 
-For HBH GDD republishing, do **not** edit this repo directly — run `X:\HereBeHordes\scripts\publish-gdd.ps1` and it'll push the injection here for you.
+`release.ps1` clears any stale `.git\index.lock`, runs the integrity guards (`index.html` must end with `</html>`; `CNAME` must read `yesandeverything.com`), auto-detects what changed and writes a matching commit, pushes to `main`, then posts the changelog line to `#yae-dev-log` on Discord. GitHub Pages auto-deploys from `main` root within ~30s. Hard-refresh (Ctrl+Shift+R) to bust the CDN cache if a change doesn't appear.
+
+Raw git (`git add . && git commit && git push`) is the escape hatch only. It skips the integrity guards and the `index.lock` clear, so reserve it for one-off recovery when the release script itself is the thing being fixed.
+
+For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHordes\scripts\publish-gdd.ps1` and it'll push the injection here for you.
 
 ## Conventions
 

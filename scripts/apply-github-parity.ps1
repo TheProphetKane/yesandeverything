@@ -188,19 +188,37 @@ Write-Host ''
 Write-Host '=== Step 3: branch protection (optional, prompts before applying) ===' -ForegroundColor Cyan
 $reply = Read-Host 'Apply linear-history + no-force-push to main on all repos? (y/N)'
 if ($reply -eq 'y' -or $reply -eq 'Y') {
+  # Build the request body as a PowerShell object, convert to JSON, pipe to gh api --input -
+  # gh's -f / -F flags send strings for null/booleans incorrectly; stdin JSON sidesteps that.
+  $protection = @{
+    required_status_checks         = $null
+    enforce_admins                 = $false
+    required_pull_request_reviews  = $null
+    restrictions                   = $null
+    allow_force_pushes             = $false
+    allow_deletions                = $false
+    required_linear_history        = $true
+    required_conversation_resolution = $false
+    lock_branch                    = $false
+    allow_fork_syncing             = $true
+  } | ConvertTo-Json -Depth 5 -Compress
   foreach ($r in $repos) {
     $repo = "TheProphetKane/$($r.slug)"
-    Write-Host "  $repo" -ForegroundColor Yellow
-    gh api -X PUT "/repos/$repo/branches/main/protection" `
-      -f required_status_checks=null `
-      -F enforce_admins=false `
-      -f required_pull_request_reviews=null `
-      -f restrictions=null `
-      -F allow_force_pushes=false `
-      -F allow_deletions=false `
-      -F required_linear_history=true 2>$null | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "    WARN: protection failed for $repo (may require GitHub Pro for private repos)" -ForegroundColor Yellow
+    Write-Host "  ${repo}" -ForegroundColor Yellow
+    # Write the body as UTF-8 NO BOM (PowerShell pipe-to-stdin defaults trip GitHub's JSON parser).
+    $tmpFile = [System.IO.Path]::GetTempFileName()
+    [System.IO.File]::WriteAllText($tmpFile, $protection, [System.Text.UTF8Encoding]::new($false))
+    try {
+      $result = gh api -X PUT "/repos/$repo/branches/main/protection" --input $tmpFile 2>&1
+      if ($LASTEXITCODE -eq 0) {
+        Write-Host "    OK" -ForegroundColor Green
+      } else {
+        Write-Host "    WARN: protection failed for ${repo}: $result" -ForegroundColor Yellow
+      }
+    } catch {
+      Write-Host "    WARN: exception applying protection to ${repo}: $_" -ForegroundColor Yellow
+    } finally {
+      Remove-Item -Force $tmpFile -ErrorAction SilentlyContinue
     }
   }
   Write-Host 'Step 3 complete.' -ForegroundColor Green
