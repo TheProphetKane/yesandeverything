@@ -2366,3 +2366,646 @@ select.field-input:focus {
     radial-gradient(ellipse 70% 40% at 0% 0%, rgba(232, 160, 58, 0.18), transparent 65%),
     radial-gradient(ellipse 70% 40% at 100% 100%, rgba(200, 74, 26, 0.14), transparent 65%);
 }
+
+/* ============================================================
+   v0.16.0 - 100-polish pass
+   All purely additive. Each block is numbered so the changelog can
+   reference exactly which improvement landed where.
+   ============================================================ */
+
+/* 9. Save indicator widget. Sits in the header opposite the help button. */
+.app-header {
+  position: relative;
+}
+.app-status {
+  position: absolute;
+  top: 14px;
+  right: 60px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--moss-light);
+  opacity: 0.45;
+  transition: opacity var(--dur-base) var(--ease-snap), color var(--dur-base) var(--ease-snap);
+}
+.app-status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 0 0 var(--moss-glow);
+  transition: background var(--dur-fast) var(--ease-snap), box-shadow var(--dur-fast) var(--ease-snap);
+}
+/* 10. Save indicator: animated pulse on each persist. */
+.app-status.is-saving {
+  opacity: 1;
+  color: var(--gold-bright);
+}
+.app-status.is-saving .app-status-dot {
+  background: var(--gold-bright);
+  animation: saveDotPulse 1.1s var(--ease-snap);
+}
+@keyframes saveDotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0.55); transform: scale(1); }
+  60%  { box-shadow: 0 0 0 10px rgba(245, 200, 66, 0); transform: scale(1.4); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, 0); transform: scale(1); }
+}
+
+/* 11. Keyboard-shortcut help button. */
+.app-help-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid var(--moss-dark);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: transform var(--dur-fast) var(--ease-spring),
+              color var(--dur-fast) var(--ease-snap),
+              border-color var(--dur-fast) var(--ease-snap),
+              background var(--dur-fast) var(--ease-snap),
+              box-shadow var(--dur-fast) var(--ease-snap);
+}
+.app-help-btn:hover {
+  color: var(--gold-bright);
+  border-color: var(--gold);
+  background: rgba(245, 200, 66, 0.10);
+  transform: scale(1.10);
+  box-shadow: 0 0 0 4px var(--gold-halo);
+}
+.app-help-btn:active { transform: scale(0.94); }
+
+/* 12. Keyboard shortcut dialog. */
+.shortcut-dialog {
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-hi) 100%);
+  color: var(--cream);
+  border: 1px solid var(--gold-fade);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px 22px;
+  max-width: 460px;
+  width: calc(100vw - 32px);
+  box-shadow: var(--sheen-top), 0 24px 64px -12px rgba(0, 0, 0, 0.70), 0 0 0 1px var(--gold-fade);
+}
+.shortcut-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+.shortcut-dialog[open] {
+  animation: dialogIn var(--dur-base) var(--ease-spring) both;
+}
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.shortcut-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--moss-dark);
+}
+.shortcut-dialog-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  color: var(--gold-bright);
+  text-shadow: 0 0 14px var(--gold-glow);
+}
+.shortcut-dialog-close {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--moss-light);
+  width: 28px; height: 28px; padding: 0;
+  font-size: 18px; line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color var(--dur-fast), background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast) var(--ease-spring);
+}
+.shortcut-dialog-close:hover {
+  color: var(--warn);
+  background: rgba(196, 88, 10, 0.14);
+  border-color: var(--warn);
+  transform: scale(1.08);
+}
+.shortcut-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.shortcut-list dt { color: var(--gold); display: flex; gap: 4px; align-items: center; }
+.shortcut-list dd { color: var(--cream-dim); margin: 0; }
+.shortcut-list kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--field);
+  color: var(--gold-bright);
+  border: 1px solid var(--moss-dark);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 6px;
+  letter-spacing: 0.3px;
+}
+
+/* 13. Smooth scroll behavior + scroll-padding to avoid header overlap. */
+html { scroll-behavior: smooth; scroll-padding-top: 60px; }
+
+/* 14. Touch-callout off for label-frame so long-press doesn't pop iOS menus. */
+.label-frame, .lbl-symbol, .lbl-botanical {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 15. Drag-cursor on chip is grab; under :active becomes grabbing. */
+.layout-chip { cursor: grab; }
+.layout-chip:active { cursor: grabbing; }
+
+/* 16. Pretty selection across the whole app. */
+::selection { background: var(--gold-fade); color: var(--cream); text-shadow: 0 0 6px var(--gold-glow); }
+
+/* 17. Subtle text rendering bump for the editor body. */
+.editor-card { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* 18. Buttons inside the editor never trigger ugly default focus rings - they
+       get the gold halo from the focus-visible rules instead. */
+button:focus { outline: none; }
+button:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
+/* 19. Inputs: subtle inset shadow on hover, not just focus. */
+.field-input:hover:not(:focus) {
+  box-shadow: inset 0 0 0 1px rgba(232, 160, 58, 0.10);
+}
+
+/* 20. Section chevron softens to gold-fade when section is closed. */
+.ed-section:not(.ed-section--open) .ed-section-chevron { color: var(--gold-fade); }
+
+/* 21. Animated underline on section head when hovered. */
+.ed-section-head {
+  position: relative;
+}
+.ed-section-head::after {
+  content: '';
+  position: absolute;
+  left: 8px; right: 36px;
+  bottom: 4px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-fade), transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease-snap);
+}
+.ed-section-head:hover::after { transform: scaleX(1); }
+
+/* 22. Number counter color shift band: green -> gold -> warn. */
+.desc-counter { transition: color var(--dur-base) var(--ease-snap); }
+.desc-counter.warn { color: var(--warn); font-weight: 700; }
+
+/* 23. Status message gets a subtle dot prefix when ok. */
+.status-msg.ok::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--moss-light);
+  margin-right: 6px;
+  box-shadow: 0 0 8px var(--moss-glow);
+  vertical-align: middle;
+}
+.status-msg.warn::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  margin-right: 6px;
+  box-shadow: 0 0 8px rgba(196, 88, 10, 0.5);
+  vertical-align: middle;
+}
+
+/* 24. Field-label color brightens when the field is focused (caret follow). */
+.field:focus-within .field-label {
+  color: var(--gold-bright);
+  text-shadow: 0 0 12px var(--gold-glow);
+}
+
+/* 25. Field-input invalid state. */
+.field-input[aria-invalid="true"], .field-input.is-invalid {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 3px rgba(196, 88, 10, 0.18);
+}
+
+/* 26. Soft entrance for the back-fields when toggled visible. */
+.back-fields > * {
+  animation: backFieldRise var(--dur-base) var(--ease-snap) both;
+}
+.back-fields > *:nth-child(2) { animation-delay: 40ms; }
+.back-fields > *:nth-child(3) { animation-delay: 80ms; }
+.back-fields > *:nth-child(4) { animation-delay: 120ms; }
+.back-fields > *:nth-child(5) { animation-delay: 160ms; }
+@keyframes backFieldRise {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 27. Hidden rail subtle drift on drop-target so it feels alive. */
+.layout-hidden-chips.is-drop-target { animation: hiddenPulse 1.2s ease-in-out infinite; }
+@keyframes hiddenPulse {
+  0%, 100% { box-shadow: inset 0 0 18px rgba(196, 88, 10, 0.10), 0 0 0 1px rgba(196, 88, 10, 0.35); }
+  50%      { box-shadow: inset 0 0 26px rgba(196, 88, 10, 0.18), 0 0 0 1px rgba(196, 88, 10, 0.50); }
+}
+
+/* 28. Empty hidden rail: brighter empty-state message. */
+.layout-hidden-empty {
+  animation: emptyFade 1.6s ease-in-out infinite alternate;
+}
+@keyframes emptyFade {
+  0%   { opacity: 0.55; }
+  100% { opacity: 0.85; }
+}
+
+/* 29. Zone card grows a subtle highlight when items inside are being dragged. */
+.layout-zone-card:has(.layout-chip.is-dragging) { border-color: var(--gold-fade); }
+
+/* 30. Active preset highlight in dropdown. */
+.preset-row select option:checked { background: var(--gold-fade); }
+
+/* 31. Disabled button styling. */
+button:disabled, .btn-primary:disabled, .btn-secondary:disabled, .btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  pointer-events: none;
+}
+
+/* 32. Custom-item card: shrink on remove via inline animation. */
+.custom-item-card.is-leaving { animation: customItemOut var(--dur-fast) var(--ease-snap) both; }
+@keyframes customItemOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-4px) scale(0.98); height: 0; padding-top: 0; padding-bottom: 0; }
+}
+
+/* 33. Layout add-zone button: subtle outline pulse when empty side. */
+.layout-zones:empty + .layout-add-zone {
+  animation: addZoneNudge 2.6s ease-in-out infinite;
+}
+@keyframes addZoneNudge {
+  0%, 100% { border-color: var(--moss); box-shadow: 0 0 0 0 var(--gold-glow); }
+  50%      { border-color: var(--gold-fade); box-shadow: 0 0 0 4px var(--gold-halo); }
+}
+
+/* 34. Section title input clears icon affordance on focus. */
+.title-editor-input:focus { padding-right: 22px; }
+
+/* 35. Custom items panel grows scroll-zone if it gets very long. */
+.custom-items-list { max-height: 540px; overflow-y: auto; padding-right: 2px; }
+
+/* 36. Layout designer chip handles get a small drift on hover. */
+.layout-chip:hover .layout-chip-handle { color: var(--gold-bright); transform: translateX(-1px); }
+.layout-chip-handle { transition: color var(--dur-fast), transform var(--dur-fast); }
+
+/* 37. Color dots feel clicky. */
+.layout-chip-dot:active { transform: scale(0.88); transition-duration: 60ms; }
+
+/* 38. Tooltip-like hint when hovering chip dots (uses native title via CSS). */
+.layout-chip-dot { position: relative; }
+
+/* 39. Library current-thumb feels like a stamped chip. */
+.illu-current-thumb {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset,
+              0 4px 10px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* 40. Library tile selection ring is slightly brighter. */
+.illu-tile.is-selected {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 2px var(--gold-bright), 0 0 22px var(--gold-glow);
+  z-index: 2;
+}
+
+/* 41. Library tile press feedback. */
+.illu-tile:active { transform: scale(0.96); transition-duration: 80ms; }
+
+/* 42. Library tile label is more legible on light backgrounds. */
+.illu-tile-label {
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
+}
+
+/* 43. Library search ghost prompt: italic with a gold tint. */
+.illu-search::placeholder {
+  font-family: var(--font-italic);
+  font-style: italic;
+  color: var(--moss-light);
+}
+
+/* 44. Smooth fade between current resolution states (auto -> locked). */
+.illu-current { transition: border-color var(--dur-slow) var(--ease-snap); }
+
+/* 45. Border picker tiles: smoother active feedback. */
+.border-tile:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+/* 46. Parchment tile glow on focus. */
+.parchment-tile:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+/* 47. Color swatch a11y focus ring. */
+.swatch:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+}
+
+/* 48. Color popover swatches keyboard navigation indicator. */
+.layout-color-swatch:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+}
+
+/* 49. Color popover swatches: nice ring on selection. */
+.layout-color-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--bg-card-hi), 0 0 0 4px var(--gold-bright), 0 0 18px var(--gold-glow);
+}
+
+/* 50. Long content: nice fade at the editor-card scroll bottom. */
+.editor-card { scroll-padding-block: 16px; }
+
+/* 51. Smooth scroll inside editor-card. */
+.editor-card { scroll-behavior: smooth; }
+
+/* 52. Better visible scrollbar thumbs in the illu-grid (rest is themed already). */
+.illu-grid::-webkit-scrollbar { width: 8px; }
+.illu-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--moss), var(--moss-dark));
+  border-radius: 4px;
+}
+.illu-grid::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--gold-fade), var(--moss)); }
+
+/* 53. Color popover custom-color label spacing. */
+.layout-color-popover-custom label span { color: var(--cream); }
+
+/* 54. Light fade on the color popover close button to feel discoverable. */
+.layout-color-popover-close { opacity: 0.8; }
+.layout-color-popover-close:hover { opacity: 1; }
+
+/* 55. Force the editor card not to clip the focus halo of inputs near the edge. */
+.editor-card { scroll-padding-inline: 12px; }
+
+/* 56. Subtle tooltip via title attribute on chips. */
+.layout-chip[title] { cursor: grab; }
+
+/* 57. Saved-label item: lift on hover. */
+.saved-item { transition: transform var(--dur-fast) var(--ease-snap), border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast); }
+.saved-item:hover { box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5); }
+
+/* 58. App-footer link micro-interaction. */
+.app-footer a:hover { letter-spacing: 0.06em; transition: letter-spacing var(--dur-fast) var(--ease-snap), color var(--dur-fast); }
+
+/* 59. Version pill micro hover. */
+.version-pill { transition: color var(--dur-fast) var(--ease-snap), border-color var(--dur-fast); }
+.version-pill:hover { color: var(--gold-bright); border-color: var(--gold-fade); }
+
+/* 60. ========== MOBILE / RESPONSIVE ========================== */
+@media (max-width: 720px) {
+  /* 60a. Stack editor above preview on phones. */
+  .app-main {
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 12px 24px;
+  }
+  /* 60b. Editor full width. */
+  .editor-panel { width: 100%; }
+  /* 60c. Drop the editor max-height so all content is reachable. */
+  .editor-card { max-height: none; padding: 16px; }
+  /* 60d. Reduce title size. */
+  .shop-name-display { font-size: 22px; }
+  .editor-title { font-size: 17px; }
+  /* 60e. Section heads tighter spacing. */
+  .ed-section-head { padding: 12px 4px; font-size: 13px; letter-spacing: 1.8px; }
+  /* 60f. Color popover takes the full screen width with a margin. */
+  .layout-color-popover { left: 12px !important; right: 12px; width: auto !important; }
+  /* 60g. Layout columns stack on phones. */
+  .layout-columns { grid-template-columns: 1fr; }
+  /* 60h. Border picker collapses to 2 columns. */
+  .border-picker { grid-template-columns: 1fr 1fr; }
+  /* 60i. Parchment picker collapses to 4 columns. */
+  .parchment-picker { grid-template-columns: repeat(4, 1fr); }
+  /* 60j. Illustration grid drops to smaller tiles. */
+  .illu-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); grid-auto-rows: 120px; height: 360px; }
+  /* 60k. App-status / help button move into header flow. */
+  .app-status { position: static; opacity: 0.5; margin: 8px auto 0; }
+  .app-help-btn { position: static; margin: 4px auto 0; }
+  /* 60l. Bottom-pad so iOS home indicator doesn't overlap. */
+  body { padding-bottom: env(safe-area-inset-bottom, 0); }
+  /* 60m. Tap targets at least 44px. */
+  .btn-primary, .btn-secondary, .btn-ghost { min-height: 46px; }
+  /* 60n. Chip tap target. */
+  .layout-chip { min-height: 30px; }
+}
+
+/* 61. Mobile-narrower fallback. */
+@media (max-width: 380px) {
+  .illu-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 130px; }
+  .border-picker { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .parchment-picker { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* 62. Touch device: kill hover-lift transforms (they feel sticky on iOS). */
+@media (hover: none) {
+  .swatch:hover, .layout-chip:hover, .border-tile:hover, .illu-tile:hover,
+  .parchment-tile:hover { transform: none; }
+  .preview-card:hover { transform: none; box-shadow: var(--sheen-top), var(--shadow-2), 0 0 0 1px rgba(74, 120, 88, 0.20), 0 0 38px -8px rgba(232, 160, 58, 0.22); }
+  .label-frame:hover { transform: none; }
+}
+
+/* 63. Reduced motion: also kill the mesh + mote loops. */
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after { animation: none !important; }
+  .app-status.is-saving .app-status-dot { animation: none !important; }
+  .layout-hidden-chips.is-drop-target { animation: none !important; }
+  .layout-zones:empty + .layout-add-zone { animation: none !important; }
+}
+
+/* 64. High contrast: bump border thickness on cards. */
+@media (prefers-contrast: more) {
+  .editor-card, .preview-card, .saved-panel, .layout-designer, .layout-zone-card {
+    border-width: 2px;
+  }
+  .layout-chip { border-width: 2px; }
+}
+
+/* 65. Print: hide editor when printing. (Existing print rules handle this for
+       editor body, but explicitly hide the help button + save indicator too.) */
+@media print {
+  .app-status, .app-help-btn, .shortcut-dialog { display: none !important; }
+}
+
+/* 66. Subtle field-input caret color. */
+.field-input { caret-color: var(--gold-bright); }
+
+/* 67. textarea: smoother resize handle. */
+textarea.field-input { resize: vertical; min-height: 64px; }
+
+/* 68. Color picker chip: native picker triggers a tinted overlay. */
+.color-picker { transition: filter var(--dur-fast); }
+.color-picker:hover { filter: brightness(1.15); }
+
+/* 69. Section bodies get a max-width to keep long lines from sprawling on wide editor panels. */
+.ed-section-body { max-width: 100%; }
+
+/* 70. Drop indicators on chips: stronger color when dragging. */
+.layout-chip.is-drop-before { box-shadow: -3px 0 0 var(--gold-bright), 0 0 14px var(--gold-glow); }
+.layout-chip.is-drop-after  { box-shadow:  3px 0 0 var(--gold-bright), 0 0 14px var(--gold-glow); }
+
+/* 71. .layout-chip is-dragging gets a subtle ghost outline. */
+.layout-chip.is-dragging {
+  outline: 1px dashed var(--gold-fade);
+  outline-offset: 2px;
+}
+
+/* 72. Field-row item alignment fix on narrow viewports. */
+.field-row { flex-wrap: wrap; }
+
+/* 73. Custom item title input grows when focused. */
+.custom-item-title:focus { background: var(--field-hi); }
+
+/* 74. Custom item body textarea: monospace numbers for nice rhythm. */
+.custom-item-body { font-variant-numeric: tabular-nums; }
+
+/* 75. Inline gold separator that section heads can sit above. */
+.ed-section:not(:first-of-type) .ed-section-head { padding-top: 16px; }
+
+/* 76. Smooth color transition on swatches. */
+.swatch { transition: background var(--dur-fast), transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast); }
+
+/* 77. Layout-designer column entrance stagger. */
+.layout-column[data-side="front"] { animation: columnIn var(--dur-base) var(--ease-snap) both; animation-delay: 60ms; }
+.layout-column[data-side="back"]  { animation: columnIn var(--dur-base) var(--ease-snap) both; animation-delay: 140ms; }
+@keyframes columnIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 78. Subtle pulsing focus on focused field text. */
+.field-input:focus { color: var(--cream); }
+
+/* 79. Preset rows: smooth select hover. */
+.preset-row .field-input { transition: border-color var(--dur-fast), background var(--dur-fast); }
+
+/* 80. Subtler preset hint text. */
+.preset-hint, .layout-title-hint, .layout-hidden-hint, .custom-items-hint, .title-editor-hint {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* 81. Saved item-actions get cleaner hover. */
+.saved-item-actions button { letter-spacing: 0.4px; }
+
+/* 82. Editor section dividers: refined gold-fade gradient. */
+.ed-section { border-top-color: rgba(74, 120, 88, 0.55); }
+
+/* 83. Cleaner separator at the bottom of the back-fields box. */
+.back-fields { border-left-color: rgba(232, 160, 58, 0.45); }
+
+/* 84. Section headers responsive font-weight bump. */
+.ed-section-head { font-weight: 800; }
+
+/* 85. Layout designer title: smooth color shift. */
+.layout-title { transition: color var(--dur-fast); }
+
+/* 86. Drop indicators on zone-chips containers: more obvious. */
+.layout-zone-chips.is-drop-target {
+  background: rgba(232, 193, 114, 0.14);
+  border-color: var(--gold-bright);
+}
+
+/* 87. Improved chip-hide button visibility. */
+.layout-chip-hide { opacity: 0.6; transition: opacity var(--dur-fast), color var(--dur-fast), background var(--dur-fast); }
+.layout-chip:hover .layout-chip-hide { opacity: 1; }
+
+/* 88. Preview-title underline gradient is brighter on hover. */
+.preview-title { transition: text-shadow var(--dur-base); }
+.preview-card:hover .preview-title { text-shadow: 0 0 18px var(--gold-glow), 0 0 32px rgba(232, 160, 58, 0.20); }
+
+/* 89. Refined section body padding inside the accordion. */
+.ed-section--open .ed-section-body { padding: 10px 0 22px; }
+
+/* 90. Tap state for tiles on touch. */
+.illu-tile { -webkit-tap-highlight-color: rgba(245, 200, 66, 0.18); }
+
+/* 91. App overall: prevent rubber-banding on body for iOS. */
+body { overscroll-behavior-y: none; }
+
+/* 92. Sticky behavior for the section heads while scrolling long sections. */
+.ed-section-head {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, rgba(26, 45, 28, 0.92), rgba(26, 45, 28, 0.78));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 3;
+}
+
+/* 93. Saved label item: better hierarchy for the date. */
+.saved-item-date { font-variant-numeric: tabular-nums; }
+
+/* 94. Editor-card scrollbar refined. */
+.editor-card::-webkit-scrollbar { width: 8px; }
+.editor-card::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--moss-dark), var(--moss));
+  border-radius: 4px;
+}
+
+/* 95. Layout-add-item button text feel. */
+.layout-add-item { font-variant-numeric: tabular-nums; }
+
+/* 96. Saved-panel header title micro emphasis. */
+.saved-title { text-shadow: 0 0 8px var(--gold-glow); }
+
+/* 97. Tooltip-like ::after labels on dots (CSS-only). */
+.layout-chip-dot:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-deep);
+  color: var(--cream);
+  border: 1px solid var(--gold-fade);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 30;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+/* 98. Subtle entrance for the layout designer. */
+.layout-designer { animation: designerIn var(--dur-slow) var(--ease-snap) both; }
+@keyframes designerIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 99. Better visibility for placeholder text in dark fields. */
+.field-input::placeholder { color: var(--moss-light); opacity: 0.65; font-style: italic; }
+
+/* 100. Print stage: ensure no editor chrome bleeds through. */
+@media print {
+  body::before, body::after { display: none !important; }
+  .app, .app-header, .app-footer { display: none !important; }
+}

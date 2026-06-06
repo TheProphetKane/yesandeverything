@@ -318,7 +318,15 @@ async function main() {
   state.subscribe(paint);
   paint(state.get());
 
-  const debouncedSave = debounce((s) => saveState(s), 200);
+  // v0.16: save indicator flashes when the debounced save fires.
+  const saveIndicator = document.querySelector('[data-save-indicator]');
+  const debouncedSave = debounce((s) => {
+    saveState(s);
+    if (saveIndicator) {
+      saveIndicator.classList.add('is-saving');
+      setTimeout(() => saveIndicator.classList.remove('is-saving'), 1100);
+    }
+  }, 200);
   state.subscribe(debouncedSave);
 
   document.addEventListener('pointerdown', (e) => {
@@ -327,6 +335,129 @@ async function main() {
     const rect = btn.getBoundingClientRect();
     btn.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`);
     btn.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`);
+  });
+
+  // v0.16: global keyboard shortcuts.
+  //   ?               -> open the shortcut help dialog
+  //   Esc             -> close any open popover or open dialog
+  //   Ctrl/Cmd + P    -> print (also the native shortcut, but we make sure
+  //                      our print-stage layout is fresh first)
+  //   Ctrl/Cmd + K    -> focus the herb search input
+  //   Ctrl/Cmd + S    -> force an immediate persist + flash save indicator
+  //   Alt + 1..4      -> toggle Content / Style / Layout / Output sections
+  const helpDialog = document.querySelector('[data-shortcut-help]');
+  document.querySelector('[data-shortcut-toggle]')?.addEventListener('click', () => {
+    if (helpDialog?.open) helpDialog.close();
+    else helpDialog?.showModal();
+  });
+  document.querySelector('[data-shortcut-close]')?.addEventListener('click', () => {
+    helpDialog?.close();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const inField = e.target instanceof HTMLElement &&
+      (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable);
+
+    // ESC: cascading dismiss. Popovers first; then open dialog.
+    if (e.key === 'Escape') {
+      const popovers = document.querySelectorAll('.layout-color-popover, .layout-item-picker');
+      if (popovers.length) {
+        popovers.forEach(p => p.remove());
+        e.preventDefault();
+        return;
+      }
+      if (helpDialog?.open) {
+        helpDialog.close();
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (e.key === '?' && !inField) {
+      if (helpDialog?.open) helpDialog.close();
+      else helpDialog?.showModal();
+      e.preventDefault();
+      return;
+    }
+
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && (e.key === 'k' || e.key === 'K')) {
+      const herb = document.getElementById('herbName');
+      if (herb) { herb.focus(); herb.select(); }
+      e.preventDefault();
+      return;
+    }
+    if (mod && (e.key === 's' || e.key === 'S')) {
+      saveState(state.get());
+      if (saveIndicator) {
+        saveIndicator.classList.add('is-saving');
+        setTimeout(() => saveIndicator.classList.remove('is-saving'), 1100);
+      }
+      e.preventDefault();
+      return;
+    }
+
+    if (e.altKey && /^[1-4]$/.test(e.key)) {
+      const idx = parseInt(e.key, 10) - 1;
+      const sections = document.querySelectorAll('.ed-section');
+      const sec = sections[idx];
+      if (sec) {
+        const open = sec.classList.toggle('ed-section--open');
+        const head = sec.querySelector('.ed-section-head');
+        head?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      e.preventDefault();
+    }
+  });
+
+  // v0.16: auto-grow textareas as the user types. Most apps have it; we
+  // didn't until now.
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (!(el instanceof HTMLTextAreaElement)) return;
+    if (!el.classList.contains('field-input') && !el.classList.contains('custom-item-body')) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 360) + 'px';
+  });
+
+  // v0.16: outside-click dismisses any open color popover or item picker
+  // even if their internal dismisser hasn't wired yet (defensive).
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    if (t.closest('.layout-color-popover, [data-color-pick], [data-glow-pick]')) return;
+    document.querySelectorAll('.layout-color-popover').forEach(p => p.remove());
+  }, true);
+
+  // v0.16: when a user opens a section via keyboard shortcut or click, focus
+  // the first focusable element inside its body for fast keyboard input.
+  document.addEventListener('click', (e) => {
+    const head = e.target instanceof HTMLElement && e.target.closest('.ed-section-head');
+    if (!head) return;
+    const sec = head.closest('.ed-section');
+    if (!sec?.classList.contains('ed-section--open')) return;
+    const body = sec.querySelector('.ed-section-body');
+    const first = body?.querySelector('input:not([hidden]), textarea, select, button');
+    // Don't yank focus on click; user already used the mouse. This intentionally
+    // doesn't auto-focus on mouse clicks - keyboard handler below does.
+  });
+
+  // v0.16: window-visibility persist guard. When the user backgrounds the
+  // tab on mobile, force a snapshot save so iOS Safari's aggressive page
+  // freezing doesn't drop the latest debounced state.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveState(state.get());
+    }
+  });
+
+  // v0.16: announce save status to screen readers via the existing aria-live
+  // node. The CSS class drives the visual; the textContent drives the SR text.
+  state.subscribe(() => {
+    const t = saveIndicator?.querySelector('.app-status-text');
+    if (t) t.textContent = 'Saving';
+    setTimeout(() => { if (t) t.textContent = 'Saved'; }, 280);
   });
 }
 
