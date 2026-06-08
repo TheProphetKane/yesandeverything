@@ -206,7 +206,7 @@
        ----------------------------------------------------------- */
 
     .window {
-      background: linear-gradient(180deg, rgba(13,17,23,0.85) 0%, rgba(13,17,23,0.55) 100%);
+      background: linear-gradient(180deg, rgba(13,17,23,0.96) 0%, rgba(13,17,23,0.9) 100%);
       border: 1px solid var(--ink-3);
       border-radius: 12px;
       backdrop-filter: blur(20px) saturate(1.2);
@@ -1513,6 +1513,9 @@
       color: var(--fg-3); background: var(--ink-1); border-color: var(--ink-3);
       cursor: not-allowed; opacity: 0.5; pointer-events: none;
     }
+    /* Sticky-nav scroll offset: land sections below the top menu, not under it */
+    html { scroll-padding-top: 84px; }
+    main.wrap > section, .project { scroll-margin-top: 84px; }
   </style>
 </head>
 <body>
@@ -2304,13 +2307,7 @@
           '<span class="klabel">Search</span> <kbd>' + (navigator.platform.indexOf('Mac') > -1 ? '⌘' : 'Ctrl') + ' K</kbd></button>';
         document.body.appendChild(nav);
 
-        var hero = document.querySelector('.window');
-        function onScroll() {
-          var past = hero ? (hero.getBoundingClientRect().bottom < 40) : (window.scrollY > 320);
-          nav.classList.toggle('show', past);
-        }
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
+        nav.classList.add('show'); // always visible (no scroll-triggered pop-in)
 
         // smooth scroll for nav + brand
         nav.querySelectorAll('a[href^="#"]').forEach(function (a) {
