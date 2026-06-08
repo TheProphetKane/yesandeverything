@@ -1468,6 +1468,25 @@
       .scrollprog { transition: none; }
       .topnav { transition: none; }
     }
+    .titlebar .tb-terms {
+      margin-left: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: var(--fg-2);
+      background: var(--ink-2);
+      border: 1px solid var(--ink-3);
+      border-radius: 999px;
+      padding: 3px 11px;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+    .titlebar .tb-terms:hover {
+      color: var(--warn);
+      border-color: rgba(245, 165, 36, 0.45);
+      background: rgba(245, 165, 36, 0.06);
+    }
+    .titlebar .tb-terms:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
   </style>
 </head>
 <body>
@@ -1630,14 +1649,15 @@
          Hero - "running app" window
          ============================================================ -->
     <div class="window reveal">
-      <div class="titlebar" aria-hidden="true">
-        <div class="traffic"><span></span><span></span><span></span></div>
-        <div class="path">
+      <div class="titlebar">
+        <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="path" aria-hidden="true">
           <span class="dim">~</span><span class="mid">/</span><span class="you">kane</span><span class="mid">/</span><span class="mid2">projects</span><span class="dim"> $</span>
           <span style="color: var(--fg-1);"> yesandeverything</span>
           <span style="color: var(--amber);"> --list</span>
         </div>
-        <span class="badge">live</span>
+        <span class="badge" aria-hidden="true">live</span>
+        <button type="button" class="tb-terms" id="reopen-terms" title="Re-open the terms notice">terms</button>
       </div>
 
       <header class="hero">
@@ -2033,12 +2053,7 @@
         try { alreadyAcknowledged = localStorage.getItem(ACK_KEY) === '1'; }
         catch (_) { /* private mode etc. - show anyway */ }
 
-        if (alreadyAcknowledged) {
-          el.hidden = true;
-          return;
-        }
-
-        // Expand all / collapse all the §1–§6 details
+        // Expand all / collapse all the section details
         const toggle = el.querySelector('#gate-expand-toggle');
         if (toggle) {
           const all = () => el.querySelectorAll('.gate-clause > details');
@@ -2048,7 +2063,6 @@
             list.forEach(d => { d.open = anyClosed; });
             toggle.textContent = anyClosed ? 'Collapse all' : 'Expand all';
           });
-          // Keep the label in sync when individual details are toggled
           el.querySelectorAll('.gate-clause > details').forEach((d) => {
             d.addEventListener('toggle', () => {
               const list = all();
@@ -2058,38 +2072,33 @@
           });
         }
 
-        // Show: unhide, lock scroll, animate in, focus the button.
-        el.hidden = false;
-        root.classList.add('gated');
-        body.classList.add('gated');
-        // Track the element that had focus so we can restore on dismiss.
-        const previousFocus = document.activeElement;
-        // One frame later so the transition can play.
-        requestAnimationFrame(() => {
-          el.classList.add('on');
-          // delay focus past the transition start so screen readers
-          // announce the dialog rather than the button alone
-          setTimeout(() => btn.focus({ preventScroll: true }), 60);
-        });
+        // reviewMode = re-opened deliberately by the user (dismissible via
+        // Esc / backdrop). First-visit mandatory gate is NOT dismissible.
+        let reviewMode = false;
+        let previousFocus = null;
 
-        // Trap focus inside the dialog (single focusable, so just
-        // keep snapping focus back to the button on Tab).
         function trap(e) {
           if (e.key === 'Tab') {
             e.preventDefault();
             btn.focus();
           } else if (e.key === 'Escape') {
-            // Intentionally do nothing - must click to acknowledge.
             e.preventDefault();
-          } else if (e.key === 'Enter' || e.key === ' ') {
-            if (document.activeElement === btn) {
-              // default handles it
-              return;
-            }
+            if (reviewMode) dismiss();
           }
         }
-        el.addEventListener('keydown', trap);
-        document.addEventListener('keydown', trap, true);
+
+        function show(review) {
+          reviewMode = !!review;
+          previousFocus = document.activeElement;
+          el.hidden = false;
+          root.classList.add('gated');
+          body.classList.add('gated');
+          requestAnimationFrame(() => {
+            el.classList.add('on');
+            setTimeout(() => btn.focus({ preventScroll: true }), 60);
+          });
+          document.addEventListener('keydown', trap, true);
+        }
 
         function dismiss() {
           try { localStorage.setItem(ACK_KEY, '1'); } catch (_) {}
@@ -2097,7 +2106,6 @@
           root.classList.remove('gated');
           body.classList.remove('gated');
           document.removeEventListener('keydown', trap, true);
-          // hide after the transition
           setTimeout(() => {
             el.hidden = true;
             if (previousFocus && previousFocus.focus) {
@@ -2107,8 +2115,23 @@
         }
 
         btn.addEventListener('click', dismiss);
-        // Clicking the backdrop does NOT dismiss - that would be too easy.
+        // Backdrop closes only when re-opened for review, never on first visit.
+        el.addEventListener('click', (e) => { if (e.target === el && reviewMode) dismiss(); });
+
+        // Public hook for the titlebar "terms" button.
+        window.__reopenNotice = function () { show(true); };
+
+        if (!alreadyAcknowledged) show(false);
+        else el.hidden = true;
       })();
+
+      // ---- Re-open terms button (titlebar) -------------------------------
+      var reopenTermsBtn = document.getElementById('reopen-terms');
+      if (reopenTermsBtn) {
+        reopenTermsBtn.addEventListener('click', function () {
+          if (window.__reopenNotice) window.__reopenNotice();
+        });
+      }
 
       // ---- Year stamp -----------------------------------------------------
       const yearEl = document.getElementById('year');
