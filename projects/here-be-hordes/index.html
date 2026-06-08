@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Here Be Hordes — yesandeverything</title>
+  <meta name="description" content="Here Be Hordes: an exoplanet colony defense RTS in Godot 4.6, portal-anchored Order 42 outpost holding against the native undead." />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#06080b" />
+  <link rel="canonical" href="https://yesandeverything.com/projects/here-be-hordes/" />
+  <meta property="og:title" content="Here Be Hordes" />
+  <meta property="og:description" content="Here Be Hordes: an exoplanet colony defense RTS in Godot 4.6, portal-anchored Order 42 outpost holding against the native undead." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2306080b'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='monospace' font-size='18' font-weight='600' fill='%23ff00ff'%3E%26%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root{
+      --ink-0:#06080b;--ink-1:#0d1117;--ink-2:#141a22;--ink-3:#1f2632;--ink-4:#2c3543;
+      --fg-0:#ecf0f5;--fg-1:#a4aeba;--fg-2:#697381;--fg-3:#4a5563;
+      --accent:#ff00ff;--accent-hot:#ff66ff;--accent-dim:#5a1d5a;--accent-glow:rgba(255,0,255,0.22);
+      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);--amber:#f5b860;--warn:#f5a524;
+      --mono:ui-monospace,"JetBrains Mono","SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+      --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif;
+      --serif:"Iowan Old Style","Palatino Linotype","Georgia",serif;
+    }
+    *{box-sizing:border-box}
+    html{color-scheme:dark}
+    body{margin:0;background:var(--ink-0);color:var(--fg-0);font-family:var(--mono);font-size:15px;line-height:1.65;
+      -webkit-font-smoothing:antialiased;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.4;
+      background-image:radial-gradient(circle at 16% -8%,#3a1b4d 0%,transparent 38%),
+        radial-gradient(circle at 88% 6%,#2d1f4d 0%,transparent 36%),
+        radial-gradient(circle at 72% 96%,#102f3a 0%,transparent 42%)}
+    .wrap{max-width:820px;margin:0 auto;padding:48px 22px 80px}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hot)}
+    .crumb{font-size:12px;color:var(--fg-2);letter-spacing:.03em;margin-bottom:26px}
+    .crumb a{color:var(--fg-2)}
+    .crumb a:hover{color:var(--fg-0)}
+    .crumb .sep{color:var(--fg-3);margin:0 6px}
+    h1{font-family:var(--mono);font-size:clamp(30px,5vw,44px);font-weight:600;letter-spacing:-.03em;margin:0 0 14px;line-height:1.06}
+    h1 .arrow{color:var(--accent);text-shadow:0 0 24px var(--accent-glow)}
+    .meta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+    .pill{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--fg-1);
+      background:var(--ink-1);border:1px solid var(--ink-3);border-radius:999px;padding:4px 11px;display:inline-flex;align-items:center;gap:7px}
+    .pill.status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 9px var(--accent-glow)}
+    .pill.blue{color:var(--blue);border-color:rgba(2,164,211,.3)}
+    .lead{font-family:var(--sans);font-size:18px;line-height:1.6;color:var(--fg-1);margin:0 0 30px;max-width:60ch}
+    .lead em{font-family:var(--serif);font-style:italic;color:var(--fg-0)}
+    section{margin:34px 0 0}
+    .label{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-2);margin:0 0 16px;font-weight:500}
+    .label::before{content:"//";color:var(--accent);font-weight:600}
+    .label::after{content:"";flex:1;height:1px;background:linear-gradient(to right,var(--ink-3),transparent)}
+    p.body{font-family:var(--sans);font-size:16px;line-height:1.7;color:var(--fg-1);margin:0 0 16px;max-width:64ch}
+    p.body strong{color:var(--fg-0);font-weight:600}
+    p.body em{font-family:var(--serif);font-style:italic;color:var(--fg-0)}
+    ul.feat{list-style:none;margin:6px 0 0;padding:0;max-width:64ch}
+    ul.feat li{position:relative;padding:6px 0 6px 22px;font-family:var(--sans);font-size:15px;color:var(--fg-1);border-bottom:1px dashed var(--ink-3)}
+    ul.feat li::before{content:"›";position:absolute;left:0;color:var(--accent);font-weight:700}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0 0}
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;font-family:var(--mono);font-size:12px;font-weight:500;
+      letter-spacing:.03em;color:var(--accent);background:rgba(255,0,255,.06);border:1px solid var(--accent-dim);border-radius:8px;
+      cursor:pointer;transition:background .16s,border-color .16s,color .16s,transform .16s,box-shadow .16s}
+    .btn:hover{color:var(--ink-0);background:var(--accent);border-color:var(--accent);box-shadow:0 0 18px var(--accent-glow);transform:translateY(-1px)}
+    .btn.blue{color:var(--blue);background:rgba(2,164,211,.06);border-color:rgba(2,164,211,.4)}
+    .btn.blue:hover{color:var(--ink-0);background:var(--blue);border-color:var(--blue);box-shadow:0 0 18px var(--blue-glow)}
+    .btn.disabled{color:var(--fg-3);background:var(--ink-1);border-color:var(--ink-3);cursor:not-allowed;opacity:.5;pointer-events:none}
+    footer{margin-top:56px;padding-top:22px;border-top:1px dashed var(--ink-3);color:var(--fg-3);font-size:11.5px;
+      display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    @media(max-width:520px){.wrap{padding:32px 16px 64px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>here-be-hordes</div>
+    <h1><span class="arrow">&rsaquo;</span> Here Be Hordes</h1>
+    <div class="meta"><span class="pill status">Pre-alpha</span><span class="pill">v0.97.x</span><span class="pill blue">Godot 4.6</span><span class="pill">RTS</span></div>
+    <p class="lead">A hand-painted, grim-dark colony-defense RTS in true 2:1 isometric. You hold a portal-anchored Order 42 outpost on a far exoplanet, pulling resources for a depleted Earth while the native undead test the wall every night.</p>
+
+    <section id="details">
+      <p class="label">details</p>
+            <p class="body">The fantasy is an industrial nightmare painted in oil. You raise mines, lumberyards, farms, refineries, and munitions workshops, ring them with walls and towers, and route units across an isometric tile grid with A* pathfinding. The map is the enemy as much as the horde is: the colony has to grow loud to grow strong, and loud is what gets you killed.</p>
+            <p class="body">The signature mechanic is <strong>noise</strong>. Every weapon fired and every building running emits sound that radiates out and pulls more enemies toward the source. A quiet base survives far longer than a productive one, so every expansion is a deliberate trade between output and exposure. A <strong>Terror</strong> system reads how badly a run is going and escalates pressure in response, so the difficulty curve bends to the player rather than a fixed script.</p>
+            <p class="body">The build target is scale: hundreds to thousands of enemies on screen without the frame budget collapsing. That constraint drives the engineering, with data-oriented and batched (MultiMesh) enemy paths chosen over per-node work wherever the numbers get large. The current milestone is M3, mid-game enemy variety.</p>
+
+    </section>
+
+    <section id="design">
+      <p class="label">design</p>
+            <p class="body">The canonical design lives in the Game Design Document, which is the single source of truth for every system, milestone, locked decision, and tuning number. It is mirrored here behind a password gate.</p>
+            <p class="body">Engine is Godot 4.6.2, GDScript-first. Rendering is true 2:1 isometric; pathfinding is <code>AStarGrid2D</code>. The roster ships through deliberately parallel implementations (per-node and pooled) so the same enemy can run cheaply at scale or richly when few.</p>
+            <p class="body">Open the GDD: <a href="/hordes/">yesandeverything.com/hordes</a> (password-gated).</p>
+
+    </section>
+
+    <section>
+      <p class="label">links</p>
+      <div class="actions"><a href="#details" class="btn">Details</a> <a href="/hordes/" class="btn">Design</a> <span class="btn disabled" aria-disabled="true">Launch</span></div>
+    </section>
+
+    <footer>
+      <span>&copy; <span id="y">2026</span> Kane &middot; no trackers</span>
+      <span><a href="/#projects">&larr; all projects</a></span>
+    </footer>
+  </main>
+  <script>var y=document.getElementById('y');if(y)y.textContent=new Date().getFullYear();</script>
+</body>
+</html>
