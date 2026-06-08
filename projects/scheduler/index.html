@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scheduler &mdash; Yes and... Everything</title>
-<meta name="description" content="Yes and... Scheduler — a multi-tenant employee-scheduling SaaS at v0.2.0. Each client company gets an isolated organization on a single Cloudflare Workers + D1 instance.">
+<title>Scheduler - Yes and... Everything</title>
+<meta name="description" content="Yes and... Scheduler - a multi-tenant employee-scheduling SaaS at v0.4.1. Each client company gets an isolated organization on a single Cloudflare Workers + D1 instance.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#06080b">
 <style>
@@ -202,13 +202,13 @@
   <h1>Scheduler</h1>
   <div class="meta">
     <span class="pill status">Live</span>
-    <span class="pill">v0.2.0</span>
+    <span class="pill">v0.4.1</span>
     <span class="pill">multi-tenant</span>
     <span class="pill">internal &amp; SaaS</span>
   </div>
   <p class="blurb">
     A multi-tenant employee-scheduling SaaS. Each client company gets its own
-    isolated organization on the same instance &mdash; cross-org access returns
+    isolated organization on the same instance - cross-org access returns
     <em>404, never 403</em>, so tenant existence never leaks. Employees sign in
     with a magic link, set Preferred / Available / Unavailable on a rolling
     six-week shift window, and request swaps, drops, time off, or open-shift
@@ -219,29 +219,34 @@
     super-admin role observes every org, invites admins, and never owns. Built
     first for an Aquatics department (Lifeguard + Swim Instructor) and
     architected to host any number of independent companies side-by-side
-    without code changes. Mobile-first &mdash; verified at 360px.
+    without code changes. Mobile-first - verified at 360px.
   </p>
 
-  <h2>v0.2.0 — what's new</h2>
+  <h2>v0.4.1 - what's new</h2>
   <p class="blurb">
-    <em>Multi-tenant orgs.</em> Lakehouse, YMCA, and any future client run
-    side-by-side on one Scheduler instance with no data leakage. New
-    <code>organizations</code> table; every domain table now scopes by
-    <code>organization_id</code>. A pending-admin state routes invited people
-    through <code>/onboarding/create-org</code> where they spin up their own
-    org. Admins can own multiple orgs via an <code>org_admins</code> join table
-    and switch context via a header dropdown; the SPA sends an
-    <code>X-Org-Slug</code> header so super-admins and multi-org admins can
-    flip without re-auth. One-click shareable invite links pre-fill the
-    recipient's login form. A floating Feedback button on every authenticated
-    page (mailto for now; <code>/api/feedback</code> coming).
+    <em>Admin-configurable shifts and a modern dashboard UI (v0.3.0).</em> Shift
+    templates gained role labels (Lifeguard, Front desk, Swim instructor) and
+    staff-visible notes, a Holidays &amp; closures page marks non-working days that
+    schedule generation skips, and Admin Settings exposes preference-window,
+    freeze-window, and time-off rules that were previously hardcoded. The SPA moved
+    to a dark terminal-meets-Linear system: ink/accent token ladder, cyan glow,
+    JetBrains Mono numerics, mesh-gradient hero surfaces, all motion gated on
+    <code>prefers-reduced-motion</code> and tuned for WCAG AA.
+  </p>
+  <p class="blurb">
+    <em>A 100-item polish pass (v0.4.0).</em> Global toast system, loading skeletons
+    on every async surface, two-stage destructive confirms, a keyboard-shortcut
+    overlay with chord navigation, iOS Safari safe-area handling, bottom-sheet modals
+    on mobile, a print stylesheet for the personal schedule, and per-week "copy last
+    week" on the preference form. v0.4.1 cleared a typecheck regression that had
+    blocked the SPA deploy, so the latest polish is live.
   </p>
 
   <h2>Live</h2>
   <ul class="links">
-    <li><a href="https://scheduler.yesandeverything.com">scheduler.yesandeverything.com</a> &mdash; SPA (custom domain)</li>
-    <li><a href="https://theprophetkane.github.io/yesandscheduler/">theprophetkane.github.io/yesandscheduler/</a> &mdash; SPA (origin)</li>
-    <li><a href="https://scheduler-api.theprophetkane.workers.dev/api/health">scheduler-api.theprophetkane.workers.dev</a> &mdash; Worker API (health check)</li>
+    <li><a href="https://scheduler.yesandeverything.com">scheduler.yesandeverything.com</a> - SPA (custom domain)</li>
+    <li><a href="https://theprophetkane.github.io/yesandscheduler/">theprophetkane.github.io/yesandscheduler/</a> - SPA (origin)</li>
+    <li><a href="https://scheduler-api.theprophetkane.workers.dev/api/health">scheduler-api.theprophetkane.workers.dev</a> - Worker API (health check)</li>
   </ul>
 
   <h2>Documents</h2>
@@ -251,7 +256,7 @@
 
   <h2>Source</h2>
   <ul class="links">
-    <li><a href="https://github.com/TheProphetKane/scheduler">github.com/TheProphetKane/scheduler</a> &mdash; <span class="note">private</span></li>
+    <li><a href="https://github.com/TheProphetKane/scheduler">github.com/TheProphetKane/scheduler</a> - <span class="note">private</span></li>
   </ul>
 
   <h2>Stack</h2>
@@ -260,7 +265,7 @@
     org boundary enforcement, notifications, audit log). React 18 + TypeScript +
     Vite + Tailwind on the SPA, deployed to GitHub Pages. Supabase Auth for
     magic-link sign-in; the Worker verifies Supabase JWTs against the project
-    JWKS &mdash; no passwords stored anywhere. Resend SMTP for transactional
+    JWKS - no passwords stored anywhere. Resend SMTP for transactional
     email. Single pnpm workspace: <code>apps/web</code>, <code>apps/api</code>,
     <code>packages/shared</code>.
   </p>
