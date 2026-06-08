@@ -1324,7 +1324,7 @@
       transition: width 80ms linear; pointer-events: none;
     }
 
-    .bg-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.46; }
+    .bg-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.62; }
 
     /* Top nav (slides in after the hero scrolls away) */
     .topnav {
@@ -2464,10 +2464,12 @@
             E: [[[1,0],[0,0]], [[0,0],[0,1]], [[0,1],[1,1]], [[0,0.5],[0.78,0.5]]]
           };
           var word = 'KANE';
-          var h = Math.min(150, innerHeight * 0.16) * dpr;
-          var w = h * 0.6, gap = h * 0.34, step = 0.2;
-          var totalW = word.length * w + (word.length - 1) * gap;
-          var ox0 = (W - totalW) / 2, oy = (H * 0.42) - h / 2;
+          var pad = W * 0.05;                                  // ~5% margin each side
+          var usable = W - pad * 2;
+          var w = usable / (word.length + (word.length - 1) * 0.25); // letters fill the width
+          var gap = w * 0.25, step = 0.12;                      // denser sampling for big letters
+          var h = Math.min(w * 1.35, H * 0.5);                  // height tracks width, capped at half-viewport
+          var ox0 = pad, oy = (H * 0.44) - h / 2;
           var seen = {}, out = [];
           for (var li = 0; li < word.length; li++) {
             var strokes = L[word.charAt(li)], ox = ox0 + li * (w + gap);
@@ -2524,8 +2526,8 @@
               if (dm < 140 * dpr) { p.x += dmx / dm * 0.6; p.y += dmy / dm * 0.6; }
             }
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 1.9 * dpr, 0, 6.2832);
-            ctx.fillStyle = 'rgba(255,0,255,0.5)';
+            ctx.arc(p.x, p.y, 2.4 * dpr, 0, 6.2832);
+            ctx.fillStyle = 'rgba(255,0,255,0.85)';
             ctx.fill();
           }
           for (var a = 0; a < pts.length; a++) {
@@ -2535,8 +2537,8 @@
               if (d < link) {
                 ctx.beginPath();
                 ctx.moveTo(pts[a].x, pts[a].y); ctx.lineTo(pts[b].x, pts[b].y);
-                ctx.strokeStyle = 'rgba(2,164,211,' + (0.2 * (1 - d / link)).toFixed(3) + ')';
-                ctx.lineWidth = dpr;
+                ctx.strokeStyle = 'rgba(2,164,211,' + (0.32 * (1 - d / link)).toFixed(3) + ')';
+                ctx.lineWidth = 1.4 * dpr;
                 ctx.stroke();
               }
             }
