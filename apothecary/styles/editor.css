@@ -3014,10 +3014,16 @@ body { overscroll-behavior-y: none; }
    v0.16.1 - mobile preview overflow + a11y sweep
    ============================================================ */
 
-/* v0.16.1: kill any horizontal overflow from the body. Even if a child
-   element gets too wide, the page never shows a horizontal scrollbar; the
-   problem element gets a localized scroll instead. */
-html, body { overflow-x: hidden; max-width: 100vw; }
+/* v0.16.3: page-level horizontal containment lives on body in base.css
+   (overflow-x: hidden), which is enough. The old v0.16.1 rule also put
+   overflow-x on <html> and max-width: 100vw on body. Both were wrong:
+   100vw counts the vertical scrollbar gutter, so on any tall page the body
+   ran ~15px wider than the usable width, and overflow-x: hidden forces the
+   other axis to overflow-y: auto, so the layout oscillated and the vertical
+   scrollbar flickered on and off. Putting overflow-x on <html> also turned
+   the root into a second scroll container and broke vertical scrolling on
+   touch. The preview-card scroll container (below) absorbs the real overflow
+   source, so no page-level max-width is needed. */
 
 /* v0.16.1: the preview card was the main offender. The label-frame inside
    has fixed inline width set by JS based on the design size + scale. If the

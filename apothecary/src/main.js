@@ -318,11 +318,17 @@ async function main() {
   state.subscribe(paint);
   paint(state.get());
 
-  // v0.16.1: re-paint on viewport changes so the preview scale recomputes
-  // when the user rotates the device or resizes the window. Debounced so a
-  // resize drag doesn't thrash the render.
+  // v0.16.3: re-paint only when the viewport WIDTH changes. The preview scale
+  // depends on width alone (previewScaleFor in render.js). Mobile browsers fire
+  // resize on every scroll as the URL bar shows and hides, which changes only
+  // the height; repainting the whole preview on each of those events fought the
+  // scroll gesture and made the page feel unscrollable. Skip height-only
+  // resizes; still debounce real width changes so a desktop drag doesn't thrash.
   let resizeTimer = null;
+  let lastViewportW = typeof window !== 'undefined' ? window.innerWidth : 0;
   window.addEventListener('resize', () => {
+    if (window.innerWidth === lastViewportW) return;
+    lastViewportW = window.innerWidth;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => paint(state.get()), 80);
   });
