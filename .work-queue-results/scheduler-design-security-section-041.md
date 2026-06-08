@@ -7,7 +7,7 @@
 
 ## What was done
 
-Single-line text swap on X:\Scheduler\docs\DESIGN.md line 507.
+Single-line text swap on X:\YesAndScheduler\docs\DESIGN.md line 507.
 
 Before:
 > Passwords are bcrypt-hashed at cost 12. Sessions are HttpOnly secure cookies. CSRF protection via SameSite=Lax + an Origin-header check on state-changing routes. SQL is parameterized; no string concat into queries.
@@ -19,7 +19,7 @@ Kept the trailing "no string concat into queries" clause that the prompt templat
 
 ## Files touched
 
-- X:\Scheduler\docs\DESIGN.md (line 507)
+- X:\YesAndScheduler\docs\DESIGN.md (line 507)
 
 ## Followups recommended
 

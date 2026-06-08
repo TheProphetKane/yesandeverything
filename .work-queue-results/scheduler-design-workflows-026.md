@@ -6,7 +6,7 @@
 
 ## Change
 
-`X:\Scheduler\docs\DESIGN.md` §19 repo-layout tree, lines 490-492.
+`X:\YesAndScheduler\docs\DESIGN.md` §19 repo-layout tree, lines 490-492.
 
 **Before:**
 

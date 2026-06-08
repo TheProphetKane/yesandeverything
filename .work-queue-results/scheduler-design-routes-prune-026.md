@@ -14,7 +14,7 @@
 
 ## Files touched
 
-- X:\Scheduler\docs\DESIGN.md (2 line deletions in §17)
+- X:\YesAndScheduler\docs\DESIGN.md (2 line deletions in §17)
 
 ## Verification
 
@@ -27,4 +27,4 @@
 
 ## Drain context
 
-- Working tree dirty in X:\Scheduler. Not pushed (release.ps1 is a shell command; drain rule pauses for Nick).
+- Working tree dirty in X:\YesAndScheduler. Not pushed (release.ps1 is a shell command; drain rule pauses for Nick).

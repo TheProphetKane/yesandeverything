@@ -6,7 +6,7 @@
 
 ## Change
 
-X:\Scheduler\CLAUDE.md line 17 rewritten.
+X:\YesAndScheduler\CLAUDE.md line 17 rewritten.
 
 Before:
 

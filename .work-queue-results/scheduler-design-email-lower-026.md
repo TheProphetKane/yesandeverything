@@ -9,11 +9,11 @@
 
 Verified migrations/0002_auth.sql lines 13-14, 24: `email TEXT NOT NULL` (not unique), `email_lower TEXT NOT NULL`, `CREATE UNIQUE INDEX idx_users_email_lower ON users(email_lower)`. The DESIGN.md row claimed `email (unique, NOT NULL)` which contradicted the actual schema.
 
-Edit applied to X:\Scheduler\docs\DESIGN.md line 323: changed `email (unique, NOT NULL), display_name` to `email (NOT NULL), email_lower (unique, NOT NULL), display_name`. Single-line edit, surrounding text untouched.
+Edit applied to X:\YesAndScheduler\docs\DESIGN.md line 323: changed `email (unique, NOT NULL), display_name` to `email (NOT NULL), email_lower (unique, NOT NULL), display_name`. Single-line edit, surrounding text untouched.
 
 ## Files touched
 
-- X:\Scheduler\docs\DESIGN.md (line 323, users column list)
+- X:\YesAndScheduler\docs\DESIGN.md (line 323, users column list)
 
 ## Followups recommended
 
