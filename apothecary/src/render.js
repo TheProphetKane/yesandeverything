@@ -359,8 +359,21 @@ if (document.fonts && document.fonts.ready) {
 const MAX_PREVIEW_PX = 800;
 const PREVIEW_SCALE_CAP = 3.0;
 
+// v0.16.1: the preview width was capped at 800px which is fine on desktop
+// but on mobile (370px viewports) the rendered preview overflowed off-screen
+// and there was nothing to scroll it back. Now we clamp to the actual usable
+// viewport width minus a small inset for the preview-card padding so the
+// label always fits on screen at the largest scale that still fits.
 function previewScaleFor(physWIn) {
-  return Math.min(PREVIEW_SCALE_CAP, MAX_PREVIEW_PX / (physWIn * 96));
+  const labelPx = physWIn * 96;
+  // Available horizontal space inside the preview-card. Reserve 56px for
+  // card padding (24px each side) + a couple px breathing room. The
+  // window.innerWidth fallback covers SSR / test environments where window
+  // is undefined.
+  const viewportW = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const availableW = Math.max(220, viewportW - 56);
+  const cap = Math.min(MAX_PREVIEW_PX, availableW);
+  return Math.min(PREVIEW_SCALE_CAP, cap / labelPx);
 }
 
 function pickPrintLayout({ wIn, hIn }, cardCount, paper = { wIn: 8.5, hIn: 11 }, gap = 0.15, pad = 0.25) {

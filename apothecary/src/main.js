@@ -318,6 +318,16 @@ async function main() {
   state.subscribe(paint);
   paint(state.get());
 
+  // v0.16.1: re-paint on viewport changes so the preview scale recomputes
+  // when the user rotates the device or resizes the window. Debounced so a
+  // resize drag doesn't thrash the render.
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => paint(state.get()), 80);
+  });
+  window.addEventListener('orientationchange', () => paint(state.get()));
+
   // v0.16: save indicator flashes when the debounced save fires.
   const saveIndicator = document.querySelector('[data-save-indicator]');
   const debouncedSave = debounce((s) => {

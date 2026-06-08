@@ -3009,3 +3009,135 @@ body { overscroll-behavior-y: none; }
   body::before, body::after { display: none !important; }
   .app, .app-header, .app-footer { display: none !important; }
 }
+
+/* ============================================================
+   v0.16.1 - mobile preview overflow + a11y sweep
+   ============================================================ */
+
+/* v0.16.1: kill any horizontal overflow from the body. Even if a child
+   element gets too wide, the page never shows a horizontal scrollbar; the
+   problem element gets a localized scroll instead. */
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* v0.16.1: the preview card was the main offender. The label-frame inside
+   has fixed inline width set by JS based on the design size + scale. If the
+   JS-side cap doesn't bring it under the viewport (e.g. very old cached
+   render code, slow first paint), we want a scrollable safety net rather
+   than the label leaking off-screen with no way to see it. */
+.preview-card {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-color: var(--moss) transparent;
+  scrollbar-width: thin;
+  /* horizontal scroll snaps to the label so swiping lands cleanly */
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.preview-card .label-frame { scroll-snap-align: center; }
+
+/* v0.16.1: small thumb for the horizontal preview scroll. */
+.preview-card::-webkit-scrollbar { height: 6px; }
+.preview-card::-webkit-scrollbar-thumb {
+  background: var(--moss);
+  border-radius: 4px;
+}
+
+/* v0.16.1: the label wrapper inside the preview shouldn't constrain its
+   children but should grow to fit them so the scroll container has
+   something to scroll. No max-width here - the parent .preview-card has
+   overflow-x: auto and clamps the visible region; the wrapper itself can
+   exceed it. */
+.label-wrapper { width: max-content; min-width: 100%; }
+
+/* v0.16.1: mobile + small tablet sweep. Refining the existing v0.16
+   breakpoint with more accessibility-leaning tweaks. */
+@media (max-width: 720px) {
+  /* Preview-panel padding tighter on mobile. */
+  .preview-panel { gap: 14px; }
+  .preview-card  { padding: 16px; }
+
+  /* Help button + save indicator stack on top with proper space. Items 60k
+     of v0.16 made them static; bumping their alignment so they're
+     center-aligned and tap-friendly. */
+  .app-header { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 12px 10px; }
+  .app-status, .app-help-btn { position: static; }
+
+  /* Swatch + color picker chip: bump to 36px so they meet the 44px combined
+     tap recommendation when there's gap padding around them. */
+  .swatch, .color-picker { width: 36px; height: 36px; }
+
+  /* Border tile preview SVG scales with the tile. */
+  .border-tile-preview { width: 72px; height: 44px; }
+
+  /* Color popover already adapts via v0.16 rule 60f; tighten its z-index
+     in case stacking compositing pushes it under something. */
+  .layout-color-popover { z-index: 99999; }
+
+  /* Shortcut dialog: fit small viewports cleanly. */
+  .shortcut-dialog { padding: 14px 16px 18px; max-width: 100%; }
+  .shortcut-list { font-size: 12px; gap: 6px 10px; }
+
+  /* Layout-zone-card chips have enough touch area. */
+  .layout-chip-hide, .layout-chip-dot { width: 22px; height: 22px; }
+  .layout-chip-handle { font-size: 11px; }
+
+  /* Field input row spacing tighter so more fields are visible at once. */
+  .field { margin-bottom: 10px; }
+
+  /* Editor card padding inset reduced; the field-input padding takes most
+     of the visual breathing room on small screens. */
+  .editor-card { padding: 14px; }
+
+  /* Sticky section heads on mobile: bigger touch target. */
+  .ed-section-head { padding: 14px 6px; min-height: 48px; }
+
+  /* Saved-panel and editor-card max-height removed on mobile so nothing
+     gets choked off. */
+  .saved-panel { max-height: none; }
+}
+
+/* v0.16.1: very small phones (iPhone SE, etc.). */
+@media (max-width: 380px) {
+  .app-header { padding: 14px 8px 8px; }
+  .editor-card { padding: 12px; }
+  /* Save indicator hidden to reclaim vertical space; aria-live still announces
+     to screen readers without rendering visually. */
+  .app-status { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  /* Shortcut dialog: full width minus margins. */
+  .shortcut-dialog { width: calc(100vw - 16px); }
+}
+
+/* v0.16.1: better label preview presentation on touch devices. The
+   preview-card hover effects don't fire on touch (good), but the label
+   frame's hover-lift transform fights with the scroll-snap pan gesture on
+   iOS. Disable both transforms when scrolling. */
+@media (hover: none) and (pointer: coarse) {
+  .label-frame:hover { transform: none; }
+  .preview-card:hover { transform: none; }
+  .illu-tile:hover { transform: none; }
+  .layout-chip:hover { transform: none; }
+}
+
+/* v0.16.1: announce-only save indicator gets explicit a11y class. */
+.app-status[hidden] { display: none; }
+.app-status[aria-hidden="true"] {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* v0.16.1: focus ring on the .app-help-btn shouldn't get clipped. */
+.app-help-btn { isolation: isolate; }
+
+/* v0.16.1: ensure dialog content scrolls if the screen is short. */
+.shortcut-dialog { max-height: calc(100vh - 24px); overflow-y: auto; }
+
+/* v0.16.1: kbd elements get enough touch contrast on light backgrounds. */
+.shortcut-list kbd { min-width: 24px; text-align: center; }
+
+/* v0.16.1: sticky head sometimes hides the first row of section body content
+   if the user scrolls past too fast. Add scroll-margin so anchor jumps land
+   below the sticky head. */
+.ed-section-body { scroll-margin-top: 56px; }
