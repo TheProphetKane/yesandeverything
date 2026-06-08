@@ -157,10 +157,10 @@ export function defaultState() {
     layoutPresets: [],   // [{ id, name, layout, sectionTitles, customItems }]
     borderStyle:   'celtic',  // 'simple' | 'beveled' | 'celtic' | 'ornate'
 
-    // v0.14: illustration override. null = auto-match herb name to library
-    // keyword (data/herb-to-illustration.json), then fall back to legacy
-    // data/ingredients/<slug>.png. String = explicit keyword from
-    // data/illustrations.json.
+    // v0.14: illustration override. null = auto-match herb name to a library
+    // keyword (data/herb-to-illustration.json), else hide the slot. String =
+    // explicit keyword from data/illustrations.json. Art resolves from
+    // data/illustrations/<keyword>.png; there is no legacy fallback.
     illustration:  null,
 
     // v0.14.2: per-side preview collapse. Drives the wrapper around each

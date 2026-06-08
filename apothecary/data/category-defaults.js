@@ -1,14 +1,15 @@
-// category-defaults.js — per-botanical-category representative PNG.
+// category-defaults.js: per-botanical-category representative slug.
 //
 // LOCKED DECISION (v0.8.2): no SVG anywhere in the ingredient or symbol slots.
-// When a herb doesn't have its own data/ingredients/<slug>.png, the renderer
-// falls back to a representative herb's PNG that shares the botanical
-// category. These are picked from herbs with reliable Wikimedia line-drawing
-// matches — strong, recognizable shapes that read as "this is a <category>"
-// regardless of which specific entry the user picked.
 //
-// If a representative's PNG itself doesn't exist on disk, the slot hides
-// (img.onerror chain bottoms out). No SVG ever rendered.
+// HISTORICAL (pre-v0.15): this mapped a botanical category to a representative
+// herb's PNG so a herb with no art of its own could fall back to a category
+// stand-in. That fallback ran against data/ingredients/<slug>.png, which was
+// removed once the renderer went library-only. The v0.15 botanical renderer
+// resolves art from data/illustrations/ by keyword (state.illustration or the
+// herb-to-illustration auto-match) and hides the slot when nothing matches; it
+// does not consult this map. The module is still imported in main.js but its
+// slug is no longer read by render.js. Retained pending removal.
 
 export const CATEGORY_DEFAULTS = {
   flower:   'chamomile',     // recognized daisy-like flower silhouette
