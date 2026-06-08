@@ -1992,6 +1992,11 @@
     (function () {
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+      // Reload scroll fix: stop the browser restoring (and drifting) scroll
+      // position on hard refresh, which was nudging the page down each reload.
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      if (!location.hash) window.scrollTo(0, 0);
+
       // ---- Acknowledge gate ---------------------------------------------
       // Appears on load, blocks the page until accepted. Persists across
       // sessions via localStorage so return visitors aren't re-prompted
