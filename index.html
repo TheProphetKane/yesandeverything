@@ -1487,6 +1487,28 @@
       background: rgba(245, 165, 36, 0.06);
     }
     .titlebar .tb-terms:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+    /* Normalize project cards: uniform size, bottom-pinned meta + actions */
+    .project { display: flex; flex-direction: column; }
+    .project-blurb { flex: 1 1 auto; }
+    .projects .project.feature { grid-column: auto; }
+
+    /* Collapse toggle (the head arrow folds a card to title + buttons) */
+    .has-toggle .project-name::before { display: none; }
+    .ptoggle {
+      appearance: none; background: transparent; border: 0; margin: 0;
+      padding: 0 6px 0 0; color: var(--accent); cursor: pointer;
+      font-family: var(--mono); font-weight: 700; font-size: 19px; line-height: 1;
+      flex: 0 0 auto; align-self: flex-start;
+    }
+    .ptoggle .parrow { display: inline-block; transition: transform 200ms var(--ease-spring); }
+    .project.collapsed .ptoggle .parrow { transform: rotate(90deg); }
+    .ptoggle:hover { color: var(--accent-hot); }
+    .ptoggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    .project.collapsed { align-self: start; }
+    .project.collapsed .project-blurb,
+    .project.collapsed .project-meta,
+    .project.collapsed .spark { display: none; }
+    .project.collapsed .project-actions { margin-top: 14px; }
   </style>
 </head>
 <body>
@@ -2547,6 +2569,27 @@
         }
         loop();
       })();
+
+      // ---- Collapsible project cards (head arrow -> title + buttons) ------
+      document.querySelectorAll('.project').forEach(function (card) {
+        var head = card.querySelector('.project-head');
+        if (!head || head.querySelector('.ptoggle')) return;
+        var nm = ((card.querySelector('.project-name') || {}).textContent || 'project').trim();
+        var t = document.createElement('button');
+        t.type = 'button';
+        t.className = 'ptoggle';
+        t.setAttribute('aria-expanded', 'true');
+        t.setAttribute('aria-label', 'Collapse ' + nm);
+        t.innerHTML = '<span class="parrow">\u203A</span>';
+        head.insertBefore(t, head.firstChild);
+        card.classList.add('has-toggle');
+        t.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          var collapsed = card.classList.toggle('collapsed');
+          t.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          t.setAttribute('aria-label', (collapsed ? 'Expand ' : 'Collapse ') + nm);
+        });
+      });
 
     })();
   </script>
