@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security policy &mdash; Yes and... Everything</title>
+<meta name="description" content="YesAndBudget consolidated security and privacy policy. Threat model, data inventory, access control, cryptography, consent, deletion, vulnerability management, incident response.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#06080b">
+<style>
+  :root {
+    --ink-0: #06080b; --ink-1: #0d1117; --ink-2: #141a22;
+    --ink-3: #1f2632; --ink-4: #2c3543;
+    --fg-0: #ecf0f5; --fg-1: #a4aeba; --fg-2: #697381; --fg-3: #4a5563;
+    --accent: #00ff9c; --accent-dim: #1d5a3d;
+    --accent-glow: rgba(0, 255, 156, 0.28);
+    --cyan: #62d2f3;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; scrollbar-color: var(--ink-4) transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--ink-0); color: var(--fg-0);
+    font-family: var(--mono);
+    font-size: 15px; line-height: 1.65;
+    font-feature-settings: "ss01", "calt";
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 18% -10%, rgba(98,210,243,0.05), transparent 38%),
+      radial-gradient(circle at 88% 8%, rgba(0,255,156,0.04), transparent 36%);
+    min-height: 100vh;
+  }
+  ::selection { background: var(--accent-glow); color: var(--fg-0); }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 56px 24px 96px; }
+  .crumb { color: var(--fg-2); font-size: 12px; margin-bottom: 28px; letter-spacing: 0.04em; }
+  .crumb a { color: var(--fg-2); text-decoration: none; border-bottom: 1px dotted var(--fg-3); }
+  .crumb a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  h1 {
+    font-family: var(--mono); color: var(--fg-0);
+    font-size: clamp(28px, 5vw, 38px); font-weight: 600;
+    margin: 0 0 6px; letter-spacing: -0.02em;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h1::before { content: "›"; color: var(--accent); }
+  .lede { color: var(--fg-1); font-family: var(--sans); font-size: 15.5px;
+          line-height: 1.65; margin: 14px 0 32px; max-width: 64ch; }
+  h2 {
+    font-family: var(--mono); font-size: 11.5px;
+    text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--fg-2); margin: 40px 0 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2::before { content: "//"; color: var(--accent); font-weight: 600; }
+  h2::after { content: ""; flex: 1; height: 1px;
+              background: linear-gradient(to right, var(--ink-3), transparent); }
+  h3 { font-family: var(--mono); font-size: 14px; color: var(--fg-0);
+       margin: 24px 0 8px; font-weight: 600; }
+  p { color: var(--fg-1); font-family: var(--sans); margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { color: var(--fg-1); font-family: var(--sans); margin: 0 0 14px; padding-left: 22px; max-width: 68ch; }
+  li { margin: 4px 0; }
+  strong { color: var(--fg-0); font-weight: 600; }
+  code {
+    font-family: var(--mono); color: var(--cyan);
+    background: rgba(98,210,243,0.06);
+    border: 1px solid rgba(98,210,243,0.18);
+    padding: 1px 6px; border-radius: 4px; font-size: 12.5px;
+  }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent-dim); }
+  a:hover { border-bottom-color: var(--accent); }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--sans); font-size: 13.5px;
+    margin: 14px 0 18px;
+  }
+  th, td {
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--ink-3); vertical-align: top;
+  }
+  th { color: var(--fg-2); font-family: var(--mono); font-size: 11px;
+       text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+  td { color: var(--fg-1); }
+  hr { border: 0; border-top: 1px solid var(--ink-3); margin: 32px 0; }
+  .meta { color: var(--fg-3); font-family: var(--mono); font-size: 11px;
+          margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--ink-3); }
+  .meta a { color: var(--fg-2); border-bottom-style: dotted; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="crumb"><a href="/">yes and... everything</a> / <a href="/projects/budget/">budget</a> / Security policy</div>
+<h1>Security policy</h1>
+
+<p class="lede">Consolidated security and privacy policy. Reflects locked decisions D-001 through D-011 in narrative form for review. Read together with the <a href="/projects/budget/privacy">privacy policy</a> and the <a href="/projects/budget/pre-install">pre-install checklist</a>.</p>
+
+<h2>1. Threat model</h2>
+<p>YesAndBudget runs as a single-user desktop application on the consumer's own device. The threats it protects against:</p>
+<ul>
+  <li><strong>Unauthorized network exfiltration of bank data.</strong> Addressed by the no-cloud architecture (D-001): there is no operator-controlled server, no shared backend, no telemetry pipeline. The application's API binds to 127.0.0.1 only (D-006) and refuses connections from any external interface.</li>
+  <li><strong>Credential leakage from version control.</strong> Addressed by gitignoring every credential-bearing file (<code>.plaid-token</code>, <code>data/</code>, <code>.env*</code>) and by static review of every release.</li>
+  <li><strong>Accidental data corruption during import.</strong> Addressed by pre-import snapshots and the rollback endpoint that walks every transaction inserted by a batch (D-004, D-007).</li>
+  <li><strong>Confused-deputy bugs against the user's data.</strong> Addressed by the D-011 archive-before-delete pattern: switching an account between CSV and Plaid modes archives the displaced rows, never deletes.</li>
+</ul>
+<p>The threats it does NOT defend against:</p>
+<ul>
+  <li><strong>Compromise of the consumer's operating system.</strong> If the OS is compromised, all data on the device is recoverable by the attacker. Defenses against this are at the OS layer: full-disk encryption, OS login, and patch management.</li>
+  <li><strong>Theft of an unlocked device.</strong> Same as above. Lock your device when unattended.</li>
+  <li><strong>Insider threat from someone with shared access to the consumer's user session.</strong> Standard desktop-app threat model.</li>
+</ul>
+
+<h2>2. Data inventory</h2>
+<table>
+  <thead><tr><th>Data</th><th>Location</th><th>Encryption at rest</th><th>Retention</th></tr></thead>
+  <tbody>
+    <tr><td>Transactions, accounts, categories, rules</td><td><code>data/yesandbudget.db</code> (SQLite)</td><td>OS-layer FDE</td><td>Indefinite, consumer-controlled</td></tr>
+    <tr><td>Pre-import backups</td><td><code>data/backups/*.db</code></td><td>OS-layer FDE</td><td>Default 30 days</td></tr>
+    <tr><td>Plaid client_id + secret</td><td><code>.plaid-token</code> (plain-text, gitignored)</td><td>OS-layer FDE</td><td>Replaced on credential rotation</td></tr>
+    <tr><td>Plaid per-item access tokens</td><td><code>plaid_items.access_token</code> column</td><td>OS-layer FDE</td><td>Deleted on unlink (D-009)</td></tr>
+    <tr><td>Plaid sync log</td><td><code>plaid_sync_log</code> table</td><td>OS-layer FDE</td><td>Consumer-deletable</td></tr>
+  </tbody>
+</table>
+<p>None of this data is transmitted to any operator-controlled server. The only outbound network traffic is to <code>production.plaid.com</code> (HTTPS, TLS 1.2+) under the consumer's Plaid credentials.</p>
+
+<h2>3. Access control</h2>
+<p>There is no shared infrastructure. Access control is delegated to the OS. The application's HTTP server binds to 127.0.0.1 only (D-006). The application does not impose a separate authentication layer on top of OS login by default; the optional in-app passphrase lock (Settings → App lock) provides an additional UI-layer gate when enabled.</p>
+
+<h2>4. Cryptography</h2>
+<p><strong>In transit:</strong> TLS 1.2+ for all outbound traffic to Plaid. Localhost loopback traffic is plain HTTP because it never traverses any network outside the device.</p>
+<p><strong>At rest:</strong> OS-layer full-disk encryption (BitLocker / FileVault recommended; see the <a href="/projects/budget/pre-install">pre-install checklist</a>). Application-layer encryption via SQLCipher is documented as a future hardening step.</p>
+
+<h2>5. Consent</h2>
+<p>Captured at two layers:</p>
+<ol>
+  <li><strong>Plaid Link consent</strong> — when the consumer initiates a bank connection, Plaid's own consent screen describes the data being collected and obtains explicit consent before the link completes.</li>
+  <li><strong>YesAndBudget takeover confirmation</strong> — when a Plaid link affects existing CSV-imported data, the application presents a per-account preview showing exactly which prior records will be archived. The consumer must explicitly confirm before any change is made. See D-011.</li>
+</ol>
+<p>A first-launch data-use modal presents the consumer with a summary of what the application stores, where, and how to delete it. Acceptance is recorded with a timestamp and the application version.</p>
+
+<h2>6. Deletion and retention</h2>
+<p>The consumer fully controls retention. Per-transaction deletion, per-import rollback, per-Plaid-link unlink, and a Settings "Delete all my data" factory reset are all exposed in the UI. There is no operator-side copy that survives because there is no operator side.</p>
+
+<h2>7. Vulnerability management</h2>
+<p>Dependency vulnerabilities are scanned on every pull request via Dependabot and a <code>pnpm audit</code> CI gate. High-severity findings block the release script. Endpoint hardening on each user's installation relies on the platform's built-in tooling: Windows Defender / equivalent endpoint protection, OS-level patch management, and dependency vulnerability scanning.</p>
+
+<h2>8. Incident response</h2>
+<p>If a vulnerability is reported and confirmed, the fix ships in the next release with a CHANGELOG entry. If consumer data exposure is possible, a notice is posted at <a href="/projects/budget/security-notices">security-notices</a> listing affected versions and the recommended user action. If a stored credential has been exposed, rotate it via the relevant dashboard and update <code>.plaid-token</code> accordingly.</p>
+
+<h2>9. Review</h2>
+<p>This policy is reviewed on every release. The locked decisions it consolidates (D-001 through D-011) require an ADR-promoter call to change.</p>
+<div class="meta">Mirrored from the source repository at <a href="https://github.com/TheProphetKane/yesandbudget">github.com/TheProphetKane/yesandbudget</a>. Material changes are noted in the CHANGELOG of that repo.</div>
+</div>
+</body>
+</html>
