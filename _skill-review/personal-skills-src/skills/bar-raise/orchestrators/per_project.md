@@ -9,7 +9,7 @@ This is the procedure you (Claude) follow when the user invokes a per-project ba
   - BR -> `X:\BrackishRising`
   - HBH -> `X:\HereBeHordes`
   - YaC -> `X:\YesAndChains`
-  - Scheduler -> `X:\Scheduler`
+  - Scheduler -> `X:\YesAndScheduler`
   - YaA -> `X:\YesAndApothecary`
   - YaB -> `X:\YesAndBudget`
 - `$today` -- ISO date in `YYYY-MM-DD`.

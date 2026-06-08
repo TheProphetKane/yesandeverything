@@ -1,11 +1,11 @@
-# bar-raise-scheduler.ps1 - scheduled per-project bar-raise for Scheduler.
+﻿# bar-raise-scheduler.ps1 - scheduled per-project bar-raise for Scheduler.
 #
 # Windows Task Scheduler invokes this script daily. It calls the Claude Code
 # CLI with the per-project bar-raise prompt, which fires the bar-raise skill
 # orchestrator at orchestrators/per_project.md against Scheduler.
 #
 # Output lands in:
-#   - X:\Scheduler\docs\BAR_RAISE-YYYY-MM-DD.md
+#   - X:\YesAndScheduler\docs\BAR_RAISE-YYYY-MM-DD.md
 #   - X:\YesAndEverything\status\data\Scheduler.json (barRaise block updated)
 #   - X:\YesAndEverything\scripts\schedule\logs\bar-raise-scheduler-YYYY-MM-DD.log
 #
@@ -22,6 +22,12 @@
 #   3. Run this script manually once and verify the log + the dashboard JSON
 #      both update.
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Continue"
 $ScriptDir = $PSScriptRoot
 $LogDir = Join-Path $ScriptDir "logs"
@@ -52,7 +58,7 @@ $InvokeArgs = @("--print", $Prompt)
 "$(Get-Date -Format o) Args: $($InvokeArgs -join ' ')" | Tee-Object -FilePath $LogPath -Append
 
 # Run from the project root so any relative paths the skill writes resolve sensibly.
-Push-Location "X:\Scheduler"
+Push-Location "X:\YesAndScheduler"
 try {
   & $ClaudeBin @InvokeArgs 2>&1 | Tee-Object -FilePath $LogPath -Append
   $rc = $LASTEXITCODE

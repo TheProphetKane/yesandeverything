@@ -1,4 +1,4 @@
-# apply-branch-protection.ps1
+﻿# apply-branch-protection.ps1
 # Apply linear-history + no-force-push to main across all 7 repos.
 # Standalone (does not require apply-github-parity.ps1). Verbose: prints the
 # full API error when a call fails so the actual GitHub message is visible.
@@ -13,6 +13,12 @@
 param(
   [string]$OnlyRepo = ""
 )
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
+
 
 $ErrorActionPreference = "Continue"
 

@@ -1,5 +1,8 @@
 # Claude Primer — YesAndEverything
 
+**Command rule (always):** Any git, push, release, deploy, or script command provided in chat must lead with `cd X:\YesAndEverything` so it never runs against the wrong repo. This repo is `X:\YesAndEverything`. (Cross-project standard; see `X:\YesAndEverything\CLAUDE_SETTINGS.md` § "Script standard: self-locating cwd".)
+
+
 You are working on **YesAndEverything** — the public-facing static site at <https://yesandeverything.com>. It is a single-page landing page listing Kane's projects, plus per-project sub-pages, plus a password-gated mirror of the HBH GDD.
 
 ## What this repo is (and isn't)

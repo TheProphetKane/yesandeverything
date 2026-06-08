@@ -1,4 +1,4 @@
-# apply-github-parity.ps1
+﻿# apply-github-parity.ps1
 # Generated 2026-05-29. Brings all 7 repos to identical config level.
 #
 # Prereqs:
@@ -14,6 +14,12 @@
 # replaced wholesale by --add-topic / --remove-topic; description and
 # homepage are simple field updates.
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 

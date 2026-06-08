@@ -41,7 +41,7 @@ Match against the working directory and the project CLAUDE.md primer. The four p
 |---|---|---|
 | HBH (`X:\HereBeHordes`) | `docs/GDD.html` Decisions tab, "Locked Decisions" section | none — GDD-only |
 | YaC (`X:\YesAndChains`) | `DECISIONS_NEEDED.md` | `docs/adr/NNNN-*.md` |
-| Scheduler (`X:\Scheduler`) | `docs/DESIGN.md` §23 Open Questions (move to "Closed") | `docs/adr/NNNN-*.md` (not yet seeded) |
+| Scheduler (`X:\YesAndScheduler`) | `docs/DESIGN.md` §23 Open Questions (move to "Closed") | `docs/adr/NNNN-*.md` (not yet seeded) |
 | YaE (`X:\YesAndEverything`) | no formal log — call it out, suggest creating one | n/a |
 
 If the project is unclear, ask. Don't write into the wrong repo.

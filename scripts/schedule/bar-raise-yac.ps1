@@ -1,4 +1,4 @@
-# bar-raise-yac.ps1 - scheduled per-project bar-raise for YesAndChains.
+﻿# bar-raise-yac.ps1 - scheduled per-project bar-raise for YesAndChains.
 #
 # Windows Task Scheduler invokes this script daily. It calls the Claude Code
 # CLI with the per-project bar-raise prompt, which fires the bar-raise skill
@@ -22,6 +22,12 @@
 #   3. Run this script manually once and verify the log + the dashboard JSON
 #      both update.
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Continue"
 $ScriptDir = $PSScriptRoot
 $LogDir = Join-Path $ScriptDir "logs"

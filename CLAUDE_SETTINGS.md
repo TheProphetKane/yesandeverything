@@ -15,7 +15,7 @@ HereBeHordes (HBH) lives at X:\HereBeHordes. Godot 4.6 RTS survival game. Public
 
 YesAndChains (YaC) lives at X:\YesAndChains. Disc-golf caddy PWA at yesandchains.com. Pre-1.0 launch. Vanilla TypeScript plus Supabase plus Cloudflare Worker.
 
-Scheduler lives at X:\Scheduler. Employee-scheduling web app. pnpm workspaces, Vite plus React plus Tailwind on web, Cloudflare Worker plus D1 plus Hono on API.
+Scheduler lives at X:\YesAndScheduler. Employee-scheduling web app. pnpm workspaces, Vite plus React plus Tailwind on web, Cloudflare Worker plus D1 plus Hono on API.
 
 YesAndEverything (YaE) lives at X:\YesAndEverything. Static umbrella site at yesandeverything.com. Lists the other projects plus the password-gated HBH GDD mirror plus the apothecary subdir mirror.
 
@@ -268,3 +268,17 @@ When I say "Let's try X", treat as tuning. Don't lock.
 
 
 That's the working agreement. Update this file when the agreement changes, not when you remember it later.
+
+## Script standard: self-locating cwd (added 2026-06-05)
+
+Every release, push, deploy, publish, or notify script in any repo must cd to its own repo root before doing anything, so it runs correctly from any working directory. Nick works across repos and is rarely in the right cwd; a script that assumes its cwd is a recurring failure.
+
+Standard guard, placed after any script-level `param()` block:
+
+```powershell
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
+```
+
+New scripts ship with this from the start. When providing a push or release command in chat, always lead with `cd X:\<repo>` so it never runs against the wrong repo. The one-time patcher that backfilled existing scripts is `scripts/enforce-self-cd.ps1` (idempotent, validates each file parses, writes .bak backups).

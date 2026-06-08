@@ -94,7 +94,7 @@ For each repo in scope, gather four things. Keep this mechanical — don't read 
 - **Active milestone:** read `docs/launch-checklist-1.0.md` (the active 1.0 queue) for the next unchecked item or section header.
 - **Working tree:** as above.
 
-#### Scheduler (`X:\Scheduler`)
+#### Scheduler (`X:\YesAndScheduler`)
 
 - **Version:** `package.json` `"version"` field (root + `apps/web` + `apps/api` if they diverge).
 - **Last bumped:** most recent commit touching `package.json`.

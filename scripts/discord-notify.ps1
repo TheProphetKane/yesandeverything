@@ -1,4 +1,4 @@
-# discord-notify.ps1
+﻿# discord-notify.ps1
 # Posts a release notification to the YaE dev-log Discord channel via
 # webhook. Called as Step 2 of release.ps1.
 #
@@ -13,6 +13,12 @@
 #   3. Name it ("YaE Release Bot"), pick avatar, copy URL
 #   4. Save to scripts\.discord_webhook.txt (single line, no quotes)
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Stop"
 $here = $PSScriptRoot
 $repoRoot = Split-Path -Parent $here
@@ -51,8 +57,8 @@ if ($titleText.Length -gt 256) { $titleText = $titleText.Substring(0, 253) + "..
 if ($descBody.Length -gt 600) { $descBody = $descBody.Substring(0, 597) + "..." }
 
 # Replace em-dashes per solo-dev voice rule.
-$titleText = $titleText -replace '\s*—\s*', ' - '
-$descBody = $descBody -replace '\s*—\s*', ', '
+$titleText = $titleText -replace '\s*â€”\s*', ' - '
+$descBody = $descBody -replace '\s*â€”\s*', ', '
 
 $payloadObj = @{
     embeds = @(

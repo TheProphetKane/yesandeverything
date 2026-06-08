@@ -1,4 +1,4 @@
-## audit-yab.ps1 - scheduled canonical-audit run for YesAndBudget.
+﻿## audit-yab.ps1 - scheduled canonical-audit run for YesAndBudget.
 ##
 ## Windows Task Scheduler invokes this script daily. It calls the Claude
 ## Code CLI with the project-canonical-audit trigger phrase, which writes
@@ -14,6 +14,12 @@
 ##   2. Run this script manually once, verify the log and the audit md both
 ##      land.
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Continue"
 $ScriptDir = $PSScriptRoot
 $LogDir = Join-Path $ScriptDir "logs"

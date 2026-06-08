@@ -1,4 +1,4 @@
-# apply-repo-cleanup.ps1
+﻿# apply-repo-cleanup.ps1
 # Cleanup dead files + recover from FUSE-corrupted git indexes on HBH and YaE.
 #
 # Generated 2026-05-29 alongside apply-github-parity.ps1.
@@ -12,6 +12,12 @@
 #
 # Safe to re-run. Each step checks for actual state before mutating.
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Continue"
 
 function Step($msg) { Write-Host "  $msg" -ForegroundColor Yellow }

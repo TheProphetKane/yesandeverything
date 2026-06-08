@@ -46,7 +46,7 @@ The audit is hard-coded to these four files. Don't expand scope without asking.
 |---|---|
 | `X:\HereBeHordes\CLAUDE.md` | Here There Be Hordes (Godot 4.6 RTS) |
 | `X:\YesAndChains\CLAUDE.md` | YesAndChains (pocket disc-golf caddy PWA) |
-| `X:\Scheduler\CLAUDE.md` | Yes and Scheduler (employee-scheduling web app) |
+| `X:\YesAndScheduler\CLAUDE.md` | Yes and Scheduler (employee-scheduling web app) |
 | `X:\YesAndEverything\CLAUDE.md` | YesAndEverything (umbrella static site) |
 
 ## How to run an audit

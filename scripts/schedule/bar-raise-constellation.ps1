@@ -1,4 +1,4 @@
-# bar-raise-constellation.ps1 - scheduled weekly constellation bar-raise.
+﻿# bar-raise-constellation.ps1 - scheduled weekly constellation bar-raise.
 #
 # Windows Task Scheduler invokes this on Mondays at 07:00 (after the six
 # per-project Monday runs at 06:00-06:25 have completed). It calls the Claude
@@ -12,6 +12,12 @@
 #   - Six updated X:\YesAndEverything\status\data\<project>.json files
 #   - X:\YesAndEverything\scripts\schedule\logs\bar-raise-constellation-YYYY-MM-DD.log
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Continue"
 $ScriptDir = $PSScriptRoot
 $LogDir = Join-Path $ScriptDir "logs"

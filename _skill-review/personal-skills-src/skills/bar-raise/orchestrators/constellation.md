@@ -9,7 +9,7 @@ The constellation bar-raise runs every Monday morning (per the scheduling plan i
   - BR -> `X:\BrackishRising`
   - HBH -> `X:\HereBeHordes`
   - YaC -> `X:\YesAndChains`
-  - Scheduler -> `X:\Scheduler`
+  - Scheduler -> `X:\YesAndScheduler`
   - YaA -> `X:\YesAndApothecary`
   - YaB -> `X:\YesAndBudget`
 

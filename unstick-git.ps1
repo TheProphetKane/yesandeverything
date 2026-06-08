@@ -4,6 +4,12 @@
 #
 # Usage: .\unstick-git.ps1
 
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
+
 $lock = Join-Path $PSScriptRoot '.git\index.lock'
 if (Test-Path $lock) {
     Remove-Item $lock -Force

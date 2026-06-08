@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Scheduler — Design Document</title>
+<title>Here Be Hordes — Design Document</title>
 <meta name="robots" content="noindex" />
 <meta name="color-scheme" content="dark" />
 <meta name="theme-color" content="#06080b" />
@@ -84,7 +84,7 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
 <div class="gate" id="gate">
   <div class="gate-card">
     <h1>Restricted Document</h1>
-    <div class="sub">Scheduler &middot; design</div>
+    <div class="sub">Here Be Hordes &middot; design</div>
     <p>This is a private design document. Enter the access phrase to continue.</p>
     <form id="gateForm" autocomplete="off">
       <label for="pw">Access phrase</label>
@@ -97,75 +97,60 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
 </div>
 
 <div class="doc hidden" id="doc">
-  <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>scheduler<span class="sep">/</span>design</div>
-  <h1><span class="arrow">&rsaquo;</span> Scheduler &mdash; Design</h1>
-  <div class="metarow"><span class="pill pink">Live</span><span class="pill">v0.4.x</span><span class="pill blue">multi-tenant</span></div>
-  <p class="canon">Canonical source of truth: docs/DESIGN.md (and DECISIONS in DESIGN section 23) in the Scheduler repo.</p>
-  <div class="tabs" role="tablist"><button class="tab" role="tab" data-panel="overview" aria-selected="false">Overview</button><button class="tab" role="tab" data-panel="goals" aria-selected="false">Goals</button><button class="tab" role="tab" data-panel="decisions" aria-selected="false">Decisions</button><button class="tab" role="tab" data-panel="systems" aria-selected="false">Systems</button><button class="tab" role="tab" data-panel="data" aria-selected="false">Data</button><button class="tab" role="tab" data-panel="roadmap" aria-selected="false">Roadmap</button></div>
+  <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>here-be-hordes<span class="sep">/</span>design</div>
+  <h1><span class="arrow">&rsaquo;</span> Here Be Hordes &mdash; Design</h1>
+  <div class="metarow"><span class="pill pink">Pre-alpha</span><span class="pill">v0.97.x</span><span class="pill blue">Godot 4.6</span></div>
+  <p class="canon">Canonical source of truth: the full Game Design Document at /hordes/ (password-gated, same phrase). This page is a structured summary of it.</p>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-panel="overview" aria-selected="false">Overview</button><button class="tab" role="tab" data-panel="goals" aria-selected="false">Goals</button><button class="tab" role="tab" data-panel="decisions" aria-selected="false">Decisions</button><button class="tab" role="tab" data-panel="systems" aria-selected="false">Systems</button><button class="tab" role="tab" data-panel="roadmap" aria-selected="false">Roadmap</button></div>
     <div class="panel" id="overview" role="tabpanel">
     <h2>Overview</h2>
-    <p class="ptag">A multi-tenant employee-scheduling SaaS: each company runs as an isolated org on one instance.</p>
-    <div class="sec"><h3>Product</h3>
+    <p class="ptag">An exoplanet colony-defense RTS: hold a portal-anchored Order 42 outpost against the native undead.</p>
+    <div class="sec"><h3>Premise</h3>
       <ul>
-      <li>Employees set availability on a rolling six-week window; an auto-fill builds the schedule.</li>
-      <li>Managers run a review queue (swaps, drops, time-off, open shifts) and publish weeks.</li>
-      <li>Admins manage users, the org tree, settings, and an append-only audit log; a super-admin observes every org.</li>
+      <li>Hand-painted, grim-dark, true 2:1 isometric. Extract resources for a depleted Earth while the horde tests the wall.</li>
+      <li>Build mines, lumberyards, farms, refineries, munitions workshops; ring them with walls and towers.</li>
       </ul></div>
-    <div class="sec"><h3>Roles</h3>
+    <div class="sec"><h3>Canonical GDD</h3>
       <ul>
-      <li>Employee, Manager, Admin, Super-admin. Admins can own multiple orgs and switch via a header dropdown.</li>
+      <li>The exhaustive, rebuild-from-scratch spec is the GDD: design sections, backlog, roadmap, assets, decisions, and the Numbers tables. Open it at /hordes/.</li>
       </ul></div>
   </div>
   <div class="panel" id="goals" role="tabpanel">
     <h2>Goals</h2>
-    <p class="ptag">What the product must be true to.</p>
+    <p class="ptag">What the game must be true to.</p>
     <div class="sec"><h3>Design goals</h3>
       <ul>
-      <li><strong>Hard tenant isolation.</strong> Cross-org access returns 404, never 403, so tenant existence never leaks.</li>
-      <li><strong>Preference-driven fill.</strong> Auto-fill honors preferred shifts, then availability, then min-hours.</li>
-      <li><strong>Mobile-first.</strong> Verified usable at 360px.</li>
-      <li><strong>Passwordless.</strong> Magic-link sign-in; no credentials stored.</li>
+      <li><strong>Scale.</strong> Hundreds to thousands of enemies on screen without the frame budget collapsing.</li>
+      <li><strong>Quiet vs loud.</strong> Noise pulls enemies; a productive base is an exposed base.</li>
+      <li><strong>Reactive pressure.</strong> A Terror system escalates based on how the run is going.</li>
+      <li><strong>Deterministic missions.</strong> Each replay of a mission generates the identical map.</li>
       </ul></div>
   </div>
   <div class="panel" id="decisions" role="tabpanel">
     <h2>Decisions</h2>
-    <p class="ptag">Locked architectural decisions.</p>
+    <p class="ptag">Locked decisions (full set in the GDD).</p>
     <div class="sec"><h3>Locked decisions</h3>
       <ul>
-      <li class="dec">§ <strong>Auth pivoted to Supabase magic-link.</strong> The original bcrypt/PBKDF2-in-Workers plan was dropped once an external IdP owned identity (Workers CPU + WASM constraints).</li>
-      <li class="dec">§ <strong>404-not-403</strong> on every cross-org boundary.</li>
-      <li class="dec">§ <strong>Org context via an X-Org-Slug header</strong> so multi-org admins and super-admins switch without re-auth.</li>
-      <li class="dec">§ <strong>All six v1 milestones shipped in v0.1.0</strong> (2026-05-10); v0.2.0+ are post-v1 tenancy and polish, not new milestones.</li>
-      <li class="dec">§ <strong>Stack is Cloudflare Workers + D1</strong> (Hono) for the API, React+Vite+Tailwind on Pages for the SPA.</li>
+      <li class="dec">§ <strong>Lore is Alien Portal canonical.</strong> The alternate Out-of-the-Depths direction forked into Brackish Rising.</li>
+      <li class="dec">§ <strong>No accuracy.</strong> Units always hit; debuffs use damage and/or armor reduction, never accuracy.</li>
+      <li class="dec">§ <strong>No agency removal.</strong> Never freeze units or override orders; debuffs scale stats only.</li>
+      <li class="dec">§ <strong>Efficiency-first engineering.</strong> Profile before per-frame work; prefer batched / spatial / data-oriented patterns.</li>
+      <li class="dec">§ <strong>Semver discipline.</strong> MINOR for cohesive systems, PATCH for tweaks; apply the milestone test before every bump.</li>
       </ul></div>
   </div>
   <div class="panel" id="systems" role="tabpanel">
     <h2>Systems</h2>
     <p class="ptag">How it is built.</p>
-    <div class="sec"><h3>API</h3>
+    <div class="sec"><h3>Engine</h3>
       <ul>
-      <li>Cloudflare Workers + D1 (SQLite) with Hono routes.</li>
-      <li>Schedule auto-fill round-robins the roster under the preference/availability/min-hours order.</li>
-      <li>Org-boundary enforcement, notifications, append-only audit log.</li>
+      <li>Godot 4.6.2, GDScript-first, strict typing (warnings-as-errors). Path-extends over class_name for subclasses.</li>
+      <li>Rendering: true 2:1 isometric. Pathfinding: AStarGrid2D with diagonal-only-if-clear; walls are edge occupants.</li>
+      <li>Autoloads: economy, game_clock, research, noise_field, and more (wired in project.godot).</li>
       </ul></div>
-    <div class="sec"><h3>Web</h3>
+    <div class="sec"><h3>Enemy architecture</h3>
       <ul>
-      <li>React 18 + TypeScript + Vite + Tailwind, deployed to GitHub Pages.</li>
-      <li>Supabase Auth magic-link; the Worker verifies Supabase JWTs against the project JWKS.</li>
-      </ul></div>
-    <div class="sec"><h3>Workspace</h3>
-      <ul>
-      <li>Single pnpm workspace: apps/web, apps/api, packages/shared.</li>
-      </ul></div>
-  </div>
-  <div class="panel" id="data" role="tabpanel">
-    <h2>Data</h2>
-    <p class="ptag">Schema shape.</p>
-    <div class="sec"><h3>Tables</h3>
-      <ul>
-      <li>organizations; every domain table scopes by organization_id.</li>
-      <li>org_admins join table for multi-org ownership; users; shift_templates (role + notes); holidays; system_settings.</li>
-      <li>Append-only audit log. Non-destructive migrations (e.g. migration 0008 added shift roles, holidays, settings keys).</li>
+      <li><strong>Dual implementation by design:</strong> a per-Node path (NavigationAgent2D, fog dormancy, noise wake) and a pooled MultiMesh path (data records, tick functions) selected by debug flags.</li>
+      <li>Touch one path, mirror the change in the other; an audit script compares them.</li>
       </ul></div>
   </div>
   <div class="panel" id="roadmap" role="tabpanel">
@@ -173,23 +158,23 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
     <p class="ptag">Current state and what is next.</p>
     <div class="sec"><h3>Now</h3>
       <ul>
-      <li>Post-v1 polish; v0.4.x shipped a 100-item UX pass and the deploy fix.</li>
+      <li>Milestone M3: mid-game enemy variety.</li>
       </ul></div>
-    <div class="sec"><h3>Next</h3>
+    <div class="sec"><h3>Scope</h3>
       <ul>
-      <li>M7.1 multi-tenant polish: SPA org-switcher widget, dedicated invite-admin UI for super-admins, cross-org scope-leak test suite.</li>
+      <li>v1 scope is locked in GDD section 17. New features are filed under Decisions, not invented ad hoc.</li>
       </ul></div>
   </div>
 
   <footer>
     <span>&copy; <span id="y">2026</span> Kane &middot; design document &middot; access-restricted</span>
-    <span><a href="/projects/scheduler/">&larr; details</a> &middot; <a href="/#projects">all projects</a></span>
+    <span><a href="/projects/here-be-hordes/">&larr; details</a> &middot; <a href="/#projects">all projects</a></span>
   </footer>
 </div>
 
 <script>
 (function(){
-  var KEY='yae.design.scheduler';
+  var KEY='yae.design.here-be-hordes';
   var gate=document.getElementById('gate'),doc=document.getElementById('doc');
   function open(){gate.classList.add('hidden');doc.classList.remove('hidden');}
   try{if(sessionStorage.getItem(KEY)==='1')open();}catch(e){}

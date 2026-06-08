@@ -1,6 +1,6 @@
 # Scheduler project-specific hazards
 
-`X:\Scheduler`. Employee-scheduling SaaS. Cloudflare Workers + D1 SQLite + React/Vite frontend.
+`X:\YesAndScheduler`. Employee-scheduling SaaS. Cloudflare Workers + D1 SQLite + React/Vite frontend.
 
 ## Always-on checks
 

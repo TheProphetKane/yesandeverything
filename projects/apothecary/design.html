@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Scheduler — Design Document</title>
+<title>Apothecary Labels — Design Document</title>
 <meta name="robots" content="noindex" />
 <meta name="color-scheme" content="dark" />
 <meta name="theme-color" content="#06080b" />
@@ -84,7 +84,7 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
 <div class="gate" id="gate">
   <div class="gate-card">
     <h1>Restricted Document</h1>
-    <div class="sub">Scheduler &middot; design</div>
+    <div class="sub">Apothecary Labels &middot; design</div>
     <p>This is a private design document. Enter the access phrase to continue.</p>
     <form id="gateForm" autocomplete="off">
       <label for="pw">Access phrase</label>
@@ -97,23 +97,19 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
 </div>
 
 <div class="doc hidden" id="doc">
-  <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>scheduler<span class="sep">/</span>design</div>
-  <h1><span class="arrow">&rsaquo;</span> Scheduler &mdash; Design</h1>
-  <div class="metarow"><span class="pill pink">Live</span><span class="pill">v0.4.x</span><span class="pill blue">multi-tenant</span></div>
-  <p class="canon">Canonical source of truth: docs/DESIGN.md (and DECISIONS in DESIGN section 23) in the Scheduler repo.</p>
+  <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>apothecary<span class="sep">/</span>design</div>
+  <h1><span class="arrow">&rsaquo;</span> Apothecary Labels &mdash; Design</h1>
+  <div class="metarow"><span class="pill pink">Live</span><span class="pill">v0.16.x</span><span class="pill blue">Vanilla JS</span></div>
+  <p class="canon">Canonical source of truth: PROJECT_SPEC.md in the YesAndApothecary repo (schemas, locked decisions).</p>
   <div class="tabs" role="tablist"><button class="tab" role="tab" data-panel="overview" aria-selected="false">Overview</button><button class="tab" role="tab" data-panel="goals" aria-selected="false">Goals</button><button class="tab" role="tab" data-panel="decisions" aria-selected="false">Decisions</button><button class="tab" role="tab" data-panel="systems" aria-selected="false">Systems</button><button class="tab" role="tab" data-panel="data" aria-selected="false">Data</button><button class="tab" role="tab" data-panel="roadmap" aria-selected="false">Roadmap</button></div>
     <div class="panel" id="overview" role="tabpanel">
     <h2>Overview</h2>
-    <p class="ptag">A multi-tenant employee-scheduling SaaS: each company runs as an isolated org on one instance.</p>
+    <p class="ptag">A browser label designer for Celtic-styled apothecary jars: type a herb, get a finished label.</p>
     <div class="sec"><h3>Product</h3>
       <ul>
-      <li>Employees set availability on a rolling six-week window; an auto-fill builds the schedule.</li>
-      <li>Managers run a review queue (swaps, drops, time-off, open shifts) and publish weeks.</li>
-      <li>Admins manage users, the org tree, settings, and an append-only audit log; a super-admin observes every org.</li>
-      </ul></div>
-    <div class="sec"><h3>Roles</h3>
-      <ul>
-      <li>Employee, Manager, Admin, Super-admin. Admins can own multiple orgs and switch via a header dropdown.</li>
+      <li>Pick a herb and a label assembles itself: parchment, gold trim, Elder Futhark runes, Celtic symbols, botanical art.</li>
+      <li>Five label sizes from 1.5x0.75in to 6x3in share proportions exactly; optional back label.</li>
+      <li>Front and back print together on one 8.5x11 sheet. Work saves to localStorage.</li>
       </ul></div>
   </div>
   <div class="panel" id="goals" role="tabpanel">
@@ -121,10 +117,10 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
     <p class="ptag">What the product must be true to.</p>
     <div class="sec"><h3>Design goals</h3>
       <ul>
-      <li><strong>Hard tenant isolation.</strong> Cross-org access returns 404, never 403, so tenant existence never leaks.</li>
-      <li><strong>Preference-driven fill.</strong> Auto-fill honors preferred shifts, then availability, then min-hours.</li>
-      <li><strong>Mobile-first.</strong> Verified usable at 360px.</li>
-      <li><strong>Passwordless.</strong> Magic-link sign-in; no credentials stored.</li>
+      <li><strong>Schema-driven extensibility.</strong> A new label kind is data, not a rewrite.</li>
+      <li><strong>Print-exact.</strong> Sizes map to real-world dimensions.</li>
+      <li><strong>Zero build.</strong> Native ES modules, no bundler, no framework.</li>
+      <li><strong>Dark editor, parchment label.</strong> The editor is dark; the label faces print.</li>
       </ul></div>
   </div>
   <div class="panel" id="decisions" role="tabpanel">
@@ -132,40 +128,34 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
     <p class="ptag">Locked architectural decisions.</p>
     <div class="sec"><h3>Locked decisions</h3>
       <ul>
-      <li class="dec">§ <strong>Auth pivoted to Supabase magic-link.</strong> The original bcrypt/PBKDF2-in-Workers plan was dropped once an external IdP owned identity (Workers CPU + WASM constraints).</li>
-      <li class="dec">§ <strong>404-not-403</strong> on every cross-org boundary.</li>
-      <li class="dec">§ <strong>Org context via an X-Org-Slug header</strong> so multi-org admins and super-admins switch without re-auth.</li>
-      <li class="dec">§ <strong>All six v1 milestones shipped in v0.1.0</strong> (2026-05-10); v0.2.0+ are post-v1 tenancy and polish, not new milestones.</li>
-      <li class="dec">§ <strong>Stack is Cloudflare Workers + D1</strong> (Hono) for the API, React+Vite+Tailwind on Pages for the SPA.</li>
+      <li class="dec">§ <strong>The renderer is schema-driven and that is law.</strong> A template descriptor names zones, items, theme, size; the editor reads the same descriptor.</li>
+      <li class="dec">§ <strong>The item-renderer registry (ITEM_RENDERERS) is the extension point.</strong> New item type = one entry, never a new switch case.</li>
+      <li class="dec">§ <strong>Single observable state object;</strong> all writes go through state.set / patchNested.</li>
+      <li class="dec">§ <strong>One pure render function</strong> owns the preview DOM; no scattered DOM updates.</li>
+      <li class="dec">§ <strong>Illustration library is the canonical art system</strong> (v0.15+): data/illustrations.json + PNGs, with an autoMatch herb-to-art map.</li>
       </ul></div>
   </div>
   <div class="panel" id="systems" role="tabpanel">
     <h2>Systems</h2>
     <p class="ptag">How it is built.</p>
-    <div class="sec"><h3>API</h3>
+    <div class="sec"><h3>Modules</h3>
       <ul>
-      <li>Cloudflare Workers + D1 (SQLite) with Hono routes.</li>
-      <li>Schedule auto-fill round-robins the roster under the preference/availability/min-hours order.</li>
-      <li>Org-boundary enforcement, notifications, append-only audit log.</li>
+      <li>state.js (observable store), render.js (schema renderer + ITEM_RENDERERS), ui/editor.js (form).</li>
+      <li>util/lookup.js (fuzzy herb lookup), util/autofit.js (shrink-to-fit, gated on document.fonts.ready), util/persist.js (versioned localStorage), util/print.js.</li>
       </ul></div>
-    <div class="sec"><h3>Web</h3>
+    <div class="sec"><h3>Print</h3>
       <ul>
-      <li>React 18 + TypeScript + Vite + Tailwind, deployed to GitHub Pages.</li>
-      <li>Supabase Auth magic-link; the Worker verifies Supabase JWTs against the project JWKS.</li>
-      </ul></div>
-    <div class="sec"><h3>Workspace</h3>
-      <ul>
-      <li>Single pnpm workspace: apps/web, apps/api, packages/shared.</li>
+      <li>CSS uses the visibility-toggle pattern, not display:none, so the fixed-position label survives ancestor hiding.</li>
       </ul></div>
   </div>
   <div class="panel" id="data" role="tabpanel">
     <h2>Data</h2>
-    <p class="ptag">Schema shape.</p>
-    <div class="sec"><h3>Tables</h3>
+    <p class="ptag">Registries and shapes.</p>
+    <div class="sec"><h3>Data files</h3>
       <ul>
-      <li>organizations; every domain table scopes by organization_id.</li>
-      <li>org_admins join table for multi-org ownership; users; shift_templates (role + notes); holidays; system_settings.</li>
-      <li>Append-only audit log. Non-destructive migrations (e.g. migration 0008 added shift roles, holidays, settings keys).</li>
+      <li>herbs.json (~199 entries with Celtic associations), aliases.json, runes.json (Elder Futhark).</li>
+      <li>symbols.js (Celtic symbol SVG + PNG registry), illustrations.json + data/illustrations/ PNGs, herb-to-illustration autoMatch.</li>
+      <li>themes.js, textures.js, label-templates.js, categories.js. Schemas documented in PROJECT_SPEC.</li>
       </ul></div>
   </div>
   <div class="panel" id="roadmap" role="tabpanel">
@@ -173,23 +163,23 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
     <p class="ptag">Current state and what is next.</p>
     <div class="sec"><h3>Now</h3>
       <ul>
-      <li>Post-v1 polish; v0.4.x shipped a 100-item UX pass and the deploy fix.</li>
+      <li>Symbol and label polish.</li>
       </ul></div>
     <div class="sec"><h3>Next</h3>
       <ul>
-      <li>M7.1 multi-tenant polish: SPA org-switcher widget, dedicated invite-admin UI for super-admins, cross-org scope-leak test suite.</li>
+      <li>New label templates (tea, soap, talisman tag) added as label-templates.js entries plus any item renderers.</li>
       </ul></div>
   </div>
 
   <footer>
     <span>&copy; <span id="y">2026</span> Kane &middot; design document &middot; access-restricted</span>
-    <span><a href="/projects/scheduler/">&larr; details</a> &middot; <a href="/#projects">all projects</a></span>
+    <span><a href="/projects/apothecary/">&larr; details</a> &middot; <a href="/#projects">all projects</a></span>
   </footer>
 </div>
 
 <script>
 (function(){
-  var KEY='yae.design.scheduler';
+  var KEY='yae.design.apothecary';
   var gate=document.getElementById('gate'),doc=document.getElementById('doc');
   function open(){gate.classList.add('hidden');doc.classList.remove('hidden');}
   try{if(sessionStorage.getItem(KEY)==='1')open();}catch(e){}

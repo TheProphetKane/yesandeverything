@@ -61,7 +61,7 @@ Four phases. Each one produces evidence for the next.
 
 Determine which project to audit. Heuristics:
 1. If user passed a project name, use it.
-2. If cwd matches `X:\HereBeHordes` / `X:\BrackishRising` / `X:\YesAndBudget` / `X:\YesAndChains` / `X:\Scheduler` / `X:\YesAndApothecary` / `X:\YesAndEverything`, use that.
+2. If cwd matches `X:\HereBeHordes` / `X:\BrackishRising` / `X:\YesAndBudget` / `X:\YesAndChains` / `X:\YesAndScheduler` / `X:\YesAndApothecary` / `X:\YesAndEverything`, use that.
 3. Else ask once: "which project?"
 
 Determine the file set:
@@ -218,7 +218,7 @@ Project-detection heuristics for auto-routing:
 - `X:\BrackishRising` → BR catalog (stricter voice rules; HBH file inheritance pattern; preload parse-time)
 - `X:\YesAndBudget` → YaB catalog (D-001..D-007, .finances/ leak watch)
 - `X:\YesAndChains` → YaC catalog
-- `X:\Scheduler` → Scheduler catalog
+- `X:\YesAndScheduler` → Scheduler catalog
 - `X:\YesAndApothecary` → YaApothecary catalog
 - `X:\YesAndEverything` → YaE catalog (publish injection patterns)
 

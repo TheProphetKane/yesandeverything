@@ -1,4 +1,4 @@
-# register-all.ps1 - one-shot Task Scheduler installer for the bar-raise pipeline.
+﻿# register-all.ps1 - one-shot Task Scheduler installer for the bar-raise pipeline.
 #
 # Registers 7 tasks (6 per-project daily + 1 constellation weekly):
 #   - bar-raise-br-daily        06:00 daily
@@ -16,6 +16,12 @@
 #
 # Run elevated (Task Scheduler registration requires admin or per-user setup).
 
+
+
+# --- enforce repo-root cwd (cross-project requirement) ---
+$__here = $PSScriptRoot
+$__repoRoot = if ((Split-Path -Leaf $__here) -eq 'scripts') { Split-Path -Parent $__here } else { $__here }
+Set-Location -LiteralPath $__repoRoot
 $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
 
