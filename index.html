@@ -296,7 +296,7 @@
     }
     .hero .prompt-line .ps1 { color: var(--cyan); }
     .hero .prompt-line .cmd { color: var(--fg-1); }
-    .hero .prompt-line .flag { color: var(--amber); }
+    .hero .prompt-line .flag { color: var(--accent); }
 
     .hero h1 {
       font-family: var(--mono);
@@ -1685,7 +1685,7 @@
         <div class="path" aria-hidden="true">
           <span class="dim">~</span><span class="mid">/</span><span class="you">kane</span><span class="mid">/</span><span class="mid2">projects</span><span class="dim"> $</span>
           <span style="color: var(--fg-1);"> yesandeverything</span>
-          <span style="color: var(--amber);"> --list</span>
+          <span style="color: var(--accent);"> --list</span>
         </div>
         <span class="badge" aria-hidden="true">live</span>
         <button type="button" class="tb-terms" id="reopen-terms" title="Re-open the terms notice">terms</button>
@@ -2479,14 +2479,22 @@
             var strokes = L[word.charAt(li)], ox = ox0 + li * (w + gap);
             for (var si = 0; si < strokes.length; si++) {
               var s0 = strokes[si][0], s1 = strokes[si][1];
-              var dx = s1[0] - s0[0], dy = s1[1] - s0[1];
-              var len = Math.sqrt(dx * dx + dy * dy), steps = Math.max(1, Math.round(len / step));
+              var ax = ox + s0[0] * w, ay = oy + s0[1] * h;   // segment in px
+              var bx = ox + s1[0] * w, by = oy + s1[1] * h;
+              var vx = bx - ax, vy = by - ay;
+              var L2 = Math.sqrt(vx * vx + vy * vy) || 1;
+              var nx = -vy / L2, ny = vx / L2;                // perpendicular unit
+              var th = w * 0.16;                              // bar thickness -> two rails
+              var steps = Math.max(1, Math.round(L2 / (step * w)));
               for (var k = 0; k <= steps; k++) {
                 var tt = k / steps;
-                var px = ox + (s0[0] + dx * tt) * w, py = oy + (s0[1] + dy * tt) * h;
-                var key = Math.round(px / (6 * dpr)) + ',' + Math.round(py / (6 * dpr));
-                if (seen[key]) continue; seen[key] = 1;
-                out.push({ x: px, y: py });
+                var cx = ax + vx * tt, cy = ay + vy * tt;     // centerline
+                for (var off = -1; off <= 1; off += 2) {      // two parallel rails per section
+                  var px = cx + nx * (th / 2) * off, py = cy + ny * (th / 2) * off;
+                  var key = Math.round(px / (5 * dpr)) + ',' + Math.round(py / (5 * dpr));
+                  if (seen[key]) continue; seen[key] = 1;
+                  out.push({ x: px, y: py });
+                }
               }
             }
           }
