@@ -2552,7 +2552,12 @@
           kane = kanePoints();
         }
         size();
-        var rzt; addEventListener('resize', function () { clearTimeout(rzt); rzt = setTimeout(size, 200); });
+        var rzt, lastW = innerWidth;
+        addEventListener('resize', function () {
+          if (innerWidth === lastW) return; // ignore mobile URL-bar height changes (was breaking up KANE on scroll)
+          lastW = innerWidth;
+          clearTimeout(rzt); rzt = setTimeout(size, 200);
+        });
         if (!touch) {
           addEventListener('pointermove', function (e) { mouse.x = e.clientX * dpr; mouse.y = e.clientY * dpr; }, { passive: true });
           addEventListener('pointerleave', function () { mouse.x = mouse.y = -99999; });
