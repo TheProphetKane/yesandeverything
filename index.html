@@ -2492,6 +2492,7 @@
         try { if (matchMedia('(prefers-reduced-data: reduce)').matches) return; } catch (e) {}
         var small = innerWidth < 768;
         var touch = false; try { touch = matchMedia('(pointer: coarse)').matches; } catch (e) {}
+        var animate = true; // full drift on every device
         var cv = document.createElement('canvas');
         cv.className = 'bg-canvas'; cv.setAttribute('aria-hidden', 'true');
         document.body.appendChild(cv);
@@ -2507,22 +2508,20 @@
             N: [[[0,1],[0,0]], [[0,0],[1,1]], [[1,1],[1,0]]],
             E: [[[1,0],[0,0]], [[0,0],[0,1]], [[0,1],[1,1]], [[0,0.5],[0.78,0.5]]]
           };
-          var word = 'KANE';
-          var pad = W * 0.05, usable = W - pad * 2;
-          var w = usable / (word.length + (word.length - 1) * 0.25);
-          var gap = w * 0.25, step = small ? 0.2 : 0.12;
-          var h = Math.min(w * 1.35, H * 0.5);
-          var ox0 = pad, oy = (H * 0.44) - h / 2;
-          var th = small ? 0 : w * 0.16;            // single line on mobile, double rails on desktop
+          var word = ['K', 'A', 'N', 'E'];
+          var wide = innerWidth >= 1280;        // wide screens: KANE down both side margins
+          var step = small ? 0.2 : 0.12;
           var seen = {}, out = [];
-          for (var li = 0; li < word.length; li++) {
-            var strokes = L[word.charAt(li)], ox = ox0 + li * (w + gap);
-            for (var si = 0; si < strokes.length; si++) {
-              var ax = ox + strokes[si][0][0] * w, ay = oy + strokes[si][0][1] * h;
-              var bx = ox + strokes[si][1][0] * w, by = oy + strokes[si][1][1] * h;
+          function emit(ls, ox, oy, lw, lh) {
+            var th = small ? 0 : lw * 0.16;     // squared rails on desktop, single line on mobile
+            for (var si = 0; si < ls.length; si++) {
+              var s0 = ls[si][0], s1 = ls[si][1];
+              var ax = ox + s0[0] * lw, ay = oy + s0[1] * lh;
+              var bx = ox + s1[0] * lw, by = oy + s1[1] * lh;
               var vx = bx - ax, vy = by - ay, len = Math.sqrt(vx * vx + vy * vy) || 1;
               var nx = -vy / len, ny = vx / len;
-              var steps = Math.max(1, Math.round(len / (step * w)));
+              var spacing = Math.max(step * lw, 13 * dpr);
+              var steps = Math.max(1, Math.round(len / spacing));
               for (var k = 0; k <= steps; k++) {
                 var tt = k / steps, cx = ax + vx * tt, cy = ay + vy * tt;
                 var offs = th > 0 ? [-1, 1] : [0];
@@ -2534,6 +2533,19 @@
                 }
               }
             }
+          }
+          if (wide) {
+            var vpad = H * 0.06, availH = H - vpad * 2;
+            var lh = availH / (4 + 3 * 0.3), gap = lh * 0.3, lw = lh * 0.55;
+            var cols = [W * 0.035, W - W * 0.035 - lw];
+            for (var c = 0; c < cols.length; c++) {
+              for (var i = 0; i < 4; i++) { emit(L[word[i]], cols[c], vpad + i * (lh + gap), lw, lh); }
+            }
+          } else {
+            var pad = W * 0.05, usable = W - pad * 2;
+            var lwH = usable / (4 + 3 * 0.25), gapH = lwH * 0.25;
+            var lhH = Math.min(lwH * 1.35, H * 0.5), oyH = (H * 0.44) - lhH / 2;
+            for (var j = 0; j < 4; j++) { emit(L[word[j]], pad + j * (lwH + gapH), oyH, lwH, lhH); }
           }
           return out;
         }
@@ -2556,7 +2568,7 @@
         addEventListener('resize', function () {
           if (innerWidth === lastW) return; // ignore mobile URL-bar height changes (was breaking up KANE on scroll)
           lastW = innerWidth;
-          clearTimeout(rzt); rzt = setTimeout(size, 200);
+          clearTimeout(rzt); rzt = setTimeout(function () { size(); if (!animate) requestAnimationFrame(loop); }, 200);
         });
         if (!touch) {
           addEventListener('pointermove', function (e) { mouse.x = e.clientX * dpr; mouse.y = e.clientY * dpr; }, { passive: true });
@@ -2583,8 +2595,7 @@
             dx = nodes[a].x - nodes[b].x; dy = nodes[a].y - nodes[b].y; d = Math.sqrt(dx * dx + dy * dy);
             if (d < link) { ctx.beginPath(); ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(nodes[b].x, nodes[b].y); ctx.strokeStyle = 'rgba(2,164,211,' + (0.32 * (1 - d / link)).toFixed(3) + ')'; ctx.lineWidth = 1.4 * dpr; ctx.stroke(); }
           }
-          var el = performance.now() - t0;
-          if (el > HOLD) kaneAlpha = Math.max(0, 1 - (el - HOLD) / FADE);
+          if (animate) { var el = performance.now() - t0; if (el > HOLD) kaneAlpha = Math.max(0, 1 - (el - HOLD) / FADE); }
           if (kaneAlpha > 0 && kane.length) {
             ctx.save(); ctx.globalAlpha = kaneAlpha;
             for (i = 0; i < kane.length; i++) { p = kane[i]; ctx.beginPath(); ctx.arc(p.x, p.y, 2.4 * dpr, 0, 6.2832); ctx.fillStyle = 'rgba(255,0,255,0.95)'; ctx.fill(); }
@@ -2595,7 +2606,7 @@
             ctx.restore();
             if (kaneAlpha <= 0) kane = [];
           }
-          requestAnimationFrame(loop);
+          if (animate) requestAnimationFrame(loop);
         }
         (window.requestIdleCallback || function (f) { setTimeout(f, 200); })(function () { requestAnimationFrame(loop); });
       })();
