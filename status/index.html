@@ -303,6 +303,7 @@
 
   var STALE_DAYS_ACTIVE = 14;
   var STALE_DAYS_PARKED = 60;
+  var USAGE = null;  // dashboard/data/usage.json, refreshed by the usage collector
 
   function $(id) { return document.getElementById(id); }
   function el(tag, props, kids) {
@@ -407,6 +408,16 @@
         text: String(data.workQueueDepth)
       }));
       metaRow.appendChild(wq);
+    }
+    if (USAGE && USAGE.projects && USAGE.projects[proj.id]) {
+      var todayIso = new Date().toISOString().slice(0, 10);
+      var tt = 0;
+      (USAGE.projects[proj.id].daily || []).forEach(function (d) { if (d.d === todayIso) tt += (d.input || 0) + (d.output || 0); });
+      var tk = el("div");
+      tk.setAttribute("title", "tokens burned on this project today");
+      tk.appendChild(el("span", { className: "k", text: "tokens today" }));
+      tk.appendChild(el("span", { className: "v", text: tt >= 1e6 ? (tt / 1e6).toFixed(2) + "M" : tt >= 1e3 ? (tt / 1e3).toFixed(1) + "k" : String(tt) }));
+      metaRow.appendChild(tk);
     }
     if (metaRow.children.length) card.appendChild(metaRow);
 
@@ -549,13 +560,14 @@
     $("error-banner").style.display = "none";
     var grid = $("grid");
 
-    var jobs = [fetchJson("data/constellation.json")].concat(
+    var jobs = [fetchJson("data/constellation.json"), fetchJson("../dashboard/data/usage.json")].concat(
       PROJECTS.map(function (p) { return fetchJson("data/" + p.id + ".json"); })
     );
 
     return Promise.all(jobs).then(function (results) {
       var cn = results[0];
-      var projData = results.slice(1);
+      USAGE = results[1];
+      var projData = results.slice(2);
       renderConstellation(cn);
       grid.innerHTML = "";
       var anyData = false;
