@@ -156,6 +156,11 @@ Each project repo now ships a `.project-context.json` at its root. Schema versio
   "display_name": "Pretty Name",
   "path": "X:\\Project",          // absolute Windows path
   "type": "godot-game | node-web-app | browser-pwa | browser-app | static-site | multi-canonical",
+  "milestone": {                   // v1.1: the active (or last shipped) milestone; the
+    "id": "M4",                    // dashboard writers read THIS, never hardcode it.
+    "label": "Pre-Production Lock",// Update here when the milestone changes.
+    "status": "in-progress | shipped | not-started"
+  },
   "engine": "Godot 4.6",           // optional, game projects only
   "stack": ["Vite", "React", ...], // optional, web projects only
   "primary_language": "GDScript | TypeScript | JavaScript | HTML",

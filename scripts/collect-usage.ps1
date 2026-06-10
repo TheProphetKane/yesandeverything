@@ -4,7 +4,8 @@
 # logs), attributes each usage record to a project by path, buckets tokens by
 # local day, prices them with the editable table below, and writes
 # work\data\usage.json. Incremental: a state file remembers how far into each
-# log it has read, so repeat runs only process appended lines.
+# log it has read, so repeat runs only process appended lines. Output lands
+# at dashboard\data\usage.json for the /dashboard/ page.
 #
 # Run manually or on a schedule (every 30 min is plenty):
 #   cd X:\YesAndEverything
@@ -20,13 +21,18 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
-# ----- Editable pricing (USD per million tokens) -------------------------
-# Matched by substring against the model string on each usage record.
+# ----- Pricing (USD per million tokens; Anthropic published API rates) ----
+# Verified against the published price list on the date below. When rates
+# change: update the table AND bump $PRICING_VERSION (any date string). Costs
+# are frozen into the state aggregates at scan time, so a rate change applies
+# to FUTURE token use only, never retroactively. Cache rates follow the
+# standard convention: read = 0.1x input, 5-minute write = 1.25x input.
+$PRICING_VERSION = "2026-06-10"
 $PRICING = @(
-  @{ match = "fable";  in = 20.0; out = 100.0; cacheRead = 2.00; cacheWrite = 25.00 },  # VERIFY: post-cutoff model, placeholder rates
-  @{ match = "opus";   in = 15.0; out =  75.0; cacheRead = 1.50; cacheWrite = 18.75 },
-  @{ match = "sonnet"; in =  3.0; out =  15.0; cacheRead = 0.30; cacheWrite =  3.75 },
-  @{ match = "haiku";  in =  1.0; out =   5.0; cacheRead = 0.10; cacheWrite =  1.25 }
+  @{ match = "fable";  in = 10.0; out = 50.0; cacheRead = 1.00; cacheWrite = 12.50 },
+  @{ match = "opus";   in =  5.0; out = 25.0; cacheRead = 0.50; cacheWrite =  6.25 },
+  @{ match = "sonnet"; in =  3.0; out = 15.0; cacheRead = 0.30; cacheWrite =  3.75 },
+  @{ match = "haiku";  in =  1.0; out =  5.0; cacheRead = 0.10; cacheWrite =  1.25 }
 )
 $PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
 
@@ -50,7 +56,7 @@ $SCAN_ROOTS = @(
 )
 
 # Absolute paths throughout: .NET file APIs ignore PowerShell's cwd.
-$DataDir = Join-Path $RepoRoot "work\data"
+$DataDir = Join-Path $RepoRoot "dashboard\data"
 $OutPath = Join-Path $DataDir "usage.json"
 $StatePath = Join-Path $DataDir ".usage-state.json"
 if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Force | Out-Null }
@@ -77,6 +83,15 @@ $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cos
 if (Test-Path $StatePath) {
   try {
     $state = Get-Content -Raw $StatePath | ConvertFrom-Json
+    if (-not $state.pricingVersion) {
+      # Pre-versioned state was built on placeholder rates. One-time full
+      # re-scan so history is priced at the published table. Versioned states
+      # are never repriced: a future rate change applies forward only.
+      throw "state predates pricing versioning; full re-scan at published rates"
+    }
+    if ($state.pricingVersion -ne $PRICING_VERSION) {
+      Write-Host "INFO: pricing table changed ($($state.pricingVersion) -> $PRICING_VERSION). Existing aggregates keep their original pricing; new tokens use the new table." -ForegroundColor Yellow
+    }
     foreach ($prop in $state.files.PSObject.Properties) {
       $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project }
     }
@@ -186,7 +201,8 @@ foreach ($proj in ($Agg.Keys | Sort-Object)) {
 }
 $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-  pricingNote = "API-equivalent estimates; edit the table in scripts/collect-usage.ps1"
+  pricingVersion = $PRICING_VERSION
+  pricingNote = "Anthropic published API rates as of $PRICING_VERSION; rate changes apply forward only (costs freeze into history at scan time)"
   projects = $projects
 }
 
@@ -217,15 +233,19 @@ foreach ($proj in $Agg.Keys) {
     $flat += [ordered]@{ p = $proj; d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; cost = $b.cost }
   }
 }
-Write-ValidatedJson $StatePath ([ordered]@{ files = $Files; agg = $flat })
+Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; files = $Files; agg = $flat })
 
 # ----- Commit + push -------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
+# git writes normal progress to stderr; under ErrorActionPreference=Stop the
+# 2>&1 redirect promotes that into a terminating NativeCommandError even on a
+# successful push. Relax EAP for the native git calls below.
+$ErrorActionPreference = "Continue"
 foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
 }
-& git add work/data/usage.json 2>&1 | Out-Null
+& git add dashboard/data/usage.json 2>&1 | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
 & git commit -m "work: usage refresh" 2>&1 | Out-Null

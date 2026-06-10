@@ -74,6 +74,8 @@ JSON contract:
 
 Verdict enum: `healthy | needs-attention | at-risk | stalled | null`.
 
+Status-JSON additions (2026-06-10): `milestone` is sourced from each repo's `.project-context.json` (writers never hardcode it), and an optional `metrics` array (`[{k, v}]`) carries per-project readouts computed from the repo at release time. Each project publishes what matters to it: roster/test counts for the games, the 1.0 checklist for YaC, route/migration counts for Scheduler, registry sizes for YaA, importer/decision counts for YaB. The work dashboard renders them generically.
+
 Run-state fields (additive, 2026-06-10): the bar-raise also writes `health` (int 0-100, weighted mean of lens dimension scores), `lensScores` (lens id -> dimension score for the latest run), `openFindings` (list of `{id, severity, priority, runsOpen, firstSeen}`), and `tensionsOpen` (list of `{lenses, runsSeen}`) inside the `barRaise` block. The locked six fields keep their shape; consumers ignore fields they do not know. The dashboard renders `health`, a per-lens score bar row, and a chronic count when these are present. Producers must verify before overwriting: `scripts/check-status-json.ps1` gates the YaE release, and every writer re-parses its read-back instead of trusting a byte compare.
 Stale flag set true by the dashboard JS when `lastReleaseAt` is older than 14 days for an active project, 60 days for parked.
 
