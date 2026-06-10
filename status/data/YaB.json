@@ -21,12 +21,12 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-09.md",
-        "latestReportAt": "2026-06-09T06:25:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-10.md",
+        "latestReportAt": "2026-06-10T06:25:00Z",
         "verdict": "needs-attention",
-        "topFinding": "The eleven-cycle non-commit stall is over: on 2026-06-08 the tree shipped three MINORs in one day (v0.11.0 insights, v0.12.0 security hardening, v0.13.0 Plaid Phase 2 + SQLCipher), added .gitattributes, dropped the loop probe and .bak files, and left HEAD clean at 310ef64, closing both prior HIGH findings and most of the 06-08 action list. The cost of moving that fast is a cleanup tail: the project inverted three of its own 'what this is not' lines (no Plaid, not cloud-hosted, manual-upload-only) without updating CLAUDE.md, took on keytar (an archived native module) as the load-bearing key store for encrypted installs, and now carries a SQLCipher path that loses every transaction if the OS-keystore key is ever lost, with no documented escrow. None of it is bleeding today, but six MEDIUM findings cluster around doc, dependency, and scope hygiene. The verdict moves two tiers from at-risk to needs-attention; the work now is to reconcile the canonical framing to the Plaid/cloud reality and de-risk the encryption-key story before encryption is turned on for real.",
-        "actionsOpen": 6,
-        "actionsClosed": 7
+        "topFinding": "Third frozen day in a row. HEAD is still 310ef64 (v0.13.0, 2026-06-08); the tree is byte-identical to what the 06-09 bar-raise and the 06-09/06-10 canonical audits measured, so the code findings carry verbatim. The story has moved off the code and onto the loop meant to fix it: the canonical audit's auto-enqueued YaB items from the last three runs (including the locked-decision D-011 route fix) never reached the shared .work-queue.json, while the six items that did land are stale (06-05 to 06-07), one a P0 commit-now the 06-08 sprint already discharged but still marked pending. The result is a locked-decision violation in shipped code (server.ts:758 returns 400 where D-011 mandates 409) unfixed across multiple cycles because nothing downstream can see it. Verdict holds at needs-attention; the deteriorating axis is orchestration, not the product, and zero prior actions closed.",
+        "actionsOpen": 11,
+        "actionsClosed": 0
     },
     "workQueueDepth": 0,
     "stale": false,

@@ -143,14 +143,14 @@ Cross-cutting: every project's `release.ps1` ends by calling `write-dashboard-st
 
 ### What it is
 
-Each project repo now ships a `.project-context.json` at its root. Schema version 1. This file is the **machine-readable** per-project metadata that any skill can load in one step, replacing the LLM-driven "re-derive everything from CLAUDE.md prose" pattern.
+Each project repo now ships a `.project-context.json` at its root. Schema version 1.1 (additive over v1; v1 files remain valid). This file is the **machine-readable** per-project metadata that any skill can load in one step, replacing the LLM-driven "re-derive everything from CLAUDE.md prose" pattern.
 
-### Schema (v1)
+### Schema (v1.1)
 
 ```json
 {
-  "$schema": "https://yesandeverything.com/schema/project-context-v1.json",
-  "schema_version": 1,
+  "$schema": "https://yesandeverything.com/schema/project-context-v1.1.json",
+  "schema_version": 1.1,           // 1 also accepted; v1.1 is additive
   "name": "ProjectName",           // canonical name (matches repo dir + scheduled-task target)
   "short": "PN",                   // abbreviation used in commit messages, status JSON
   "display_name": "Pretty Name",
@@ -192,6 +192,15 @@ Each project repo now ships a `.project-context.json` at its root. Schema versio
   "repo_url": "https://github.com/TheProphetKane/...",
   "tags": ["...", ...],
 
+  "lens_weights": {                // optional (v1.1): bar-raise emphasis multipliers
+    "security": 1.5,               // lens id -> multiplier; consumers clamp to 0.5-2.0
+    "solo-tool-ux": 0.8            // so no lens can be zeroed out and none can dominate
+  },
+
+  "hard_rule_checks": [            // optional (v1.1): objective verification per hard rule
+    {"rule": "D-006 loopback bind", "check": "one-line command or test that proves compliance"}
+  ],
+
   "hard_rules": ["...", ...],            // one-line strings, matched by the hazard catalog
   "locked_decisions_summary": ["...", ...],
   "release_message_format": "feat(name): vX.Y.Z - <summary>",
@@ -224,15 +233,19 @@ The CLAUDE.md handler remains the human-readable narrative. The `.project-contex
 - **.project-context.json** — when paths, scripts, version-pill locations, or hard-rule lists change; also when a new locked decision is added (mirror into `locked_decisions_summary`)
 - Both whenever the project type or stack shifts
 
-### Migration notes (schema v1 → v2)
+### Migration notes (v1 → v1.1)
 
-Reserved for future. Any field rename / removal increments `schema_version` and ships with a migration recipe in this doc.
+v1.1 is purely additive: an optional `lens_weights` map (lens id → emphasis multiplier) and an optional `hard_rule_checks` list (per-rule one-line verification commands the bar-raise security and compliance lenses run; a BLOCK is only as good as a checkable rule). Consumers clamp every weight multiplier to the 0.5-2.0 range at read time, so no lens can be zeroed out and none can dominate. Existing v1 context files validate unchanged; absent fields mean all weights 1.0 and no scripted checks. Both `schema_version: 1` and `schema_version: 1.1` are supported.
 
-### Skills currently consuming v1
+### Migration notes (schema v1.x → v2)
+
+Reserved for future. Any field rename / removal increments `schema_version` to 2 and ships with a migration recipe in this doc.
+
+### Skills currently consuming v1/v1.1
 
 - `project-canonical-audit` (canonical_docs, locked_decisions_log)
 - `drift-auto-fix` (canonical_docs, hard_rules)
-- `bar-raise` (everything; this is the heaviest consumer)
+- `bar-raise` (everything; this is the heaviest consumer, and the only v1.1 `lens_weights` consumer so far)
 - `backlog-hygiene` (backlog_path)
 - `handler-audit` (handler, hard_rules, locked_decisions_summary)
 - `htbh-changelog-entry` (version_pill_locations, changelog_path)

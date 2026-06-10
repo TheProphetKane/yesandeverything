@@ -21,16 +21,4 @@ Where will this project fail when it sees an unexpected input, a partial-state r
 
 ## Output shape
 
-Write a finding only if you have one. Otherwise write exactly: "No findings."
-
-If you have a finding, use this block:
-
-```
-### Reliability
-- **Severity**: high | medium | low
-- **Finding**: <one sentence>
-- **Evidence**: <specific paths, function names, line numbers, commit refs>
-- **Suggested action**: <what to do; if HIGH, this becomes a P0 work-queue item>
-```
-
-Cite at least one concrete reference. Findings without evidence get downgraded.
+Return the structured report defined in `REPORT_CONTRACT.md` (this directory), with `lens: "reliability"`. Report only on this dimension: no verdicts, no ranking against other lenses. Multiple findings allowed; every finding carries evidence plus impact (1-5) and confidence (1-5), and lists any `tensions_with` lens ids. Nothing to flag means an empty `findings` list and a high `dimension_score`.

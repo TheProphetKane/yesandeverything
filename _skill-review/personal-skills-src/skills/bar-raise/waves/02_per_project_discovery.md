@@ -57,17 +57,6 @@ The project's `tags` array (from `status/data/<project>.json`) determines which 
 
 ## Output (working memory)
 
-A structured context blob holding:
+Assemble the harvest into the structured blob defined in `waves/CONTEXT_CONTRACT.md`. Every Tier-1 and domain lens subagent receives that blob verbatim; lenses do not re-read the filesystem for anything the blob already carries. That keeps lens runs cheap, consistent, and comparable across runs.
 
-- project ID + display name
-- canonical-doc state (version, milestone, decisions, open questions)
-- handler conventions (voice, hazards, lock signals)
-- backlog state (counts, top P0)
-- changelog state (last 5 entries, cadence signal)
-- commit state (recent cadence, message-shape signal)
-- working-tree state (clean / dirty count)
-- latest audit findings counts
-- latest bar-raise (if any) for delta comparison
-- tag list
-
-Each Tier-1 and domain lens reads from this blob, not from the filesystem directly. That keeps lens runs cheap and consistent.
+Include the previous run state (`barRaise` block from `X:\YesAndEverything\status\data\<project>.json`) as `previous_run`. If that JSON fails to parse, pull the last good version from YaE git history and flag the corruption; never feed lenses a corrupt blob field.

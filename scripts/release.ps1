@@ -18,6 +18,14 @@ $here = $PSScriptRoot
 Push-Location
 
 try {
+    Write-Host "==== Step 0: dashboard JSON integrity guard ====" -ForegroundColor Magenta
+    & (Join-Path $here "check-status-json.ps1")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: corrupt status JSON would ship to the live dashboard." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host ""
     Write-Host "==== Step 1/2: push YaE to GitHub ====" -ForegroundColor Magenta
     & (Join-Path $here "push-to-github.ps1")
     if ($LASTEXITCODE -ne 0) {

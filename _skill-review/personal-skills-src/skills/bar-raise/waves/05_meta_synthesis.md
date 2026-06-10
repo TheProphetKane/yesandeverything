@@ -1,54 +1,107 @@
 # Wave 5: Meta synthesis
 
-Collapse every lens finding from Waves 3 + 4 into a single coherent report, pick a verdict, write the Markdown file, and stage the YaE-side JSON update.
+Collect every lens report from Waves 3 + 4, compute the weighted health score, pick the verdict from score bands, surface tensions between dimensions, write the Markdown file, and stage the YaE-side JSON update.
+
+The synthesis weighs all dimensions together. No single lens decides the verdict and no lens outranks another by default. Security does not override usability and usability does not override security; every dimension gets checked on its own merits, and no one goal prevents another from succeeding. The job here is to balance the dimensions and surface the tradeoffs, not to let one win silently. The only exception is a BLOCK, which is a factual hard-rule gate, not a goal winning over another goal.
 
 ## Inputs
 
 - Wave 2 context blob (project state).
-- Wave 3 outputs (11 lens findings, each either "No findings" or a finding block).
-- Wave 4 outputs (0 to ~8 domain lens findings depending on the project's tags; empty if Phase 4 has not shipped).
-- Previous bar-raise report (if `$projectRoot/docs/BAR_RAISE-*.md` exists from a prior run).
+- Wave 3 reports: 12 Tier-1 lens reports in the `waves/03_tier1_lenses/REPORT_CONTRACT.md` shape.
+- Wave 4 reports: 0 to ~8 domain lens reports in the same shape (empty if Phase 4 has not shipped).
+- `lens_weights` from `$projectRoot/.project-context.json` (schema v1.1; optional map of lens id to emphasis multiplier).
+- Previous run state from the status JSON `barRaise` block (`health`, `lensScores`, `openFindings`, `tensionsOpen`); fall back to the most recent prior `BAR_RAISE-*.md` only when that block is absent.
 
-## Verdict picker
+## Health score
 
-Apply in order; first match wins:
+1. Each lens weight = `1.0 x clamp(lens_weights[lens], 0.5, 2.0)`. Absent entries mean 1.0. The clamp guarantees no lens can be zeroed out and none can dominate.
+2. Project health = weighted mean of all lens `dimension_score`s, rounded to an integer: `health = round(sum(weight_i x score_i) / sum(weight_i))`.
+3. Domain lens reports participate at weight 1.0 unless `lens_weights` names them.
+4. A lens that failed to return a usable report after one re-spawn is excluded from the mean (never counted as zero) and flagged in Notes.
 
-1. **stalled** -- no commits in the last 14 days AND backlog has P0 items open. Or: last bar-raise was 'at-risk' and nothing has changed since.
-2. **at-risk** -- two or more HIGH-severity findings, OR one HIGH from `09_dependency` (external blocker), OR one HIGH from `11_strategic_kill_this`.
-3. **needs-attention** -- one HIGH-severity finding, OR three or more MEDIUM, OR a regression vs the previous bar-raise (verdict downgraded one tier or worse).
-4. **healthy** -- zero HIGH, fewer than three MEDIUM, and either no previous bar-raise or stable / improved vs the previous one.
+## BLOCK handling
+
+If any report has `blocking: true`:
+
+- Put a BLOCK banner at the very top of the Markdown report, above the verdict line, naming the breached hard rule and the evidence.
+- Floor the verdict at `at-risk`. A project with an open hard-rule breach cannot be called healthy or needs-attention. If the bands already say `stalled`, stalled stands.
+- Do not otherwise distort the weighted blend. The BLOCK gates the verdict; it does not rewrite any score.
+
+## Verdict bands
+
+The verdict comes from the health score, never from any single lens:
+
+- **healthy** -- health >= 80 and no open BLOCK.
+- **needs-attention** -- health 65-79.
+- **at-risk** -- health 50-64, OR any open BLOCK (the floor).
+- **stalled** -- health < 50, OR (no commits in the last 14 days AND a P0 backlog item open).
 
 The verdict goes into both the Markdown report and the JSON `barRaise.verdict` field.
 
 ## Top finding
 
-One paragraph (3-5 sentences). What is the single most important thing for Nick to know about this project right now, distilled from the lens findings? If the verdict is `healthy`, the top finding can be "what to keep doing" rather than "what is wrong."
+One paragraph (3-5 sentences). The single most important thing to know about this project right now, distilled from the lens reports. If the verdict is `healthy`, the top finding can be "what to keep doing" rather than "what is wrong."
 
 This paragraph also goes into the JSON `barRaise.topFinding` field.
 
+## Tensions and tradeoffs
+
+This section is the point of the whole model. It is first-class; never skip it when conflicts exist.
+
+1. Scan every finding's `tensions_with` list.
+2. Also scan for opposing `suggested_action`s across lenses (one lens wants a gate added on a path, another wants friction removed from the same path), even when neither finding declared the tension.
+3. For each conflict:
+   - Name the lenses in tension.
+   - Describe the conflict in one line.
+   - Propose a balanced resolution that does not sacrifice either dimension to zero. "Do the token-handling fix but keep the one-command release flow by scripting it" beats "security wins."
+
+If no tensions exist, write "No tensions between dimensions this run."
+
 ## Action list
 
-Aggregate every lens finding's "Suggested action" line. Rank:
+Pool every finding from every lens into one list. Rank lens-agnostically:
 
-1. All HIGH actions, in lens order (Architecture before Reliability before Security, etc.).
-2. All MEDIUM actions, in lens order.
-3. All LOW actions, in lens order (or omit if the report is already long).
+1. Priority score = `impact x confidence`, descending.
+2. Tie-break by severity (high > medium > low), then by impact.
 
-For each action, note the lens it came from in parentheses.
+Never order by which lens emitted the action. The lens appears only as a provenance tag in parentheses at the end of the line.
 
-The JSON `barRaise.actionsOpen` field counts HIGH + MEDIUM. LOW is excluded from that count.
+The JSON `barRaise.actionsOpen` field counts HIGH + MEDIUM findings. LOW is excluded from that count.
+
+A finding open for 5+ consecutive runs carries a `[CHRONIC xN]` tag on its action line (see Run state below).
 
 ## What got better / what got worse
 
-Compare against the most recent prior bar-raise (if any). For each lens:
+Compare against the previous run state (`lensScores` + `openFindings` from the status JSON). The comparison is numeric; never re-parse the previous Markdown report when the JSON state exists. Per lens:
 
-- A previous HIGH that is now MEDIUM, LOW, or absent counts as "got better."
-- A previous absence or LOW that is now MEDIUM or HIGH counts as "got worse."
-- Severity unchanged counts as neither.
+- A previous HIGH or MEDIUM finding id now absent, or a lens score up 10+ points vs the previous `lensScores`, counts as "got better."
+- A new HIGH or MEDIUM finding id, or a lens score down 10+ points, counts as "got worse."
+- Anything else counts as neither.
 
 Produce two bullet lists. If this is the first bar-raise for the project, write "First bar-raise for this project; no delta to report."
 
 The JSON `barRaise.actionsClosed` field counts the "got better" deltas where a previous HIGH or MEDIUM action is now absent.
+
+## Run state, finding aging, and auto-enqueue
+
+The synthesis maintains machine state in the status JSON so the next run never re-parses old Markdown and the queue never receives duplicates. All fields are additive to the locked `barRaise` contract; the dashboard ignores fields it does not know.
+
+- `health`: this run's weighted health score.
+- `lensScores`: map of lens id to this run's `dimension_score`. The numeric basis for the next run's deltas; the dashboard can sparkline it.
+- `openFindings`: list of `{ id, severity, priority, runsOpen, firstSeen }` for every open HIGH and MEDIUM finding. A finding carried from the previous run increments `runsOpen`; a new one starts at 1 with `firstSeen` set to the run date.
+- `tensionsOpen`: list of `{ lenses: [a, b], runsSeen }` for tensions surfaced this run.
+
+Aging rules:
+
+- `runsOpen >= 5` marks a finding chronic. Chronic findings get a `[CHRONIC xN]` tag in the action list and are escalated into the next constellation report instead of being silently re-reported daily.
+- A tension with `runsSeen >= 3` is no longer a tradeoff to re-balance; it is an undecided decision. Flag it in the report as "promote via adr-promoter" so it lands in the project's decision log once.
+
+Auto-enqueue (closes the report -> queue -> drift-auto-fix loop):
+
+- `blocking: true` -> queue priority P0. P0 pauses the drain for review, which is right for a hard-rule breach.
+- HIGH -> P1. MEDIUM -> P2. LOW is not queued.
+- Each queue item carries the finding id. Before enqueuing, check the previous run's `openFindings` and the current `X:\YesAndEverything\.work-queue.json` for that id; if it is present in either, skip. The daily run must never enqueue the same finding twice.
+- Enqueue through the work-queue-runner add flow so the queue file's shape and triage log stay consistent.
 
 ## Markdown report format
 
@@ -57,35 +110,50 @@ Output path: `$projectRoot/docs/BAR_RAISE-$today.md`.
 ```markdown
 # BAR_RAISE-YYYY-MM-DD: <project display name>
 
+> **BLOCK: <breached hard rule>** -- <evidence>. Verdict floored at at-risk until resolved.
+
+(The BLOCK banner appears only when a lens returned `blocking: true`; omit the line entirely otherwise.)
+
 Verdict: <healthy | needs-attention | at-risk | stalled>
+Health: <int 0-100> (weighted mean across <N> lenses)
 Run: per-project
-Lenses applied: Tier-1 = 11, Domain = <N> (<list>)
+Lenses applied: Tier-1 = 12, Domain = <N> (<list>)
 
 ## Top finding
 
 <one paragraph>
 
+## Tensions and tradeoffs
+
+- security <-> solo-tool-ux: <one-line conflict>. Resolution: <balanced action>.
+- <or exactly: "No tensions between dimensions this run.">
+
+## Lens scores
+
+| Lens | Score | Weight | Findings |
+|---|---|---|---|
+| architecture | 84 | 1.0 | 1 |
+| security | 65 | 1.5 | 2 |
+| ... | | | |
+
 ## Findings by lens
 
-### Architecture
-- **Severity**: <severity>
-- **Finding**: <one sentence>
-- **Evidence**: <paths / function names / commits>
-- **Suggested action**: <what to do>
+### architecture
+- **[architecture-01] [HIGH, impact 4, confidence 5]** <one sentence>
+  - Evidence: <paths / function names / commits>
+  - Suggested action: <imperative sentence>
+  - Tensions with: <lens ids, or "none">
 
-### Reliability
-<same shape, or "No findings.">
+### reliability
+No findings. (score 92)
 
-### Security
-...
-
-(... all 11 Tier-1 lenses, then domain lenses in the same shape ...)
+(... all 12 Tier-1 lenses, then domain lenses in the same shape ...)
 
 ## Action items
 
-1. [HIGH] (architecture) Specific action sentence.
-2. [HIGH] (reliability) Specific action sentence.
-3. [MED] (maintainability) Specific action sentence.
+1. [P20] [HIGH] Specific action sentence. (security)
+2. [P16] [HIGH] Specific action sentence. (architecture)
+3. [P12] [MED] Specific action sentence. (maintainability)
 4. ...
 
 ## What got better since last review
@@ -100,16 +168,19 @@ Lenses applied: Tier-1 = 11, Domain = <N> (<list>)
 
 ## Notes
 
-<optional: anything else worth flagging that does not fit the lens structure>
+<optional: anything else worth flagging that does not fit the lens structure, including any lens that failed to report>
 ```
 
 ## Write procedure
 
-1. Build the Markdown content as a Python multiline string.
-2. Use atomic-write-with-readback (the Python pattern from the FUSE-truncation memory). Five-attempt retry. Verify the tail ends with a newline.
-3. Read the current `X:\YesAndEverything\status\data\$project.json`. Mutate ONLY the `barRaise` block. Preserve every other field.
-4. Atomic-write the JSON back. Verify it parses.
+Verify before overwriting, always. A corrupt input never propagates and a bad write never replaces a good file.
+
+1. Read the current `X:\YesAndEverything\status\data\$project.json`. If it fails to parse (truncation, NUL padding, cut strings), do NOT mutate it in place and do NOT rebuild from nulls: restore the last good version from YaE git history (`git -C X:\YesAndEverything show HEAD:status/data/$project.json`) first, then apply this run's update on top. Note the restoration in the report's Notes.
+2. Build the Markdown as a Python multiline string. Build the updated JSON in memory and `json.loads` it BEFORE any write. Never write content that does not parse.
+3. Write both files through atomic-write-with-readback: write a tmp sibling, fsync, replace, then reopen a fresh handle and verify. Verification means byte-compare AND re-parse (JSON) or tail-check (Markdown ends with a newline; no NUL bytes anywhere). The FUSE cache can echo back the bytes just written while the disk holds a truncated file, so the re-parse of a fresh read is the real check, not the byte compare. Five-attempt retry.
+4. Mutate ONLY the `barRaise` block. Preserve every other field. The locked fields keep their shape (`latestReportPath`, `latestReportAt`, `verdict`, `topFinding`, `actionsOpen`, `actionsClosed`); `health`, `lensScores`, `openFindings`, `tensionsOpen` are additive inside the same block.
 5. Stage the JSON in YaE's git index: `git -C X:\YesAndEverything add status/data/$project.json`. Do not commit; let the next push pick it up.
+6. Final gate: re-validate every status JSON touched this run (parse, no NUL bytes, closing brace). `X:\YesAndEverything\scripts\check-status-json.ps1` is the Windows-side equivalent and runs as Step 0 of the YaE release; the run is not done until the same checks pass here.
 
 ## Voice
 
