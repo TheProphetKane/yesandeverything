@@ -1,0 +1,230 @@
+# collect-usage.ps1 - aggregate per-project Claude token usage for the /work/ dashboard.
+#
+# Scans local session logs (Claude Code project transcripts + Cowork session
+# logs), attributes each usage record to a project by path, buckets tokens by
+# local day, prices them with the editable table below, and writes
+# work\data\usage.json. Incremental: a state file remembers how far into each
+# log it has read, so repeat runs only process appended lines.
+#
+# Run manually or on a schedule (every 30 min is plenty):
+#   cd X:\YesAndEverything
+#   .\scripts\collect-usage.ps1            # collect + commit + push
+#   .\scripts\collect-usage.ps1 -NoPush    # collect only
+#
+# Costs are API-EQUIVALENT ESTIMATES. Subscription usage is not billed per
+# token; the table below exists so the numbers mean something. Edit freely.
+
+param([switch]$NoPush)
+
+$ErrorActionPreference = "Stop"
+Set-Location (Join-Path $PSScriptRoot "..")
+
+# ----- Editable pricing (USD per million tokens) -------------------------
+# Matched by substring against the model string on each usage record.
+$PRICING = @(
+  @{ match = "fable";  in = 20.0; out = 100.0; cacheRead = 2.00; cacheWrite = 25.00 },  # VERIFY: post-cutoff model, placeholder rates
+  @{ match = "opus";   in = 15.0; out =  75.0; cacheRead = 1.50; cacheWrite = 18.75 },
+  @{ match = "sonnet"; in =  3.0; out =  15.0; cacheRead = 0.30; cacheWrite =  3.75 },
+  @{ match = "haiku";  in =  1.0; out =   5.0; cacheRead = 0.10; cacheWrite =  1.25 }
+)
+$PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
+
+# ----- Project attribution (ordered; first hit wins) ---------------------
+$PROJECT_PATTERNS = @(
+  @{ pat = "HereBeHordes";     id = "HBH" },
+  @{ pat = "HereThereBeHordes"; id = "HBH" },
+  @{ pat = "BrackishRising";   id = "BR" },
+  @{ pat = "YesAndChains";     id = "YaC" },
+  @{ pat = "YesAndScheduler";  id = "Scheduler" },
+  @{ pat = "YesAndApothecary"; id = "YaA" },
+  @{ pat = "YesAndBudget";     id = "YaB" },
+  @{ pat = "YesAndEverything"; id = "YaE" },
+  @{ pat = "Scheduler";        id = "Scheduler" }   # legacy X:\Scheduler path; after YesAnd* so it never shadows them
+)
+
+$SCAN_ROOTS = @(
+  (Join-Path $env:USERPROFILE ".claude\projects"),
+  (Join-Path $env:APPDATA "Claude\local-agent-mode-sessions")
+)
+
+$DataDir = "work\data"
+$OutPath = Join-Path $DataDir "usage.json"
+$StatePath = Join-Path $DataDir ".usage-state.json"
+if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Force | Out-Null }
+
+function Get-ProjectFor([string]$text) {
+  foreach ($p in $PROJECT_PATTERNS) {
+    if ($text -and $text.IndexOf($p.pat, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) { return $p.id }
+  }
+  return $null
+}
+
+function Get-Price([string]$model) {
+  if ($model) {
+    foreach ($p in $PRICING) {
+      if ($model.IndexOf($p.match, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) { return $p }
+    }
+  }
+  return $PRICE_DEFAULT
+}
+
+# ----- Load state ---------------------------------------------------------
+$Files = @{}   # path -> @{ length; processed; project }
+$Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
+if (Test-Path $StatePath) {
+  try {
+    $state = Get-Content -Raw $StatePath | ConvertFrom-Json
+    foreach ($prop in $state.files.PSObject.Properties) {
+      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project }
+    }
+    foreach ($row in $state.agg) {
+      if (-not $Agg.ContainsKey($row.p)) { $Agg[$row.p] = @{} }
+      $Agg[$row.p][$row.d] = @{ input = [long]$row.input; output = [long]$row.output; cacheRead = [long]$row.cacheRead; cacheWrite = [long]$row.cacheWrite; cost = [double]$row.cost }
+    }
+  } catch {
+    Write-Host "WARN: state file unreadable; full rescan. ($_)" -ForegroundColor Yellow
+    $Files = @{}; $Agg = @{}
+  }
+}
+
+function Add-Usage([string]$proj, [string]$day, $u, [string]$model) {
+  $in  = [long]($u.input_tokens); if (-not $in) { $in = 0 }
+  $out = [long]($u.output_tokens); if (-not $out) { $out = 0 }
+  $cr  = [long]($u.cache_read_input_tokens); if (-not $cr) { $cr = 0 }
+  $cw  = [long]($u.cache_creation_input_tokens); if (-not $cw) { $cw = 0 }
+  if (($in + $out + $cr + $cw) -eq 0) { return }
+  $price = Get-Price $model
+  $cost = ($in * $price.in + $out * $price.out + $cr * $price.cacheRead + $cw * $price.cacheWrite) / 1e6
+  if (-not $Agg.ContainsKey($proj)) { $Agg[$proj] = @{} }
+  if (-not $Agg[$proj].ContainsKey($day)) { $Agg[$proj][$day] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+  $b = $Agg[$proj][$day]
+  $b.input += $in; $b.output += $out; $b.cacheRead += $cr; $b.cacheWrite += $cw; $b.cost += $cost
+}
+
+# ----- Scan ----------------------------------------------------------------
+$scannedFiles = 0; $newLines = 0; $usageLines = 0
+foreach ($root in $SCAN_ROOTS) {
+  if (-not (Test-Path $root)) { Write-Host "INFO: $root not found, skipping." -ForegroundColor DarkGray; continue }
+  $logs = Get-ChildItem -Path $root -Filter *.jsonl -Recurse -File -ErrorAction SilentlyContinue
+  foreach ($f in $logs) {
+    $key = $f.FullName
+    $prev = $Files[$key]
+    if ($prev -and $prev.length -eq $f.Length) { continue }
+    $processed = 0; $fileProj = $null
+    if ($prev) { $processed = $prev.processed; $fileProj = $prev.project }
+    if (-not $fileProj) { $fileProj = Get-ProjectFor $key }
+    $scannedFiles++
+
+    $fs = [System.IO.File]::Open($key, "Open", "Read", "ReadWrite")
+    try {
+      if ($processed -gt 0 -and $processed -le $fs.Length) { $fs.Seek($processed, "Begin") | Out-Null } else { $processed = 0 }
+      $sr = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
+      $chunk = $sr.ReadToEnd()
+      $consumed = $fs.Length - $processed
+      # Only count fully-terminated lines; an in-flight session may be mid-write
+      # on the last line. Leave the partial tail for the next run.
+      $lastNl = $chunk.LastIndexOf("`n")
+      if ($lastNl -lt 0) { continue }
+      $body = $chunk.Substring(0, $lastNl + 1)
+      $byteLen = [System.Text.Encoding]::UTF8.GetByteCount($body)
+      $newProcessed = $processed + $byteLen
+
+      foreach ($line in $body -split "`n") {
+        if (-not $line) { continue }
+        $newLines++
+        if ($line.IndexOf('"usage"') -lt 0) {
+          if (-not $fileProj) { $hit = Get-ProjectFor $line; if ($hit) { $fileProj = $hit } }
+          continue
+        }
+        $obj = $null
+        try { $obj = $line | ConvertFrom-Json } catch { continue }
+        $usage = $null; $model = $null
+        if ($obj.message -and $obj.message.usage) { $usage = $obj.message.usage; $model = $obj.message.model }
+        elseif ($obj.usage) { $usage = $obj.usage; $model = $obj.model }
+        if (-not $usage) { continue }
+        $usageLines++
+        $proj = $null
+        if ($obj.cwd) { $proj = Get-ProjectFor $obj.cwd }
+        if (-not $proj) { $proj = Get-ProjectFor $line }
+        if (-not $proj) { $proj = $fileProj }
+        if (-not $proj) { $proj = "unattributed" }
+        $ts = $null
+        if ($obj.timestamp) { try { $ts = [datetime]$obj.timestamp } catch { $ts = $null } }
+        if (-not $ts) { $ts = $f.LastWriteTime }
+        $day = $ts.ToLocalTime().ToString("yyyy-MM-dd")
+        Add-Usage $proj $day $usage $model
+      }
+      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj }
+    } finally {
+      $fs.Dispose()
+    }
+  }
+}
+Write-Host "Scanned $scannedFiles changed file(s), $newLines new line(s), $usageLines usage record(s)." -ForegroundColor Green
+
+# ----- Build usage.json ----------------------------------------------------
+$cutoff = (Get-Date).Date.AddDays(-60)
+$projects = [ordered]@{}
+foreach ($proj in ($Agg.Keys | Sort-Object)) {
+  $allTime = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; costUSD = [double]0 }
+  $daily = @()
+  foreach ($day in ($Agg[$proj].Keys | Sort-Object)) {
+    $b = $Agg[$proj][$day]
+    $allTime.input += $b.input; $allTime.output += $b.output
+    $allTime.cacheRead += $b.cacheRead; $allTime.cacheWrite += $b.cacheWrite
+    $allTime.costUSD += $b.cost
+    if ([datetime]$day -ge $cutoff) {
+      $daily += [ordered]@{ d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; costUSD = [math]::Round($b.cost, 4) }
+    }
+  }
+  $allTime.costUSD = [math]::Round($allTime.costUSD, 2)
+  $sessions = @($Files.Keys | Where-Object { $Files[$_].project -eq $proj }).Count
+  $projects[$proj] = [ordered]@{ allTime = $allTime; sessions = $sessions; daily = $daily }
+}
+$payload = [ordered]@{
+  generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+  pricingNote = "API-equivalent estimates; edit the table in scripts/collect-usage.ps1"
+  projects = $projects
+}
+
+function Write-ValidatedJson([string]$path, $obj) {
+  $json = ($obj | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
+  if (-not $json.EndsWith("`n")) { $json += "`n" }
+  $tmp = "$path.tmp"
+  [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
+  $null = (Get-Content -Raw $tmp | ConvertFrom-Json)   # must parse before it may replace the live file
+  Move-Item -Force $tmp $path
+  $back = [System.IO.File]::ReadAllText($path)
+  if ($back.Contains([char]0)) { throw "NUL bytes in $path after write" }
+  $null = ($back | ConvertFrom-Json)                   # verify-before-done: re-parse the fresh read
+}
+
+Write-ValidatedJson $OutPath $payload
+Write-Host "Wrote $OutPath ($([math]::Round((Get-Item $OutPath).Length / 1kb, 1)) KB)." -ForegroundColor Green
+
+# ----- Save state ----------------------------------------------------------
+$flat = @()
+foreach ($proj in $Agg.Keys) {
+  foreach ($day in $Agg[$proj].Keys) {
+    $b = $Agg[$proj][$day]
+    $flat += [ordered]@{ p = $proj; d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; cost = $b.cost }
+  }
+}
+Write-ValidatedJson $StatePath ([ordered]@{ files = $Files; agg = $flat })
+
+# ----- Commit + push -------------------------------------------------------
+if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
+foreach ($lockName in @("index.lock", "HEAD.lock")) {
+  $lock = ".git\$lockName"
+  if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
+}
+& git add work/data/usage.json 2>&1 | Out-Null
+$staged = git diff --cached --name-only 2>$null
+if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
+& git commit -m "work: usage refresh" 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) { Write-Host "WARN: commit failed; staged only." -ForegroundColor Yellow; exit 0 }
+$branch = git rev-parse --abbrev-ref HEAD 2>$null
+if (-not $branch) { $branch = "main" }
+& git push origin $branch 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) { Write-Host "WARN: push failed; committed locally." -ForegroundColor Yellow; exit 0 }
+Write-Host "Pushed usage refresh; dashboard updates in ~30s." -ForegroundColor Green
