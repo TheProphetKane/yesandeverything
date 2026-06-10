@@ -17,7 +17,8 @@
 param([switch]$NoPush)
 
 $ErrorActionPreference = "Stop"
-Set-Location (Join-Path $PSScriptRoot "..")
+$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Set-Location $RepoRoot
 
 # ----- Editable pricing (USD per million tokens) -------------------------
 # Matched by substring against the model string on each usage record.
@@ -44,10 +45,12 @@ $PROJECT_PATTERNS = @(
 
 $SCAN_ROOTS = @(
   (Join-Path $env:USERPROFILE ".claude\projects"),
-  (Join-Path $env:APPDATA "Claude\local-agent-mode-sessions")
+  (Join-Path $env:APPDATA "Claude"),
+  (Join-Path $env:LOCALAPPDATA "AnthropicClaude")
 )
 
-$DataDir = "work\data"
+# Absolute paths throughout: .NET file APIs ignore PowerShell's cwd.
+$DataDir = Join-Path $RepoRoot "work\data"
 $OutPath = Join-Path $DataDir "usage.json"
 $StatePath = Join-Path $DataDir ".usage-state.json"
 if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Force | Out-Null }
@@ -201,6 +204,10 @@ function Write-ValidatedJson([string]$path, $obj) {
 
 Write-ValidatedJson $OutPath $payload
 Write-Host "Wrote $OutPath ($([math]::Round((Get-Item $OutPath).Length / 1kb, 1)) KB)." -ForegroundColor Green
+foreach ($proj in $projects.Keys) {
+  $a = $projects[$proj].allTime
+  Write-Host ("  {0,-14} {1,12:n0} in / {2,12:n0} out  ~ `${3,9:n2}" -f $proj, $a.input, $a.output, $a.costUSD) -ForegroundColor DarkGray
+}
 
 # ----- Save state ----------------------------------------------------------
 $flat = @()
