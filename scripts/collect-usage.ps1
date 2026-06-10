@@ -165,7 +165,7 @@ foreach ($root in $SCAN_ROOTS) {
         if ($obj.cwd) { $proj = Get-ProjectFor $obj.cwd }
         if (-not $proj) { $proj = Get-ProjectFor $line }
         if (-not $proj) { $proj = $fileProj }
-        if (-not $proj) { $proj = "unattributed" }
+        if (-not $proj) { $proj = "Other" }
         $ts = $null
         if ($obj.timestamp) { try { $ts = [datetime]$obj.timestamp } catch { $ts = $null } }
         if (-not $ts) { $ts = $f.LastWriteTime }

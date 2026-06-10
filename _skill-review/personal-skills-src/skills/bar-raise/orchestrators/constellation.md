@@ -65,12 +65,12 @@ Now produce the constellation-level artifact. This uses the Wave 1 portfolio blo
 
 Portfolio health = mean of the six per-project health scores (all projects weigh equally; a lens excluded from one project's mean simply does not participate there).
 
-The portfolio verdict comes from bands over that mean, never from a count of projects in any one state and never from a single project's verdict:
+The portfolio verdict uses the same vocabulary as per-project (working / in-progress / needs-attention / stalled). Breakage is the only thing that demands attention:
 
-- **healthy** -- portfolio health >= 80 and no project has an open BLOCK.
-- **needs-attention** -- portfolio health 65-79.
-- **at-risk** -- portfolio health 50-64, OR any project has an open BLOCK (the same factual floor as per-project: a portfolio with an open hard-rule breach cannot be called healthy).
-- **stalled** -- portfolio health < 50, OR the cross-project work-queue has not drained an item in 14+ days.
+- **needs-attention** -- any project's verdict is needs-attention, OR any open BLOCK anywhere. Something is broken; that is the factual carve-out, not a goal winning over another goal.
+- **stalled** -- nothing broken, but the cross-project work-queue has not drained an item in 14+ days.
+- **working** -- portfolio mean health >= 80 and every project with usage this month is working or stalled-by-choice.
+- **in-progress** -- everything else; the normal state of a portfolio under active build.
 
 #### Top portfolio actions
 
@@ -99,11 +99,11 @@ Format:
 ```markdown
 # CONSTELLATION-YYYY-MM-DD
 
-> **BLOCK: <project>: <breached hard rule>** -- <evidence>. Portfolio verdict floored at at-risk until resolved.
+> **BLOCK: <project>: <breached hard rule>** -- <evidence>. Portfolio verdict forced to needs-attention until resolved.
 
 (BLOCK banner only when some project has an open BLOCK; omit otherwise.)
 
-Portfolio verdict: <healthy | needs-attention | at-risk | stalled>
+Portfolio verdict: <working | in-progress | needs-attention | stalled>
 Portfolio health: <int 0-100> (mean of six per-project health scores)
 Projects: BR, HBH, YaC, Scheduler, YaA, YaB
 Summary: <one paragraph, 3-5 sentences>
@@ -165,7 +165,7 @@ Contract (locked in `BAR_RAISE_ROADMAP.md` Phase 3):
     { "project": "BR", "severity": "high", "label": "..." },
     { "project": "<cross-cutting>", "severity": "high", "label": "..." }
   ],
-  "atRiskProjects": ["HBH"],
+  "atRiskProjects": ["HBH"],          // locked field name; lists needs-attention (broken) projects post-revision
   "stalledProjects": [],
   "totalOpenActions": 17,
   "totalClosedSinceLastConstellation": 23

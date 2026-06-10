@@ -24,17 +24,19 @@ The synthesis weighs all dimensions together. No single lens decides the verdict
 If any report has `blocking: true`:
 
 - Put a BLOCK banner at the very top of the Markdown report, above the verdict line, naming the breached hard rule and the evidence.
-- Floor the verdict at `at-risk`. A project with an open hard-rule breach cannot be called healthy or needs-attention. If the bands already say `stalled`, stalled stands.
+- Force the verdict to `needs-attention`. A project with an open hard-rule breach is broken by definition, whatever its health score says.
 - Do not otherwise distort the weighted blend. The BLOCK gates the verdict; it does not rewrite any score.
 
 ## Verdict bands
 
-The verdict comes from the health score, never from any single lens:
+Verdict vocabulary (revised 2026-06-10): a project that works is never "needs-attention" just because it carries polish debt. Attention is reserved for actual breakage. The verdict comes from breakage signals plus the health score, never from any single lens's opinion:
 
-- **healthy** -- health >= 80 and no open BLOCK.
-- **needs-attention** -- health 65-79.
-- **at-risk** -- health 50-64, OR any open BLOCK (the floor).
-- **stalled** -- health < 50, OR (no commits in the last 14 days AND a P0 backlog item open).
+- **working** -- no breakage signals, health >= 65, and the project is substantially done (`completion.pct >= 90` in `.project-context.json`) or live and functioning for its users.
+- **in-progress** -- no breakage signals; the project is being built. Doc drift, missing tests, and polish debt are normal in-progress findings and belong in the action list, not the verdict.
+- **needs-attention** -- something is actually broken: any open BLOCK, OR a HIGH finding with live breakage (runtime bug, failing release pipeline, data-loss exposure, corrupted shipped artifact), OR health < 50.
+- **stalled** -- no commits in the last 14 days AND a P0 backlog item open. Stalled overrides in-progress, never needs-attention.
+
+For deltas against pre-revision runs, map healthy -> working and at-risk -> needs-attention.
 
 The verdict goes into both the Markdown report and the JSON `barRaise.verdict` field.
 
@@ -110,11 +112,11 @@ Output path: `$projectRoot/docs/BAR_RAISE-$today.md`.
 ```markdown
 # BAR_RAISE-YYYY-MM-DD: <project display name>
 
-> **BLOCK: <breached hard rule>** -- <evidence>. Verdict floored at at-risk until resolved.
+> **BLOCK: <breached hard rule>** -- <evidence>. Verdict forced to needs-attention until resolved.
 
 (The BLOCK banner appears only when a lens returned `blocking: true`; omit the line entirely otherwise.)
 
-Verdict: <healthy | needs-attention | at-risk | stalled>
+Verdict: <working | in-progress | needs-attention | stalled>
 Health: <int 0-100> (weighted mean across <N> lenses)
 Run: per-project
 Lenses applied: Tier-1 = 12, Domain = <N> (<list>)

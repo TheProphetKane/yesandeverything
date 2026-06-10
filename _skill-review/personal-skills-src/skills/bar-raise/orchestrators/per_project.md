@@ -65,7 +65,7 @@ Hand the full set of reports (Tier-1 + domain) to `waves/05_meta_synthesis.md`. 
 
 1. Computes the weighted health score: weight = 1.0 x clamped `lens_weights` multiplier (0.5 to 2.0, absent = 1.0); health = weighted mean of the `dimension_score`s.
 2. Picks the verdict from the health-score bands. No single lens picks the verdict.
-3. Applies the BLOCK floor if any lens returned `blocking: true` (banner at the top, verdict floored at `at-risk`).
+3. Applies the BLOCK gate if any lens returned `blocking: true` (banner at the top, verdict forced to `needs-attention`).
 4. Writes the top finding, the Tensions and tradeoffs section, and the action list ranked by `impact x confidence` (lens shown only as a provenance tag).
 5. Compares numerically against the previous run state (`lensScores` + `openFindings` in the status JSON) and produces "what got better" and "what got worse" deltas.
 6. Updates run state (`health`, `lensScores`, `openFindings` with `runsOpen` aging, `tensionsOpen`) and auto-enqueues new blocking/HIGH/MEDIUM findings with finding-id dedupe, per the Wave 5 rules.

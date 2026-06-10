@@ -72,7 +72,7 @@ JSON contract:
 }
 ```
 
-Verdict enum: `healthy | needs-attention | at-risk | stalled | null`.
+Verdict enum (revised 2026-06-10): `working | in-progress | needs-attention | stalled | null`. Attention is reserved for actual breakage (BLOCK, live bug, broken pipeline); polish and doc debt stay in the action list. Pre-revision values map healthy -> working, at-risk -> needs-attention. An additive `completion` block (`{pct, anchored}`) carries the owner-anchored percent-to-done, sourced from each repo's `.project-context.json` (conditions in its `remaining` list); the dashboard radar renders it.
 
 Status-JSON additions (2026-06-10): `milestone` is sourced from each repo's `.project-context.json` (writers never hardcode it), and an optional `metrics` array (`[{k, v}]`) carries per-project readouts computed from the repo at release time. Each project publishes what matters to it: roster/test counts for the games, the 1.0 checklist for YaC, route/migration counts for Scheduler, registry sizes for YaA, importer/decision counts for YaB. The work dashboard renders them generically.
 
@@ -302,8 +302,4 @@ If you are a Claude session opening this file fresh, here is how to continue.
 | 0 - roadmap + contract + URL lock | DONE | 2026-05-26 |
 | 1 - static dashboard reading existing signals (BR + YaC pilot) | DONE | 2026-05-26 |
 | 1b - extend dashboard to HBH / Scheduler / YaA / YaB | DONE | 2026-05-26 |
-| 2 - per-project bar-raise skill (SKILL.md + orchestrator + Waves 2/3/5 + Wave 4 dir scaffolded) | DONE | 2026-05-26 |
-| 3 - constellation orchestrator (Wave 1 + constellation orchestrator filled, JSON contract locked) | DONE | 2026-05-26 |
-| 4 - domain lens set (42 lenses across 9 domains) | DONE | 2026-05-26 |
-| 5 - scheduling (Task Scheduler shims + register/unregister + README; 7 tasks registered live 2026-05-26, first runs at 06:00-06:25 the following morning) | DONE | 2026-05-26 |
-| 6 - polish + handover (BAR_RAISE_HANDOVER.md + PERSONAL_CLAUDE_ARCHITECTURE.md cross-ref) | DONE | 2026-05-26 |
+| 2 - per-project bar-raise skill (SKILL.md + orchestrator + Waves 2/3/5 + Wave 4 dir scaffolded) | DONE | 2026-05-26 
