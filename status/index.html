@@ -192,6 +192,19 @@
   .card .panel.bar-raise .verdict.stalled { background: rgba(255, 91, 110, 0.18); color: var(--bad); }
   .card .panel.bar-raise .top-finding { color: var(--fg-0); margin-top: 4px; }
   .card .panel.bar-raise .placeholder { color: var(--fg-3); font-style: italic; }
+  .card .panel.bar-raise .health { color: var(--cyan); font-size: 11px; margin-left: 8px; }
+  .card .panel.bar-raise .lens-bars {
+    display: flex; align-items: flex-end; gap: 3px;
+    height: 26px; margin-top: 6px;
+  }
+  .card .panel.bar-raise .lens-bars .bar {
+    width: 9px; min-height: 2px;
+    border-radius: 1px 1px 0 0;
+    background: var(--ink-4);
+  }
+  .card .panel.bar-raise .lens-bars .bar.top { background: var(--accent); }
+  .card .panel.bar-raise .lens-bars .bar.mid { background: var(--amber); }
+  .card .panel.bar-raise .lens-bars .bar.low { background: var(--bad); }
 
   .card .tags {
     display: flex; flex-wrap: wrap; gap: 4px;
@@ -430,11 +443,35 @@
     if (data.barRaise && data.barRaise.verdict) {
       var body = el("div", { className: "body" });
       body.appendChild(el("span", { className: "verdict " + data.barRaise.verdict, text: data.barRaise.verdict }));
+      if (data.barRaise.health != null) {
+        body.appendChild(el("span", { className: "health", text: "health " + data.barRaise.health }));
+      }
       if (data.barRaise.latestReportAt) body.appendChild(el("span", { className: "when", text: fmtAgo(data.barRaise.latestReportAt) }));
       brPanel.appendChild(body);
       if (data.barRaise.topFinding) brPanel.appendChild(el("div", { className: "top-finding", text: data.barRaise.topFinding }));
       if (data.barRaise.actionsOpen != null) {
-        brPanel.appendChild(el("div", { className: "body", text: data.barRaise.actionsOpen + " actions open / " + (data.barRaise.actionsClosed || 0) + " closed" }));
+        var actionLine = data.barRaise.actionsOpen + " actions open / " + (data.barRaise.actionsClosed || 0) + " closed";
+        var chronic = (data.barRaise.openFindings || []).filter(function (f) { return f && f.runsOpen >= 5; }).length;
+        if (chronic) actionLine += " / " + chronic + " chronic";
+        brPanel.appendChild(el("div", { className: "body", text: actionLine }));
+      }
+      // Per-lens dimension scores from the latest run (barRaise.lensScores).
+      // One bar per lens, height by score; hover for lens id + value.
+      var scores = data.barRaise.lensScores;
+      if (scores && typeof scores === "object") {
+        var lensIds = Object.keys(scores);
+        if (lensIds.length) {
+          var bars = el("div", { className: "lens-bars" });
+          lensIds.forEach(function (k) {
+            var s = Number(scores[k]);
+            if (!isFinite(s)) return;
+            var cls = s >= 80 ? "top" : (s >= 65 ? "mid" : "low");
+            var bar = el("div", { className: "bar " + cls, title: k + ": " + s });
+            bar.style.height = Math.max(2, Math.round(s * 0.26)) + "px";
+            bars.appendChild(bar);
+          });
+          brPanel.appendChild(bars);
+        }
       }
     } else {
       brPanel.appendChild(el("div", { className: "placeholder", text: "no bar-raise yet (Phase 2)" }));

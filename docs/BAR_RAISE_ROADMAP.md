@@ -73,6 +73,8 @@ JSON contract:
 ```
 
 Verdict enum: `healthy | needs-attention | at-risk | stalled | null`.
+
+Run-state fields (additive, 2026-06-10): the bar-raise also writes `health` (int 0-100, weighted mean of lens dimension scores), `lensScores` (lens id -> dimension score for the latest run), `openFindings` (list of `{id, severity, priority, runsOpen, firstSeen}`), and `tensionsOpen` (list of `{lenses, runsSeen}`) inside the `barRaise` block. The locked six fields keep their shape; consumers ignore fields they do not know. The dashboard renders `health`, a per-lens score bar row, and a chronic count when these are present. Producers must verify before overwriting: `scripts/check-status-json.ps1` gates the YaE release, and every writer re-parses its read-back instead of trusting a byte compare.
 Stale flag set true by the dashboard JS when `lastReleaseAt` is older than 14 days for an active project, 60 days for parked.
 
 JSON files at `yesandeverything.com/status/data/<project>.json`. Constellation JSON at `yesandeverything.com/status/data/constellation.json`.
