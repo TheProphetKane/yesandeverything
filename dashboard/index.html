@@ -8,6 +8,7 @@
 <meta name="description" content="Live build dashboard: per-project activity, token flow, completion, health, and progress.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#06080b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d1117'/%3E%3Ctext x='16' y='23' font-size='20' font-family='monospace' font-weight='bold' fill='%23ff00ff' text-anchor='middle'%3E%26amp;%3C/text%3E%3C/svg%3E">
 <style>
   :root {
     --ink-0: #06080b;
@@ -115,6 +116,7 @@
   .crumb { color: var(--fg-2); font-size: 12px; white-space: nowrap; }
   .crumb a { color: var(--fg-2); border-bottom-style: dotted; }
   .controls { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fg-2); }
+  .hud-clock { font-size: 12px; color: var(--cyan-hot); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
   button.refresh, .auto-btn {
     background: var(--ink-2); color: var(--fg-1);
     border: 1px solid var(--ink-4);
@@ -145,6 +147,8 @@
     background: rgba(13, 17, 23, 0.88);
     font-size: 12px; color: var(--fg-2);
     padding: 5px 0; margin-bottom: 10px;
+    mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
   }
   .ticker .tk { display: inline-block; white-space: nowrap; animation: tick 110s linear infinite; will-change: transform; }
   .ticker:hover .tk { animation-play-state: paused; }
@@ -161,6 +165,11 @@
   .error-banner {
     background: rgba(255, 91, 110, 0.08); border: 1px solid rgba(255, 91, 110, 0.3);
     color: var(--bad); padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; font-size: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .error-banner button {
+    background: none; border: 1px solid rgba(255, 91, 110, 0.4); color: var(--bad);
+    font-family: var(--mono); font-size: 11px; padding: 2px 10px; border-radius: 3px; cursor: pointer;
   }
 
   .totals { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 10px; }
@@ -174,7 +183,7 @@
   .total .num .up { color: var(--ok); font-size: 14px; }
   .total .num .dn { color: var(--bad); font-size: 14px; }
 
-  .layout { display: grid; grid-template-columns: 340px 52px 1fr 52px; gap: 10px; align-items: stretch; margin-bottom: 10px; }
+  .layout { display: grid; grid-template-columns: 340px 52px 1fr 52px; gap: 10px; align-items: stretch; margin-bottom: 6px; }
   @media (max-width: 1280px) { .layout { grid-template-columns: 1fr; } .navarrow { display: none; } }
   .side { display: flex; flex-direction: column; gap: 10px; }
   .core-box svg { display: block; width: 100%; height: auto; max-height: 256px; margin: 0 auto; }
@@ -190,12 +199,13 @@
     border: 1px solid var(--ink-3); border-radius: 4px;
     font-size: 26px; font-family: var(--mono);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.1s;
     user-select: none;
   }
   .navarrow:hover { color: var(--accent-hot); border-color: var(--accent-dim); box-shadow: 0 0 18px var(--accent-glow); background: var(--ink-2); }
+  .navarrow:active { transform: scale(0.96); }
+  .navarrow:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
 
-  /* ---------- Spotlight wheel ---------- */
   .spotlight { display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 10px; }
   .wheel { display: grid; grid-template-columns: 86px 1fr 86px; gap: 10px; flex: 1; min-height: 0; perspective: 1100px; }
   @media (max-width: 1500px) { .wheel { grid-template-columns: 1fr; } .ghost { display: none; } }
@@ -230,6 +240,7 @@
   .spot-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .spot-head .name { font-size: 24px; font-weight: 700; letter-spacing: 0.3px; }
   .spot-head .name .ver { color: var(--cyan-hot); font-size: 13px; margin-left: 10px; font-weight: 400; }
+  .spot-head .name .repo { font-size: 13px; margin-left: 8px; border-bottom: none; }
   .spot-head .name .pdot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 11px; vertical-align: 1px; }
   .spot-head .name .pdot.hot { animation: pulse 2s ease-in-out infinite; }
   .spot-head .usage-line { font-size: 14px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
@@ -237,8 +248,18 @@
   .spot-head .usage-line .cost { color: var(--accent-hot); }
   .spot-pos { font-size: 11px; color: var(--fg-3); letter-spacing: 2px; margin-left: 12px; }
 
+  .wdots { display: flex; justify-content: center; gap: 8px; padding: 4px 0 8px; }
+  .wdots button {
+    width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-5);
+    background: var(--ink-3); cursor: pointer; padding: 0;
+    transition: background 0.25s, box-shadow 0.25s, transform 0.25s;
+  }
+  .wdots button.on { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); transform: scale(1.25); border-color: var(--accent); }
+  .wdots button:hover { border-color: var(--accent-dim); }
+
   .gauges { display: flex; gap: 26px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
-  .gauge { display: flex; align-items: center; gap: 10px; }
+  .gauge { display: flex; align-items: center; gap: 10px; transition: transform 0.2s var(--ease-out-quart); }
+  .gauge:hover { transform: translateY(-1px); }
   .gauge svg { display: block; }
   .gauge .gv { font-size: 15px; color: var(--fg-0); font-variant-numeric: tabular-nums; line-height: 1.3; font-weight: 600; }
   .gauge .gl { font-size: 9px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 1.2px; display: block; font-weight: 400; }
@@ -263,6 +284,8 @@
   .flow path.line.out-l { stroke: var(--accent-hot); filter: drop-shadow(0 0 4px var(--accent-glow)); animation-delay: 0.15s; }
   @keyframes drawIn { to { stroke-dashoffset: 0; } }
   .flow line.midline { stroke: var(--ink-4); stroke-width: 1; }
+  .today-pulse { animation: tpulse 2.2s ease-in-out infinite; }
+  @keyframes tpulse { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.35; } }
   .flow .xhair { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--fg-2); opacity: 0; pointer-events: none; }
   .flow .snap { position: absolute; width: 7px; height: 7px; border-radius: 50%; opacity: 0; pointer-events: none; transform: translate(-50%, -50%); }
   .flow .snap.si { background: var(--cyan-hot); box-shadow: 0 0 8px var(--cyan-glow); }
@@ -288,7 +311,6 @@
   .readout .rv { font-size: 16px; font-weight: 700; color: var(--cyan-hot); font-variant-numeric: tabular-nums; }
   .readout .rk { font-size: 9px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 1px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* one line, always */
   .chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 10px; overflow: hidden; min-width: 0; }
   .chip {
     font-size: 11.5px; color: var(--fg-2);
@@ -304,17 +326,19 @@
   .chip.stalled { color: var(--bad); border-color: rgba(255, 91, 110, 0.4); }
   .chip.fresh { color: var(--ok); border-color: rgba(0, 214, 143, 0.3); }
 
-  /* ---------- Bottom strip: rotating, selection always centered ---------- */
-  /* 8 rotating slots; slot 5 (under the main graph) is the emphasized center */
   .strip { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.7fr 1fr 1fr 1fr; gap: 10px; overflow: visible; }
   @media (max-width: 1500px) { .strip { grid-template-columns: repeat(4, 1fr); } }
+  .strip.slide-l .mini { animation: stripL 0.35s var(--ease-out-quart) both; }
+  .strip.slide-r .mini { animation: stripR 0.35s var(--ease-out-quart) both; }
+  @keyframes stripL { from { opacity: 0.2; transform: translateX(56px); } to { opacity: 1; transform: none; } }
+  @keyframes stripR { from { opacity: 0.2; transform: translateX(-56px); } to { opacity: 1; transform: none; } }
   .mini {
     cursor: pointer; padding: 9px 12px 7px;
-    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s var(--ease-out-quart), background 0.3s;
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
   }
-  .mini:hover { transform: translateY(-2px); }
+  .mini:hover { border-color: var(--ink-5); }
   .mini.center {
-    transform: scale(1.06); z-index: 2; overflow: visible;
+    z-index: 2; overflow: visible;
     border-color: var(--accent);
     background: radial-gradient(130% 150% at 50% 0%, rgba(255, 0, 255, 0.12), rgba(13, 17, 23, 0.94) 55%);
     box-shadow: 0 0 26px var(--accent-glow), 0 0 70px rgba(255, 0, 255, 0.10);
@@ -346,7 +370,7 @@
     backdrop-filter: blur(7px);
     animation: fadeIn 0.25s ease;
   }
-  .overlay[hidden] { display: none; } /* the hidden attribute must beat display:flex */
+  .overlay[hidden] { display: none; }
   @keyframes fadeIn { from { opacity: 0; } }
   .glass {
     background: rgba(20, 26, 34, 0.55);
@@ -355,7 +379,7 @@
     border-radius: 10px;
     box-shadow: 0 24px 90px rgba(0, 0, 0, 0.6), 0 0 50px rgba(255, 0, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     padding: 24px 30px 28px;
-    width: min(920px, 94vw); max-height: 88vh; overflow: auto;
+    width: min(940px, 94vw); max-height: 88vh; overflow: auto;
     animation: glassIn 0.35s var(--ease-out-quart);
   }
   @keyframes glassIn { from { opacity: 0; transform: scale(0.92) translateY(16px); } to { opacity: 1; transform: none; } }
@@ -366,14 +390,27 @@
     font-family: var(--mono); font-size: 14px; padding: 2px 10px; cursor: pointer;
   }
   .glass-close:hover { color: var(--accent-hot); border-color: var(--accent-dim); }
-  .glass .panel.big { background: transparent; border: none; box-shadow: none; padding: 0; font-size: 17px; }
-  .glass .panel.big::before, .glass .panel.big::after,
-  .glass .panel.big .ck::before, .glass .panel.big .ck::after { display: none; }
-  .glass .panel.big .ptitle { font-size: 12px; }
-  .glass .panel.big svg { max-height: none; }
-  .glass .panel.big .core-legend { font-size: 14px; gap: 8px 18px; }
+  .glass-body > * { animation: riseIn 0.45s var(--ease-out-quart) both; }
+  .glass-body > *:nth-child(2) { animation-delay: 0.06s; }
+  .glass-body > *:nth-child(3) { animation-delay: 0.12s; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .bigviz svg { display: block; width: min(520px, 80vw); height: auto; margin: 0 auto; }
+  .bigviz .blabel-svg { font-family: var(--mono); }
+  .keyrows { margin-top: 16px; }
+  .keyrow { display: flex; align-items: center; gap: 12px; font-size: 13.5px; padding: 7px 0; border-bottom: 1px dashed var(--ink-3); animation: riseIn 0.4s var(--ease-out-quart) both; }
+  .keyrow .kdot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+  .keyrow .kname { width: 170px; color: var(--fg-0); font-weight: 600; flex: 0 0 auto; }
+  .keyrow .kmeter { flex: 1; height: 6px; background: var(--ink-3); border-radius: 3px; overflow: hidden; }
+  .keyrow .kmeter .kf { height: 100%; width: 0%; border-radius: 3px; transition: width 1s var(--ease-out-quart); }
+  .keyrow .kval { width: 120px; text-align: right; color: var(--fg-1); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+  .keyrow .kextra { width: 150px; text-align: right; color: var(--fg-3); font-size: 11.5px; flex: 0 0 auto; }
   .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 26px; }
-  .bigstat { padding: 6px 2px; min-width: 0; }
+  .bigstat { padding: 6px 2px; min-width: 0; animation: riseIn 0.45s var(--ease-out-quart) both; }
+  .bigstat:nth-child(2) { animation-delay: 0.05s; }
+  .bigstat:nth-child(3) { animation-delay: 0.1s; }
+  .bigstat:nth-child(4) { animation-delay: 0.15s; }
+  .bigstat:nth-child(5) { animation-delay: 0.2s; }
+  .bigstat:nth-child(6) { animation-delay: 0.25s; }
   .bigstat .blabel { font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--fg-3); }
   .bigstat .bnum { font-size: 38px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--fg-0); line-height: 1.2; }
   .bigstat.cyan .bnum { color: var(--cyan-hot); text-shadow: 0 0 22px var(--cyan-glow); }
@@ -388,25 +425,75 @@
   .meterrow .mval { width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
   .meter { flex: 1; height: 6px; background: var(--ink-3); border-radius: 3px; overflow: hidden; }
   .meter .mf { height: 100%; border-radius: 3px; width: 0%; transition: width 1.1s var(--ease-out-quart); box-shadow: 0 0 10px var(--accent-glow); }
-  .rel-row { display: flex; gap: 14px; align-items: baseline; font-size: 14px; padding: 9px 0; border-bottom: 1px dashed var(--ink-3); }
-  .rel-row .rid { color: var(--cyan-hot); font-weight: 600; width: 96px; flex: 0 0 auto; }
+  .rel-row { display: flex; gap: 14px; align-items: baseline; font-size: 14px; padding: 9px 0; border-bottom: 1px dashed var(--ink-3); animation: riseIn 0.4s var(--ease-out-quart) both; }
+  .rel-row .rid { color: var(--cyan-hot); font-weight: 600; width: 110px; flex: 0 0 auto; }
   .rel-row .rv { color: var(--accent-hot); width: 76px; flex: 0 0 auto; }
   .rel-row .rmsg { color: var(--fg-1); min-width: 0; }
   .rel-row .rago { color: var(--fg-3); margin-left: auto; white-space: nowrap; flex: 0 0 auto; }
 
+  /* ---------- Password gate ---------- */
+  .gate {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ink-0);
+  }
+  .gate[hidden] { display: none; }
+  .gate .gcard {
+    background: rgba(20, 26, 34, 0.6);
+    backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    box-shadow: 0 24px 90px rgba(0, 0, 0, 0.6), 0 0 50px rgba(255, 0, 255, 0.14);
+    padding: 34px 40px;
+    width: min(420px, 92vw);
+    text-align: center;
+    animation: glassIn 0.4s var(--ease-out-quart);
+  }
+  .gate h2 { margin: 0 0 4px; font-size: 16px; color: var(--accent); letter-spacing: 1px; text-shadow: 0 0 16px var(--accent-glow); }
+  .gate p { margin: 0 0 18px; font-size: 11.5px; color: var(--fg-3); }
+  .gate input {
+    width: 100%; background: var(--ink-1); border: 1px solid var(--ink-4); border-radius: 4px;
+    color: var(--fg-0); font-family: var(--mono); font-size: 14px; padding: 8px 12px;
+    text-align: center; letter-spacing: 2px; outline: none;
+  }
+  .gate input:focus { border-color: var(--accent-dim); box-shadow: 0 0 14px var(--accent-glow); }
+  .gate button {
+    margin-top: 12px; width: 100%;
+    background: var(--ink-2); border: 1px solid var(--accent-dim); border-radius: 4px;
+    color: var(--accent-hot); font-family: var(--mono); font-size: 13px; padding: 8px;
+    cursor: pointer; letter-spacing: 1px;
+    transition: box-shadow 0.2s, background 0.2s;
+  }
+  .gate button:hover { box-shadow: 0 0 18px var(--accent-glow); background: var(--ink-3); }
+  .gate .gerr { color: var(--bad); font-size: 11px; margin-top: 10px; min-height: 14px; }
+  .gate .gerr.shake { animation: shake 0.4s ease; }
+  @keyframes shake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
   @media (prefers-reduced-motion: reduce) {
-    .live-dot, .ring-spin, .ring-spin2, .ticker .tk,
-    .spot-inner, .total::after, .overlay, .glass { animation: none !important; }
+    .live-dot, .ring-spin, .ring-spin2, .ticker .tk, .today-pulse,
+    .spot-inner, .total::after, .overlay, .glass, .glass-body > *, .bigstat, .keyrow, .rel-row,
+    .strip.slide-l .mini, .strip.slide-r .mini { animation: none !important; }
     .flow path.line, .sline path.sl { animation: none !important; stroke-dasharray: none; stroke-dashoffset: 0; }
     .flow path.area { animation: none !important; opacity: 1; }
-    .garc, .mini .mbar .mfill, .meter .mf { transition: none; }
+    .garc, .mini .mbar .mfill, .meter .mf, .keyrow .kmeter .kf { transition: none; }
     .ghost.gprev, .ghost.gnext { transform: none; }
   }
 </style>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
-<div class="wrap">
+
+<div class="gate" id="gate" hidden>
+  <div class="gcard">
+    <h2>/ restricted</h2>
+    <p>build telemetry is private. enter the key to continue.</p>
+    <input type="password" id="gate-input" autocomplete="off" aria-label="access key" placeholder="access key">
+    <button type="button" id="gate-btn">unlock</button>
+    <div class="gerr" id="gate-err"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
 
   <header class="page">
     <div>
@@ -415,6 +502,7 @@
     </div>
     <div class="filters" id="filters" aria-label="wave view"></div>
     <div class="controls">
+      <span class="hud-clock" id="hud-clock" title="local time"></span>
       <button class="auto-btn" id="auto-btn" type="button" title="auto-spin the wheel: off / drift 25s / jump 12s">auto: off</button>
       <span class="last-refreshed" id="last-refreshed" title="when this page last fetched data">never refreshed</span>
       <button class="refresh" id="refresh-btn" type="button" title="re-fetch all dashboard data now">refresh</button>
@@ -432,21 +520,23 @@
 
   <div class="layout">
     <div class="side">
-      <div class="panel core-box clickable" id="panel-core" title="click to enlarge"><span class="ck"></span>
+      <div class="panel core-box clickable" id="panel-core" title="click to enlarge with labels"><span class="ck"></span>
         <p class="ptitle"><span class="tick">//</span><span id="core-title">token core &middot; today by project</span></p>
         <div id="core"></div>
         <div class="core-legend" id="core-legend"></div>
       </div>
-      <div class="panel core-box clickable" id="panel-radar" title="click to enlarge"><span class="ck"></span>
+      <div class="panel core-box clickable" id="panel-radar" title="click to enlarge with the full key"><span class="ck"></span>
         <p class="ptitle"><span class="tick">//</span>completion radar &middot; distance to done</p>
         <div id="radar"></div>
         <div class="core-legend" id="radar-legend"></div>
       </div>
     </div>
-    <button class="navarrow" id="nav-prev" type="button" aria-label="previous" title="spin the wheel back">&lsaquo;</button>
+    <button class="navarrow" id="nav-prev" type="button" aria-label="previous" aria-keyshortcuts="ArrowLeft" title="spin the wheel back">&lsaquo;</button>
     <div class="panel spotlight" id="spotlight"><span class="ck"></span></div>
-    <button class="navarrow" id="nav-next" type="button" aria-label="next" title="spin the wheel forward">&rsaquo;</button>
+    <button class="navarrow" id="nav-next" type="button" aria-label="next" aria-keyshortcuts="ArrowRight" title="spin the wheel forward">&rsaquo;</button>
   </div>
+
+  <div class="wdots" id="wheel-dots" aria-label="wheel position"></div>
 
   <div class="strip" id="strip"></div>
 
@@ -468,7 +558,7 @@
 <script>
 (function () {
   // id = data plumbing (file names, hashes); tag = the short DISPLAY label.
-  // Naming rule: Yes& apps abbreviate to the word after Yes&, never letter codes.
+  // Naming rule: Yes& apps abbreviate to the word after Yes&; games to Hordes / Rising.
   var PROJECTS = [
     { id: "HBH",       tag: "Hordes",     displayName: "Here Be Hordes",   hue: "#ff00ff" },
     { id: "BR",        tag: "Rising",     displayName: "Brackish Rising",  hue: "#5fd6ff" },
@@ -485,6 +575,7 @@
   var SCAN_MS = 7000;
   var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var SVGNS = "http://www.w3.org/2000/svg";
+  var GATE_HASH = "15409e87be753bfb50dc6f2169a58c7fa4ae1adefbe3e6f271b54d595ddb47d5";
 
   var TIPS = {
     tokensToday: "all prompts and replies burned today",
@@ -492,7 +583,7 @@
     vsYesterday: "today vs yesterday, token totals",
     allTime: "every token since logging began",
     allTimeCost: "history priced at collection-time rates",
-    burnRate: "average est cost per 1k tokens today",
+    burnRate: "avg est cost per 1k tokens today; cache reads keep this low",
     reviewActions: "open findings from the latest reviews",
     lastCollected: "when the collector last pushed data",
     complete: "owner-anchored percent to done",
@@ -513,7 +604,7 @@
   var SEL = 0, DIR = 1, spinning = false;
   var AUTO = "off";
   var AUTO_MS = { drift: 25000, jump: 12000 };
-  var autoTimer = null, hoverHold = false;
+  var autoTimer = null, hoverHold = false, refreshTimer = null;
   try { AUTO = localStorage.getItem("dashAuto") || "off"; } catch (e) {}
   if (!AUTO_MS[AUTO] && AUTO !== "off") AUTO = "off";
 
@@ -523,7 +614,6 @@
     if (parts[1] && VIEWS[parts[1]]) VIEW = parts[1];
   })();
   function setHash() {
-    // consistent scheme: always #PROJECT/WAVE (e.g. #ALL/flow, #YaC/cost)
     var h = FILTER + "/" + VIEW;
     if (("#" + h) !== location.hash) history.replaceState(null, "", "#" + h);
   }
@@ -614,7 +704,6 @@
     }
     return d;
   }
-  // daily map for one project id, or summed across all for "ALL"
   function byDayFor(id) {
     var out = {};
     if (!LAST || !LAST.usage || !LAST.usage.projects) return out;
@@ -691,7 +780,6 @@
     resize(); seed(); frame();
   })();
 
-  /* ---------- Wave-view pills (project nav lives on the wheel + strip) ---------- */
   function buildFilters() {
     var bar = $("filters");
     bar.innerHTML = "";
@@ -703,19 +791,14 @@
     });
   }
 
-  /* ---------- Token core ---------- */
   function coreMetric(d) {
     if (VIEW === "cost") return d.costUSD || 0;
     if (VIEW === "cache") return (d.cacheRead || 0) + (d.cacheWrite || 0);
     return (d.input || 0) + (d.output || 0);
   }
-  function renderCore(usage) {
-    var box = $("core"), legend = $("core-legend");
-    box.innerHTML = ""; legend.innerHTML = "";
-    var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
-    $("core-title").textContent = (VIEW === "cost" ? "cost core" : VIEW === "cache" ? "cache core" : "token core") + " · today by project";
+  function coreRows(usage) {
     var todayK = dayKey(0);
-    var rows = PROJECTS.map(function (p) {
+    return PROJECTS.map(function (p) {
       var u = usage && usage.projects ? usage.projects[p.id] : null;
       var t = { id: p.id, tag: p.tag, hue: p.hue, inT: 0, outT: 0, val: 0 };
       if (u) (u.daily || []).forEach(function (d) {
@@ -723,6 +806,13 @@
       });
       return t;
     }).filter(function (r) { return r.val > 0; });
+  }
+  function renderCore(usage) {
+    var box = $("core"), legend = $("core-legend");
+    box.innerHTML = ""; legend.innerHTML = "";
+    var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
+    $("core-title").textContent = (VIEW === "cost" ? "cost core" : VIEW === "cache" ? "cache core" : "token core") + " · today by project";
+    var rows = coreRows(usage);
     var sum = rows.reduce(function (s, r) { return s + r.val; }, 0);
     var focusSum = rows.reduce(function (s, r) { return s + (inFilter(r.id) ? r.val : 0); }, 0);
 
@@ -786,23 +876,34 @@
 
     rows.forEach(function (r) {
       if (!inFilter(r.id) && FILTER !== "ALL") return;
+      var share = sum > 0 ? Math.round((r.val / sum) * 100) : 0;
       var li = el("span", { title: r.tag + " share of today" });
       var sw = el("span", { className: "sw" }); sw.style.background = r.hue;
       li.appendChild(sw);
-      li.appendChild(txt(r.tag + " " + fmt(r.val)));
+      li.appendChild(txt(r.tag + " " + fmt(r.val) + " · " + share + "%"));
       legend.appendChild(li);
     });
     if (!rows.length) legend.appendChild(el("span", { text: "nothing burned yet today" }));
   }
 
-  /* ---------- Completion radar ---------- */
   var VERDICT_APPROX = { working: 90, healthy: 87, "in-progress": 70, "needs-attention": 55, "at-risk": 57, stalled: 40 };
-  function renderRadar(statuses) {
-    var box = $("radar"), legend = $("radar-legend");
-    box.innerHTML = ""; legend.innerHTML = "";
+  function radarVals(statuses) {
     var axes = PROJECTS.filter(function (p) { return p.id !== "YaE"; });
-    var svg = svgEl("svg", { viewBox: "0 0 300 300", "aria-label": "project completion radar" });
-    var CX = 150, CY = 150, R = 110;
+    var vals = [], haveCompletion = false;
+    axes.forEach(function (p) {
+      var st = statuses[p.id];
+      var c = st && st.completion ? st.completion.pct : null;
+      if (c != null) haveCompletion = true;
+      else if (st && st.barRaise && st.barRaise.verdict) c = VERDICT_APPROX[st.barRaise.verdict];
+      vals.push(c == null ? 0 : c);
+    });
+    return { axes: axes, vals: vals, haveCompletion: haveCompletion };
+  }
+  function radarSvg(statuses, size, labelMode) {
+    var rv = radarVals(statuses);
+    var axes = rv.axes, vals = rv.vals;
+    var svg = svgEl("svg", { viewBox: "0 0 " + size + " " + size, "aria-label": "project completion radar" });
+    var CX = size / 2, CY = size / 2, R = size * 0.36;
     [0.25, 0.5, 0.75, 1].forEach(function (f) {
       var pts = axes.map(function (_, i) {
         var a = (Math.PI * 2 * i / axes.length) - Math.PI / 2;
@@ -810,24 +911,16 @@
       }).join(" ");
       svg.appendChild(svgEl("polygon", { points: pts, fill: "none", stroke: "rgba(44,53,67," + (f === 1 ? 0.9 : 0.45) + ")", "stroke-width": 1 }));
     });
-    var vals = [], haveCompletion = false;
     axes.forEach(function (p, i) {
       var a = (Math.PI * 2 * i / axes.length) - Math.PI / 2;
       svg.appendChild(svgEl("line", { x1: CX, y1: CY, x2: CX + Math.cos(a) * R, y2: CY + Math.sin(a) * R, stroke: "rgba(44,53,67,0.5)", "stroke-width": 1 }));
       var lt = svgEl("text", {
-        x: CX + Math.cos(a) * (R + 16), y: CY + Math.sin(a) * (R + 16) + 3,
-        "text-anchor": "middle", "font-size": 10, "font-family": "inherit", fill: p.hue,
-        opacity: inFilter(p.id) ? 1 : 0.3
+        x: CX + Math.cos(a) * (R + (labelMode === "big" ? 30 : 16)), y: CY + Math.sin(a) * (R + (labelMode === "big" ? 30 : 16)) + 3,
+        "text-anchor": "middle", "font-size": labelMode === "big" ? 13 : 10, "font-family": "inherit", fill: p.hue,
+        opacity: inFilter(p.id) ? 1 : 0.3, class: "blabel-svg"
       });
-      lt.textContent = p.tag;
+      lt.textContent = labelMode === "big" ? (p.tag + " · " + (vals[i] || "?") + "%") : p.tag;
       svg.appendChild(lt);
-      var st = statuses[p.id];
-      var c = st && st.completion ? st.completion.pct : null;
-      if (c != null) { haveCompletion = true; }
-      else if (st && st.barRaise && st.barRaise.verdict) {
-        c = VERDICT_APPROX[st.barRaise.verdict];
-      }
-      vals.push(c == null ? 0 : c);
     });
     var poly = axes.map(function (_, i) {
       var a = (Math.PI * 2 * i / axes.length) - Math.PI / 2;
@@ -837,11 +930,13 @@
     var shape = svgEl("polygon", {
       points: poly,
       fill: "rgba(255,0,255,0.13)",
-      stroke: haveCompletion ? "#ff66ff" : "rgba(255,102,255,0.7)",
+      stroke: rv.haveCompletion ? "#ff66ff" : "rgba(255,102,255,0.7)",
       "stroke-width": 1.6
     });
-    if (!haveCompletion) shape.setAttribute("stroke-dasharray", "5 4");
+    if (!rv.haveCompletion) shape.setAttribute("stroke-dasharray", "5 4");
     shape.style.filter = "drop-shadow(0 0 6px rgba(255,0,255,0.28))";
+    shape.style.transformOrigin = "center";
+    if (!REDUCED) shape.animate([{ transform: "scale(0.6)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: 600, easing: "ease-out" });
     svg.appendChild(shape);
     var mean = 0, nvals = 0;
     axes.forEach(function (p, i) {
@@ -850,30 +945,38 @@
       if (vals[i]) { mean += vals[i]; nvals++; }
       var dot = svgEl("circle", {
         cx: CX + Math.cos(a) * R * f, cy: CY + Math.sin(a) * R * f,
-        r: inFilter(p.id) && FILTER !== "ALL" ? 4 : 2.6,
+        r: (inFilter(p.id) && FILTER !== "ALL" ? 4 : 2.6) * (labelMode === "big" ? 1.4 : 1),
         fill: p.hue, opacity: inFilter(p.id) ? 1 : 0.3
       });
       dot.appendChild(svgEl("title"));
       dot.lastChild.textContent = p.tag + " " + (vals[i] || "?") + "% complete";
       svg.appendChild(dot);
-      var vt = svgEl("text", {
-        x: CX + Math.cos(a) * (R * f + 12), y: CY + Math.sin(a) * (R * f + 12) + 3,
-        "text-anchor": "middle", "font-size": 9, "font-family": "inherit",
-        fill: "#a4aeba", opacity: inFilter(p.id) ? 0.9 : 0.2
-      });
-      vt.textContent = vals[i] || "";
-      svg.appendChild(vt);
+      if (labelMode !== "big") {
+        var vt = svgEl("text", {
+          x: CX + Math.cos(a) * (R * f + 12), y: CY + Math.sin(a) * (R * f + 12) + 3,
+          "text-anchor": "middle", "font-size": 9, "font-family": "inherit",
+          fill: "#a4aeba", opacity: inFilter(p.id) ? 0.9 : 0.2
+        });
+        vt.textContent = vals[i] || "";
+        svg.appendChild(vt);
+      }
     });
     if (nvals) {
-      var mt = svgEl("text", { x: CX, y: CY + 4, "text-anchor": "middle", "font-size": 14, "font-weight": 700, "font-family": "inherit", fill: "#ecf0f5" });
+      var mt = svgEl("text", { x: CX, y: CY + 4, "text-anchor": "middle", "font-size": labelMode === "big" ? 20 : 14, "font-weight": 700, "font-family": "inherit", fill: "#ecf0f5" });
       mt.textContent = Math.round(mean / nvals) + "%";
       var ti = svgEl("title");
       ti.textContent = "portfolio mean completion";
       mt.appendChild(ti);
       svg.appendChild(mt);
     }
-    box.appendChild(svg);
-    legend.appendChild(el("span", { text: haveCompletion
+    return { svg: svg, haveCompletion: rv.haveCompletion };
+  }
+  function renderRadar(statuses) {
+    var box = $("radar"), legend = $("radar-legend");
+    box.innerHTML = ""; legend.innerHTML = "";
+    var r = radarSvg(statuses, 300, "small");
+    box.appendChild(r.svg);
+    legend.appendChild(el("span", { text: r.haveCompletion
       ? "owner-anchored % to done, conditions in each repo's .project-context.json"
       : "dashed = approximated from review verdicts until completion anchors ship" }));
   }
@@ -908,10 +1011,11 @@
     svg.appendChild(defs);
 
     var labelUp = "in", labelDn = "out";
-    var upPathEl = null, dnPathEl = null;
+    var upPathEl = null, dnPathEl = null, lastY = MID;
     if (VIEW === "cost") {
       var base = H - 20;
       var cPts = days.map(function (r, i) { return [i * step, base - (r.cost / max) * (base - 8)]; });
+      lastY = cPts[cPts.length - 1][1];
       var dnD = smoothPath(cPts);
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gc-" + projId + ")", d: dnD + " L" + W + "," + base + " L0," + base + " Z" }));
       svg.appendChild(svgEl("line", { class: "midline", x1: 0, y1: base, x2: W, y2: base }));
@@ -921,6 +1025,7 @@
     } else {
       var upPts = days.map(function (r, i) { return [i * step, MID - (r[upKey] / max) * AMP]; });
       var dnPts = days.map(function (r, i) { return [i * step, MID + (r[dnKey] / max) * AMP]; });
+      lastY = dnPts[dnPts.length - 1][1];
       var upD = smoothPath(upPts), dnD2 = smoothPath(dnPts);
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gin-" + projId + ")", d: upD + " L" + W + "," + MID + " L0," + MID + " Z" }));
       svg.appendChild(svgEl("path", { class: "area out-a", fill: "url(#gout-" + projId + ")", d: dnD2 + " L" + W + "," + MID + " L0," + MID + " Z" }));
@@ -931,6 +1036,11 @@
       svg.appendChild(dnPathEl);
       if (VIEW === "cache") { labelUp = "cache read"; labelDn = "cache write"; }
     }
+    // today marker: pulsing dot pinned to the latest point
+    var tdot = svgEl("circle", { cx: W - 1, cy: lastY, r: 3, fill: "#ff66ff", class: "today-pulse" });
+    tdot.appendChild(svgEl("title"));
+    tdot.lastChild.textContent = "today";
+    svg.appendChild(tdot);
 
     if (!REDUCED) {
       var scanLine = svgEl("line", { x1: 0, y1: 4, x2: 0, y2: H - 16, stroke: "rgba(255,102,255,0.45)", "stroke-width": 1 });
@@ -1020,8 +1130,9 @@
         snapI.style.left = px + "px"; snapI.style.top = yCss(MID - (uV / max) * AMP) + "px"; snapI.style.opacity = "1";
         snapO.style.left = px + "px"; snapO.style.top = yCss(MID + (dV / max) * AMP) + "px"; snapO.style.opacity = "1";
       }
+      var ago = (DAYS - 1) - idx;
       tip.innerHTML = "";
-      tip.appendChild(el("div", { className: "d", text: dow(r.d) + " " + r.d }));
+      tip.appendChild(el("div", { className: "d", text: dow(r.d) + " " + r.d + (ago === 0 ? " · today" : " · " + ago + "d ago") }));
       tip.appendChild(el("div", { className: "ti", text: "in  " + fmtTok(r.input) }));
       tip.appendChild(el("div", { className: "to", text: "out " + fmtTok(r.output) }));
       tip.appendChild(el("div", { className: "d", text: "cache " + fmtTok(r.cacheRead + r.cacheWrite) }));
@@ -1038,7 +1149,6 @@
     return wrap;
   }
 
-  /* ---------- Arc gauge ---------- */
   function arcGauge(value, maxVal, color, label, display, tipText) {
     var size = 54, r = 21, c = 2 * Math.PI * r;
     var g = el("div", { className: "gauge" });
@@ -1111,10 +1221,10 @@
       else { n.textContent = value; if (unit) n.appendChild(el("span", { className: "unit", text: unit })); }
       return n;
     }
-    var scope = FILTER === "ALL" ? "" : " (" + FILTER + ")";
-    total("today", tToday.tok, fmtTok, "tok", "tokens today" + scope, TIPS.tokensToday);
-    total("cost", tToday.cost, fmtUSD, "est", "cost today" + scope, TIPS.costToday);
-    var deltaCell = total("", 0, function () { return ""; }, "", "vs yesterday" + scope, TIPS.vsYesterday);
+    var scopeTag = FILTER === "ALL" ? "" : " (" + metaFor(FILTER).tag + ")";
+    total("today", tToday.tok, fmtTok, "tok", "tokens today" + scopeTag, TIPS.tokensToday);
+    total("cost", tToday.cost, fmtUSD, "est", "cost today" + scopeTag, TIPS.costToday);
+    var deltaCell = total("", 0, function () { return ""; }, "", "vs yesterday" + scopeTag, TIPS.vsYesterday);
     deltaCell.innerHTML = "";
     if (tYester.tok > 0) {
       var pct = Math.round(((tToday.tok - tYester.tok) / tYester.tok) * 100);
@@ -1123,12 +1233,12 @@
     } else {
       deltaCell.appendChild(txt("--"));
     }
-    total("", tAll.tok, fmtTok, "tok", "all-time" + scope, TIPS.allTime);
-    total("cost", tAll.cost, fmtUSD, "est", "all-time cost" + scope, TIPS.allTimeCost);
+    total("", tAll.tok, fmtTok, "tok", "all-time" + scopeTag, TIPS.allTime);
+    total("cost", tAll.cost, fmtUSD, "est", "all-time cost" + scopeTag, TIPS.allTimeCost);
     total("", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k", "burn rate today", TIPS.burnRate);
-    total("", actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scope, TIPS.reviewActions);
+    total("", actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag, TIPS.reviewActions);
     total("", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected", TIPS.lastCollected);
-    document.title = "dashboard · " + fmtUSD(tToday.cost) + " today";
+    document.title = "dashboard · " + (FILTER === "ALL" ? "" : metaFor(FILTER).tag + " · ") + fmtUSD(tToday.cost) + " today";
   }
 
   function renderTicker(statuses) {
@@ -1158,31 +1268,119 @@
   }
 
   /* ---------- Glass overlay ---------- */
+  var lastFocus = null;
   function closeOverlay() {
     var ov = $("overlay");
     if (ov.hidden) return;
     ov.hidden = true;
     $("glass-body").innerHTML = "";
+    document.body.style.overflow = "";
     hoverHold = false;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function openOverlay(title, node) {
+    lastFocus = document.activeElement;
     $("glass-title").textContent = title;
     var body = $("glass-body");
     body.innerHTML = "";
     body.appendChild(node);
     $("overlay").hidden = false;
+    document.body.style.overflow = "hidden";
     hoverHold = true;
+    $("glass-close").focus();
   }
-  function openClone(panelId, title) {
-    var src = $(panelId);
-    if (!src) return;
-    var c = src.cloneNode(true);
-    c.classList.add("big");
-    c.classList.remove("clickable");
-    c.removeAttribute("title");
-    var withIds = c.querySelectorAll("[id]");
-    for (var i = 0; i < withIds.length; i++) withIds[i].removeAttribute("id");
-    openOverlay(title, c);
+  function keyRow(hue, name, frac, val, extra, color) {
+    var r = el("div", { className: "keyrow" });
+    var d = el("span", { className: "kdot" }); d.style.background = hue; d.style.boxShadow = "0 0 8px " + hue + "66";
+    r.appendChild(d);
+    r.appendChild(el("span", { className: "kname", text: name }));
+    var m = el("span", { className: "kmeter" });
+    var f = el("span", { className: "kf" });
+    f.style.background = color || hue;
+    m.appendChild(f);
+    r.appendChild(m);
+    r.appendChild(el("span", { className: "kval", text: val }));
+    if (extra) r.appendChild(el("span", { className: "kextra", text: extra }));
+    requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.width = Math.max(2, Math.min(100, frac * 100)) + "%"; }); });
+    return r;
+  }
+  function openCoreBig() {
+    if (!LAST) return;
+    var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
+    var rows = coreRows(LAST.usage).sort(function (a, b) { return b.val - a.val; });
+    var sum = rows.reduce(function (s, r) { return s + r.val; }, 0);
+    var box = el("div", { className: "bigviz" });
+    // big labeled donut
+    var size = 480, CX = 240, CY = 240, R = 150, CIRC = 2 * Math.PI * R;
+    var svg = svgEl("svg", { viewBox: "0 0 " + size + " " + size });
+    var angle = -90;
+    rows.forEach(function (r) {
+      var frac = sum > 0 ? r.val / sum : 0;
+      var span = Math.max(2.5, frac * 360 - 2.5);
+      svg.appendChild(svgEl("circle", {
+        cx: CX, cy: CY, r: R, fill: "none",
+        stroke: r.hue, "stroke-width": 22, "stroke-linecap": "round",
+        "stroke-dasharray": (span / 360 * CIRC).toFixed(1) + " " + CIRC.toFixed(1),
+        transform: "rotate(" + angle + " " + CX + " " + CY + ")",
+        opacity: 0.92
+      }));
+      // on-image label at the arc's mid angle
+      var midA = (angle + span / 2) * Math.PI / 180;
+      var lx = CX + Math.cos(midA) * (R + 48), ly = CY + Math.sin(midA) * (R + 48);
+      var t1 = svgEl("text", { x: lx, y: ly, "text-anchor": "middle", "font-size": 14, "font-weight": 700, fill: r.hue, "font-family": "inherit", class: "blabel-svg" });
+      t1.textContent = r.tag;
+      svg.appendChild(t1);
+      var t2 = svgEl("text", { x: lx, y: ly + 15, "text-anchor": "middle", "font-size": 11.5, fill: "#a4aeba", "font-family": "inherit", class: "blabel-svg" });
+      t2.textContent = fmt(r.val) + " · " + Math.round(frac * 100) + "%";
+      svg.appendChild(t2);
+      // leader tick
+      svg.appendChild(svgEl("line", {
+        x1: CX + Math.cos(midA) * (R + 14), y1: CY + Math.sin(midA) * (R + 14),
+        x2: CX + Math.cos(midA) * (R + 30), y2: CY + Math.sin(midA) * (R + 30),
+        stroke: r.hue, "stroke-width": 1, opacity: 0.6
+      }));
+      angle += frac * 360;
+    });
+    var ct = svgEl("text", { x: CX, y: CY - 4, "text-anchor": "middle", "font-size": 34, "font-weight": 700, fill: "#ecf0f5", "font-family": "inherit" });
+    ct.textContent = fmt(sum);
+    svg.appendChild(ct);
+    var cl = svgEl("text", { x: CX, y: CY + 22, "text-anchor": "middle", "font-size": 11, "letter-spacing": 2, fill: "#697381", "font-family": "inherit" });
+    cl.textContent = (VIEW === "cost" ? "EST COST" : VIEW === "cache" ? "CACHE" : "TOKENS") + " TODAY";
+    svg.appendChild(cl);
+    box.appendChild(svg);
+    // full key with in/out split
+    var keys = el("div", { className: "keyrows" });
+    rows.forEach(function (r, i) {
+      var row = keyRow(r.hue, metaFor(r.id).displayName, sum > 0 ? r.val / sum : 0, fmt(r.val),
+        VIEW === "flow" ? ("in " + fmtTok(r.inT) + " / out " + fmtTok(r.outT)) : Math.round((sum > 0 ? r.val / sum : 0) * 100) + "% of today");
+      row.style.animationDelay = (0.1 + i * 0.05) + "s";
+      keys.appendChild(row);
+    });
+    if (!rows.length) keys.appendChild(el("div", { text: "nothing burned yet today" }));
+    var wrap2 = el("div");
+    wrap2.appendChild(box);
+    wrap2.appendChild(keys);
+    openOverlay($("core-title").textContent, wrap2);
+  }
+  function openRadarBig() {
+    if (!LAST) return;
+    var box = el("div", { className: "bigviz" });
+    box.appendChild(radarSvg(LAST.statuses, 480, "big").svg);
+    var keys = el("div", { className: "keyrows" });
+    PROJECTS.filter(function (p) { return p.id !== "YaE"; }).forEach(function (p, i) {
+      var st = LAST.statuses[p.id];
+      var pct = st && st.completion ? st.completion.pct : null;
+      var br = st && st.barRaise ? st.barRaise : {};
+      var row = keyRow(p.hue, p.displayName, (pct || 0) / 100, (pct != null ? pct + "%" : "?"),
+        (br.verdict || "no review") + (br.actionsOpen != null ? " · " + br.actionsOpen + " open" : ""),
+        pct != null ? completionColor(pct) : p.hue);
+      row.style.animationDelay = (0.1 + i * 0.05) + "s";
+      keys.appendChild(row);
+    });
+    var wrap2 = el("div");
+    wrap2.appendChild(box);
+    wrap2.appendChild(keys);
+    openOverlay("completion radar · distance to done", wrap2);
   }
   function sparkSvg(series, color) {
     var smax = 1;
@@ -1288,7 +1486,7 @@
     block("", "review actions open", actionsOpen, function (n) { return String(Math.round(n)); }, "");
     block("", "sessions logged", sessions, function (n) { return String(Math.round(n)); }, "");
     block("", "last collected", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, usage && usage.pricingVersion ? "rates " + usage.pricingVersion : "");
-    openOverlay("portfolio stats" + (FILTER === "ALL" ? "" : " · " + FILTER), grid);
+    openOverlay("portfolio stats" + (FILTER === "ALL" ? "" : " · " + metaFor(FILTER).tag), grid);
   }
   function openReleases() {
     if (!LAST) return;
@@ -1299,8 +1497,9 @@
     });
     items.sort(function (a, b) { return b.t - a.t; });
     var box = el("div");
-    items.forEach(function (it) {
+    items.forEach(function (it, i) {
       var r = el("div", { className: "rel-row" });
+      r.style.animationDelay = (i * 0.05) + "s";
       r.appendChild(el("span", { className: "rid", text: it.id }));
       r.appendChild(el("span", { className: "rv", text: "v" + it.v }));
       r.appendChild(el("span", { className: "rmsg", text: it.msg }));
@@ -1318,12 +1517,13 @@
     var todayK = dayKey(0), tok = 0;
     var byDay = byDayFor(id);
     if (byDay[todayK]) tok = byDay[todayK].input + byDay[todayK].output;
+    var st = id !== "ALL" && LAST ? LAST.statuses[id] : null;
     var g = el("div", { className: "ghost " + cls, role: "button", tabindex: "0", title: (dir > 0 ? "next: " : "previous: ") + m.displayName });
     var dot = el("span", { className: "gdot" });
     dot.style.background = m.hue; dot.style.boxShadow = "0 0 8px " + m.hue + "66";
     g.appendChild(dot);
     g.appendChild(el("span", { className: "gname", text: m.displayName }));
-    g.appendChild(el("span", { className: "gtok", text: fmtTok(tok) + " today" }));
+    g.appendChild(el("span", { className: "gtok", text: fmtTok(tok) + " today" + (st && st.completion ? " · " + st.completion.pct + "%" : "") }));
     function go() { advance(dir); resetAuto(); }
     g.addEventListener("click", go);
     g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
@@ -1367,6 +1567,9 @@
     name.appendChild(pdot);
     name.appendChild(txt(m.displayName));
     if (status && status.version) name.appendChild(el("span", { className: "ver", text: "v" + status.version, title: "current released version" }));
+    if (status && status.repoUrl) {
+      name.appendChild(el("a", { className: "repo", href: status.repoUrl, target: "_blank", rel: "noopener", text: "↗", title: "open the repo" }));
+    }
     name.appendChild(el("span", { className: "spot-pos", text: (SEL + 1) + " / " + CYCLE.length, title: "position on the wheel" }));
     head.appendChild(name);
 
@@ -1388,7 +1591,6 @@
 
     var gauges = el("div", { className: "gauges" });
     if (isAll) {
-      // portfolio gauges: mean completion, total actions, verdict mix
       var meanC = 0, nC = 0, acts = 0, counts = {};
       PROJECTS.forEach(function (p) {
         var s = LAST.statuses[p.id];
@@ -1496,17 +1698,30 @@
     wheel.appendChild(stage);
     wheel.appendChild(ghostFor((SEL + 1) % n, "gnext", 1));
     box.appendChild(wheel);
+    renderDots();
+  }
+  function renderDots() {
+    var box = $("wheel-dots");
+    box.innerHTML = "";
+    CYCLE.forEach(function (id, i) {
+      var m = metaFor(id);
+      var b = el("button", { className: i === SEL ? "on" : "", type: "button", title: m.displayName, "aria-label": m.displayName });
+      if (i === SEL) b.style.background = m.hue;
+      b.addEventListener("click", function () { jumpTo(i); });
+      box.appendChild(b);
+    });
   }
 
-  /* ---------- Bottom strip: ALL pinned, projects rotate around center ---------- */
+  /* ---------- Bottom strip: everything rotates around the center slot ---------- */
   function renderStrip() {
     if (!LAST) return;
-    var usage = LAST.usage, statuses = LAST.statuses;
+    var statuses = LAST.statuses;
     var box = $("strip");
     box.innerHTML = "";
+    box.className = "strip " + (DIR > 0 ? "slide-l" : "slide-r");
     var todayK = dayKey(0);
 
-    function miniFor(meta) {
+    function miniFor(meta, slot) {
       var id = meta.id;
       var byDay = byDayFor(id);
       var todayTok = 0, series = [], smax = 1;
@@ -1519,6 +1734,11 @@
       }
       var selected = FILTER === id;
       var mini = el("div", { className: "panel mini" + (selected ? " center" : ""), role: "button", tabindex: "0", "aria-label": meta.displayName }, [el("span", { className: "ck" })]);
+      mini.style.animationDelay = (slot * 28) + "ms";
+      var st = statuses[id];
+      if (st && st.barRaise && st.barRaise.verdict && !selected) {
+        mini.style.borderLeft = "2px solid " + verdictColor(st.barRaise.verdict);
+      }
       var mh = el("div", { className: "mhead" });
       var left = el("span");
       var md = el("span", { className: "mdot" }); md.style.background = meta.hue;
@@ -1533,8 +1753,7 @@
         var sub = el("div", { className: "msub" });
         sub.appendChild(txt("today "));
         sub.appendChild(el("span", { className: "cost", text: fmtUSD(todayCost) }));
-        var st0 = statuses[id];
-        if (st0 && st0.completion) sub.appendChild(txt(" · " + st0.completion.pct + "% done"));
+        if (st && st.completion) sub.appendChild(txt(" · " + st.completion.pct + "% done"));
         if (id === "ALL") sub.appendChild(txt(" · portfolio view"));
         mini.appendChild(sub);
       }
@@ -1543,7 +1762,6 @@
       var pts = series.map(function (v, k) { return [(k / (DAYS - 1)) * 100, 20 - (v / smax) * 18]; });
       svg.appendChild(svgEl("path", { d: smoothPath(pts), fill: "none", stroke: meta.hue, "stroke-width": 1.2, opacity: 0.85 }));
       mini.appendChild(svg);
-      var st = statuses[id];
       var pct = st && st.completion ? st.completion.pct : null;
       var bar = el("div", { className: "mbar", title: pct != null ? pct + "% to done" : (id === "ALL" ? "portfolio" : "no completion anchor yet") });
       var fill = el("div", { className: "mfill" });
@@ -1559,22 +1777,18 @@
       return mini;
     }
 
-    // Everything (ALL included) rotates around the emphasized center slot,
-    // which sits under the main graph. The selection is always that slot.
     var CENTER = 4, n = CYCLE.length;
     for (var i = 0; i < n; i++) {
       var cid = CYCLE[(SEL - CENTER + i + n) % n];
-      box.appendChild(miniFor(metaFor(cid)));
+      box.appendChild(miniFor(metaFor(cid), i));
     }
   }
-  var lastProjIdx = 0;
 
   /* ---------- Wheel nav with slide-out + autoscroll ---------- */
   function settle(target, dir) {
     DIR = dir;
     SEL = target;
     FILTER = CYCLE[SEL];
-    if (FILTER !== "ALL") lastProjIdx = PROJECTS.map(function (p) { return p.id; }).indexOf(FILTER);
     setHash();
     renderAll();
   }
@@ -1608,17 +1822,9 @@
     }
     var b = $("auto-btn");
     b.textContent = "auto: " + AUTO;
+    b.title = "auto-spin the wheel: off / drift 25s / jump 12s" + (AUTO !== "off" ? " · every " + (AUTO_MS[AUTO] / 1000) + "s, paused on hover" : "");
     b.className = "auto-btn" + (AUTO !== "off" ? " on" : "");
   }
-  $("auto-btn").addEventListener("click", function () {
-    AUTO = AUTO === "off" ? "drift" : AUTO === "drift" ? "jump" : "off";
-    try { localStorage.setItem("dashAuto", AUTO); } catch (e) {}
-    resetAuto();
-  });
-  $("nav-prev").addEventListener("click", function () { advance(-1); resetAuto(); });
-  $("nav-next").addEventListener("click", function () { advance(1); resetAuto(); });
-  $("spotlight").addEventListener("mouseenter", function () { hoverHold = true; });
-  $("spotlight").addEventListener("mouseleave", function () { hoverHold = false; });
 
   function renderAll() {
     if (!LAST) return;
@@ -1650,25 +1856,38 @@
       btn.textContent = "refresh";
     }).catch(function (e) {
       var banner = $("error-banner");
-      banner.textContent = "Refresh failed: " + e.message;
-      banner.style.display = "block";
+      banner.innerHTML = "";
+      banner.appendChild(txt("Refresh failed: " + e.message));
+      var rb = el("button", { type: "button", text: "retry" });
+      rb.addEventListener("click", refresh);
+      banner.appendChild(rb);
+      banner.style.display = "flex";
       btn.disabled = false;
       btn.textContent = "refresh";
     });
   }
 
+  /* ---------- Wiring ---------- */
+  $("auto-btn").addEventListener("click", function () {
+    AUTO = AUTO === "off" ? "drift" : AUTO === "drift" ? "jump" : "off";
+    try { localStorage.setItem("dashAuto", AUTO); } catch (e) {}
+    resetAuto();
+  });
+  $("nav-prev").addEventListener("click", function () { advance(-1); resetAuto(); });
+  $("nav-next").addEventListener("click", function () { advance(1); resetAuto(); });
+  $("spotlight").addEventListener("mouseenter", function () { hoverHold = true; });
+  $("spotlight").addEventListener("mouseleave", function () { hoverHold = false; });
   addEventListener("hashchange", function () {
     var parts = (location.hash || "").replace("#", "").split("/");
     if (CYCLE.indexOf(parts[0]) >= 0) { FILTER = parts[0]; SEL = CYCLE.indexOf(parts[0]); }
     VIEW = (parts[1] && VIEWS[parts[1]]) ? parts[1] : "flow";
-    if (FILTER !== "ALL") lastProjIdx = PROJECTS.map(function (p) { return p.id; }).indexOf(FILTER);
-    setHash(); // normalize partial hashes to #PROJECT/WAVE
+    setHash();
     renderAll();
   });
   $("overlay").addEventListener("click", function (e) { if (e.target === $("overlay")) closeOverlay(); });
   $("glass-close").addEventListener("click", closeOverlay);
-  $("panel-core").addEventListener("click", function () { openClone("panel-core", $("core-title").textContent); });
-  $("panel-radar").addEventListener("click", function () { openClone("panel-radar", "completion radar · distance to done"); });
+  $("panel-core").addEventListener("click", openCoreBig);
+  $("panel-radar").addEventListener("click", openRadarBig);
   $("ticker").classList.add("clickable");
   $("ticker").addEventListener("click", openReleases);
   addEventListener("keydown", function (e) {
@@ -1683,10 +1902,75 @@
     }
   });
   $("refresh-btn").addEventListener("click", refresh);
-  setHash(); // land on the canonical #PROJECT/WAVE form immediately
-  refresh();
-  resetAuto();
-  setInterval(refresh, 60000);
+  // local HUD clock
+  (function clock() {
+    function tickClock() {
+      var d = new Date();
+      function p2(n) { return (n < 10 ? "0" : "") + n; }
+      $("hud-clock").textContent = p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+  })();
+  // pause the pollers while the tab is hidden
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+      if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    } else {
+      refresh();
+      refreshTimer = setInterval(refresh, 60000);
+      resetAuto();
+    }
+  });
+
+  /* ---------- Gate: build telemetry is private ---------- */
+  function sha256Hex(str) {
+    var data = new TextEncoder().encode(str);
+    return crypto.subtle.digest("SHA-256", data).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+        return ("0" + b.toString(16)).slice(-2);
+      }).join("");
+    });
+  }
+  function boot() {
+    $("gate").hidden = true;
+    $("app").hidden = false;
+    setHash();
+    refresh();
+    resetAuto();
+    refreshTimer = setInterval(refresh, 60000);
+  }
+  function tryUnlock() {
+    var v = $("gate-input").value || "";
+    if (!window.crypto || !crypto.subtle) {
+      $("gate-err").textContent = "secure context required";
+      return;
+    }
+    sha256Hex(v).then(function (hex) {
+      if (hex === GATE_HASH) {
+        try { sessionStorage.setItem("dashGate", hex); } catch (e) {}
+        boot();
+      } else {
+        var err = $("gate-err");
+        err.textContent = "wrong key";
+        err.classList.remove("shake");
+        void err.offsetWidth;
+        err.classList.add("shake");
+        $("gate-input").select();
+      }
+    });
+  }
+  $("gate-btn").addEventListener("click", tryUnlock);
+  $("gate-input").addEventListener("keydown", function (e) { if (e.key === "Enter") tryUnlock(); });
+  var stored = null;
+  try { stored = sessionStorage.getItem("dashGate"); } catch (e) {}
+  if (stored === GATE_HASH) {
+    boot();
+  } else {
+    $("gate").hidden = false;
+    $("gate-input").focus();
+  }
 })();
 </script>
 </body>
