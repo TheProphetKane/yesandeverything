@@ -42,7 +42,8 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
-$ATTRIB_VERSION = 3   # v3: YaS id, transcript-only roots, global msg dedupe, timestamp chain
+$ATTRIB_VERSION = 4   # v4: per-model breakdown, horizon derived from aggregates
+                      # (v3: YaS id, transcript-only roots, global msg dedupe, timestamp chain)
 
 # ----- Pricing (USD per million tokens; Anthropic published API rates) ----
 # Verified against the published price list on the date below. When rates
@@ -179,11 +180,20 @@ function Get-Price([string]$model) {
   }
   return $PRICE_DEFAULT
 }
+function Get-ModelFamily([string]$model) {
+  if ($model) {
+    foreach ($p in $PRICING) {
+      if ($model.IndexOf($p.match, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) { return $p.match }
+    }
+  }
+  return "other"
+}
 
 # ----- Load state -----------------------------------------------------------
 $FreshScan = ($Audit -or $Rescan)
 $Files = @{}   # path -> @{ length; processed; project; votes; lastMsgId }
 $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
+$AggM = @{}    # project -> model family -> @{ input; output; cacheRead; cacheWrite; cost }
 $PrevOldest = $null   # oldest record ever seen across runs (the log horizon)
 if (-not $FreshScan -and (Test-Path $StatePath)) {
   try {
@@ -211,6 +221,18 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
       $b.input += [long]$row.input; $b.output += [long]$row.output
       $b.cacheRead += [long]$row.cacheRead; $b.cacheWrite += [long]$row.cacheWrite; $b.cost += [double]$row.cost
     }
+    if ($state.aggM) {
+      foreach ($row in $state.aggM) {
+        $rp = $row.p
+        if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }
+        if ($rp -eq "Scheduler") { $rp = "YaS" }
+        if (-not $AggM.ContainsKey($rp)) { $AggM[$rp] = @{} }
+        if (-not $AggM[$rp].ContainsKey($row.m)) { $AggM[$rp][$row.m] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+        $bm = $AggM[$rp][$row.m]
+        $bm.input += [long]$row.input; $bm.output += [long]$row.output
+        $bm.cacheRead += [long]$row.cacheRead; $bm.cacheWrite += [long]$row.cacheWrite; $bm.cost += [double]$row.cost
+      }
+    }
   } catch {
     Write-Host "WARN: full rescan. ($_)" -ForegroundColor Yellow
     $Files = @{}; $Agg = @{}
@@ -229,6 +251,12 @@ function Add-Usage([string]$proj, [string]$day, $u, [string]$model) {
   if (-not $Agg[$proj].ContainsKey($day)) { $Agg[$proj][$day] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
   $b = $Agg[$proj][$day]
   $b.input += $in; $b.output += $out; $b.cacheRead += $cr; $b.cacheWrite += $cw; $b.cost += $cost
+  # per-model family rollup: which model burned what, per project, all-time
+  $fam = Get-ModelFamily $model
+  if (-not $AggM.ContainsKey($proj)) { $AggM[$proj] = @{} }
+  if (-not $AggM[$proj].ContainsKey($fam)) { $AggM[$proj][$fam] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+  $bm = $AggM[$proj][$fam]
+  $bm.input += $in; $bm.output += $out; $bm.cacheRead += $cr; $bm.cacheWrite += $cw; $bm.cost += $cost
 }
 
 # ----- Scan -----------------------------------------------------------------
@@ -381,7 +409,22 @@ foreach ($proj in ($Agg.Keys | Sort-Object)) {
   }
   $allTime.costUSD = [math]::Round($allTime.costUSD, 2)
   $sessions = @($Files.Keys | Where-Object { $Files[$_].project -eq $proj }).Count
-  $projects[$proj] = [ordered]@{ allTime = $allTime; sessions = $sessions; daily = $daily }
+  $models = [ordered]@{}
+  if ($AggM.ContainsKey($proj)) {
+    foreach ($fam in ($AggM[$proj].Keys | Sort-Object)) {
+      $bm = $AggM[$proj][$fam]
+      $models[$fam] = [ordered]@{ input = $bm.input; output = $bm.output; cacheRead = $bm.cacheRead; cacheWrite = $bm.cacheWrite; costUSD = [math]::Round($bm.cost, 2) }
+    }
+  }
+  $projects[$proj] = [ordered]@{ allTime = $allTime; sessions = $sessions; models = $models; daily = $daily }
+}
+# the true horizon: oldest day in the aggregates (incremental scans only see
+# NEW lines, so the scan-time oldest alone would drift forward to "today")
+foreach ($proj in $Agg.Keys) {
+  foreach ($day in $Agg[$proj].Keys) {
+    try { $dd = [datetime]$day } catch { continue }
+    if (-not $oldestTs -or $dd -lt $oldestTs) { $oldestTs = $dd }
+  }
 }
 
 # ----- Audit mode: report + compare, write nothing else --------------------
@@ -466,7 +509,14 @@ foreach ($proj in $Agg.Keys) {
     $flat += [ordered]@{ p = $proj; d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; cost = $b.cost }
   }
 }
-Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat })
+$flatM = @()
+foreach ($proj in $AggM.Keys) {
+  foreach ($fam in $AggM[$proj].Keys) {
+    $bm = $AggM[$proj][$fam]
+    $flatM += [ordered]@{ p = $proj; m = $fam; input = $bm.input; output = $bm.output; cacheRead = $bm.cacheRead; cacheWrite = $bm.cacheWrite; cost = $bm.cost }
+  }
+}
+Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat; aggM = $flatM })
 
 # ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }

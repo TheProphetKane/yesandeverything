@@ -1391,6 +1391,16 @@
 
   /* ---------- Wave chart with scan-locked riders ---------- */
   function buildFlow(projId, byDay) {
+    // thin-log days: backfill estimates keyed by date for this scope
+    var estMap = {};
+    (function () {
+      var b = LAST && LAST.backfill;
+      if (!b) return;
+      var arr = projId === "ALL"
+        ? (b.totals && b.totals.perDay)
+        : (b.projects && b.projects[projId] && b.projects[projId].perDay);
+      (arr || []).forEach(function (e2) { estMap[e2.d] = e2; });
+    })();
     var days = [], max = 1, sum7 = 0, sum30 = 0;
     var upKey = VIEW === "cache" ? "cacheRead" : "input";
     var dnKey = VIEW === "cache" ? "cacheWrite" : "output";
@@ -1444,6 +1454,18 @@
       svg.appendChild(dnPathEl);
       if (VIEW === "cache") { labelUp = "cache read"; labelDn = "cache write"; }
     }
+    // thin-log day markers: small dashed ticks along the top where the logs
+    // undershoot commit volume and a backfill estimate fills the gap
+    days.forEach(function (r, i) {
+      var e2 = estMap[r.d];
+      if (!e2 || !e2.tok) return;
+      var x = i * step;
+      var tick = svgEl("line", { x1: x, y1: 4, x2: x, y2: 13, stroke: "rgba(148,158,176,0.55)", "stroke-width": 1.4, "stroke-dasharray": "2 2" });
+      var tt = svgEl("title");
+      tt.textContent = "logs thin " + r.d + ": +~" + fmtTok(e2.tok) + " tok / " + fmtUSD(e2.cost) + " estimated";
+      tick.appendChild(tt);
+      svg.appendChild(tick);
+    });
     var wrap = el("div", { className: "flow" });
     // riders are CSS-positioned divs so they stay round
     function place(div, vx, vy) {
@@ -1545,6 +1567,8 @@
       tip.appendChild(el("div", { className: "to", text: "out " + fmtTok(r.output) }));
       tip.appendChild(el("div", { className: "d", text: "cache " + fmtTok(r.cacheRead + r.cacheWrite) }));
       tip.appendChild(el("div", { className: "tc", text: fmtUSD(r.cost) + " est" }));
+      var eD = estMap[r.d];
+      if (eD && eD.tok) tip.appendChild(el("div", { className: "d", text: "logs thin · +~" + fmtTok(eD.tok) + " / " + fmtUSD(eD.cost) + " est" }));
       tip.style.left = Math.min(rect.width - 70, Math.max(70, px)) + "px";
       tip.style.top = "8px";
       tip.style.opacity = "1";
@@ -1995,6 +2019,8 @@
         title: "the bars above show measured spend only; the estimate reconciles git commit volume against thin or missing transcript days"
       }));
     }
+    // per-model data lives in usage.json's models block for calculation and
+    // documentation only; it is intentionally not displayed anywhere
     // row 3: all-time tokens · cost this week · burn rate today (3-across, aligns with the row below)
     var costThisWeek = costSeries.slice(7).reduce(function (a, b) { return a + b; }, 0);
     var row3 = el("div", { className: "bigstat" });

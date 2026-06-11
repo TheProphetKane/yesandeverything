@@ -70,80 +70,102 @@ foreach ($r in $REPOS) {
   if (-not $dates) { Write-Host "WARN: no git history readable at $($r.path); skipped." -ForegroundColor Yellow; continue }
   $cByDay = @{}
   foreach ($d in $dates) { if ($cByDay.ContainsKey($d)) { $cByDay[$d]++ } else { $cByDay[$d] = 1 } }
-  $cost = @{}; $tok = @{}
+  $cost = @{}; $tok = @{}; $cin = @{}; $cout = @{}; $ccr = @{}; $ccw = @{}
   $u = $usage.projects.PSObject.Properties[$r.id]
   if ($u) {
     foreach ($d in $u.Value.daily) {
       $cost[$d.d] = [double]$d.costUSD
       $tok[$d.d] = [long]$d.input + [long]$d.output
+      $cin[$d.d] = [long]$d.input; $cout[$d.d] = [long]$d.output
+      $ccr[$d.d] = [long]$d.cacheRead; $ccw[$d.d] = [long]$d.cacheWrite
     }
   }
-  $P[$r.id] = @{ commits = $cByDay; cost = $cost; tok = $tok }
+  $P[$r.id] = @{ commits = $cByDay; cost = $cost; tok = $tok; cin = $cin; cout = $cout; ccr = $ccr; ccw = $ccw }
 }
 
-# ----- Pass 2: per-project rates from the best-retained recent days --------
-$rates = @{}   # id -> @{ cost = $/commit; tok = tok/commit; samples = n }
-$allCostRates = @(); $allTokRates = @()
+# ----- Pass 2: per-commit token BUNDLES from the best-retained recent days --
+# The bundle (input, output, cache-read, cache-write per commit) is measured;
+# the PRICE applied to estimated work is Opus 4.8 ($5/$25, cache 0.5/6.25),
+# per the standing assumption: historical work ran Opus-class unless a
+# transcript confirms otherwise (measured records carry confirmed models and
+# keep their recorded pricing).
+$OPUS = @{ inP = 5.0; outP = 25.0; crP = 0.5; cwP = 6.25 }
+function BundleCostUSD($bIn, $bOut, $bCr, $bCw) {
+  return ($bIn * $OPUS.inP + $bOut * $OPUS.outP + $bCr * $OPUS.crP + $bCw * $OPUS.cwP) / 1e6
+}
+$rates = @{}   # id -> @{ in;out;cr;cw per commit; samples }
+$allIn = @(); $allOut = @(); $allCr = @(); $allCw = @()
 foreach ($id in $P.Keys) {
   $t = $P[$id]
   $sampleDays = @($t.commits.Keys | Where-Object { $_ -lt $todayKey -and $t.cost[$_] -gt 0 } | Sort-Object -Descending | Select-Object -First 7)
-  $cr = @(); $tr = @()
+  $rIn = @(); $rOut = @(); $rCr = @(); $rCw = @()
   foreach ($d in $sampleDays) {
     $n = $t.commits[$d]
     if ($n -gt 0) {
-      $cr += $t.cost[$d] / $n
-      $tr += $t.tok[$d] / $n
+      $rIn += $t.cin[$d] / $n; $rOut += $t.cout[$d] / $n
+      $rCr += $t.ccr[$d] / $n; $rCw += $t.ccw[$d] / $n
     }
   }
-  $rates[$id] = @{ cost = (Median $cr); tok = (Median $tr); samples = $cr.Count }
-  $allCostRates += $cr; $allTokRates += $tr
+  $rates[$id] = @{ in = (Median $rIn); out = (Median $rOut); cr = (Median $rCr); cw = (Median $rCw); samples = $rIn.Count }
+  $allIn += $rIn; $allOut += $rOut; $allCr += $rCr; $allCw += $rCw
 }
-$pfCostRate = Median $allCostRates
-$pfTokRate = Median $allTokRates
+$pf = @{ in = (Median $allIn); out = (Median $allOut); cr = (Median $allCr); cw = (Median $allCw) }
 
 # ----- Pass 3: day-level shortfall ------------------------------------------
 $projects = [ordered]@{}
 $totEstTok = [long]0; $totEstCost = [double]0
+$totPerDay = @{}   # date -> @{ tok; cost } summed across projects
 foreach ($r in $REPOS) {
   if (-not $P.ContainsKey($r.id)) { continue }
   $t = $P[$r.id]
   $rate = $rates[$r.id]
   $useOwn = ($rate.samples -ge 4)
-  $rc = if ($useOwn) { $rate.cost } else { $pfCostRate }
-  $rt = if ($useOwn) { $rate.tok } else { $pfTokRate }
+  $b = if ($useOwn) { $rate } else { $pf }
+  $perCommitCost = BundleCostUSD $b.in $b.out $b.cr $b.cw
+  $perCommitTok = $b.in + $b.out
   $estCost = [double]0; $estTok = [long]0; $shortDays = 0; $commitsCovered = 0
-  foreach ($d in $t.commits.Keys) {
+  $perDay = @()
+  foreach ($d in ($t.commits.Keys | Sort-Object)) {
     if ($d -ge $todayKey) { continue }   # today is in-flight; never estimated
     $n = $t.commits[$d]
     $mC = [double]$t.cost[$d]
     $mT = [long]$t.tok[$d]
-    $dC = ($n * $rc) - $mC
+    $dC = ($n * $perCommitCost) - $mC
     if ($dC -gt 0) {
+      $dT = [long][Math]::Max(0, ($n * $perCommitTok) - $mT)
       $estCost += $dC
-      $estTok += [long][Math]::Max(0, ($n * $rt) - $mT)
+      $estTok += $dT
       $shortDays++
       $commitsCovered += $n
+      $perDay += [ordered]@{ d = $d; tok = $dT; cost = [math]::Round($dC, 2) }
+      if (-not $totPerDay.ContainsKey($d)) { $totPerDay[$d] = @{ tok = [long]0; cost = [double]0 } }
+      $totPerDay[$d].tok += $dT; $totPerDay[$d].cost += $dC
     }
   }
   $estCost = [math]::Round($estCost, 2)
   $totEstTok += $estTok; $totEstCost += $estCost
   $projects[$r.id] = [ordered]@{
-    ratePerCommitUSD = [math]::Round($rc, 2)
+    opusRatePerCommitUSD = [math]::Round($perCommitCost, 2)
     rateSamples = $rate.samples
-    rateBasis = $(if ($useOwn) { "own median (7 recent active days)" } else { "portfolio median" })
+    rateBasis = $(if ($useOwn) { "own bundle median (7 recent active days), Opus 4.8 priced" } else { "portfolio bundle median, Opus 4.8 priced" })
     shortfallDays = $shortDays
     commitsOnShortfallDays = $commitsCovered
     estTokens = $estTok
     estCostUSD = $estCost
+    perDay = $perDay
   }
-  Write-Host ("  {0,-6} rate `${1,6:n2}/commit ({2}) -> {3,3} thin day(s), {4,4} commits ~ {5,12:n0} tok / `${6,9:n2}" -f $r.id, $rc, $(if ($useOwn) { "own" } else { "pf" }), $shortDays, $commitsCovered, $estTok, $estCost) -ForegroundColor DarkGray
+  Write-Host ("  {0,-6} opus rate `${1,6:n2}/commit ({2}) -> {3,3} thin day(s), {4,4} commits ~ {5,12:n0} tok / `${6,9:n2}" -f $r.id, $perCommitCost, $(if ($useOwn) { "own" } else { "pf" }), $shortDays, $commitsCovered, $estTok, $estCost) -ForegroundColor DarkGray
+}
+$totPerDayArr = @()
+foreach ($d in ($totPerDay.Keys | Sort-Object)) {
+  $totPerDayArr += [ordered]@{ d = $d; tok = $totPerDay[$d].tok; cost = [math]::Round($totPerDay[$d].cost, 2) }
 }
 
 $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
   horizon = $(if ($usage.oldestRecord) { $usage.oldestRecord } else { $null })
-  method = "day-level reconciliation: expected = commits x median cost-per-commit from each project's 7 most recent active days; estimate = sum of max(0, expected - measured) per day before today. Covers purged pre-horizon history AND thinned days inside the window. Tokens are in+out only. Estimate, not measurement."
-  totals = [ordered]@{ estTokens = $totEstTok; estCostUSD = [math]::Round($totEstCost, 2) }
+  method = "day-level reconciliation: expected = commits x median per-commit token bundle (in/out/cacheRead/cacheWrite) from each project's 7 most recent active days, PRICED AT OPUS 4.8 (5/25, cache 0.5/6.25) per the standing assumption that unconfirmed historical work ran Opus-class. Estimate = sum of max(0, expected - measured) per day before today; covers purged pre-horizon history and thinned days inside the window. Measured records keep their confirmed-model pricing. Tokens are in+out only."
+  totals = [ordered]@{ estTokens = $totEstTok; estCostUSD = [math]::Round($totEstCost, 2); perDay = $totPerDayArr }
   projects = $projects
 }
 
