@@ -121,7 +121,7 @@ Structure:
 
 ## HIGH severity (handler is teaching the wrong thing)
 
-[Items where the handler now misleads — wrong email, wrong file path, contradicted convention, cross-handler contradiction. Each item lists: which handler, the exact stale text, the current truth, and the recommended fix.]
+[Items where the handler now misleads — wrong email, wrong file path, contradicted convention, cross-handler contradiction. Each item lists: which handler, the exact stale text, the current truth, and the recommended fix. Format every item across all three severity tiers in the REPORT_CONTRACT finding shape: `id` (handler-<project>-<slug>), `severity`, `impact` 1-5, `confidence` 1-5, `evidence` (exact stale quote + current truth), `finding`, `suggested_action`, `tensions_with`.]
 
 ## MEDIUM (handler is incomplete or out of date)
 
@@ -172,9 +172,16 @@ For each numbered item under `## Recommended actions`:
      "priority": "P0" | "P1" | "P2" | "P3",
      "status": "pending",
      "prompt": "<one-paragraph instruction the drain task can execute against the named CLAUDE.md>",
-     "source": "YYYY-MM-DD handler audit"
+     "source": "YYYY-MM-DD handler audit",
+     "severity": "high" | "medium" | "low",
+     "impact": 1-5,
+     "confidence": 1-5,
+     "evidence": "<handler line/quote + the current truth it contradicts>",
+     "tensions_with": []
    }
    ```
+
+   The last five fields are the bar-raise REPORT_CONTRACT carry-through (see `bar-raise/waves/03_tier1_lenses/REPORT_CONTRACT.md`): `impact` 1-5 is how much a session suffers being taught the stale claim, `confidence` 1-5 is evidence solidity (speculation caps at 2), `evidence` is required above LOW, `tensions_with` names concerns the fix could degrade (usually empty for handler text).
 
 4. `auto_safe=true` for: version-pill bumps inside a handler, stale email swaps where the new value is unambiguous, file-path corrections where the new path verifiably exists, dated-claim refreshes where the new date can be derived from the canonical doc.
    `auto_safe=false` for: convention paragraph rewrites, cross-handler contradictions (the user has to pick the canonical version), anything that touches more than text alignment.

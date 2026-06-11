@@ -17,7 +17,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `index.html` | The site itself. Single self-contained file. Lists projects with descriptions. |
 | `404.html` | Fallback for unknown paths. |
 | `CNAME` | Custom-domain pointer for GitHub Pages: `yesandeverything.com`. |
-| `robots.txt` | Allows crawlers on root, disallows `/hordes/` (private GDD). |
+| `robots.txt` | Allows crawlers on root, disallows the private paths: `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/sitemap/`. |
 | `.nojekyll` (implicit) | Tells GitHub Pages to skip Jekyll processing. |
 | `hordes/index.html` | Password-gated HBH GDD mirror. Password: `SneakPeak`. Contains base64-inlined GDD via `var ENCODED = "..."`. **Generated, not hand-edited.** |
 | `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a 3-line meta-refresh stub that redirects to `/hordes/` so any old bookmark still lands on the gate. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
@@ -26,6 +26,9 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `brackish-rising/` | Password-gated Brackish Rising GDD mirror. Same base64-inlined gate pattern as `hordes/`; generated from the BR repo, not hand-edited. |
 | `budget/` | Budget project landing page. Single self-contained file; project mirror. |
 | `terms/` | Terms / legal page. Single self-contained file. |
+| `dashboard/` | Private usage dashboard (robots-gated). Reads `dashboard/data/usage.json`. |
+| `sitemap/` | Private site map page (robots-gated). |
+| `work/` | Private work page (robots-gated). |
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
 | `scripts/` | Release tooling. `release.ps1` runs the integrity guards then commit + push + Discord; `push-to-github.ps1`, `discord-notify.ps1`, plus repo-parity and branch-protection helpers. |

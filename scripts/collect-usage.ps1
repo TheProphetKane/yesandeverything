@@ -1,32 +1,56 @@
-# collect-usage.ps1 - aggregate per-project Claude token usage for the /work/ dashboard.
+# collect-usage.ps1 - aggregate per-project Claude token usage for the /dashboard/ page.
 #
 # Scans local session logs (Claude Code project transcripts + Cowork session
-# logs), attributes each usage record to a project by path, buckets tokens by
-# local day, prices them with the editable table below, and writes
-# work\data\usage.json. Incremental: a state file remembers how far into each
-# log it has read, so repeat runs only process appended lines. Output lands
-# at dashboard\data\usage.json for the /dashboard/ page.
+# logs), attributes each usage record to a project, buckets tokens by Central
+# calendar day, prices them with the editable table below, and writes
+# dashboard\data\usage.json. Incremental: a state file remembers how far into
+# each log it has read, so repeat runs only process appended lines.
 #
-# Run manually or on a schedule (every 30 min is plenty):
 #   cd X:\YesAndEverything
-#   .\scripts\collect-usage.ps1            # collect + commit + push
+#   .\scripts\collect-usage.ps1            # incremental collect + commit + push
 #   .\scripts\collect-usage.ps1 -NoPush    # collect only
+#   .\scripts\collect-usage.ps1 -Audit     # read-only full scan; writes a coverage
+#                                          # report to docs\USAGE_AUDIT-<date>.md and
+#                                          # compares against the live usage.json.
+#                                          # Touches nothing else.
+#   .\scripts\collect-usage.ps1 -Rescan    # rebuild ALL history from the logs with
+#                                          # current attribution + dedupe rules, then
+#                                          # write + push as normal.
+#
+# ATTRIBUTION (v2, 2026-06-11): each file's project is the MAJORITY VOTE of
+# pattern hits across every line scanned, not the first hit. Per-record, a cwd
+# match wins outright, then the record's own line match, then the file majority,
+# then YaE. v1 stamped a whole session with the first project name seen, which
+# misattributed Cowork sessions (their first lines mention every repo) and is
+# why Hordes / Rising read low. State files from v1 trigger a one-time full
+# re-scan automatically.
+#
+# DEDUPE: Claude Code writes one transcript line per content block, repeating
+# the same message id + usage. v1 counted each repeat. v2 counts one usage per
+# message id (keeping the last, which carries final output counts).
+#
+# In incremental runs a file's majority can shift as it grows; already-banked
+# records keep their original attribution. Run -Rescan occasionally (or after
+# any attribution change) to re-true history.
 #
 # Costs are API-EQUIVALENT ESTIMATES. Subscription usage is not billed per
 # token; the table below exists so the numbers mean something. Edit freely.
 
-param([switch]$NoPush)
+param([switch]$NoPush, [switch]$Audit, [switch]$Rescan)
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
+$ATTRIB_VERSION = 2
+
 # ----- Pricing (USD per million tokens; Anthropic published API rates) ----
 # Verified against the published price list on the date below. When rates
 # change: update the table AND bump $PRICING_VERSION (any date string). Costs
 # are frozen into the state aggregates at scan time, so a rate change applies
-# to FUTURE token use only, never retroactively. Cache rates follow the
-# standard convention: read = 0.1x input, 5-minute write = 1.25x input.
+# to FUTURE token use only, never retroactively (a -Rescan reprices everything
+# at the current table; avoid rescanning across a rate change unless that is
+# what you want). Cache rates: read = 0.1x input, 5-minute write = 1.25x input.
 $PRICING_VERSION = "2026-06-10"
 $PRICING = @(
   @{ match = "fable";  in = 10.0; out = 50.0; cacheRead = 1.00; cacheWrite = 12.50 },
@@ -36,32 +60,41 @@ $PRICING = @(
 )
 $PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
 
-# ----- Project attribution (ordered; first hit wins) ---------------------
+# ----- Project attribution (ordered; first hit wins WITHIN a line) ---------
 $PROJECT_PATTERNS = @(
   # scheduled-task names first: a task session belongs to its project even when
   # its prompt also mentions the YaE queue or other repos
-  @{ pat = "audit-htbh";       id = "HBH" },
-  @{ pat = "bar-raise-hbh";    id = "HBH" },
-  @{ pat = "audit-brackish";   id = "BR" },
-  @{ pat = "bar-raise-br";     id = "BR" },
-  @{ pat = "audit-yac";        id = "YaC" },
-  @{ pat = "bar-raise-yac";    id = "YaC" },
-  @{ pat = "audit-scheduler";  id = "Scheduler" },
+  @{ pat = "audit-htbh";          id = "HBH" },
+  @{ pat = "bar-raise-hbh";       id = "HBH" },
+  @{ pat = "audit-brackish";      id = "BR" },
+  @{ pat = "bar-raise-br";        id = "BR" },
+  @{ pat = "audit-yac";           id = "YaC" },
+  @{ pat = "bar-raise-yac";       id = "YaC" },
+  @{ pat = "audit-scheduler";     id = "Scheduler" },
   @{ pat = "bar-raise-scheduler"; id = "Scheduler" },
-  @{ pat = "audit-apothecary"; id = "YaA" },
-  @{ pat = "bar-raise-yaa";    id = "YaA" },
-  @{ pat = "audit-yab";        id = "YaB" },
-  @{ pat = "bar-raise-yab";    id = "YaB" },
-  @{ pat = "Claude\Scheduled"; id = "YaE" },   # any other scheduled task -> Everything
-  @{ pat = "HereBeHordes";     id = "HBH" },
-  @{ pat = "HereThereBeHordes"; id = "HBH" },
-  @{ pat = "BrackishRising";   id = "BR" },
-  @{ pat = "YesAndChains";     id = "YaC" },
-  @{ pat = "YesAndScheduler";  id = "Scheduler" },
-  @{ pat = "YesAndApothecary"; id = "YaA" },
-  @{ pat = "YesAndBudget";     id = "YaB" },
-  @{ pat = "YesAndEverything"; id = "YaE" },
-  @{ pat = "Scheduler";        id = "Scheduler" }   # legacy X:\Scheduler path; after YesAnd* so it never shadows them
+  @{ pat = "audit-apothecary";    id = "YaA" },
+  @{ pat = "bar-raise-yaa";       id = "YaA" },
+  @{ pat = "audit-yab";           id = "YaB" },
+  @{ pat = "bar-raise-yab";       id = "YaB" },
+  # repo folder names (match X:\ paths, /mnt/ paths, and dir-encoded forms)
+  @{ pat = "HereBeHordes";        id = "HBH" },
+  @{ pat = "HereThereBeHordes";   id = "HBH" },
+  @{ pat = "here-be-hordes";      id = "HBH" },
+  @{ pat = "BrackishRising";      id = "BR" },
+  @{ pat = "brackish-rising";     id = "BR" },
+  @{ pat = "YesAndChains";        id = "YaC" },
+  @{ pat = "yesandchains";        id = "YaC" },
+  @{ pat = "YesAndScheduler";     id = "Scheduler" },
+  @{ pat = "YesAndApothecary";    id = "YaA" },
+  @{ pat = "yesandapothecary";    id = "YaA" },
+  @{ pat = "YesAndBudget";        id = "YaB" },
+  @{ pat = "YesAndEverything";    id = "YaE" },
+  @{ pat = "yesandeverything";    id = "YaE" },
+  # generic scheduled-task dir -> Everything (after project task names above)
+  @{ pat = "Claude\Scheduled";    id = "YaE" },
+  @{ pat = "mnt/Scheduled";       id = "YaE" },
+  # legacy X:\Scheduler path; last so it never shadows the YesAnd* names
+  @{ pat = "Scheduler";           id = "Scheduler" }
 )
 
 $SCAN_ROOTS = @(
@@ -99,27 +132,28 @@ function Get-Price([string]$model) {
   return $PRICE_DEFAULT
 }
 
-# ----- Load state ---------------------------------------------------------
-$Files = @{}   # path -> @{ length; processed; project }
+# ----- Load state -----------------------------------------------------------
+$FreshScan = ($Audit -or $Rescan)
+$Files = @{}   # path -> @{ length; processed; project; votes; lastMsgId }
 $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
-if (Test-Path $StatePath) {
+if (-not $FreshScan -and (Test-Path $StatePath)) {
   try {
     $state = Get-Content -Raw $StatePath | ConvertFrom-Json
-    if (-not $state.pricingVersion) {
-      # Pre-versioned state was built on placeholder rates. One-time full
-      # re-scan so history is priced at the published table. Versioned states
-      # are never repriced: a future rate change applies forward only.
-      throw "state predates pricing versioning; full re-scan at published rates"
+    if (-not $state.pricingVersion) { throw "state predates pricing versioning; full re-scan" }
+    if ([int]$state.attribVersion -ne $ATTRIB_VERSION) {
+      throw "state attribution v$($state.attribVersion) != v$ATTRIB_VERSION; full re-scan with vote-based attribution + dedupe"
     }
     if ($state.pricingVersion -ne $PRICING_VERSION) {
       Write-Host "INFO: pricing table changed ($($state.pricingVersion) -> $PRICING_VERSION). Existing aggregates keep their original pricing; new tokens use the new table." -ForegroundColor Yellow
     }
     foreach ($prop in $state.files.PSObject.Properties) {
-      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project }
+      $votes = @{}
+      if ($prop.Value.votes) { foreach ($v in $prop.Value.votes.PSObject.Properties) { $votes[$v.Name] = [int]$v.Value } }
+      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId }
     }
     foreach ($row in $state.agg) {
       $rp = $row.p
-      if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }  # fold legacy buckets into Everything
+      if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }
       if (-not $Agg.ContainsKey($rp)) { $Agg[$rp] = @{} }
       if (-not $Agg[$rp].ContainsKey($row.d)) { $Agg[$rp][$row.d] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
       $b = $Agg[$rp][$row.d]
@@ -127,7 +161,7 @@ if (Test-Path $StatePath) {
       $b.cacheRead += [long]$row.cacheRead; $b.cacheWrite += [long]$row.cacheWrite; $b.cost += [double]$row.cost
     }
   } catch {
-    Write-Host "WARN: state file unreadable; full rescan. ($_)" -ForegroundColor Yellow
+    Write-Host "WARN: full rescan. ($_)" -ForegroundColor Yellow
     $Files = @{}; $Agg = @{}
   }
 }
@@ -146,18 +180,27 @@ function Add-Usage([string]$proj, [string]$day, $u, [string]$model) {
   $b.input += $in; $b.output += $out; $b.cacheRead += $cr; $b.cacheWrite += $cw; $b.cost += $cost
 }
 
-# ----- Scan ----------------------------------------------------------------
-$scannedFiles = 0; $newLines = 0; $usageLines = 0
+# ----- Scan -----------------------------------------------------------------
+$scannedFiles = 0; $newLines = 0; $usageRecords = 0; $dupSkipped = 0; $fallbackYaE = 0
+$oldestTs = $null; $newestTs = $null
+$fileTotals = @()   # audit detail: per-file resolved project + token sum
+
 foreach ($root in $SCAN_ROOTS) {
   if (-not (Test-Path $root)) { Write-Host "INFO: $root not found, skipping." -ForegroundColor DarkGray; continue }
   $logs = Get-ChildItem -Path $root -Filter *.jsonl -Recurse -File -ErrorAction SilentlyContinue
   foreach ($f in $logs) {
     $key = $f.FullName
-    $prev = $Files[$key]
+    $prev = $null
+    if (-not $FreshScan) { $prev = $Files[$key] }
     if ($prev -and $prev.length -eq $f.Length) { continue }
-    $processed = 0; $fileProj = $null
-    if ($prev) { $processed = $prev.processed; $fileProj = $prev.project }
-    if (-not $fileProj) { $fileProj = Get-ProjectFor $key }
+    $processed = 0
+    $votes = @{}
+    $lastMsgId = $null
+    if ($prev) {
+      $processed = $prev.processed
+      if ($prev.votes) { $votes = $prev.votes }
+      $lastMsgId = $prev.lastMsgId
+    }
     $scannedFiles++
 
     $fs = [System.IO.File]::Open($key, "Open", "Read", "ReadWrite")
@@ -165,7 +208,6 @@ foreach ($root in $SCAN_ROOTS) {
       if ($processed -gt 0 -and $processed -le $fs.Length) { $fs.Seek($processed, "Begin") | Out-Null } else { $processed = 0 }
       $sr = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
       $chunk = $sr.ReadToEnd()
-      $consumed = $fs.Length - $processed
       # Only count fully-terminated lines; an in-flight session may be mid-write
       # on the last line. Leave the partial tail for the next run.
       $lastNl = $chunk.LastIndexOf("`n")
@@ -174,40 +216,71 @@ foreach ($root in $SCAN_ROOTS) {
       $byteLen = [System.Text.Encoding]::UTF8.GetByteCount($body)
       $newProcessed = $processed + $byteLen
 
+      # Pass 1: vote + buffer usage records. Attribution resolves AFTER the
+      # whole chunk has voted, so early records aren't stamped by whatever
+      # project name happened to appear first.
+      $records = New-Object System.Collections.Generic.List[object]
       foreach ($line in $body -split "`n") {
         if (-not $line) { continue }
         $newLines++
-        if ($line.IndexOf('"usage"') -lt 0) {
-          if (-not $fileProj) { $hit = Get-ProjectFor $line; if ($hit) { $fileProj = $hit } }
-          continue
-        }
+        $lineHit = Get-ProjectFor $line
+        if ($lineHit) { if ($votes.ContainsKey($lineHit)) { $votes[$lineHit]++ } else { $votes[$lineHit] = 1 } }
+        if ($line.IndexOf('"usage"') -lt 0) { continue }
         $obj = $null
         try { $obj = $line | ConvertFrom-Json } catch { continue }
-        $usage = $null; $model = $null
-        if ($obj.message -and $obj.message.usage) { $usage = $obj.message.usage; $model = $obj.message.model }
+        $usage = $null; $model = $null; $msgId = $null
+        if ($obj.message -and $obj.message.usage) { $usage = $obj.message.usage; $model = $obj.message.model; $msgId = $obj.message.id }
         elseif ($obj.usage) { $usage = $obj.usage; $model = $obj.model }
         if (-not $usage) { continue }
-        $usageLines++
-        $proj = $null
-        if ($obj.cwd) { $proj = Get-ProjectFor $obj.cwd }
-        if (-not $proj) { $proj = Get-ProjectFor $line }
-        if (-not $proj) { $proj = $fileProj }
-        if (-not $proj) { $proj = "YaE" }   # anything unmatched rolls into Everything
+        if (-not $msgId -and $obj.requestId) { $msgId = $obj.requestId }
+        $strong = $null
+        if ($obj.cwd) { $strong = Get-ProjectFor $obj.cwd }
         $ts = $null
         if ($obj.timestamp) { try { $ts = [datetime]$obj.timestamp } catch { $ts = $null } }
         if (-not $ts) { $ts = $f.LastWriteTime }
-        $day = Get-CentralDay $ts
-        Add-Usage $proj $day $usage $model
+        $rec = @{ strong = $strong; lineHit = $lineHit; msgId = $msgId; ts = $ts; usage = $usage; model = $model }
+        # Dedupe: repeated transcript lines for the same message id carry the
+        # same final usage. Keep the LAST occurrence (overwrite in place).
+        if ($msgId) {
+          if ($records.Count -gt 0 -and $records[$records.Count - 1].msgId -eq $msgId) {
+            $records[$records.Count - 1] = $rec; $dupSkipped++; continue
+          }
+          if ($records.Count -eq 0 -and $lastMsgId -eq $msgId) { $dupSkipped++; continue }
+        }
+        $records.Add($rec)
       }
-      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj }
+
+      # Pass 2: resolve attribution and bank the records.
+      $fileProj = $null
+      if ($votes.Count -gt 0) { $fileProj = ($votes.GetEnumerator() | Sort-Object -Property Value -Descending | Select-Object -First 1).Key }
+      if (-not $fileProj) { $fileProj = Get-ProjectFor $key }
+      $fileTok = [long]0
+      foreach ($r in $records) {
+        $proj = $r.strong
+        if (-not $proj) { $proj = $r.lineHit }
+        if (-not $proj) { $proj = $fileProj }
+        if (-not $proj) { $proj = "YaE"; $fallbackYaE++ }
+        $usageRecords++
+        if (-not $oldestTs -or $r.ts -lt $oldestTs) { $oldestTs = $r.ts }
+        if (-not $newestTs -or $r.ts -gt $newestTs) { $newestTs = $r.ts }
+        $u = $r.usage
+        $fileTok += [long]($u.input_tokens) + [long]($u.output_tokens)
+        Add-Usage $proj (Get-CentralDay $r.ts) $u $r.model
+        if ($r.msgId) { $lastMsgId = $r.msgId }
+      }
+      if ($Audit -and $fileTok -gt 0) {
+        $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "YaE" }); tokens = $fileTok }
+      }
+      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId }
     } finally {
       $fs.Dispose()
     }
   }
 }
-Write-Host "Scanned $scannedFiles changed file(s), $newLines new line(s), $usageLines usage record(s)." -ForegroundColor Green
+Write-Host "Scanned $scannedFiles file(s), $newLines line(s), $usageRecords usage record(s), $dupSkipped duplicate(s) merged, $fallbackYaE unattributed->YaE." -ForegroundColor Green
+if ($oldestTs) { Write-Host ("Log horizon: oldest surviving record {0:yyyy-MM-dd}, newest {1:yyyy-MM-dd}. Transcripts older than the retention window are purged from disk and cannot be recovered." -f $oldestTs, $newestTs) -ForegroundColor DarkGray }
 
-# ----- Build usage.json ----------------------------------------------------
+# ----- Roll up --------------------------------------------------------------
 $cutoff = (Get-Date).Date.AddDays(-60)
 $projects = [ordered]@{}
 foreach ($proj in ($Agg.Keys | Sort-Object)) {
@@ -226,6 +299,54 @@ foreach ($proj in ($Agg.Keys | Sort-Object)) {
   $sessions = @($Files.Keys | Where-Object { $Files[$_].project -eq $proj }).Count
   $projects[$proj] = [ordered]@{ allTime = $allTime; sessions = $sessions; daily = $daily }
 }
+
+# ----- Audit mode: report + compare, write nothing else --------------------
+if ($Audit) {
+  $live = $null
+  if (Test-Path $OutPath) { try { $live = Get-Content -Raw $OutPath | ConvertFrom-Json } catch { $live = $null } }
+  $today = Get-CentralDay (Get-Date)
+  $reportPath = Join-Path $RepoRoot "docs\USAGE_AUDIT-$today.md"
+  $L = New-Object System.Collections.Generic.List[string]
+  $L.Add("# Usage coverage audit - $today")
+  $L.Add("")
+  $L.Add("Full fresh scan of all session logs with v$ATTRIB_VERSION attribution (majority vote + cwd override) and message-id dedupe, compared against the live ``dashboard/data/usage.json``. Read-only: no state, output, or git changes.")
+  $L.Add("")
+  $L.Add("Scanned $scannedFiles files / $usageRecords usage records. $dupSkipped duplicate usage lines merged. $fallbackYaE records had no attribution signal and defaulted to YaE.")
+  if ($oldestTs) { $L.Add("Oldest surviving record: $($oldestTs.ToString('yyyy-MM-dd')). Anything before that has been purged from disk by transcript retention and is not recoverable.") }
+  $L.Add("")
+  $L.Add("## Fresh scan vs live dashboard (all-time)")
+  $L.Add("")
+  $L.Add("| project | in (fresh) | in (live) | out (fresh) | out (live) | cost (fresh) | cost (live) |")
+  $L.Add("|---|---:|---:|---:|---:|---:|---:|")
+  $allIds = New-Object System.Collections.Generic.HashSet[string]
+  foreach ($k in $projects.Keys) { [void]$allIds.Add($k) }
+  if ($live -and $live.projects) { foreach ($pp in $live.projects.PSObject.Properties) { [void]$allIds.Add($pp.Name) } }
+  foreach ($id in ($allIds | Sort-Object)) {
+    $fa = if ($projects.Contains($id)) { $projects[$id].allTime } else { @{ input = 0; output = 0; costUSD = 0 } }
+    $la = $null
+    if ($live -and $live.projects -and $live.projects.PSObject.Properties[$id]) { $la = $live.projects.$id.allTime }
+    if (-not $la) { $la = @{ input = 0; output = 0; costUSD = 0 } }
+    $L.Add(("| {0} | {1:n0} | {2:n0} | {3:n0} | {4:n0} | `${5:n2} | `${6:n2} |" -f $id, [long]$fa.input, [long]$la.input, [long]$fa.output, [long]$la.output, [double]$fa.costUSD, [double]$la.costUSD))
+  }
+  $L.Add("")
+  $L.Add("## Largest sessions by tokens (attribution spot-check)")
+  $L.Add("")
+  foreach ($ft in ($fileTotals | Sort-Object tokens -Descending | Select-Object -First 20)) {
+    $L.Add(("- ``{0}`` -> **{1}** ({2:n0} in+out)" -f $ft.path, $ft.project, $ft.tokens))
+  }
+  $L.Add("")
+  $L.Add("To adopt these numbers: ``.\scripts\collect-usage.ps1 -Rescan``")
+  $L.Add("")
+  [System.IO.File]::WriteAllText($reportPath, ($L -join "`n"), [System.Text.UTF8Encoding]::new($false))
+  Write-Host "Audit report: $reportPath" -ForegroundColor Green
+  foreach ($proj in $projects.Keys) {
+    $a = $projects[$proj].allTime
+    Write-Host ("  {0,-14} {1,12:n0} in / {2,12:n0} out  ~ `${3,9:n2}" -f $proj, $a.input, $a.output, $a.costUSD) -ForegroundColor DarkGray
+  }
+  exit 0
+}
+
+# ----- Build usage.json ------------------------------------------------------
 $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
   pricingVersion = $PRICING_VERSION
@@ -252,7 +373,7 @@ foreach ($proj in $projects.Keys) {
   Write-Host ("  {0,-14} {1,12:n0} in / {2,12:n0} out  ~ `${3,9:n2}" -f $proj, $a.input, $a.output, $a.costUSD) -ForegroundColor DarkGray
 }
 
-# ----- Save state ----------------------------------------------------------
+# ----- Save state ------------------------------------------------------------
 $flat = @()
 foreach ($proj in $Agg.Keys) {
   foreach ($day in $Agg[$proj].Keys) {
@@ -260,9 +381,9 @@ foreach ($proj in $Agg.Keys) {
     $flat += [ordered]@{ p = $proj; d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; cost = $b.cost }
   }
 }
-Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; files = $Files; agg = $flat })
+Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; files = $Files; agg = $flat })
 
-# ----- Commit + push -------------------------------------------------------
+# ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
 # git writes normal progress to stderr; under ErrorActionPreference=Stop the
 # 2>&1 redirect promotes that into a terminating NativeCommandError even on a

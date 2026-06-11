@@ -723,6 +723,15 @@
     if (n == null || !isFinite(n)) return "$0.00";
     return "$" + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
   }
+  /* "left" = actionable work only: pending queue items + completion-gate
+     remainders. Backlog rows are wish-list depth, shown in tooltips but
+     never counted, so the chip stays a number worth acting on. */
+  function leftOf(st) {
+    if (!st || !st.itemsLeft) return null;
+    var il = st.itemsLeft;
+    if (il.queue != null || il.gates != null) return (il.queue || 0) + (il.gates || 0);
+    return il.open != null ? il.open : null;
+  }
   function fmtAgo(iso) {
     if (!iso) return "never";
     var t = new Date(iso).getTime();
@@ -1110,11 +1119,7 @@
       if (VIEW === "cache") { labelUp = "cache read"; labelDn = "cache write"; }
     }
     var wrap = el("div", { className: "flow" });
-    // today marker + riders are CSS-positioned divs so they stay round
-    var tdot = el("div", { className: "rdot today-pulse", title: "today" });
-    tdot.style.background = "#ff66ff"; tdot.style.width = "11px"; tdot.style.height = "11px";
-    tdot.style.boxShadow = "0 0 8px rgba(255,0,255,0.7)";
-    wrap.appendChild(tdot);
+    // riders are CSS-positioned divs so they stay round
     function place(div, vx, vy) {
       div.style.left = (vx / W * 100) + "%";
       div.style.top = ((vy / H) * (svg.clientHeight || 1)) + "px";
@@ -1171,12 +1176,9 @@
           if (riderO && samples.o) place(riderO, x, yAt(samples.o, x));
           if (riderI && samples.i) place(riderI, x, yAt(samples.i, x));
         }
-        place(tdot, W - 2, lastY);
         requestAnimationFrame(loop);
       }
       requestAnimationFrame(loop);
-    } else {
-      requestAnimationFrame(function () { place(tdot, W - 2, lastY); });
     }
     if (labelUp) wrap.appendChild(el("span", { className: "side-label in", text: labelUp, title: VIEW === "cost" ? "estimated dollars per day" : VIEW === "cache" ? "context re-read from cache" : "prompt + context tokens in" }));
     if (labelDn) wrap.appendChild(el("span", { className: "side-label out", text: labelDn, title: VIEW === "cache" ? "context written to cache" : "generated tokens out" }));
@@ -1470,14 +1472,14 @@
         if (st.barRaise.actionsOpen != null) acts += st.barRaise.actionsOpen;
         if (st.barRaise.verdict) counts[st.barRaise.verdict] = (counts[st.barRaise.verdict] || 0) + 1;
       }
-      if (st && st.itemsLeft && st.itemsLeft.open != null) leftSum += st.itemsLeft.open;
+      var lv = leftOf(st); if (lv != null) leftSum += lv;
     });
     if (nC) sum.appendChild(el("span", { className: "chip", text: "mean " + Math.round(meanC / nC) + "% complete", title: "average of the owner-anchored completion scores" }));
     Object.keys(counts).forEach(function (v) {
       sum.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
     });
     sum.appendChild(el("span", { className: "chip", text: acts + " actions open", title: TIPS.reviewActions }));
-    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " items left", title: "queue + backlogs + completion gates" }));
+    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " items left", title: "actionable now: queue items + completion gates (backlog wish-lists not counted)" }));
     outer.appendChild(sum);
 
     var split = el("div", { className: "bigviz-split" });
@@ -1496,7 +1498,7 @@
       if (st && st.milestone && st.milestone.id) bits.push(st.milestone.id + " " + (st.milestone.label || "").slice(0, 26));
       if (br.verdict) bits.push("<b>" + br.verdict + "</b>");
       if (br.actionsOpen != null) bits.push(br.actionsOpen + " open");
-      if (st && st.itemsLeft && st.itemsLeft.open != null) bits.push(st.itemsLeft.open + " left");
+      var lvb = leftOf(st); if (lvb != null) bits.push(lvb + " left");
       if (st && st.lastReleaseAt) bits.push("pushed " + fmtAgo(st.lastReleaseAt));
       bits.push("today " + fmtTok(tk));
       var row = keyRow(p.hue, p.displayName, (pct || 0) / 100, (pct != null ? pct + "%" : "?"),
@@ -1575,30 +1577,39 @@
     var b2 = block("mag", "cost today", tToday.cost, fmtUSD, "est");
     b2.appendChild(sparkSvg(costSeries, "#ff66ff"));
     b2.appendChild(el("div", { className: "blabel", text: "last 14 days" }));
-    var b3 = block("", "vs yesterday", "", null, "");
+    // left column row 2: vs past week, 7-day bars with weekday labels
+    var b3 = block("", "vs past week", "", null, "");
     var n3 = b3.querySelector(".bnum");
-    if (tYester.tok > 0) {
-      var pct = Math.round(((tToday.tok - tYester.tok) / tYester.tok) * 100);
+    var last7 = tokSeries.slice(7);          // dayKey(6) .. dayKey(0)
+    var prev7 = tokSeries.slice(6, 13);      // dayKey(7) .. dayKey(1)
+    var prevAvg = prev7.reduce(function (a, b) { return a + b; }, 0) / 7;
+    if (prevAvg > 0) {
+      var pct = Math.round(((tToday.tok - prevAvg) / prevAvg) * 100);
       n3.appendChild(el("span", { className: pct >= 0 ? "up" : "dn", text: (pct >= 0 ? "▲ " : "▼ ") + Math.abs(pct) + "%" }));
-      var mrY = el("div", { className: "meterrow" });
-      mrY.appendChild(el("span", { className: "mid", text: "yesterday" }));
-      var mY = el("div", { className: "meter" }); var fY = el("div", { className: "mf" });
-      fY.style.background = "#697381"; mY.appendChild(fY); mrY.appendChild(mY);
-      mrY.appendChild(el("span", { className: "mval", text: fmtTok(tYester.tok) }));
-      b3.appendChild(mrY);
-      var mrT = el("div", { className: "meterrow" });
-      mrT.appendChild(el("span", { className: "mid", text: "today" }));
-      var mT = el("div", { className: "meter" }); var fT = el("div", { className: "mf" });
-      fT.style.background = "linear-gradient(90deg, #02a4d3, #ff00ff)"; mT.appendChild(fT); mrT.appendChild(mT);
-      mrT.appendChild(el("span", { className: "mval", text: fmtTok(tToday.tok) }));
-      b3.appendChild(mrT);
-      var mx = Math.max(tToday.tok, tYester.tok, 1);
-      requestAnimationFrame(function () { requestAnimationFrame(function () {
-        fY.style.width = (tYester.tok / mx * 100) + "%";
-        fT.style.width = (tToday.tok / mx * 100) + "%";
-      }); });
+      n3.appendChild(el("span", { className: "unit", text: "vs prior 7-day avg" }));
     } else { n3.textContent = "--"; }
-    block("", "all-time tokens", tAll.tok, fmtTok, "tok");
+    var wk = el("div", { title: "tokens per day, last 7 days" });
+    wk.style.cssText = "display:flex;align-items:flex-end;gap:6px;height:74px;margin-top:10px;";
+    var mx7 = Math.max.apply(null, last7.concat([1]));
+    var WD = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    last7.forEach(function (v, i) {
+      var k = dayKey(6 - i), isToday = i === 6;
+      var col = el("div", { title: k + " · " + fmtTok(v) + " tok" });
+      col.style.cssText = "flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:4px;min-width:0;";
+      var bar = el("div");
+      bar.style.cssText = "width:100%;border-radius:3px 3px 0 0;min-height:2px;height:2px;transition:height .7s cubic-bezier(.2,.8,.2,1);" +
+        (isToday ? "background:linear-gradient(180deg,#ff00ff,#02a4d3);box-shadow:0 0 8px rgba(255,0,255,.4);" : "background:#3a4250;");
+      col.appendChild(bar);
+      var lab = el("div", { text: WD[new Date(k + "T00:00:00").getDay()] });
+      lab.style.cssText = "font-size:9px;letter-spacing:.08em;text-align:center;flex-shrink:0;color:" + (isToday ? "#ff66ff" : "#697381") + ";";
+      col.appendChild(lab);
+      wk.appendChild(col);
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        bar.style.height = Math.max(4, Math.round(v / mx7 * 100)) + "%";
+      }); });
+    });
+    b3.appendChild(wk);
+    // right column row 2: all-time cost with per-project bars
     var b5 = block("mag", "all-time cost", tAll.cost, fmtUSD, "est");
     perCost.slice(0, 7).forEach(function (r) {
       var mr = el("div", { className: "meterrow" });
@@ -1609,10 +1620,26 @@
       b5.appendChild(mr);
       requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.width = (r.cost / maxCost * 100) + "%"; }); });
     });
+    // row 3: all-time tokens (left), burn rate today (right, under all-time cost)
+    block("", "all-time tokens", tAll.tok, fmtTok, "tok");
     block("", "burn rate today", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k tok");
-    block("", "review actions open", actionsOpen, function (n) { return String(Math.round(n)); }, "");
-    block("", "sessions logged", sessions, function (n) { return String(Math.round(n)); }, "");
-    block("", "last collected", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, usage && usage.pricingVersion ? "rates " + usage.pricingVersion : "");
+    // bottom row, full width: sessions · review actions · last collected
+    var brow = el("div", { className: "bigstat" });
+    brow.style.cssText = "grid-column:1/-1;display:flex;gap:28px;flex-wrap:wrap;";
+    function mini(label, value, formatter, unit, tip) {
+      var d = el("div", { title: tip || "" });
+      d.style.cssText = "flex:1;min-width:120px;";
+      d.appendChild(el("div", { className: "blabel", text: label }));
+      var n = el("div", { className: "bnum" });
+      d.appendChild(n);
+      if (typeof value === "number") countUp(n, value, formatter, unit);
+      else { n.textContent = value; if (unit) n.appendChild(el("span", { className: "unit", text: unit })); }
+      brow.appendChild(d);
+    }
+    mini("sessions logged", sessions, function (n) { return String(Math.round(n)); }, "", "distinct session logs scanned");
+    mini("review actions open", actionsOpen, function (n) { return String(Math.round(n)); }, "", TIPS.reviewActions);
+    mini("last collected", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", TIPS.lastCollected);
+    grid.appendChild(brow);
     openOverlay("portfolio stats" + (FILTER === "ALL" ? "" : " · " + metaFor(FILTER).tag), grid);
   }
   function openReleases() {
@@ -1743,10 +1770,10 @@
       PROJECTS.forEach(function (p) {
         var s = LAST.statuses[p.id];
         if (s && s.workQueueDepth != null) qsum += s.workQueueDepth;
-        if (s && s.itemsLeft && s.itemsLeft.open != null) { leftSum += s.itemsLeft.open; haveLeft = true; }
+        var lvc = leftOf(s); if (lvc != null) { leftSum += lvc; haveLeft = true; }
       });
       if (haveLeft) {
-        var cl = el("span", { className: "chip", title: "open work across the portfolio: queue + backlogs + completion gates" });
+        var cl = el("span", { className: "chip", title: "actionable across the portfolio: queue items + completion gates (backlog wish-lists in each project's tooltip)" });
         cl.appendChild(el("span", { className: "k", text: "left" }));
         cl.appendChild(txt(String(leftSum)));
         chipsA.appendChild(cl);
@@ -1808,13 +1835,14 @@
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
         chips.appendChild(c2);
       }
-      if (status.itemsLeft && status.itemsLeft.open != null) {
+      if (status.itemsLeft && leftOf(status) != null) {
+        var lv6 = leftOf(status);
         var c6 = el("span", {
-          className: "chip" + (status.itemsLeft.open === 0 ? " fresh" : ""),
-          title: "open work: queue " + status.itemsLeft.queue + " · backlog " + status.itemsLeft.backlog + " · completion gates " + status.itemsLeft.gates + (status.itemsLeft.open === 0 ? " · the improvement scout hunts for more at zero" : "")
+          className: "chip" + (lv6 === 0 ? " fresh" : ""),
+          title: "actionable now: queue " + (status.itemsLeft.queue || 0) + " + completion gates " + (status.itemsLeft.gates || 0) + " · backlog depth " + (status.itemsLeft.backlog || 0) + " (wish-list, not counted)" + (lv6 === 0 ? " · the improvement scout hunts for more at zero" : "")
         });
         c6.appendChild(el("span", { className: "k", text: "left" }));
-        c6.appendChild(txt(status.itemsLeft.open === 0 ? "0 · scouting" : String(status.itemsLeft.open)));
+        c6.appendChild(txt(lv6 === 0 ? "0 · scouting" : String(lv6)));
         chips.appendChild(c6);
       } else if (status.workQueueDepth != null) {
         var c4 = el("span", { className: "chip", title: TIPS.queue });
@@ -1899,7 +1927,7 @@
         sub.appendChild(txt("today "));
         sub.appendChild(el("span", { className: "cost", text: fmtUSD(todayCost) }));
         if (st && st.completion) sub.appendChild(txt(" · " + st.completion.pct + "% done"));
-        if (st && st.itemsLeft && st.itemsLeft.open != null) sub.appendChild(txt(" · " + st.itemsLeft.open + " left"));
+        var lvm = leftOf(st); if (lvm != null) sub.appendChild(txt(" · " + lvm + " left"));
         if (id === "ALL") sub.appendChild(txt(" · portfolio view"));
         mini.appendChild(sub);
       }

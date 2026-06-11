@@ -136,9 +136,11 @@ Verdict: clean | warn | block
 
 ## Findings by category
 
+Every finding line carries the bar-raise REPORT_CONTRACT fields inline so audit-family output is machine-readable and queue items inherit them: `id` (<project>-code-<slug>), `severity`, `impact` 1-5, `confidence` 1-5, `evidence` (<file>:<line>), `finding` (one sentence), `suggested_action` (one imperative sentence), `tensions_with` (lens ids the fix could degrade, usually empty). Evidence is required above LOW; deterministic-check hits are confidence 5 by definition.
+
 ### Parse / syntax hazards (BLOCK)
 
-- **<finding>**: <file>:<line>. <description>. Fix: <one-line fix>.
+- **<id>** [impact/confidence]: <file>:<line>. <description>. Fix: <one-line fix>.
 
 ### Recurring bug patterns (HIGH)
 
@@ -192,7 +194,7 @@ Default: report only.
 
 If user says "apply" / "fix the safe ones" / `--apply` flag set:
 - For each finding in the **Auto-fixable items** section, apply via Python atomic-write (NEVER the Edit tool for files on this FUSE mount).
-- For each finding in **Queue items**, append to `X:\YesAndEverything\.work-queue.json` with `priority` derived from severity and `tags: ["code-audit", "<project>", "<category>"]`.
+- For each finding in **Queue items**, append to `X:\YesAndEverything\.work-queue.json` with `priority` derived from severity (BLOCK -> P0, HIGH -> P1, MEDIUM -> P2, LOW -> P3), `tags: ["code-audit", "<project>", "<category>"]`, and the finding's REPORT_CONTRACT fields carried through verbatim: `severity`, `impact`, `confidence`, `evidence`, `tensions_with`. Drain sessions rank by impact x confidence, same as bar-raise synthesis.
 - Re-run the relevant checks on touched files to verify the fix landed and didn't introduce new findings.
 
 Auto-fix safety:

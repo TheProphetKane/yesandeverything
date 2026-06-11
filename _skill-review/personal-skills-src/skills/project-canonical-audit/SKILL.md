@@ -122,7 +122,7 @@ Structure:
 [Bullet list of confirmed-correct items — most of the audit. Skipping this section is a mistake; it tells the user the canonical layer is mostly trustworthy.]
 
 ## Drift found
-[Numbered items. For each: location in the canonical doc, what it claims, what the code shows, severity.]
+[Numbered items. Each finding follows the bar-raise REPORT_CONTRACT shape so all audit-family output is machine-readable: `id` (kebab slug, stable across runs), `severity` (high|medium|low), `impact` (1-5, how much the project suffers if left alone), `confidence` (1-5, evidence solidity; speculation caps at 2), `evidence` (doc location + code path/line), `finding` (one sentence: doc claims X, code shows Y), `suggested_action` (one imperative sentence), `tensions_with` (other concerns the fix could degrade; usually empty for doc drift). Evidence is required above LOW.]
 
 ## Suggested fixes
 [Numbered actions. For each: exact text/file change. Tag as low-risk (text alignment) or structural (needs user decision).]
@@ -163,9 +163,16 @@ For each item in the audit's `## Queue-these` or `## Suggested fixes` section th
      "priority": "P0" | "P1" | "P2" | "P3",
      "status": "pending",
      "prompt": "<one-paragraph instruction the drain task can execute>",
-     "source": "YYYY-MM-DD canonical audit"
+     "source": "YYYY-MM-DD canonical audit",
+     "severity": "high" | "medium" | "low",
+     "impact": 1-5,
+     "confidence": 1-5,
+     "evidence": "<doc location + code path/line the finding rests on>",
+     "tensions_with": []
    }
    ```
+
+   The last five fields carry the originating finding's REPORT_CONTRACT data through to the queue, so drain sessions and the bar-raise synthesis rank queue items the same way lens findings are ranked (impact x confidence). Priority maps from severity: HIGH -> P1, MEDIUM -> P2, LOW -> P3 (P0 only for hard-rule breaches like a committed secret).
 
 4. `auto_safe=true` only for doc-only text edits the drain can ship without your judgment (version pill bumps, typo fixes, table-row corrections). Anything touching code, architecture, deletions, or values that need a decision is `auto_safe=false`.
 5. Save `.work-queue.json` back as pretty JSON (2-space indent) and update its top-level `updated` field to the current ISO timestamp.
