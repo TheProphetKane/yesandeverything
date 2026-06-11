@@ -225,7 +225,7 @@
     user-select: none;
   }
   .navarrow:hover { color: var(--accent-hot); border-color: var(--accent-dim); box-shadow: 0 0 18px var(--accent-glow); background: var(--ink-2); }
-  .navarrow:active { transform: scale(0.96); }
+  .navarrow:active { background: var(--ink-3); }
   .navarrow:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
 
   .spotlight { display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 8px 10px; }
@@ -622,9 +622,9 @@
   .meterrow:hover { transform: translateX(2px); }
 
   /* nav arrows: snappier feedback */
-  .navarrow { transition: color 0.15s, transform 0.15s var(--ease-spring), background 0.15s, border-color 0.15s; }
-  .navarrow:hover { color: var(--accent); transform: scale(1.14); }
-  .navarrow:active { transform: scale(0.92); }
+  .navarrow { transition: color 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s; }
+  .navarrow:hover { color: var(--accent); }
+  .navarrow:active { color: var(--accent-hot); background: var(--ink-3); }
 
   /* control buttons */
   .auto-btn, .refresh, .filters button, .filters .chip {
@@ -777,6 +777,21 @@
     .panel { box-shadow: none; border-color: #ccc; }
     .navarrow, .auto-btn, .refresh { display: none !important; }
   }
+  
+  /* ============================================================
+     v4 layout fixes (2026-06-11): greyed (not dropped) legend rows,
+     radar descriptor wrapping, radar label clipping. Layout-safe.
+     ============================================================ */
+  .core-legend > span.dim { opacity: 0.34; }
+  .core-legend > span.dim .sw { filter: grayscale(0.65); }
+
+  /* radar descriptor: wrap inside the widget instead of nowrap+ellipsis */
+  #radar-legend > span {
+    white-space: normal; overflow: visible; text-overflow: clip;
+    display: block; text-align: center; line-height: 1.35;
+  }
+  #radar { overflow: hidden; }
+  .radar-svg { display: block; width: 100%; height: auto; }
   </style>
 </head>
 <body>
@@ -1153,16 +1168,21 @@
     var legend = $("core-legend");
     legend.innerHTML = "";
     var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
-    rows.forEach(function (r) {
-      if (!inFilter(r.id) && FILTER !== "ALL") return;
+    var byId = {};
+    rows.forEach(function (r) { byId[r.id] = r; });
+    // Always list every project so the legend's row count -- and therefore the
+    // panel height -- never changes. Projects outside the active filter (or with
+    // nothing burned today) are greyed, not removed.
+    PROJECTS.forEach(function (p) {
+      var r = byId[p.id] || { id: p.id, tag: p.tag, hue: p.hue, val: 0 };
+      var dim = (FILTER !== "ALL" && !inFilter(p.id)) || r.val <= 0;
       var share = sum > 0 ? Math.round((r.val / sum) * 100) : 0;
-      var li = el("span", { title: r.tag + " share of today" });
+      var li = el("span", { title: p.tag + " share of today", className: dim ? "dim" : "" });
       var sw = el("span", { className: "sw" }); sw.style.background = r.hue;
       li.appendChild(sw);
-      li.appendChild(txt(r.tag + " " + fmt(r.val) + " · " + share + "%"));
+      li.appendChild(txt(p.tag + " " + fmt(r.val) + " · " + share + "%"));
       legend.appendChild(li);
     });
-    if (!rows.length) legend.appendChild(el("span", { text: "nothing burned yet today" }));
   }
   function updateCoreFocus() {
     var rows = CORE.rows;
@@ -1278,7 +1298,8 @@
   function radarSvg(statuses, size, labelMode) {
     var rv = radarVals(statuses);
     var axes = rv.axes, vals = rv.vals;
-    var svg = svgEl("svg", { viewBox: "0 0 " + size + " " + size, "aria-label": "project completion radar" });
+    var MX = size * 0.16, MY = size * 0.08;
+    var svg = svgEl("svg", { viewBox: (-MX).toFixed(1) + " " + (-MY).toFixed(1) + " " + (size + 2 * MX).toFixed(1) + " " + (size + 2 * MY).toFixed(1), "aria-label": "project completion radar", class: "radar-svg" });
     var CX = size / 2, CY = size / 2, R = size * 0.36;
     [0.25, 0.5, 0.75, 1].forEach(function (f) {
       var pts = axes.map(function (_, i) {
