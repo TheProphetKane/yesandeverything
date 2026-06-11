@@ -218,17 +218,23 @@ export const ITEM_RENDERERS = {
     </div>`;
   },
   botanical: (s, ctx, inst) => {
-    // v0.15 resolution order for the botanical slot - library ONLY (no Köhler
-    // fallback). Order:
+    // Resolution order for the botanical slot:
     //   1. state.illustration override -> data/illustrations/<keyword>.png
     //   2. herb-name auto-match via ctx.herbAutoMatch -> same dir
-    //   3. hide the slot
+    //   3. v0.18 generic category fallback via ctx.herbCategoryFallback
+    //      keyed on state.botanical -> a generic library image for the category
+    //   4. hide the slot
     let keyword = null;
     if (s.illustration && typeof s.illustration === 'string') {
       keyword = s.illustration;
     } else if (ctx.herbAutoMatch) {
       const key = String(s.herbName ?? '').toLowerCase().trim();
       keyword = ctx.herbAutoMatch[key] || null;
+    }
+    // v0.18: generic category fallback when the herb name has no auto-match.
+    if (!keyword && ctx.herbCategoryFallback) {
+      const cat = String(s.botanical ?? '').toLowerCase().trim();
+      keyword = ctx.herbCategoryFallback[cat] || null;
     }
     if (!keyword) return '';
     const glow = instanceGlow(inst);

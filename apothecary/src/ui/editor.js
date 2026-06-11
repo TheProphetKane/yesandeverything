@@ -49,7 +49,7 @@ export function mountEditor(root, ctx) {
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
     // v0.14: illustration library + auto-match.
-    illustrations = [], herbAutoMatch = {},
+    illustrations = [], herbAutoMatch = {}, herbCategoryFallback = {},
   } = ctx;
   const tmpl = templates[state.get().templateId];
 
@@ -483,7 +483,7 @@ export function mountEditor(root, ctx) {
   mountTitleEditor(titleEditorMount, state, deps);
   mountCustomItems(customItemsMount, state, deps);
   mountPresets({ select: presetSelect, saveBtn: presetSaveBtn, actions: presetActions }, state, deps);
-  mountIllustrationPicker(illustrationMount, state, { illustrations, herbAutoMatch });
+  mountIllustrationPicker(illustrationMount, state, { illustrations, herbAutoMatch, herbCategoryFallback });
 
   addCustomBtn.addEventListener('click', () => {
     const layout = structuredClone(state.get().layout);
@@ -668,6 +668,7 @@ export function mountEditor(root, ctx) {
       accent: found.accent,
       symbol: found.symbol,
       botanical: found.botanical,
+      illustration: null,
       icon: found.icon ?? null,
       runes: found.runes.map(r => ({ c: r.c, m: r.m })),
       descFull:     (found.descFull     ?? found.desc).slice(0, tmpl.descFullMaxChars),
@@ -1459,7 +1460,7 @@ function mountLayoutDesigner(root, state, deps) {
 //   - Click any thumbnail to override: state.illustration = keyword
 //   - Click "Back to Auto" to clear the override
 
-function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) {
+function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch, herbCategoryFallback }) {
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
@@ -1470,6 +1471,9 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
     const key = String(s.herbName ?? '').toLowerCase().trim();
     const auto = herbAutoMatch?.[key];
     if (auto) return { kind: 'auto', keyword: auto };
+    const cat = String(s.botanical ?? '').toLowerCase().trim();
+    const catKw = herbCategoryFallback?.[cat];
+    if (catKw) return { kind: 'category', keyword: catKw };
     return { kind: 'none', keyword: null };
   }
 
@@ -1490,12 +1494,14 @@ function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch }) 
     const label = res.keyword
       ? (illustrations.find(i => i.keyword === res.keyword)?.label || res.keyword)
       : '(none)';
-    const statusClass = res.kind === 'override' ? 'is-locked' : res.kind === 'auto' ? 'is-auto' : 'is-none';
+    const statusClass = res.kind === 'override' ? 'is-locked' : (res.kind === 'auto' || res.kind === 'category') ? 'is-auto' : 'is-none';
     const statusText = res.kind === 'override'
       ? `Locked to "${label}"`
       : res.kind === 'auto'
       ? `Auto from herb name: "${label}"`
-      : 'No match (will use the Köhler fallback)';
+      : res.kind === 'category'
+      ? `Auto by category: "${label}"`
+      : 'No art for this herb yet';
 
     root.innerHTML = `
       <div class="illu-current ${statusClass}">

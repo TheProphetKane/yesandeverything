@@ -155,7 +155,7 @@ export function defaultState() {
     // border ornament style + saved layout presets.
     sectionTitles: { ...DEFAULT_SECTION_TITLES },
     customItems:   [],   // [{ id: 'custom-xxx', title, body }]
-    layoutPresets: [],   // [{ id, name, layout, sectionTitles, customItems }]
+    layoutPresets: [],   // [{ id, name, layout, sectionTitles }]
     borderStyle:   'celtic',  // 'simple' | 'beveled' | 'celtic' | 'ornate'
 
     // v0.14: illustration override. null = auto-match herb name to a library

@@ -202,6 +202,7 @@ async function main() {
   ]);
   const illustrations = illustrationsManifest.illustrations || [];
   const herbAutoMatch = herbToIllustration.autoMatch || {};
+  const herbCategoryFallback = herbToIllustration.categoryFallback || {};
 
   const lookupHerb = makeLookup(herbDB, aliasMap);
 
@@ -288,7 +289,7 @@ async function main() {
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
     // v0.14: illustration library + auto-match table for the picker UI.
-    illustrations, herbAutoMatch,
+    illustrations, herbAutoMatch, herbCategoryFallback,
     onReset: () => {
       clearState();
       state.set(defaultState());
@@ -305,6 +306,7 @@ async function main() {
     // v0.14: illustration library + per-herb auto-match.
     illustrations,
     herbAutoMatch,
+    herbCategoryFallback,
     // v0.14.2: hook for render.js to update preview-collapse state.
     setPreviewCollapse(next) {
       state.set({ previewCollapse: next });
