@@ -2057,6 +2057,8 @@
     }
     if (bfS) mini3("all-time tokens", tAll.tok + bfS.estTokens, fmtTok, "tok est", "measured " + fmtTok(tAll.tok) + " + ~" + fmtTok(bfS.estTokens) + " estimated from pre-log commits");
     else mini3("all-time tokens", tAll.tok, fmtTok, "tok", "every token tracked, all time");
+    var tokThisWeek = tokSeries.slice(7).reduce(function (a, b) { return a + b; }, 0);
+    mini3("tokens this week", tokThisWeek, fmtTok, "tok", "in+out tokens over the last 7 days");
     mini3("cost this week", costThisWeek, fmtUSD, "est", "estimated cost over the last 7 days");
     mini3("burn rate today", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k tok", TIPS.burnRate);
     grid.appendChild(row3);
@@ -2075,6 +2077,13 @@
     }
     mini("sessions logged", sessions, function (n) { return String(Math.round(n)); }, "", "distinct session logs scanned");
     mini("review actions open", actionsOpen, function (n) { return String(Math.round(n)); }, "", TIPS.reviewActions);
+    var leftSumS = 0;
+    Object.keys(statuses).forEach(function (k3) {
+      if (!inFilter(k3)) return;
+      var lvS = leftOf(statuses[k3]);
+      if (lvS != null) leftSumS += lvS;
+    });
+    mini("items left", leftSumS, function (n) { return String(Math.round(n)); }, "", "actionable now: queue items + completion gates");
     mini("last collected", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", TIPS.lastCollected);
     grid.appendChild(brow);
     openOverlay("portfolio stats" + (FILTER === "ALL" ? "" : " · " + metaFor(FILTER).tag), grid);
