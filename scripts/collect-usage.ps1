@@ -184,6 +184,7 @@ function Get-Price([string]$model) {
 $FreshScan = ($Audit -or $Rescan)
 $Files = @{}   # path -> @{ length; processed; project; votes; lastMsgId }
 $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
+$PrevOldest = $null   # oldest record ever seen across runs (the log horizon)
 if (-not $FreshScan -and (Test-Path $StatePath)) {
   try {
     $state = Get-Content -Raw $StatePath | ConvertFrom-Json
@@ -194,6 +195,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     if ($state.pricingVersion -ne $PRICING_VERSION) {
       Write-Host "INFO: pricing table changed ($($state.pricingVersion) -> $PRICING_VERSION). Existing aggregates keep their original pricing; new tokens use the new table." -ForegroundColor Yellow
     }
+    if ($state.oldestRecord) { try { $PrevOldest = [datetime]$state.oldestRecord } catch { $PrevOldest = $null } }
     foreach ($prop in $state.files.PSObject.Properties) {
       $votes = @{}
       if ($prop.Value.votes) { foreach ($v in $prop.Value.votes.PSObject.Properties) { $votes[$v.Name] = [int]$v.Value } }
@@ -358,6 +360,7 @@ foreach ($root in $SCAN_ROOTS) {
     }
   }
 }
+if ($PrevOldest -and (-not $oldestTs -or $PrevOldest -lt $oldestTs)) { $oldestTs = $PrevOldest }
 Write-Host "Scanned $scannedFiles file(s), $newLines line(s), $usageRecords usage record(s), $dupSkipped duplicate(s) merged, $fallbackYaE unattributed->YaE, $tsFallbacks timestamp fallback(s)." -ForegroundColor Green
 if ($oldestTs) { Write-Host ("Log horizon: oldest surviving record {0:yyyy-MM-dd}, newest {1:yyyy-MM-dd}. Transcripts older than the retention window are purged from disk and cannot be recovered." -f $oldestTs, $newestTs) -ForegroundColor DarkGray }
 
@@ -432,6 +435,7 @@ $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
   pricingVersion = $PRICING_VERSION
   pricingNote = "Anthropic published API rates as of $PRICING_VERSION; rate changes apply forward only (costs freeze into history at scan time)"
+  oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("yyyy-MM-dd") } else { $null })
   projects = $projects
 }
 
@@ -462,7 +466,7 @@ foreach ($proj in $Agg.Keys) {
     $flat += [ordered]@{ p = $proj; d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; cost = $b.cost }
   }
 }
-Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; files = $Files; agg = $flat })
+Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat })
 
 # ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }

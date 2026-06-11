@@ -965,6 +965,17 @@
     if (n == null || !isFinite(n)) return "$0.00";
     return "$" + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
   }
+  /* Pre-log backfill: calibrated estimate of spend older than the surviving
+     transcripts (git commits x measured tokens-per-commit; see
+     scripts/estimate-usage-backfill.ps1). Kept separate from measured data;
+     surfaces with an approx mark and a measured/estimated split tooltip. */
+  function backfillFor(scope) {
+    var b = LAST && LAST.backfill;
+    if (!b || !b.projects) return null;
+    if (scope === "ALL") return b.totals && b.totals.estTokens ? b.totals : null;
+    var p = b.projects[scope];
+    return p && p.estTokens ? p : null;
+  }
   /* "left" = actionable work only: pending queue items + completion-gate
      remainders. Backlog rows are wish-list depth, shown in tooltips but
      never counted, so the chip stays a number worth acting on. */
@@ -1659,8 +1670,17 @@
       }
       if (!REDUCED) { dc.n.classList.remove("bump"); void dc.n.offsetWidth; dc.n.classList.add("bump"); }
     }
-    setCell(3, tAll.tok, fmtTok, "tok", "all-time" + scopeTag);
-    setCell(4, tAll.cost, fmtUSD, "est", "all-time cost" + scopeTag);
+    var bf = backfillFor(FILTER);
+    if (bf) {
+      setCell(3, tAll.tok + bf.estTokens, function (n) { return "≈" + fmtTok(n); }, "tok", "all-time" + scopeTag);
+      setCell(4, tAll.cost + bf.estCostUSD, function (n) { return "≈" + fmtUSD(n); }, "est", "all-time cost" + scopeTag);
+      var hz = LAST.backfill.horizon || "the log horizon";
+      TOT[3].n.parentNode.title = "measured " + fmtTok(tAll.tok) + " since " + hz + " + ~" + fmtTok(bf.estTokens) + " estimated from pre-log commits · click for the full stats view";
+      TOT[4].n.parentNode.title = "measured " + fmtUSD(tAll.cost) + " since " + hz + " + ~" + fmtUSD(bf.estCostUSD) + " estimated from pre-log commits · click for the full stats view";
+    } else {
+      setCell(3, tAll.tok, fmtTok, "tok", "all-time" + scopeTag);
+      setCell(4, tAll.cost, fmtUSD, "est", "all-time cost" + scopeTag);
+    }
     setCell(5, tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k", "burn rate today");
     setCell(6, actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag);
     setCell(7, usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected");
@@ -1955,6 +1975,7 @@
       }); });
     });
     // right column row 2: all-time cost with per-project bars
+    var bfS = backfillFor(FILTER);
     var b5 = block("mag", "all-time cost", tAll.cost, fmtUSD, "est");
     perCost.slice(0, 7).forEach(function (r) {
       var mr = el("div", { className: "meterrow" });
@@ -1965,6 +1986,13 @@
       b5.appendChild(mr);
       requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.width = (r.cost / maxCost * 100) + "%"; }); });
     });
+    if (bfS) {
+      b5.appendChild(el("div", {
+        className: "blabel",
+        text: "+ ~" + fmtUSD(bfS.estCostUSD) + " estimated before " + ((LAST.backfill && LAST.backfill.horizon) || "the log horizon"),
+        title: "pre-log spend, estimated from git commits x this scope's measured tokens-per-commit; transcripts that old are purged"
+      }));
+    }
     // row 3: all-time tokens · cost this week · burn rate today (3-across, aligns with the row below)
     var costThisWeek = costSeries.slice(7).reduce(function (a, b) { return a + b; }, 0);
     var row3 = el("div", { className: "bigstat" });
@@ -1979,7 +2007,8 @@
       else { n.textContent = value; if (unit) n.appendChild(el("span", { className: "unit", text: unit })); }
       row3.appendChild(d);
     }
-    mini3("all-time tokens", tAll.tok, fmtTok, "tok", "every token tracked, all time");
+    if (bfS) mini3("all-time tokens", tAll.tok + bfS.estTokens, function (n) { return "≈" + fmtTok(n); }, "tok", "measured " + fmtTok(tAll.tok) + " + ~" + fmtTok(bfS.estTokens) + " estimated from pre-log commits");
+    else mini3("all-time tokens", tAll.tok, fmtTok, "tok", "every token tracked, all time");
     mini3("cost this week", costThisWeek, fmtUSD, "est", "estimated cost over the last 7 days");
     mini3("burn rate today", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k tok", TIPS.burnRate);
     grid.appendChild(row3);
@@ -2106,15 +2135,18 @@
     name.appendChild(el("span", { className: "spot-pos", text: (SEL + 1) + " / " + CYCLE.length, title: "position on the wheel" }));
     head.appendChild(name);
 
-    var ul = el("div", { className: "usage-line", title: "today's burn and the all-time totals" });
+    var bfI = backfillFor(isAll ? "ALL" : id);
+    var ul = el("div", { className: "usage-line", title: bfI
+      ? "today's burn + lifetime incl. ~" + fmtTok(bfI.estTokens) + " / ~" + fmtUSD(bfI.estCostUSD) + " estimated from pre-log commits"
+      : "today's burn and the all-time totals" });
     ul.appendChild(txt("today "));
     ul.appendChild(el("b", { text: fmtTok(today.input + today.output) }));
     ul.appendChild(txt(" ("));
     ul.appendChild(el("span", { className: "cost", text: fmtUSD(today.cost) }));
     ul.appendChild(txt(") / all-time "));
-    ul.appendChild(el("b", { text: fmtTok(allTok) }));
+    ul.appendChild(el("b", { text: (bfI ? "≈" : "") + fmtTok(allTok + (bfI ? bfI.estTokens : 0)) }));
     ul.appendChild(txt(" ("));
-    ul.appendChild(el("span", { className: "cost", text: fmtUSD(allCost) }));
+    ul.appendChild(el("span", { className: "cost", text: (bfI ? "≈" : "") + fmtUSD(allCost + (bfI ? bfI.estCostUSD : 0)) }));
     ul.appendChild(txt(")"));
     if (sess) ul.appendChild(txt(" / " + sess + " sessions"));
     head.appendChild(ul);
@@ -2523,11 +2555,12 @@
     btn.disabled = true;
     btn.textContent = "syncing...";
     $("error-banner").style.display = "none";
-    var jobs = [fetchJson("data/usage.json")].concat(
+    var jobs = [fetchJson("data/usage.json"), fetchJson("data/backfill.json")].concat(
       PROJECTS.map(function (p) { return fetchJson("../status/data/" + p.id + ".json"); })
     );
     return Promise.all(jobs).then(function (results) {
       var usage = results[0];
+      var backfill = results[1];
       // fold any legacy stray-chat buckets into Everything
       if (usage && usage.projects) {
         // legacy id: pre-uniform data keyed Scheduler instead of YaS
@@ -2553,8 +2586,8 @@
         });
       }
       var statuses = {};
-      PROJECTS.forEach(function (p, i) { statuses[p.id] = results[i + 1]; });
-      LAST = { usage: usage, statuses: statuses };
+      PROJECTS.forEach(function (p, i) { statuses[p.id] = results[i + 2]; });
+      LAST = { usage: usage, statuses: statuses, backfill: backfill };
       renderAll();
       $("last-refreshed").textContent = "refreshed " + new Date().toLocaleTimeString();
       btn.disabled = false;
