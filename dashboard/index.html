@@ -697,6 +697,86 @@
   @media (max-width: 380px) {
     .totals { grid-template-columns: 1fr; }
   }
+  
+  /* ============================================================
+     v3 depth + a11y + data-saver layer (2026-06-11). Additive +
+     layout-safe: no grid-template or sizing changes. Adds reduced-data
+     / high-contrast / forced-colors paths, edge vignette, faint grain,
+     an elevation system, stale-data + empty-state styling, a header
+     hairline, caret + overscroll polish, and a print path.
+     ============================================================ */
+  :root {
+    --elev-sm: 0 4px 14px -8px rgba(0,0,0,0.5);
+    --elev-md: 0 12px 32px -14px rgba(0,0,0,0.6);
+    --elev-lg: 0 22px 60px -22px rgba(0,0,0,0.7);
+  }
+
+  html { scroll-behavior: smooth; }
+  body { overscroll-behavior: none; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* gate input caret + selection accent */
+  #gate-input { caret-color: var(--accent); }
+
+  /* elevation + inner top highlight at rest (hover shadow handled in v2 layer) */
+  .panel { box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), var(--elev-sm); }
+
+  /* header bottom hairline (cyan tint), no pseudo-element clobber */
+  header.page { box-shadow: 0 1px 0 rgba(2,164,211,0.12); }
+
+  /* edge vignette + faint grain (both pointer-events:none, injected by JS) */
+  .vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(120% 120% at 50% 45%, transparent 62%, rgba(0,0,0,0.42) 100%);
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.5;
+    background-image: repeating-radial-gradient(rgba(255,255,255,0.018) 0 1px, transparent 1px 3px);
+    background-size: 3px 3px;
+  }
+
+  /* stale-data badge */
+  .stale-badge {
+    display: inline-block; margin-left: 8px; padding: 1px 7px;
+    border: 1px solid var(--warn); border-radius: 999px; color: var(--warn);
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle;
+  }
+
+  /* empty / idle project: dim only (no ::after, so no layout shift) */
+  .is-empty { opacity: 0.45; }
+
+  /* data-saver: drop the canvas constellation, freeze the nebula, hide grain */
+  @media (prefers-reduced-data: reduce) {
+    #sky { display: none !important; }
+    body::after, body::before { animation: none !important; }
+    .grain { display: none; }
+  }
+  html.reduced-data #sky { display: none; }
+  html.reduced-data .grain { display: none; }
+
+  /* high-contrast preference: lift the muted greys, harden panel borders */
+  @media (prefers-contrast: more) {
+    :root { --fg-1: #cdd5df; --fg-2: #9aa5b2; --fg-3: #7a8696; }
+    .panel { border-color: var(--ink-5) !important; }
+    body::after { opacity: 0.5; }
+  }
+
+  /* Windows forced-colors / high-contrast mode */
+  @media (forced-colors: active) {
+    .panel, .totals > * { border: 1px solid CanvasText; }
+    #sky, body::after, .vignette, .grain { display: none !important; }
+  }
+
+  /* dialog backdrop tint */
+  ::backdrop { background: rgba(3,5,8,0.6); }
+
+  /* print: drop motion + background chrome, keep the data readable */
+  @media print {
+    #sky, body::after, body::before, .vignette, .grain { display: none !important; }
+    body { background: #fff; color: #000; }
+    .panel { box-shadow: none; border-color: #ccc; }
+    .navarrow, .auto-btn, .refresh { display: none !important; }
+  }
   </style>
 </head>
 <body>
@@ -2605,5 +2685,125 @@
   }
 })();
 </script>
+
+<script>
+/* ============================================================
+   Dashboard derived-metrics enrichment (2026-06-11). Runs after boot,
+   isolated from the main render IIFE. Re-reads data/usage.json (cached)
+   and decorates existing widgets with computed metrics via title
+   tooltips + a stale badge + empty-state dimming. DOM-only, additive,
+   layout-safe -- never mutates render logic or widget geometry.
+   ============================================================ */
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var RD = window.matchMedia && window.matchMedia("(prefers-reduced-data: reduce)").matches;
+  if (RD) { docEl.classList.add("reduced-data"); }
+
+  // edge vignette + faint grain (decorative, hidden from a11y tree)
+  if (!RD && !(window.matchMedia && window.matchMedia("(forced-colors: active)").matches)) {
+    ["vignette", "grain"].forEach(function (cls) {
+      if (document.querySelector("." + cls)) return;
+      var d = document.createElement("div");
+      d.className = cls; d.setAttribute("aria-hidden", "true");
+      document.body.appendChild(d);
+    });
+  }
+
+  function fUSD(n) { n = +n || 0; return "$" + (n >= 100 ? Math.round(n).toLocaleString() : n.toFixed(2)); }
+  function fTok(n) { n = +n || 0; if (n >= 1e6) return (n / 1e6).toFixed(2) + "M"; if (n >= 1e3) return (n / 1e3).toFixed(1) + "k"; return String(Math.round(n)); }
+  function pctStr(n) { n = +n; if (!isFinite(n)) return "n/a"; n = Math.max(-9999, Math.min(9999, n)); return (n >= 0 ? "+" : "") + n.toFixed(1) + "%"; }
+  function nameFor(id) {
+    var m = { BR: "Rising", HBH: "Hordes", YaA: "Apothecary", YaB: "Budget", YaC: "Chains", YaE: "Everything", YaS: "Scheduler" };
+    return m[id] || id;
+  }
+
+  function compute(d) {
+    var pr = d.projects || {}, ids = Object.keys(pr);
+    var port = { input: 0, output: 0, cacheRead: 0, allTime: 0, sessions: 0, cost: 0 };
+    var per = {}, mover = null, quiet = null;
+    ids.forEach(function (id) {
+      var p = pr[id] || {}, daily = (p.daily || []).slice().sort(function (a, b) { return a.d < b.d ? -1 : 1; });
+      var sum = { input: 0, output: 0, cacheRead: 0, cost: 0 }, active = 0, maxDay = { c: -1, d: null };
+      var streak = 0, best = 0;
+      daily.forEach(function (r) {
+        sum.input += r.input || 0; sum.output += r.output || 0; sum.cacheRead += r.cacheRead || 0; sum.cost += r.costUSD || 0;
+        var act = (r.input || 0) + (r.output || 0) > 0;
+        if (act) { active++; streak++; if (streak > best) best = streak; } else { streak = 0; }
+        if ((r.costUSD || 0) > maxDay.c) maxDay = { c: r.costUSD || 0, d: r.d };
+      });
+      var n = daily.length, last7 = 0, prev7 = 0;
+      for (var i = 0; i < n; i++) { if (i >= n - 7) last7 += daily[i].costUSD || 0; else if (i >= n - 14) prev7 += daily[i].costUSD || 0; }
+      var wow = prev7 > 0 ? (last7 - prev7) / prev7 * 100 : (last7 > 0 ? 100 : 0);
+      var chr = (sum.cacheRead + sum.input) > 0 ? sum.cacheRead / (sum.cacheRead + sum.input) * 100 : 0;
+      var allTime = p.allTime || (sum.input + sum.output);
+      per[id] = { sum: sum, chr: chr, wow: wow, active: active, best: best, streak: streak, maxDay: maxDay, last7: last7, allTime: allTime, sessions: p.sessions || 0 };
+      port.input += sum.input; port.output += sum.output; port.cacheRead += sum.cacheRead; port.cost += sum.cost;
+      port.allTime += allTime; port.sessions += (p.sessions || 0);
+      if (!mover || wow > mover.wow) mover = { id: id, wow: wow };
+      if (!quiet || last7 < quiet.last7) quiet = { id: id, last7: last7 };
+    });
+    port.chr = (port.cacheRead + port.input) > 0 ? port.cacheRead / (port.cacheRead + port.input) * 100 : 0;
+    return { per: per, port: port, ids: ids, mover: mover, quiet: quiet };
+  }
+
+  function enrich(d) {
+    var M = compute(d), port = M.port;
+    var tiles = document.querySelectorAll(".totals > *");
+    function addTip(i, extra) {
+      var t = tiles[i]; if (!t) return;
+      var base = t.getAttribute("title") || "";
+      if (base.indexOf(extra) > -1) return;
+      t.setAttribute("title", (base ? base + "  |  " : "") + extra);
+    }
+    addTip(3, "lifetime cache-hit " + port.chr.toFixed(1) + "% over " + M.ids.length + " projects, " + port.sessions + " sessions");
+    addTip(4, "cache reads hold the effective rate down; portfolio cache-hit " + port.chr.toFixed(1) + "%");
+    if (M.mover && M.quiet) addTip(5, "biggest mover wk/wk: " + nameFor(M.mover.id) + " " + pctStr(M.mover.wow) + "  |  quietest: " + nameFor(M.quiet.id));
+
+    var ga = d.generatedAt ? new Date(d.generatedAt).getTime() : 0;
+    var ageH = ga ? (Date.now() - ga) / 3.6e6 : 999;
+    if (ageH > 24 && !document.querySelector(".stale-badge")) {
+      var host = tiles[7] || document.querySelector(".totals");
+      if (host) {
+        var b = document.createElement("span");
+        b.className = "stale-badge"; b.textContent = "stale " + Math.round(ageH) + "h";
+        b.setAttribute("title", "collector last pushed " + Math.round(ageH) + "h ago; data may be behind");
+        host.appendChild(b);
+      }
+    }
+
+    document.querySelectorAll("#strip .mini, .clegend > *, .core-legend > *").forEach(function (node) {
+      var txt = node.textContent || "";
+      M.ids.forEach(function (id) {
+        var nm = nameFor(id);
+        if (txt.indexOf(nm) < 0) return;
+        var m = M.per[id]; if (!m) return;
+        if ((node.getAttribute("title") || "").indexOf("cache-hit") < 0) {
+          node.setAttribute("title", nm + ": cache-hit " + m.chr.toFixed(0) + "%, wk/wk " + pctStr(m.wow) +
+            ", active " + m.active + "d (best streak " + m.best + "), peak " + (m.maxDay.d || "-") + " " + fUSD(m.maxDay.c));
+        }
+        if (m.last7 <= 0 && m.allTime <= 0) node.classList.add("is-empty");
+      });
+    });
+
+    try { console.info("[dashboard] derived metrics ready: portfolio cache-hit " + port.chr.toFixed(1) + "%, sessions " + port.sessions + ", projects " + M.ids.length); } catch (e) {}
+  }
+
+  function go() {
+    fetch("data/usage.json", { cache: "force-cache" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.projects) { try { enrich(d); } catch (e) {} } })
+      .catch(function () {});
+  }
+  function wait() {
+    var app = document.getElementById("app");
+    if (app && !app.hidden) { setTimeout(go, 400); return; }
+    setTimeout(wait, 300);
+  }
+  if (document.readyState !== "loading") wait();
+  else document.addEventListener("DOMContentLoaded", wait);
+})();
+</script>
+
 </body>
 </html>

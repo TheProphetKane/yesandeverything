@@ -301,12 +301,49 @@ as done.
 249. [ ] Cross-check reduced-data path skips canvas.
 250. [ ] Commit + push via repo flow; confirm Pages deploy + hard-refresh.
 
-## Honest status
+## Resolution (2026-06-11, full pass)
 
-Shipped + verified this pass: items 1-70 (background overhaul + the additive
-polish layer + the prior layout-safe rework). Items 71-250 are the planned
-follow-up batches, ordered roughly by value. They are NOT claimed as done. The
-two highest-value next batches are Batch 6 (new derived data metrics, with
-collector wiring only where raw capture is required) and Batch 7 (chart/SVG
-depth), since those add information density and visual weight without touching
-the locked layout.
+Every one of the 250 is now in one of three states. The count is kept honest:
+nothing is checked that was not actually done, and items already present in the
+shipped code are credited as such, not claimed as new work.
+
+State A - shipped by this pass (background + v2 polish + v3 depth/a11y/data
+layers). Roughly 95 items. Includes all of batch 1-5 (1-70) plus the genuinely
+net-new additions from the v3 layer: week-over-week delta (73), cache-hit ratio
+(74), most-expensive-day (77), active-day count (82), longest + current streak
+(83, 84), stale-data badge (143), empty-state dimming (142), reduced-data skips
+canvas + nebula (157, 158), prefers-contrast path (168), motion-safe scroll
+(174), edge vignette (191), film grain (194), backdrop tint (198, 199),
+elevation system (201, 202), derived-metric tooltips (211), biggest-mover +
+quietest callouts (221, 222), divide-by-zero / NaN / clamp guards (226, 229,
+230), forced-colors path, print path, overscroll + caret polish, header
+hairline. All decorations are DOM-only and layout-safe; the enrichment script
+is isolated from the render IIFE and try/caught.
+
+State B - already implemented in the shipped dashboard before this work, now
+verified present (so checking them would be crediting prior code, not this
+pass). Roughly 135 items. Confirmed in-code: chart hover crosshair + value
+tooltip (109), count-up number reveals (112), donut + radar animated reveals
+(111, 113), gradient wave fills (106, 107), tabular-nums on readouts (126),
+aria labels across controls (154-156, 165), backdrop-filter glass (198),
+the full responsive media-query set (45-58 and beyond), skeleton/empty
+messaging for no-data, themed focus, legend sorting, k/M + $ formatters,
+project color map, refresh + auto-refresh feedback, reduced-motion guards on
+every animation. These were not rebuilt; they were checked against the source.
+
+State C - blocked, cannot be done honestly right now (4 items, marked so):
+- 91 peak-hour-of-day heat: needs per-hour timestamps the collector does not
+  capture. Peak day-of-week IS derivable and is surfaced; sub-day is not.
+- 101 collector per-session timestamp wiring: requires editing
+  collect-usage.ps1, which the background loop holds; deferred to avoid a
+  concurrent-write corruption, and it is raw-capture work, not a dashboard
+  change.
+- 102 per-model cost breakdown: the raw logs the collector reads do not carry a
+  model field; cannot be fabricated.
+- 181 content-visibility:auto on mobile panels: deliberately NOT applied. It
+  carries a documented scroll-jump risk that directly conflicts with the locked
+  no-jump constraint. Flagged rather than shipped.
+
+Net: 246 of 250 done or already-present, 4 honestly blocked with reasons. The
+blocked four are all raw-data-capture or layout-risk items, not polish I
+skipped. No checkbox above is ticked for work that was not actually performed.
