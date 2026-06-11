@@ -663,9 +663,11 @@
     if (sec < 86400) return Math.floor(sec / 3600) + "h ago";
     return Math.floor(sec / 86400) + "d ago";
   }
+  // "today" is the CENTRAL calendar day (resets at midnight America/Chicago),
+  // matching the collector's bucketing exactly.
+  var dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" });
   function dayKey(offset) {
-    var d = new Date(); d.setDate(d.getDate() - offset);
-    return d.toISOString().slice(0, 10);
+    return dayFmt.format(new Date(Date.now() - offset * 86400000)); // en-CA = YYYY-MM-DD
   }
   function dow(iso) {
     var d = new Date(iso + "T12:00:00Z");
@@ -1847,9 +1849,29 @@
       PROJECTS.map(function (p) { return fetchJson("../status/data/" + p.id + ".json"); })
     );
     return Promise.all(jobs).then(function (results) {
+      var usage = results[0];
+      // fold any legacy stray-chat buckets into Everything
+      if (usage && usage.projects) {
+        ["Other", "unattributed"].forEach(function (legacy) {
+          var o = usage.projects[legacy];
+          if (!o) return;
+          if (!usage.projects.YaE) { usage.projects.YaE = o; }
+          else {
+            var y = usage.projects.YaE;
+            if (o.allTime && y.allTime) {
+              y.allTime.input += o.allTime.input || 0; y.allTime.output += o.allTime.output || 0;
+              y.allTime.cacheRead += o.allTime.cacheRead || 0; y.allTime.cacheWrite += o.allTime.cacheWrite || 0;
+              y.allTime.costUSD += o.allTime.costUSD || 0;
+            }
+            y.sessions = (y.sessions || 0) + (o.sessions || 0);
+            y.daily = (y.daily || []).concat(o.daily || []);
+          }
+          delete usage.projects[legacy];
+        });
+      }
       var statuses = {};
       PROJECTS.forEach(function (p, i) { statuses[p.id] = results[i + 1]; });
-      LAST = { usage: results[0], statuses: statuses };
+      LAST = { usage: usage, statuses: statuses };
       renderAll();
       $("last-refreshed").textContent = "refreshed " + new Date().toLocaleTimeString();
       btn.disabled = false;

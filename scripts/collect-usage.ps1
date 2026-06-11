@@ -38,6 +38,21 @@ $PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
 
 # ----- Project attribution (ordered; first hit wins) ---------------------
 $PROJECT_PATTERNS = @(
+  # scheduled-task names first: a task session belongs to its project even when
+  # its prompt also mentions the YaE queue or other repos
+  @{ pat = "audit-htbh";       id = "HBH" },
+  @{ pat = "bar-raise-hbh";    id = "HBH" },
+  @{ pat = "audit-brackish";   id = "BR" },
+  @{ pat = "bar-raise-br";     id = "BR" },
+  @{ pat = "audit-yac";        id = "YaC" },
+  @{ pat = "bar-raise-yac";    id = "YaC" },
+  @{ pat = "audit-scheduler";  id = "Scheduler" },
+  @{ pat = "bar-raise-scheduler"; id = "Scheduler" },
+  @{ pat = "audit-apothecary"; id = "YaA" },
+  @{ pat = "bar-raise-yaa";    id = "YaA" },
+  @{ pat = "audit-yab";        id = "YaB" },
+  @{ pat = "bar-raise-yab";    id = "YaB" },
+  @{ pat = "Claude\Scheduled"; id = "YaE" },   # any other scheduled task -> Everything
   @{ pat = "HereBeHordes";     id = "HBH" },
   @{ pat = "HereThereBeHordes"; id = "HBH" },
   @{ pat = "BrackishRising";   id = "BR" },
@@ -56,6 +71,13 @@ $SCAN_ROOTS = @(
 )
 
 # Absolute paths throughout: .NET file APIs ignore PowerShell's cwd.
+# Day buckets use the Central calendar day so "today" resets at midnight
+# Central everywhere, regardless of the machine or viewer timezone.
+$CT = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
+function Get-CentralDay([datetime]$ts) {
+  return [System.TimeZoneInfo]::ConvertTime($ts.ToUniversalTime(), $CT).ToString("yyyy-MM-dd")
+}
+
 $DataDir = Join-Path $RepoRoot "dashboard\data"
 $OutPath = Join-Path $DataDir "usage.json"
 $StatePath = Join-Path $DataDir ".usage-state.json"
@@ -96,8 +118,13 @@ if (Test-Path $StatePath) {
       $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project }
     }
     foreach ($row in $state.agg) {
-      if (-not $Agg.ContainsKey($row.p)) { $Agg[$row.p] = @{} }
-      $Agg[$row.p][$row.d] = @{ input = [long]$row.input; output = [long]$row.output; cacheRead = [long]$row.cacheRead; cacheWrite = [long]$row.cacheWrite; cost = [double]$row.cost }
+      $rp = $row.p
+      if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }  # fold legacy buckets into Everything
+      if (-not $Agg.ContainsKey($rp)) { $Agg[$rp] = @{} }
+      if (-not $Agg[$rp].ContainsKey($row.d)) { $Agg[$rp][$row.d] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+      $b = $Agg[$rp][$row.d]
+      $b.input += [long]$row.input; $b.output += [long]$row.output
+      $b.cacheRead += [long]$row.cacheRead; $b.cacheWrite += [long]$row.cacheWrite; $b.cost += [double]$row.cost
     }
   } catch {
     Write-Host "WARN: state file unreadable; full rescan. ($_)" -ForegroundColor Yellow
@@ -165,11 +192,11 @@ foreach ($root in $SCAN_ROOTS) {
         if ($obj.cwd) { $proj = Get-ProjectFor $obj.cwd }
         if (-not $proj) { $proj = Get-ProjectFor $line }
         if (-not $proj) { $proj = $fileProj }
-        if (-not $proj) { $proj = "Other" }
+        if (-not $proj) { $proj = "YaE" }   # anything unmatched rolls into Everything
         $ts = $null
         if ($obj.timestamp) { try { $ts = [datetime]$obj.timestamp } catch { $ts = $null } }
         if (-not $ts) { $ts = $f.LastWriteTime }
-        $day = $ts.ToLocalTime().ToString("yyyy-MM-dd")
+        $day = Get-CentralDay $ts
         Add-Usage $proj $day $usage $model
       }
       $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj }
