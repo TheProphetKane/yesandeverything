@@ -58,6 +58,17 @@
     mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 25%, transparent 100%);
     -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 25%, transparent 100%);
   }
+  body::after {
+    content: ""; position: fixed; inset: -10%; z-index: -3; pointer-events: none;
+    background:
+      radial-gradient(48% 42% at 14% -4%, rgba(255, 0, 255, 0.11), transparent 70%),
+      radial-gradient(46% 40% at 102% 26%, rgba(2, 164, 211, 0.12), transparent 70%),
+      radial-gradient(52% 46% at 60% 108%, rgba(255, 0, 255, 0.07), transparent 72%);
+    filter: saturate(1.1);
+    animation: nebula-drift 30s ease-in-out infinite alternate;
+  }
+  @keyframes nebula-drift { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(-2%,1.5%,0) scale(1.06); } }
+  @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
   a { color: var(--accent-hot); text-decoration: none; border-bottom: 1px dashed var(--accent-dim); }
   a:hover { color: var(--fg-0); border-bottom-color: var(--fg-2); }
   .wrap { max-width: 1880px; margin: 0 auto; padding: 7px 18px 8px; }
@@ -829,10 +840,10 @@
   /* ---------- Constellation background + rare shooting star ---------- */
   (function sky() {
     var cv = $("sky"), ctx = cv.getContext("2d");
-    var stars = [], LINKD = 130, shoot = null;
+    var stars = [], LINKD = 150, shoot = null;
     function resize() { cv.width = innerWidth; cv.height = innerHeight; }
     function seed() {
-      var NSTARS = innerWidth < 800 ? 34 : 70; // lighter sky on small screens
+      var NSTARS = innerWidth < 800 ? 46 : 110; // lighter sky on small screens
       stars = [];
       for (var i = 0; i < NSTARS; i++) {
         stars.push({
@@ -852,17 +863,19 @@
         if (s.y < 0 || s.y > cv.height) s.vy *= -1;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, 6.2832);
-        ctx.fillStyle = s.m ? "rgba(255,0,255,0.5)" : "rgba(95,214,255,0.4)";
+        if (s.m) { ctx.shadowColor = "rgba(255,0,255,0.85)"; ctx.shadowBlur = 7; ctx.fillStyle = "rgba(255,90,255,0.85)"; }
+        else { ctx.shadowBlur = 0; ctx.fillStyle = "rgba(95,214,255,0.62)"; }
         ctx.fill();
       }
-      ctx.lineWidth = 0.5;
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 0.7;
       for (var a = 0; a < stars.length; a++) {
         for (var b = a + 1; b < stars.length; b++) {
           var dx = stars[a].x - stars[b].x, dy = stars[a].y - stars[b].y;
           var d2 = dx * dx + dy * dy;
           if (d2 < LINKD * LINKD) {
-            var o = (1 - Math.sqrt(d2) / LINKD) * 0.16;
-            ctx.strokeStyle = "rgba(59,70,90," + o.toFixed(3) + ")";
+            var o = (1 - Math.sqrt(d2) / LINKD) * 0.30;
+            ctx.strokeStyle = "rgba(2,164,211," + o.toFixed(3) + ")";
             ctx.beginPath(); ctx.moveTo(stars[a].x, stars[a].y); ctx.lineTo(stars[b].x, stars[b].y); ctx.stroke();
           }
         }
