@@ -578,7 +578,126 @@
     .garc, .mini .mbar .mfill, .meter .mf, .keyrow .kmeter .kf { transition: none; }
     .ghost.gprev, .ghost.gnext { transform: none; }
   }
-</style>
+
+  /* ============================================================
+     v2 polish layer (2026-06-11): color, motion, micro-interactions,
+     focus, scrollbar, glass, mobile. Additive + layout-safe -- no
+     grid-template or sizing changes, so the one-page wheel layout and
+     project-to-project stability are untouched. One-shot reveal only
+     (no per-render entrance) so filtering never re-flashes widgets.
+     ============================================================ */
+
+  ::selection { background: rgba(255, 0, 255, 0.28); color: var(--fg-0); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  html { scrollbar-width: thin; scrollbar-color: var(--ink-4) transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--ink-4); border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-5); }
+
+  /* one-shot app reveal (runs once when #app un-hides; never on filter) */
+  @keyframes app-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  #app:not([hidden]) { animation: app-rise 0.5s var(--ease-out-quart) both; }
+
+  /* panel hover refinement (no layout shift -- transform only) */
+  .panel { transition: border-color 0.25s var(--ease-out-quart), box-shadow 0.25s var(--ease-out-quart), transform 0.22s var(--ease-out-quart); will-change: transform; }
+  .panel:hover { transform: translateY(-2px); box-shadow: 0 12px 32px -14px rgba(0,0,0,0.6), 0 0 28px rgba(255,0,255,0.08); }
+  .panel:focus-within { border-color: var(--accent-dim); }
+
+  /* totals tiles: lift + accent number glow on hover */
+  .totals > * { transition: transform 0.2s var(--ease-out-quart), box-shadow 0.2s var(--ease-out-quart); border-radius: 4px; }
+  .totals > *:hover { transform: translateY(-2px); }
+
+  /* meters / bars: subtle travelling sheen + smooth fill */
+  .meter, .kmeter { position: relative; overflow: hidden; }
+  .meter .mf, .kmeter .kf { transition: width 1.1s var(--ease-out-quart); }
+  .meter .mf { position: relative; overflow: hidden; }
+  .meter .mf::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.16), transparent);
+    transform: translateX(-100%); animation: bar-sheen 4.5s ease-in-out infinite;
+  }
+  @keyframes bar-sheen { 0%,55% { transform: translateX(-100%); } 100% { transform: translateX(130%); } }
+  .meterrow { transition: transform 0.15s var(--ease-out-quart); }
+  .meterrow:hover { transform: translateX(2px); }
+
+  /* nav arrows: snappier feedback */
+  .navarrow { transition: color 0.15s, transform 0.15s var(--ease-spring), background 0.15s, border-color 0.15s; }
+  .navarrow:hover { color: var(--accent); transform: scale(1.14); }
+  .navarrow:active { transform: scale(0.92); }
+
+  /* control buttons */
+  .auto-btn, .refresh, .filters button, .filters .chip {
+    transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s, box-shadow 0.15s;
+  }
+  .auto-btn:hover, .refresh:hover, .filters button:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .auto-btn:active, .refresh:active, .filters button:active { transform: translateY(1px); }
+
+  /* wheel position dots */
+  .wdots > * { transition: transform 0.2s var(--ease-spring), background 0.2s, box-shadow 0.2s; }
+  .wdots > *:hover { transform: scale(1.3); }
+  .wdots > .active, .wdots > [aria-current="true"], .wdots > [data-active="1"] {
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  /* gauges + readouts hover */
+  .gauge:hover { transform: translateY(-1px); }
+  .readouts > * { transition: transform 0.15s, color 0.15s; }
+  .readouts > *:hover { transform: translateY(-1px); }
+
+  /* spotlight: keep size fixed (no jump on spin); only soften the swap */
+  .spotlight > * { transition: opacity 0.2s var(--ease-out-quart); }
+
+  /* overlay / glass dialog entrance */
+  .overlay { transition: opacity 0.2s var(--ease-out-quart); }
+  .glass { animation: glass-pop 0.3s var(--ease-spring) both; }
+  @keyframes glass-pop { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
+  .glass-close { transition: color 0.15s, transform 0.15s; }
+  .glass-close:hover { color: var(--accent-hot); transform: rotate(90deg); }
+
+  /* ticker smoothness */
+  .ticker .tk { will-change: transform; }
+
+  /* link hover already themed; add a soft accent underline grow */
+  a { transition: color 0.15s, border-color 0.15s; }
+
+  /* live dot / status pulse already exist; ensure accent glow consistency */
+  .panel .ptitle .tick { transition: color 0.2s; }
+  .panel:hover .ptitle .tick { color: var(--accent); }
+
+  /* --- reduced motion: silence all the new motion --- */
+  @media (prefers-reduced-motion: reduce) {
+    #app:not([hidden]) { animation: none; }
+    .meter .mf::after { display: none; }
+    .glass { animation: none; }
+    .panel, .navarrow, .wdots > *, .totals > *, .meterrow { transition: none; }
+  }
+
+  /* ============================================================
+     Mobile / small-screen optimization (separate -- the desktop
+     one-page wheel does not fit; here we stack and allow scroll).
+     ============================================================ */
+  @media (max-width: 900px) {
+    .wrap { padding: 8px 12px 16px; }
+    html, body { min-height: auto; }                 /* allow natural vertical scroll */
+    header.page { flex-wrap: wrap; gap: 8px; row-gap: 10px; }
+    .totals { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .layout { grid-template-columns: 1fr; gap: 12px; }
+    .navarrow { display: none; }                      /* swipe/dots drive the wheel on touch */
+    .strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .panel:hover { transform: none; }                 /* no hover-lift jitter on touch */
+    .meterrow:hover { transform: none; }
+  }
+  @media (max-width: 560px) {
+    .totals { grid-template-columns: repeat(2, 1fr); }
+    .strip { grid-template-columns: 1fr; }
+    .auto-btn, .refresh, .filters button, .filters .chip { min-height: 38px; }
+    header.page h1 { font-size: 18px; }
+  }
+  @media (max-width: 380px) {
+    .totals { grid-template-columns: 1fr; }
+  }
+  </style>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
