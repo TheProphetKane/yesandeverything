@@ -347,3 +347,34 @@ State C - blocked, cannot be done honestly right now (4 items, marked so):
 Net: 246 of 250 done or already-present, 4 honestly blocked with reasons. The
 blocked four are all raw-data-capture or layout-risk items, not polish I
 skipped. No checkbox above is ticked for work that was not actually performed.
+
+## Addendum - responsive consolidation pass (2026-06-11, v5 layer)
+
+Driven by a follow-up request to make the page load and animate consistently and
+to hold up across mobile browser sizes without breaking on resize. Honest count:
+this layer is roughly 35 discrete real changes, not 100. The work was spent on
+correctness (one coherent, monotonic responsive system) rather than padding the
+number, which matters more than hitting an arbitrary target.
+
+What changed:
+- Root cause found and fixed: the earlier v2 mobile block and the original mobile
+  block had conflicting, non-monotonic breakpoints (2-column totals at <=980 but
+  3-column at <=900, i.e. MORE columns on a smaller screen). Resolved with a
+  single authoritative v5 layer placed last in the cascade.
+- Monotonic column ladder, verified programmatically by parsing the cascade at
+  thirteen widths (1920 down to 360): totals 8 -> 4 -> 3 -> 2; strip 8 -> 4 -> 3
+  -> 2 -> 1; core+radar side 2 -> 1. No width drops then re-adds columns.
+- Resize resilience: body overflow-x clip (no horizontal blowout), min-width:0 on
+  every grid and its children (prevents long-content grid blowout), svg/canvas/img
+  capped at 100%, fluid clamp() sizing on the stat numbers and labels so tiles
+  never overflow at narrow widths.
+- Mobile layout: core and radar go side-by-side once the main layout stacks, then
+  single-column on phones; sticky blurred header on tablet/phone so the controls
+  stay reachable while scrolling; phone padding, donut max-height, and title
+  sizing tuned at 680 and 440 breakpoints; 38px touch targets and larger wheel
+  dots on coarse pointers.
+- Verification limit, stated plainly: the test browser pins innerWidth at 1920
+  regardless of window resize, so true mobile viewport screenshots were not
+  possible this session. The ladder was instead verified by parsing the actual
+  CSS cascade across widths, and the desktop render was confirmed unregressed. A
+  real-device or DevTools device-mode pass is the remaining check.
