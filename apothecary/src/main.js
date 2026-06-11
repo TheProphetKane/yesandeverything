@@ -18,7 +18,6 @@ const [
   symbolsMod,
   themesMod,
   texturesMod,
-  catDefMod,
   templatesMod,
 ] = await Promise.all([
   import("./state.js" + V),
@@ -31,7 +30,6 @@ const [
   import("../data/symbols.js" + V),
   import("../data/themes.js" + V),
   import("../data/textures.js" + V),
-  import("../data/category-defaults.js" + V),
   import("../data/label-templates.js" + V),
 ]);
 
@@ -45,7 +43,6 @@ const { loadState, saveState, clearState, debounce } = persistMod;
 const { SYMBOL_LABELS, SYMBOL_ALIASES } = symbolsMod;
 const { THEMES } = themesMod;
 const { PARCHMENT_TEXTURES } = texturesMod;
-const { categoryDefaultSlug } = catDefMod;
 const { TEMPLATES, DEFAULT_TEMPLATE_ID } = templatesMod;
 
 async function loadJson(path) {
@@ -304,7 +301,6 @@ async function main() {
     templates: TEMPLATES,
     themes: THEMES,
     parchmentTextures: PARCHMENT_TEXTURES,
-    categoryDefaultSlug,
     symbolAliases: SYMBOL_ALIASES,
     // v0.14: illustration library + per-herb auto-match.
     illustrations,

@@ -34,6 +34,7 @@ export function listSaved() {
 export function saveLabel(name, snapshot) {
   const list = read();
   const entry = {
+    __schemaVersion: 1,
     id: uid(),
     name: (name || 'Untitled').slice(0, 60),
     createdAt: Date.now(),

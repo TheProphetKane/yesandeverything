@@ -122,6 +122,7 @@ export const DEFAULT_SECTION_TITLES = {
 
 export function defaultState() {
   return {
+    __schemaVersion: 1,
     templateId: 'apothecary-3x1.5',
     sizeId: 'medium',
     shopName: "Lynn's Apothocary",
