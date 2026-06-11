@@ -1401,12 +1401,33 @@
         : (b.projects && b.projects[projId] && b.projects[projId].perDay);
       (arr || []).forEach(function (e2) { estMap[e2.d] = e2; });
     })();
+    // estimated volume folds INTO the wave so history reads true; the split
+    // between in/out uses the scope's measured ratio
+    var estRatioIn = 0.3;
+    (function () {
+      var up = LAST && LAST.usage && LAST.usage.projects;
+      if (!up) return;
+      var ti = 0, to = 0;
+      Object.keys(up).forEach(function (pid2) {
+        if (projId !== "ALL" && pid2 !== projId) return;
+        var a = up[pid2].allTime || {};
+        ti += a.input || 0; to += a.output || 0;
+      });
+      if (ti + to > 0) estRatioIn = ti / (ti + to);
+    })();
     var days = [], max = 1, sum7 = 0, sum30 = 0;
     var upKey = VIEW === "cache" ? "cacheRead" : "input";
     var dnKey = VIEW === "cache" ? "cacheWrite" : "output";
     for (var i = DAYS - 1; i >= 0; i--) {
       var k = dayKey(i), d = byDay[k] || {};
       var rec = { d: k, input: d.input || 0, output: d.output || 0, cacheRead: d.cacheRead || 0, cacheWrite: d.cacheWrite || 0, cost: d.costUSD || 0 };
+      var e0 = estMap[k];
+      if (e0) {
+        rec.estTok = e0.tok || 0;
+        rec.input += Math.round(rec.estTok * estRatioIn);
+        rec.output += Math.round(rec.estTok * (1 - estRatioIn));
+        rec.cost += e0.cost || 0;
+      }
       if (VIEW === "cost") max = Math.max(max, rec.cost);
       else max = Math.max(max, rec[upKey], rec[dnKey]);
       sum30 += rec.input + rec.output;
@@ -1568,7 +1589,7 @@
       tip.appendChild(el("div", { className: "d", text: "cache " + fmtTok(r.cacheRead + r.cacheWrite) }));
       tip.appendChild(el("div", { className: "tc", text: fmtUSD(r.cost) + " est" }));
       var eD = estMap[r.d];
-      if (eD && eD.tok) tip.appendChild(el("div", { className: "d", text: "logs thin · +~" + fmtTok(eD.tok) + " / " + fmtUSD(eD.cost) + " est" }));
+      if (eD && eD.tok) tip.appendChild(el("div", { className: "d", text: "incl ~" + fmtTok(eD.tok) + " / " + fmtUSD(eD.cost) + " est (logs thin)" }));
       tip.style.left = Math.min(rect.width - 70, Math.max(70, px)) + "px";
       tip.style.top = "8px";
       tip.style.opacity = "1";
@@ -1931,7 +1952,10 @@
         if (u.allTime) {
           tAll.tok += (u.allTime.input || 0) + (u.allTime.output || 0);
           tAll.cost += u.allTime.costUSD || 0;
-          perCost.push({ id: meta.tag, hue: meta.hue, cost: u.allTime.costUSD || 0 });
+          // per-project lifetime includes its purged-log estimate so the bars
+          // sum to the headline
+          var bfp = LAST.backfill && LAST.backfill.projects && LAST.backfill.projects[pid];
+          perCost.push({ id: meta.tag, hue: meta.hue, cost: (u.allTime.costUSD || 0) + (bfp && bfp.estCostUSD ? bfp.estCostUSD : 0) });
         }
         sessions += u.sessions || 0;
         (u.daily || []).forEach(function (d) {
@@ -1952,6 +1976,19 @@
       var s = statuses[k];
       if (s && s.barRaise && s.barRaise.actionsOpen != null) actionsOpen += s.barRaise.actionsOpen;
     });
+    // 14-day series + week rows include the per-day purged-log estimates so
+    // every surface in this overlay reads from the same lifetime basis
+    (function () {
+      var b = LAST.backfill;
+      if (!b) return;
+      var arr = FILTER === "ALL" ? (b.totals && b.totals.perDay) : (b.projects && b.projects[FILTER] && b.projects[FILTER].perDay);
+      var byD = {};
+      (arr || []).forEach(function (e2) { byD[e2.d] = e2; });
+      for (var k2 = 0; k2 < 14; k2++) {
+        var bd = byD[dayKey(13 - k2)];
+        if (bd) { tokSeries[k2] += bd.tok || 0; costSeries[k2] += bd.cost || 0; }
+      }
+    })();
     perCost.sort(function (a, b) { return b.cost - a.cost; });
     var maxCost = perCost.length ? Math.max(perCost[0].cost, 0.01) : 1;
 
@@ -1985,8 +2022,10 @@
     } else { n3.textContent = "--"; }
     var mx7 = Math.max.apply(null, last7.concat([1]));
     var WD = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-    last7.forEach(function (v, i) {
-      var k = dayKey(6 - i), isToday = i === 6;
+    // newest first: today on top, yesterday under it, back through the week
+    for (var d7 = 0; d7 < 7; d7++) (function (d7) {
+      var v = last7[6 - d7];
+      var k = dayKey(d7), isToday = d7 === 0;
       var mr = el("div", { className: "meterrow", title: k + " · " + fmtTok(v) + " tok" });
       mr.appendChild(el("span", { className: "mid", text: WD[new Date(k + "T00:00:00").getDay()] }));
       var m = el("div", { className: "meter" }); var f = el("div", { className: "mf" });
@@ -1997,7 +2036,7 @@
       requestAnimationFrame(function () { requestAnimationFrame(function () {
         f.style.width = Math.max(2, Math.round(v / mx7 * 100)) + "%";
       }); });
-    });
+    })(d7);
     // right column row 2: all-time cost with per-project bars
     var bfS = backfillFor(FILTER);
     var b5 = bfS
@@ -2015,8 +2054,8 @@
     if (bfS) {
       b5.appendChild(el("div", {
         className: "blabel",
-        text: "measured " + fmtUSD(tAll.cost) + " (bars) + ~" + fmtUSD(bfS.estCostUSD) + " estimated from purged logs",
-        title: "the bars above show measured spend only; the estimate reconciles git commit volume against thin or missing transcript days"
+        text: "bars include ~" + fmtUSD(bfS.estCostUSD) + " estimated from purged logs (measured " + fmtUSD(tAll.cost) + ")",
+        title: "the estimate reconciles git commit volume against thin or missing transcript days; measured spend keeps confirmed pricing"
       }));
     }
     // per-model data lives in usage.json's models block for calculation and
