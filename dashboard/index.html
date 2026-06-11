@@ -284,6 +284,13 @@
   .flow path.line.out-l { stroke: var(--accent-hot); filter: drop-shadow(0 0 4px var(--accent-glow)); animation-delay: 0.15s; }
   @keyframes drawIn { to { stroke-dashoffset: 0; } }
   .flow line.midline { stroke: var(--ink-4); stroke-width: 1; }
+  /* moving dots are HTML divs, not svg circles: the stretched svg
+     (preserveAspectRatio none) would squash circles into ovals */
+  .flow .rdot {
+    position: absolute; width: 6px; height: 6px; border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none; z-index: 2;
+  }
+  .flow .rdot.small { width: 5px; height: 5px; }
   .today-pulse { animation: tpulse 2.2s ease-in-out infinite; }
   @keyframes tpulse { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.35; } }
   .flow .xhair { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--fg-2); opacity: 0; pointer-events: none; }
@@ -468,6 +475,52 @@
   .gate .gerr { color: var(--bad); font-size: 11px; margin-top: 10px; min-height: 14px; }
   .gate .gerr.shake { animation: shake 0.4s ease; }
   @keyframes shake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  /* ---------- Mobile + touch (desktop-first; graceful below 980px) ---------- */
+  html { -webkit-tap-highlight-color: transparent; }
+  .spotlight { touch-action: pan-y; }
+  @media (max-width: 980px) {
+    .wrap { padding: 10px 10px 16px; }
+    header.page { gap: 8px; }
+    header.page h1 { font-size: 15px; }
+    .controls { width: 100%; justify-content: space-between; }
+    .hud-clock { display: none; }
+    .totals { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .total .num { font-size: 19px; }
+    .side { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .core-box svg { max-height: 190px; }
+    .core-legend { font-size: 10px; }
+    .spotlight { padding: 8px; }
+    .spot-head .name { font-size: 19px; }
+    .spot-head .usage-line { font-size: 12px; }
+    .flow svg { min-height: 150px; }
+    .strip { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .mini.center { transform: none; }
+    .wdots { gap: 12px; }
+    .wdots button { width: 12px; height: 12px; }
+    .glass { padding: 16px 16px 20px; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .bigstat .bnum { font-size: 30px; }
+    .keyrow .kextra { display: none; }
+    .keyrow .kname { width: 110px; }
+    .readouts { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+    .gauges { gap: 16px; }
+    .ticker { font-size: 11px; }
+    footer.page-foot { white-space: normal; }
+  }
+  @media (max-width: 640px) {
+    .side { grid-template-columns: 1fr; }
+    .strip { grid-template-columns: repeat(2, 1fr); }
+    .rel-row .rmsg { white-space: normal; }
+  }
+  @media (pointer: coarse) {
+    .navarrow { font-size: 32px; min-width: 44px; }
+    .fpill { padding: 6px 14px; }
+    button.refresh, .auto-btn { padding: 7px 13px; }
+    .glass-close { padding: 6px 14px; font-size: 16px; }
+    .gate input { font-size: 16px; } /* prevents iOS focus zoom */
+    .mini { padding: 12px 14px 10px; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .live-dot, .ring-spin, .ring-spin2, .ticker .tk, .today-pulse,
@@ -726,9 +779,10 @@
   /* ---------- Constellation background + rare shooting star ---------- */
   (function sky() {
     var cv = $("sky"), ctx = cv.getContext("2d");
-    var stars = [], NSTARS = 70, LINKD = 130, shoot = null;
+    var stars = [], LINKD = 130, shoot = null;
     function resize() { cv.width = innerWidth; cv.height = innerHeight; }
     function seed() {
+      var NSTARS = innerWidth < 800 ? 34 : 70; // lighter sky on small screens
       stars = [];
       for (var i = 0; i < NSTARS; i++) {
         stars.push({
@@ -1038,25 +1092,31 @@
       svg.appendChild(dnPathEl);
       if (VIEW === "cache") { labelUp = "cache read"; labelDn = "cache write"; }
     }
-    // today marker: pulsing dot pinned to the latest point
-    var tdot = svgEl("circle", { cx: W - 1, cy: lastY, r: 3, fill: "#ff66ff", class: "today-pulse" });
-    tdot.appendChild(svgEl("title"));
-    tdot.lastChild.textContent = "today";
-    svg.appendChild(tdot);
-
+    var wrap = el("div", { className: "flow" });
+    // today marker + riders are CSS-positioned divs so they stay round
+    var tdot = el("div", { className: "rdot today-pulse", title: "today" });
+    tdot.style.background = "#ff66ff"; tdot.style.width = "7px"; tdot.style.height = "7px";
+    tdot.style.boxShadow = "0 0 6px rgba(255,0,255,0.7)";
+    wrap.appendChild(tdot);
+    function place(div, vx, vy) {
+      div.style.left = (vx / W * 100) + "%";
+      div.style.top = ((vy / H) * (svg.clientHeight || 1)) + "px";
+    }
     if (!REDUCED) {
       var scanLine = svgEl("line", { x1: 0, y1: 4, x2: 0, y2: H - 16, stroke: "rgba(255,102,255,0.45)", "stroke-width": 1 });
       svg.appendChild(scanLine);
       var riderO = null, riderI = null;
       if (dnPathEl) {
-        riderO = svgEl("circle", { r: 2.8, fill: "#5fd6ff", opacity: 0.95 });
-        riderO.style.filter = "drop-shadow(0 0 4px rgba(95,214,255,0.6))";
-        svg.appendChild(riderO);
+        riderO = el("div", { className: "rdot" });
+        riderO.style.background = "#5fd6ff";
+        riderO.style.boxShadow = "0 0 6px rgba(95,214,255,0.7)";
+        wrap.appendChild(riderO);
       }
       if (upPathEl) {
-        riderI = svgEl("circle", { r: 2.3, fill: "#ff66ff", opacity: 0.9 });
-        riderI.style.filter = "drop-shadow(0 0 4px rgba(255,0,255,0.6))";
-        svg.appendChild(riderI);
+        riderI = el("div", { className: "rdot small" });
+        riderI.style.background = "#ff66ff";
+        riderI.style.boxShadow = "0 0 6px rgba(255,0,255,0.7)";
+        wrap.appendChild(riderI);
       }
       var samples = null;
       function samplePath(pathEl) {
@@ -1091,15 +1151,16 @@
         var x = ((now % SCAN_MS) / SCAN_MS) * W;
         scanLine.setAttribute("x1", x); scanLine.setAttribute("x2", x);
         if (samples) {
-          if (riderO && samples.o) { riderO.setAttribute("cx", x); riderO.setAttribute("cy", yAt(samples.o, x)); }
-          if (riderI && samples.i) { riderI.setAttribute("cx", x); riderI.setAttribute("cy", yAt(samples.i, x)); }
+          if (riderO && samples.o) place(riderO, x, yAt(samples.o, x));
+          if (riderI && samples.i) place(riderI, x, yAt(samples.i, x));
         }
+        place(tdot, W - 2, lastY);
         requestAnimationFrame(loop);
       }
       requestAnimationFrame(loop);
+    } else {
+      requestAnimationFrame(function () { place(tdot, W - 2, lastY); });
     }
-
-    var wrap = el("div", { className: "flow" });
     if (labelUp) wrap.appendChild(el("span", { className: "side-label in", text: labelUp, title: VIEW === "cost" ? "estimated dollars per day" : VIEW === "cache" ? "context re-read from cache" : "prompt + context tokens in" }));
     if (labelDn) wrap.appendChild(el("span", { className: "side-label out", text: labelDn, title: VIEW === "cache" ? "context written to cache" : "generated tokens out" }));
     wrap.appendChild(svg);
@@ -1614,8 +1675,18 @@
       Object.keys(counts).forEach(function (v) {
         chipsA.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
       });
-      var qsum = 0;
-      PROJECTS.forEach(function (p) { var s = LAST.statuses[p.id]; if (s && s.workQueueDepth != null) qsum += s.workQueueDepth; });
+      var qsum = 0, leftSum = 0, haveLeft = false;
+      PROJECTS.forEach(function (p) {
+        var s = LAST.statuses[p.id];
+        if (s && s.workQueueDepth != null) qsum += s.workQueueDepth;
+        if (s && s.itemsLeft && s.itemsLeft.open != null) { leftSum += s.itemsLeft.open; haveLeft = true; }
+      });
+      if (haveLeft) {
+        var cl = el("span", { className: "chip", title: "open work across the portfolio: queue + backlogs + completion gates" });
+        cl.appendChild(el("span", { className: "k", text: "left" }));
+        cl.appendChild(txt(String(leftSum)));
+        chipsA.appendChild(cl);
+      }
       var cq = el("span", { className: "chip", title: TIPS.queue });
       cq.appendChild(el("span", { className: "k", text: "queue" }));
       cq.appendChild(txt(String(qsum)));
@@ -1673,7 +1744,15 @@
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
         chips.appendChild(c2);
       }
-      if (status.workQueueDepth != null) {
+      if (status.itemsLeft && status.itemsLeft.open != null) {
+        var c6 = el("span", {
+          className: "chip" + (status.itemsLeft.open === 0 ? " fresh" : ""),
+          title: "open work: queue " + status.itemsLeft.queue + " · backlog " + status.itemsLeft.backlog + " · completion gates " + status.itemsLeft.gates + (status.itemsLeft.open === 0 ? " · the improvement scout hunts for more at zero" : "")
+        });
+        c6.appendChild(el("span", { className: "k", text: "left" }));
+        c6.appendChild(txt(status.itemsLeft.open === 0 ? "0 · scouting" : String(status.itemsLeft.open)));
+        chips.appendChild(c6);
+      } else if (status.workQueueDepth != null) {
         var c4 = el("span", { className: "chip", title: TIPS.queue });
         c4.appendChild(el("span", { className: "k", text: "queue" }));
         c4.appendChild(txt(String(status.workQueueDepth)));
@@ -1756,6 +1835,7 @@
         sub.appendChild(txt("today "));
         sub.appendChild(el("span", { className: "cost", text: fmtUSD(todayCost) }));
         if (st && st.completion) sub.appendChild(txt(" · " + st.completion.pct + "% done"));
+        if (st && st.itemsLeft && st.itemsLeft.open != null) sub.appendChild(txt(" · " + st.itemsLeft.open + " left"));
         if (id === "ALL") sub.appendChild(txt(" · portfolio view"));
         mini.appendChild(sub);
       }
@@ -1899,6 +1979,22 @@
   $("nav-next").addEventListener("click", function () { advance(1); resetAuto(); });
   $("spotlight").addEventListener("mouseenter", function () { hoverHold = true; });
   $("spotlight").addEventListener("mouseleave", function () { hoverHold = false; });
+  // swipe spins the wheel on touch devices
+  (function swipe() {
+    var sx = 0, sy = 0;
+    $("spotlight").addEventListener("touchstart", function (e) {
+      if (e.touches[0]) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }
+    }, { passive: true });
+    $("spotlight").addEventListener("touchend", function (e) {
+      var t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+      var dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        advance(dx < 0 ? 1 : -1);
+        resetAuto();
+      }
+    }, { passive: true });
+  })();
   addEventListener("hashchange", function () {
     var parts = (location.hash || "").replace("#", "").split("/");
     if (CYCLE.indexOf(parts[0]) >= 0) { FILTER = parts[0]; SEL = CYCLE.indexOf(parts[0]); }
