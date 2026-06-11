@@ -179,6 +179,8 @@
   .totals { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 8px; }
   @media (max-width: 1500px) { .totals { grid-template-columns: repeat(4, 1fr); } }
   .total { padding: 7px 14px; }
+  .total .num.bump { animation: numBump 0.5s ease; }
+  @keyframes numBump { 0% { filter: brightness(1.7); } 100% { filter: none; } }
   .total .num { font-size: 23px; font-weight: 700; color: var(--fg-0); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .total .num .unit { font-size: 11px; color: var(--fg-2); font-weight: 400; margin-left: 4px; }
   .total .label { font-size: 9.5px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; white-space: nowrap; }
@@ -191,6 +193,7 @@
   @media (max-width: 1280px) { .layout { grid-template-columns: 1fr; } .navarrow { display: none; } }
   .side { display: flex; flex-direction: column; gap: 10px; }
   .core-box svg { display: block; width: 100%; height: auto; max-height: 256px; margin: 0 auto; }
+  .core-box svg circle { transition: opacity 0.35s ease; }
   .ring-spin { transform-origin: 150px 150px; animation: spin 40s linear infinite; }
   .ring-spin2 { transform-origin: 150px 150px; animation: spinr 70s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -213,6 +216,8 @@
   .spotlight { display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 10px; }
   .wheel { display: grid; grid-template-columns: 86px 1fr 86px; gap: 10px; flex: 1; min-height: 0; perspective: 1100px; }
   @media (max-width: 1500px) { .wheel { grid-template-columns: 1fr; } .ghost { display: none; } }
+  .ghost.swap { animation: ghostSwap 0.32s ease; }
+  @keyframes ghostSwap { from { opacity: 0.04; } to { opacity: 0.32; } }
   .ghost {
     opacity: 0.32; cursor: pointer;
     background: var(--ink-1); border: 1px dashed var(--ink-4); border-radius: 4px;
@@ -227,19 +232,22 @@
   .ghost .gname { writing-mode: vertical-rl; font-size: 12px; color: var(--fg-1); letter-spacing: 1.5px; white-space: nowrap; }
   .ghost .gtok { font-size: 10px; color: var(--fg-3); writing-mode: vertical-rl; letter-spacing: 1px; }
 
-  .spot-stage { min-width: 0; display: flex; flex-direction: column; }
+  .spot-stage { min-width: 0; display: flex; flex-direction: column; position: relative; }
   .spot-inner {
-    animation: spinNext 0.45s var(--ease-out-quart);
+    animation: spinNext 0.4s var(--ease-out-quart);
     transform-origin: 50% 50%;
     display: flex; flex-direction: column; flex: 1; min-height: 0;
   }
   .spot-inner.rev { animation-name: spinPrev; }
-  .spot-inner.out-l { animation: spinOutL 0.2s ease-in forwards; }
-  .spot-inner.out-r { animation: spinOutR 0.2s ease-in forwards; }
-  @keyframes spinNext { from { opacity: 0; transform: translateX(140px) rotateY(-28deg) scale(0.96); } to { opacity: 1; transform: none; } }
-  @keyframes spinPrev { from { opacity: 0; transform: translateX(-140px) rotateY(28deg) scale(0.96); } to { opacity: 1; transform: none; } }
-  @keyframes spinOutL { to { opacity: 0; transform: translateX(-140px) rotateY(26deg) scale(0.96); } }
-  @keyframes spinOutR { to { opacity: 0; transform: translateX(140px) rotateY(-26deg) scale(0.96); } }
+  .spot-inner.noanim { animation: none; }
+  /* outgoing card floats above the incoming one so the two slide as one motion */
+  .spot-inner.leaving { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  .spot-inner.out-l { animation: spinOutL 0.24s ease-in forwards; }
+  .spot-inner.out-r { animation: spinOutR 0.24s ease-in forwards; }
+  @keyframes spinNext { from { opacity: 0; transform: translateX(150px) rotateY(-28deg) scale(0.96); filter: blur(5px); } 60% { filter: blur(0); } to { opacity: 1; transform: none; filter: blur(0); } }
+  @keyframes spinPrev { from { opacity: 0; transform: translateX(-150px) rotateY(28deg) scale(0.96); filter: blur(5px); } 60% { filter: blur(0); } to { opacity: 1; transform: none; filter: blur(0); } }
+  @keyframes spinOutL { to { opacity: 0; transform: translateX(-150px) rotateY(26deg) scale(0.96); filter: blur(5px); } }
+  @keyframes spinOutR { to { opacity: 0; transform: translateX(150px) rotateY(-26deg) scale(0.96); filter: blur(5px); } }
 
   .spot-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .spot-head .name { font-size: 24px; font-weight: 700; letter-spacing: 0.3px; }
@@ -340,10 +348,9 @@
 
   .strip { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.7fr 1fr 1fr 1fr; gap: 10px; overflow: visible; }
   @media (max-width: 1500px) { .strip { grid-template-columns: repeat(4, 1fr); } }
-  .strip.slide-l .mini { animation: stripL 0.35s var(--ease-out-quart) both; }
-  .strip.slide-r .mini { animation: stripR 0.35s var(--ease-out-quart) both; }
-  @keyframes stripL { from { opacity: 0.2; transform: translateX(56px); } to { opacity: 1; transform: none; } }
-  @keyframes stripR { from { opacity: 0.2; transform: translateX(-56px); } to { opacity: 1; transform: none; } }
+  .strip .mini { will-change: transform; }
+  .mini .msub { animation: msubIn 0.32s ease both; }
+  @keyframes msubIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .mini {
     cursor: pointer; padding: 7px 12px 5px;
     transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
@@ -546,7 +553,8 @@
   @media (prefers-reduced-motion: reduce) {
     .live-dot, .ring-spin, .ring-spin2, .ticker .tk, .today-pulse,
     .spot-inner, .total::after, .overlay, .glass, .glass-body > *, .bigstat, .keyrow, .rel-row,
-    .strip.slide-l .mini, .strip.slide-r .mini { animation: none !important; }
+    .mini .msub, .ghost.swap, .total .num.bump { animation: none !important; }
+    .strip .mini { transition: none !important; }
     .flow path.line, .sline path.sl { animation: none !important; stroke-dasharray: none; stroke-dashoffset: 0; }
     .flow path.area { animation: none !important; opacity: 1; }
     .garc, .mini .mbar .mfill, .meter .mf, .keyrow .kmeter .kf { transition: none; }
@@ -754,16 +762,23 @@
     return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
   }
   function countUp(node, target, formatter, unit) {
+    // tweens from the value currently shown (stored on the node), so an
+    // update-in-place glides between numbers instead of recounting from zero
+    var from = (node.__cu != null && isFinite(node.__cu)) ? node.__cu : 0;
+    node.__cu = target;
+    var run = (node.__cuRun || 0) + 1;
+    node.__cuRun = run;
     function finish() {
       node.textContent = formatter(target);
       if (unit) node.appendChild(el("span", { className: "unit", text: unit }));
     }
-    if (REDUCED || !isFinite(target) || target <= 0) { finish(); return; }
-    var start = null, dur = 850;
+    if (REDUCED || !isFinite(target) || target === from || (target <= 0 && from <= 0)) { finish(); return; }
+    var start = null, dur = 700;
     function tick(ts) {
+      if (node.__cuRun !== run) return;   // superseded by a newer tween
       if (!start) start = ts;
       var p = Math.min(1, (ts - start) / dur);
-      node.textContent = formatter(target * (1 - Math.pow(1 - p, 4)));
+      node.textContent = formatter(from + (target - from) * (1 - Math.pow(1 - p, 4)));
       if (p < 1) requestAnimationFrame(tick); else finish();
     }
     requestAnimationFrame(tick);
@@ -863,15 +878,33 @@
     resize(); seed(); frame();
   })();
 
+  var FPILLS = null;
+  function updateFilterPills() {
+    if (!FPILLS) return;
+    Object.keys(FPILLS).forEach(function (v) {
+      FPILLS[v].className = "fpill vmode" + (VIEW === v ? " active" : "");
+    });
+  }
   function buildFilters() {
+    if (FPILLS) { updateFilterPills(); return; }
     var bar = $("filters");
     bar.innerHTML = "";
     bar.appendChild(el("span", { className: "fnote", text: "wave:" }));
+    FPILLS = {};
     Object.keys(VIEWS).forEach(function (v) {
-      var b = el("button", { className: "fpill vmode" + (VIEW === v ? " active" : ""), type: "button", text: v, title: VIEWS[v] });
-      b.addEventListener("click", function () { VIEW = v; setHash(); renderAll(); });
+      var b = el("button", { className: "fpill vmode", type: "button", text: v, title: VIEWS[v] });
+      b.addEventListener("click", function () {
+        if (VIEW === v) return;
+        VIEW = v;
+        setHash();
+        updateFilterPills();
+        renderCore(LAST.usage);     // arcs reshape: view changed, full redraw
+        renderSelection(true);      // new wave shape without the spin animation
+      });
       bar.appendChild(b);
+      FPILLS[v] = b;
     });
+    updateFilterPills();
   }
 
   function coreMetric(d) {
@@ -890,12 +923,53 @@
       return t;
     }).filter(function (r) { return r.val > 0; });
   }
-  function renderCore(usage) {
+  // Persistent core state: on a project change the donut is NOT rebuilt; the
+  // existing arcs crossfade their focus opacity and the center number glides.
+  var CORE = { sig: null, arcs: [], centerT: null, centerL: null, rows: [] };
+  function coreSig(rows) {
+    return VIEW + "|" + rows.map(function (r) { return r.id + ":" + r.val.toFixed(3) + ":" + r.inT; }).join(",");
+  }
+  function coreLegend(rows, sum) {
+    var legend = $("core-legend");
+    legend.innerHTML = "";
+    var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
+    rows.forEach(function (r) {
+      if (!inFilter(r.id) && FILTER !== "ALL") return;
+      var share = sum > 0 ? Math.round((r.val / sum) * 100) : 0;
+      var li = el("span", { title: r.tag + " share of today" });
+      var sw = el("span", { className: "sw" }); sw.style.background = r.hue;
+      li.appendChild(sw);
+      li.appendChild(txt(r.tag + " " + fmt(r.val) + " · " + share + "%"));
+      legend.appendChild(li);
+    });
+    if (!rows.length) legend.appendChild(el("span", { text: "nothing burned yet today" }));
+  }
+  function updateCoreFocus() {
+    var rows = CORE.rows;
+    var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
+    var sum = rows.reduce(function (s, r) { return s + r.val; }, 0);
+    var focusSum = rows.reduce(function (s, r) { return s + (inFilter(r.id) ? r.val : 0); }, 0);
+    CORE.arcs.forEach(function (a) {
+      var dim = !inFilter(a.id);
+      a.main.setAttribute("opacity", dim ? 0.14 : 0.9);
+      a.subs.forEach(function (s2) { s2.setAttribute("opacity", dim ? 0.1 : 0.7); });
+    });
+    if (CORE.centerT) countUp(CORE.centerT, FILTER === "ALL" ? sum : focusSum, fmt, "");
+    if (CORE.centerL) {
+      var unitLabel = VIEW === "cost" ? "EST COST TODAY" : VIEW === "cache" ? "CACHE TODAY" : "TOKENS TODAY";
+      CORE.centerL.textContent = (FILTER === "ALL" ? "" : metaFor(FILTER).tag.toUpperCase() + " ") + unitLabel;
+    }
+    coreLegend(rows, sum);
+  }
+  function renderCore(usage, focusOnly) {
+    var rows = coreRows(usage);
+    var sig = coreSig(rows);
+    if (focusOnly && sig === CORE.sig && CORE.centerT) { CORE.rows = rows; updateCoreFocus(); return; }
+    CORE.sig = sig; CORE.rows = rows; CORE.arcs = [];
     var box = $("core"), legend = $("core-legend");
     box.innerHTML = ""; legend.innerHTML = "";
     var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
     $("core-title").textContent = (VIEW === "cost" ? "cost core" : VIEW === "cache" ? "cache core" : "token core") + " · today by project";
-    var rows = coreRows(usage);
     var sum = rows.reduce(function (s, r) { return s + r.val; }, 0);
     var focusSum = rows.reduce(function (s, r) { return s + (inFilter(r.id) ? r.val : 0); }, 0);
 
@@ -925,22 +999,30 @@
         arc.appendChild(svgEl("title"));
         arc.lastChild.textContent = r.tag + ": " + fmt(r.val) + " today (" + Math.round(frac * 100) + "% of portfolio)";
         svg.appendChild(arc);
+        var ref = { id: r.id, main: arc, subs: [] };
         if (VIEW === "flow") {
           var rIn = 88, cIn = 2 * Math.PI * rIn;
           var tot = r.inT + r.outT;
           var inFrac = tot ? r.inT / tot : 0;
           var spanIn = (span * inFrac), spanOut = (span * (1 - inFrac));
-          if (spanIn > 1) svg.appendChild(svgEl("circle", {
-            cx: 150, cy: 150, r: rIn, fill: "none", stroke: "#5fd6ff", "stroke-width": 3,
-            "stroke-dasharray": (spanIn / 360 * cIn).toFixed(1) + " " + cIn.toFixed(1),
-            transform: "rotate(" + angle + " 150 150)", opacity: dimmed ? 0.1 : 0.7
-          }));
-          if (spanOut > 1) svg.appendChild(svgEl("circle", {
-            cx: 150, cy: 150, r: rIn, fill: "none", stroke: "#ff66ff", "stroke-width": 3,
-            "stroke-dasharray": (spanOut / 360 * cIn).toFixed(1) + " " + cIn.toFixed(1),
-            transform: "rotate(" + (angle + spanIn) + " 150 150)", opacity: dimmed ? 0.1 : 0.7
-          }));
+          if (spanIn > 1) {
+            var subA = svgEl("circle", {
+              cx: 150, cy: 150, r: rIn, fill: "none", stroke: "#5fd6ff", "stroke-width": 3,
+              "stroke-dasharray": (spanIn / 360 * cIn).toFixed(1) + " " + cIn.toFixed(1),
+              transform: "rotate(" + angle + " 150 150)", opacity: dimmed ? 0.1 : 0.7
+            });
+            svg.appendChild(subA); ref.subs.push(subA);
+          }
+          if (spanOut > 1) {
+            var subB = svgEl("circle", {
+              cx: 150, cy: 150, r: rIn, fill: "none", stroke: "#ff66ff", "stroke-width": 3,
+              "stroke-dasharray": (spanOut / 360 * cIn).toFixed(1) + " " + cIn.toFixed(1),
+              transform: "rotate(" + (angle + spanIn) + " 150 150)", opacity: dimmed ? 0.1 : 0.7
+            });
+            svg.appendChild(subB); ref.subs.push(subB);
+          }
         }
+        CORE.arcs.push(ref);
         angle += frac * 360;
       });
     } else {
@@ -955,18 +1037,9 @@
     centerL.textContent = (FILTER === "ALL" ? "" : metaFor(FILTER).tag.toUpperCase() + " ") + unitLabel;
     svg.appendChild(centerL);
     box.appendChild(svg);
+    CORE.centerT = centerT; CORE.centerL = centerL;
     countUp(centerT, FILTER === "ALL" ? sum : focusSum, fmt, "");
-
-    rows.forEach(function (r) {
-      if (!inFilter(r.id) && FILTER !== "ALL") return;
-      var share = sum > 0 ? Math.round((r.val / sum) * 100) : 0;
-      var li = el("span", { title: r.tag + " share of today" });
-      var sw = el("span", { className: "sw" }); sw.style.background = r.hue;
-      li.appendChild(sw);
-      li.appendChild(txt(r.tag + " " + fmt(r.val) + " · " + share + "%"));
-      legend.appendChild(li);
-    });
-    if (!rows.length) legend.appendChild(el("span", { text: "nothing burned yet today" }));
+    coreLegend(rows, sum);
   }
 
   var VERDICT_APPROX = { working: 90, healthy: 87, "in-progress": 70, "needs-attention": 55, "at-risk": 57, stalled: 40 };
@@ -1266,9 +1339,11 @@
     return pct >= 90 ? "#00d68f" : pct >= 70 ? "#5fd6ff" : pct >= 50 ? "#cc8400" : "#ff5b6e";
   }
 
+  // The eight top cells are built once and updated in place: numbers glide
+  // between values via countUp, nothing is torn down, the page never blinks.
+  var TOT = null;
   function renderTotals(usage, statuses) {
     var box = $("totals");
-    box.innerHTML = "";
     var todayK = dayKey(0), yesterK = dayKey(1);
     var tToday = { tok: 0, cost: 0 }, tYester = { tok: 0 }, tAll = { tok: 0, cost: 0 }, sessions = 0;
     if (usage && usage.projects) {
@@ -1292,50 +1367,84 @@
       var s = statuses[k];
       if (s && s.barRaise && s.barRaise.actionsOpen != null) actionsOpen += s.barRaise.actionsOpen;
     });
-    function total(cls, value, formatter, unit, label, tipText) {
-      var t = el("div", { className: "panel total clickable " + cls }, [el("span", { className: "ck" })]);
-      if (tipText) t.title = tipText + " · click for the full stats view";
-      t.addEventListener("click", openStats);
-      var n = el("div", { className: "num" });
-      t.appendChild(n);
-      t.appendChild(el("div", { className: "label", text: label }));
-      box.appendChild(t);
-      if (typeof value === "number") countUp(n, value, formatter, unit);
-      else { n.textContent = value; if (unit) n.appendChild(el("span", { className: "unit", text: unit })); }
-      return n;
+    if (!TOT) {
+      TOT = [];
+      [
+        { cls: "today", tip: TIPS.tokensToday },
+        { cls: "cost", tip: TIPS.costToday },
+        { cls: "", tip: TIPS.vsYesterday },
+        { cls: "", tip: TIPS.allTime },
+        { cls: "cost", tip: TIPS.allTimeCost },
+        { cls: "", tip: TIPS.burnRate },
+        { cls: "", tip: TIPS.reviewActions },
+        { cls: "", tip: TIPS.lastCollected }
+      ].forEach(function (d) {
+        var t = el("div", { className: "panel total clickable " + d.cls }, [el("span", { className: "ck" })]);
+        t.title = d.tip + " · click for the full stats view";
+        t.addEventListener("click", openStats);
+        var n = el("div", { className: "num" });
+        t.appendChild(n);
+        var l = el("div", { className: "label" });
+        t.appendChild(l);
+        box.appendChild(t);
+        TOT.push({ n: n, l: l });
+      });
+    }
+    function setCell(i, value, formatter, unit, label) {
+      var c = TOT[i];
+      c.l.textContent = label;
+      var changed = c.n.__cu !== value;
+      if (typeof value === "number") countUp(c.n, value, formatter, unit);
+      else {
+        changed = c.n.__cuTxt !== value;
+        c.n.textContent = value; c.n.__cu = null; c.n.__cuTxt = value;
+        if (unit) c.n.appendChild(el("span", { className: "unit", text: unit }));
+      }
+      if (changed && !REDUCED) { c.n.classList.remove("bump"); void c.n.offsetWidth; c.n.classList.add("bump"); }
     }
     var scopeTag = FILTER === "ALL" ? "" : " (" + metaFor(FILTER).tag + ")";
-    total("today", tToday.tok, fmtTok, "tok", "tokens today" + scopeTag, TIPS.tokensToday);
-    total("cost", tToday.cost, fmtUSD, "est", "cost today" + scopeTag, TIPS.costToday);
-    var deltaCell = total("", 0, function () { return ""; }, "", "vs yesterday" + scopeTag, TIPS.vsYesterday);
-    deltaCell.innerHTML = "";
-    if (tYester.tok > 0) {
-      var pct = Math.round(((tToday.tok - tYester.tok) / tYester.tok) * 100);
-      deltaCell.appendChild(el("span", { className: pct >= 0 ? "up" : "dn", text: (pct >= 0 ? "▲ " : "▼ ") }));
-      deltaCell.appendChild(txt(Math.abs(pct) + "%"));
-    } else {
-      deltaCell.appendChild(txt("--"));
+    setCell(0, tToday.tok, fmtTok, "tok", "tokens today" + scopeTag);
+    setCell(1, tToday.cost, fmtUSD, "est", "cost today" + scopeTag);
+    var dc = TOT[2];
+    dc.l.textContent = "vs yesterday" + scopeTag;
+    var deltaTxt = tYester.tok > 0 ? String(Math.round(((tToday.tok - tYester.tok) / tYester.tok) * 100)) : "--";
+    if (dc.n.__cuTxt !== deltaTxt) {
+      dc.n.innerHTML = ""; dc.n.__cu = null; dc.n.__cuTxt = deltaTxt;
+      if (deltaTxt === "--") dc.n.appendChild(txt("--"));
+      else {
+        var pctY = parseInt(deltaTxt, 10);
+        dc.n.appendChild(el("span", { className: pctY >= 0 ? "up" : "dn", text: (pctY >= 0 ? "▲ " : "▼ ") }));
+        dc.n.appendChild(txt(Math.abs(pctY) + "%"));
+      }
+      if (!REDUCED) { dc.n.classList.remove("bump"); void dc.n.offsetWidth; dc.n.classList.add("bump"); }
     }
-    total("", tAll.tok, fmtTok, "tok", "all-time" + scopeTag, TIPS.allTime);
-    total("cost", tAll.cost, fmtUSD, "est", "all-time cost" + scopeTag, TIPS.allTimeCost);
-    total("", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k", "burn rate today", TIPS.burnRate);
-    total("", actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag, TIPS.reviewActions);
-    total("", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected", TIPS.lastCollected);
+    setCell(3, tAll.tok, fmtTok, "tok", "all-time" + scopeTag);
+    setCell(4, tAll.cost, fmtUSD, "est", "all-time cost" + scopeTag);
+    setCell(5, tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k", "burn rate today");
+    setCell(6, actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag);
+    setCell(7, usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected");
     document.title = "dashboard · " + (FILTER === "ALL" ? "" : metaFor(FILTER).tag + " · ") + fmtUSD(tToday.cost) + " today";
   }
 
+  var TICKER_SIG = null;
   function renderTicker(statuses) {
     var track = $("ticker-track");
     var items = [];
+    // the ticker is portfolio-wide on purpose: it stays visible and identical
+    // no matter which project the wheel has selected
     PROJECTS.forEach(function (p) {
-      if (!inFilter(p.id)) return;
       var s = statuses[p.id];
       if (s && s.lastReleaseAt) {
         items.push({ id: p.tag, v: s.version, msg: (s.lastReleaseMessage || "").slice(0, 110), ago: fmtAgo(s.lastReleaseAt), t: new Date(s.lastReleaseAt).getTime() });
       }
     });
-    if (!items.length) { $("ticker").style.display = "none"; return; }
+    if (!items.length) { $("ticker").style.display = "none"; TICKER_SIG = null; return; }
     items.sort(function (a, b) { return b.t - a.t; });
+    // only rebuild when the content actually changed; a rebuild restarts the
+    // marquee, so identical refreshes must leave it scrolling undisturbed
+    var sig = items.map(function (it) { return it.id + "@" + it.v + "@" + it.t; }).join("|");
+    if (sig === TICKER_SIG) { $("ticker").style.display = ""; return; }
+    TICKER_SIG = sig;
     track.innerHTML = "";
     function emit() {
       items.forEach(function (it) {
@@ -1674,24 +1783,43 @@
     openOverlay("latest pushes", box);
   }
 
-  /* ---------- Spotlight wheel (with ALL window) ---------- */
-  function ghostFor(cycleIdx, cls, dir) {
+  /* ---------- Spotlight wheel (with ALL window) ----------
+     The wheel skeleton (ghosts, stage, dots) persists across selections;
+     only the spotlight card itself is rebuilt, and it slides while the old
+     one slides out on top of it. Everything else updates in place. */
+  var GHOSTS = null;
+  function buildGhost(cls, dir) {
+    var g = el("div", { className: "ghost " + cls, role: "button", tabindex: "0" });
+    var dot = el("span", { className: "gdot" });
+    g.appendChild(dot);
+    var nm = el("span", { className: "gname" });
+    g.appendChild(nm);
+    var tk = el("span", { className: "gtok" });
+    g.appendChild(tk);
+    function go() { advance(dir); resetAuto(); }
+    g.addEventListener("click", go);
+    g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    return { g: g, dot: dot, nm: nm, tk: tk, dir: dir };
+  }
+  function updateGhost(gh, cycleIdx) {
     var id = CYCLE[cycleIdx];
     var m = metaFor(id);
     var todayK = dayKey(0), tok = 0;
     var byDay = byDayFor(id);
     if (byDay[todayK]) tok = byDay[todayK].input + byDay[todayK].output;
     var st = id !== "ALL" && LAST ? LAST.statuses[id] : null;
-    var g = el("div", { className: "ghost " + cls, role: "button", tabindex: "0", title: (dir > 0 ? "next: " : "previous: ") + m.displayName });
-    var dot = el("span", { className: "gdot" });
-    dot.style.background = m.hue; dot.style.boxShadow = "0 0 8px " + m.hue + "66";
-    g.appendChild(dot);
-    g.appendChild(el("span", { className: "gname", text: m.displayName }));
-    g.appendChild(el("span", { className: "gtok", text: fmtTok(tok) + " today" + (st && st.completion ? " · " + st.completion.pct + "%" : "") }));
-    function go() { advance(dir); resetAuto(); }
-    g.addEventListener("click", go);
-    g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
-    return g;
+    gh.g.title = (gh.dir > 0 ? "next: " : "previous: ") + m.displayName;
+    gh.dot.style.background = m.hue;
+    gh.dot.style.boxShadow = "0 0 8px " + m.hue + "66";
+    gh.nm.textContent = m.displayName;
+    gh.tk.textContent = fmtTok(tok) + " today" + (st && st.completion ? " · " + st.completion.pct + "%" : "");
+    if (!REDUCED) { gh.g.classList.remove("swap"); void gh.g.offsetWidth; gh.g.classList.add("swap"); }
+  }
+  function updateGhosts() {
+    if (!GHOSTS) return;
+    var n = CYCLE.length;
+    updateGhost(GHOSTS.prev, (SEL - 1 + n) % n);
+    updateGhost(GHOSTS.next, (SEL + 1) % n);
   }
 
   function buildInner() {
@@ -1874,35 +2002,88 @@
     var box = $("spotlight");
     box.innerHTML = '<span class="ck"></span>';
     var wheel = el("div", { className: "wheel" });
-    var n = CYCLE.length;
-    wheel.appendChild(ghostFor((SEL - 1 + n) % n, "gprev", -1));
+    GHOSTS = { prev: buildGhost("gprev", -1), next: buildGhost("gnext", 1) };
+    wheel.appendChild(GHOSTS.prev.g);
     var stage = el("div", { className: "spot-stage", id: "spot-stage" });
     stage.appendChild(buildInner());
     wheel.appendChild(stage);
-    wheel.appendChild(ghostFor((SEL + 1) % n, "gnext", 1));
+    wheel.appendChild(GHOSTS.next.g);
     box.appendChild(wheel);
-    renderDots();
+    buildDots();
+    updateGhosts();
+    updateDots();
   }
-  function renderDots() {
+  var DOTS = null;
+  function buildDots() {
     var box = $("wheel-dots");
     box.innerHTML = "";
+    DOTS = [];
     CYCLE.forEach(function (id, i) {
       var m = metaFor(id);
-      var b = el("button", { className: i === SEL ? "on" : "", type: "button", title: m.displayName, "aria-label": m.displayName });
-      if (i === SEL) b.style.background = m.hue;
+      var b = el("button", { type: "button", title: m.displayName, "aria-label": m.displayName });
       b.addEventListener("click", function () { jumpTo(i); });
       box.appendChild(b);
+      DOTS.push(b);
+    });
+  }
+  function updateDots() {
+    if (!DOTS) return;
+    DOTS.forEach(function (b, i) {
+      b.className = i === SEL ? "on" : "";
+      b.style.background = i === SEL ? metaFor(CYCLE[i]).hue : "";
     });
   }
 
-  /* ---------- Bottom strip: everything rotates around the center slot ---------- */
+  /* ---------- Bottom strip: persistent cards that physically slide ----------
+     The eight minis are built once per data refresh and kept alive. On a
+     selection change they are reordered around the center slot and FLIP-
+     animated to their new positions, so the strip glides instead of
+     re-rendering. Cards that wrap around the ends fade through instead of
+     flying across the whole row. */
+  var STRIP = null;   // id -> { node, dot, svg }
+  function buildMsub(id) {
+    var st = LAST.statuses[id];
+    var byDay = byDayFor(id);
+    var todayK = dayKey(0);
+    var sub = el("div", { className: "msub" });
+    var todayCost = byDay[todayK] ? byDay[todayK].costUSD : 0;
+    sub.appendChild(txt("today "));
+    sub.appendChild(el("span", { className: "cost", text: fmtUSD(todayCost) }));
+    if (st && st.completion) sub.appendChild(txt(" · " + st.completion.pct + "% done"));
+    var lvm = leftOf(st); if (lvm != null) sub.appendChild(txt(" · " + lvm + " left"));
+    if (id === "ALL") sub.appendChild(txt(" · portfolio view"));
+    return sub;
+  }
+  function setMiniCenter(id, on) {
+    var rec = STRIP && STRIP[id];
+    if (!rec) return;
+    var st = LAST.statuses[id];
+    var meta = metaFor(id);
+    var was = rec.node.classList.contains("center");
+    rec.node.classList.toggle("center", on);
+    var oldSub = rec.node.querySelector(".msub");
+    if (oldSub && (!on || !was)) oldSub.parentNode.removeChild(oldSub);
+    if (on) {
+      if (!was || !rec.node.querySelector(".msub")) rec.node.insertBefore(buildMsub(id), rec.svg);
+      rec.node.style.borderLeft = "";
+      rec.dot.style.boxShadow = "0 0 8px " + meta.hue;
+    } else {
+      rec.dot.style.boxShadow = "";
+      rec.node.style.borderLeft = (st && st.barRaise && st.barRaise.verdict) ? "2px solid " + verdictColor(st.barRaise.verdict) : "";
+    }
+  }
+  function stripOrderIds() {
+    var CENTER = 4, n = CYCLE.length, ids = [];
+    for (var i = 0; i < n; i++) ids.push(CYCLE[(SEL - CENTER + i + n) % n]);
+    return ids;
+  }
   function renderStrip() {
     if (!LAST) return;
     var statuses = LAST.statuses;
     var box = $("strip");
     box.innerHTML = "";
-    box.className = "strip " + (DIR > 0 ? "slide-l" : "slide-r");
-    var todayK = dayKey(0);
+    box.className = "strip";
+    STRIP = {};
 
     function miniFor(meta, slot) {
       var id = meta.id;
@@ -1915,32 +2096,16 @@
         smax = Math.max(smax, v);
         series.push(v);
       }
-      var selected = FILTER === id;
-      var mini = el("div", { className: "panel mini" + (selected ? " center" : ""), role: "button", tabindex: "0", "aria-label": meta.displayName }, [el("span", { className: "ck" })]);
-      mini.style.animationDelay = (slot * 28) + "ms";
+      var mini = el("div", { className: "panel mini", role: "button", tabindex: "0", "aria-label": meta.displayName }, [el("span", { className: "ck" })]);
       var st = statuses[id];
-      if (st && st.barRaise && st.barRaise.verdict && !selected) {
-        mini.style.borderLeft = "2px solid " + verdictColor(st.barRaise.verdict);
-      }
       var mh = el("div", { className: "mhead" });
       var left = el("span");
       var md = el("span", { className: "mdot" }); md.style.background = meta.hue;
-      if (selected) md.style.boxShadow = "0 0 8px " + meta.hue;
       left.appendChild(md);
       left.appendChild(txt(meta.tag));
       mh.appendChild(left);
       mh.appendChild(el("span", { className: "mtok", text: fmtTok(todayTok), title: "tokens burned today" }));
       mini.appendChild(mh);
-      if (selected) {
-        var todayCost = byDay[todayK] ? byDay[todayK].costUSD : 0;
-        var sub = el("div", { className: "msub" });
-        sub.appendChild(txt("today "));
-        sub.appendChild(el("span", { className: "cost", text: fmtUSD(todayCost) }));
-        if (st && st.completion) sub.appendChild(txt(" · " + st.completion.pct + "% done"));
-        var lvm = leftOf(st); if (lvm != null) sub.appendChild(txt(" · " + lvm + " left"));
-        if (id === "ALL") sub.appendChild(txt(" · portfolio view"));
-        mini.appendChild(sub);
-      }
       var svg = svgEl("svg", { viewBox: "0 0 100 22", preserveAspectRatio: "none" });
       var t30 = svgEl("title"); t30.textContent = TIPS.spark; svg.appendChild(t30);
       var pts = series.map(function (v, k) { return [(k / (DAYS - 1)) * 100, 20 - (v / smax) * 18]; });
@@ -1958,32 +2123,104 @@
       function go() { jumpTo(CYCLE.indexOf(id)); }
       mini.addEventListener("click", go);
       mini.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      STRIP[id] = { node: mini, dot: md, svg: svg };
       return mini;
     }
 
-    var CENTER = 4, n = CYCLE.length;
-    for (var i = 0; i < n; i++) {
-      var cid = CYCLE[(SEL - CENTER + i + n) % n];
-      box.appendChild(miniFor(metaFor(cid), i));
-    }
+    stripOrderIds().forEach(function (cid, i) {
+      var m = miniFor(metaFor(cid), i);
+      box.appendChild(m);
+    });
+    CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
+  }
+  function updateStrip() {
+    var box = $("strip");
+    if (!STRIP || !box.firstChild) { renderStrip(); return; }
+    // FLIP: capture old positions, reorder, then animate the delta away
+    var first = {};
+    CYCLE.forEach(function (id) {
+      var rec = STRIP[id];
+      if (rec) first[id] = rec.node.getBoundingClientRect().left;
+    });
+    stripOrderIds().forEach(function (cid) { box.appendChild(STRIP[cid].node); });
+    CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
+    if (REDUCED) return;
+    var slotW = box.firstChild.getBoundingClientRect().width + 10;
+    CYCLE.forEach(function (id) {
+      var rec = STRIP[id];
+      if (!rec) return;
+      var dx = first[id] - rec.node.getBoundingClientRect().left;
+      rec.node.style.transition = "none";
+      if (Math.abs(dx) > slotW * 2.6 || !isFinite(dx)) {
+        rec.node.style.transform = "";
+        rec.node.style.opacity = "0";
+      } else {
+        rec.node.style.transform = "translateX(" + dx + "px)";
+        rec.node.style.opacity = "";
+      }
+    });
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      CYCLE.forEach(function (id) {
+        var rec = STRIP[id];
+        if (!rec) return;
+        rec.node.style.transition = "transform 0.38s var(--ease-out-quart), opacity 0.3s ease, border-color 0.3s, box-shadow 0.3s, background 0.3s";
+        rec.node.style.transform = "";
+        rec.node.style.opacity = "";
+      });
+    }); });
   }
 
-  /* ---------- Wheel nav with slide-out + autoscroll ---------- */
+  /* ---------- Wheel nav: one continuous slide, nothing else re-renders ---------- */
+  function updateSelectionChrome() {
+    updateGhosts();
+    updateDots();
+    updateStrip();
+    renderTotals(LAST.usage, LAST.statuses);
+    renderCore(LAST.usage, true);
+    // ticker and radar are selection-independent on purpose: they never move
+  }
+  function renderSelection(noanim) {
+    if (!LAST) return;
+    var stage = $("spot-stage");
+    if (stage) {
+      stage.innerHTML = "";
+      var inner = buildInner();
+      if (noanim) inner.classList.add("noanim");
+      stage.appendChild(inner);
+    } else {
+      renderSpotlight();
+    }
+    updateSelectionChrome();
+  }
   function settle(target, dir) {
     DIR = dir;
     SEL = target;
     FILTER = CYCLE[SEL];
     setHash();
-    renderAll();
+    renderSelection(false);
   }
   function spinTo(target, dir) {
     if (spinning || target === SEL) return;
-    var old = document.querySelector("#spot-stage .spot-inner");
+    var stage = $("spot-stage");
+    var old = stage ? stage.querySelector(".spot-inner:not(.leaving)") : null;
     if (old && !REDUCED) {
       spinning = true;
-      old.classList.remove("rev");
-      old.classList.add(dir > 0 ? "out-l" : "out-r");
-      setTimeout(function () { spinning = false; settle(target, dir); }, 190);
+      DIR = dir;
+      SEL = target;
+      FILTER = CYCLE[SEL];
+      setHash();
+      // the outgoing card floats above and slides away WHILE the incoming
+      // card slides in underneath: one motion, no blank frame, no blink
+      stage.style.minHeight = stage.offsetHeight + "px";
+      old.classList.remove("rev", "noanim");
+      old.classList.add("leaving", dir > 0 ? "out-l" : "out-r");
+      stage.appendChild(buildInner());
+      updateSelectionChrome();
+      setTimeout(function () {
+        if (old.parentNode) old.parentNode.removeChild(old);
+        stage.style.minHeight = "";
+        spinning = false;
+      }, 260);
     } else {
       settle(target, dir);
     }
@@ -2010,16 +2247,34 @@
     b.className = "auto-btn" + (AUTO !== "off" ? " on" : "");
   }
 
+  // Data-refresh path. Numbers and focus update in place every cycle; the
+  // heavy DOM (spotlight card, strip, radar) is only rebuilt when the
+  // underlying data actually changed, so the auto-refresh never blinks.
+  var DATA_SIG = null;
+  function dataSig() {
+    var s = (LAST.usage && LAST.usage.generatedAt) || "";
+    PROJECTS.forEach(function (p) {
+      var st = LAST.statuses[p.id];
+      s += "|" + (st ? (st.version || "") + (st.lastReleaseAt || "") + String(st.workTreeClean) +
+        (st.barRaise ? (st.barRaise.latestReportAt || "") + (st.barRaise.actionsOpen || "") + (st.barRaise.verdict || "") : "") : "x");
+    });
+    return s;
+  }
   function renderAll() {
     if (!LAST) return;
     buildFilters();
     $("collector-notice").style.display = LAST.usage ? "none" : "block";
+    var sig = dataSig();
+    var fresh = sig !== DATA_SIG || !$("spot-stage");
+    DATA_SIG = sig;
     renderTotals(LAST.usage, LAST.statuses);
     renderTicker(LAST.statuses);
-    renderCore(LAST.usage);
-    renderRadar(LAST.statuses);
-    renderSpotlight();
-    renderStrip();
+    renderCore(LAST.usage, !fresh);
+    if (fresh) {
+      renderRadar(LAST.statuses);
+      renderSpotlight();
+      renderStrip();
+    }
   }
 
   function refresh() {
@@ -2098,11 +2353,18 @@
     }, { passive: true });
   })();
   addEventListener("hashchange", function () {
+    // manual hash edits / back-nav only; setHash uses replaceState so the
+    // wheel's own navigation never round-trips through here
     var parts = (location.hash || "").replace("#", "").split("/");
-    if (CYCLE.indexOf(parts[0]) >= 0) { FILTER = parts[0]; SEL = CYCLE.indexOf(parts[0]); }
-    VIEW = (parts[1] && VIEWS[parts[1]]) ? parts[1] : "flow";
+    var changed = false;
+    if (CYCLE.indexOf(parts[0]) >= 0 && CYCLE.indexOf(parts[0]) !== SEL) { FILTER = parts[0]; SEL = CYCLE.indexOf(parts[0]); changed = true; }
+    var v = (parts[1] && VIEWS[parts[1]]) ? parts[1] : "flow";
+    if (v !== VIEW) { VIEW = v; changed = true; }
     setHash();
-    renderAll();
+    if (!changed || !LAST) return;
+    updateFilterPills();
+    renderCore(LAST.usage);
+    renderSelection(true);
   });
   $("overlay").addEventListener("click", function (e) { if (e.target === $("overlay")) closeOverlay(); });
   $("glass-close").addEventListener("click", closeOverlay);
@@ -2118,7 +2380,11 @@
     else if (e.key === "ArrowLeft") { advance(-1); resetAuto(); }
     else if (e.key === "v") {
       var vs = Object.keys(VIEWS);
-      VIEW = vs[(vs.indexOf(VIEW) + 1) % vs.length]; setHash(); renderAll();
+      VIEW = vs[(vs.indexOf(VIEW) + 1) % vs.length];
+      setHash();
+      updateFilterPills();
+      renderCore(LAST && LAST.usage);
+      renderSelection(true);
     }
   });
   $("refresh-btn").addEventListener("click", refresh);

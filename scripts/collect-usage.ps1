@@ -92,16 +92,40 @@ $PROJECT_PATTERNS = @(
   @{ pat = "yesandeverything";    id = "YaE" },
   # generic scheduled-task dir -> Everything (after project task names above)
   @{ pat = "Claude\Scheduled";    id = "YaE" },
+  @{ pat = "Claude\\Scheduled";   id = "YaE" },   # JSON-escaped form in raw lines
   @{ pat = "mnt/Scheduled";       id = "YaE" },
   # legacy X:\Scheduler path; last so it never shadows the YesAnd* names
   @{ pat = "Scheduler";           id = "Scheduler" }
 )
 
+# ----- Scan roots: Claude Code transcripts + every Cowork session log ------
+# The desktop app's data dir depends on the install type: classic exe writes
+# %APPDATA%\Claude, some builds use %LOCALAPPDATA%\AnthropicClaude or
+# %LOCALAPPDATA%\Claude, and the MSIX/Store package redirects Roaming writes
+# into <package>\LocalCache\Roaming\Claude. Probe everything and scan
+# whichever exist; missing Cowork roots mean entire sessions go uncounted.
 $SCAN_ROOTS = @(
   (Join-Path $env:USERPROFILE ".claude\projects"),
   (Join-Path $env:APPDATA "Claude"),
+  (Join-Path $env:LOCALAPPDATA "Claude"),
   (Join-Path $env:LOCALAPPDATA "AnthropicClaude")
 )
+$pkgRoot = Join-Path $env:LOCALAPPDATA "Packages"
+if (Test-Path $pkgRoot) {
+  Get-ChildItem $pkgRoot -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match "Claude|Anthropic" } |
+    ForEach-Object {
+      $SCAN_ROOTS += (Join-Path $_.FullName "LocalCache\Roaming\Claude")
+      $SCAN_ROOTS += (Join-Path $_.FullName "LocalCache\Local\AnthropicClaude")
+      $SCAN_ROOTS += (Join-Path $_.FullName "LocalState")
+    }
+}
+# extra roots can be pinned here once discovered (one path per line):
+$ExtraRootsFile = Join-Path $PSScriptRoot ".usage-scan-roots.txt"
+if (Test-Path $ExtraRootsFile) {
+  Get-Content $ExtraRootsFile | ForEach-Object { if ($_.Trim()) { $SCAN_ROOTS += $_.Trim() } }
+}
+$SCAN_ROOTS = @($SCAN_ROOTS | Select-Object -Unique)
 
 # Absolute paths throughout: .NET file APIs ignore PowerShell's cwd.
 # Day buckets use the Central calendar day so "today" resets at midnight
@@ -116,10 +140,34 @@ $OutPath = Join-Path $DataDir "usage.json"
 $StatePath = Join-Path $DataDir ".usage-state.json"
 if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Force | Out-Null }
 
+# One compiled alternation instead of 28 IndexOf calls per line: this is the
+# difference between a minutes-long first ingest and an hour-long one.
+$PROJ_RX = New-Object System.Text.RegularExpressions.Regex (
+  "(" + (($PROJECT_PATTERNS | ForEach-Object { [regex]::Escape($_.pat) }) -join "|") + ")"),
+  ([System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::Compiled)
+$PROJ_MAP = @{}
+foreach ($p in $PROJECT_PATTERNS) { if (-not $PROJ_MAP.ContainsKey($p.pat.ToLowerInvariant())) { $PROJ_MAP[$p.pat.ToLowerInvariant()] = $p.id } }
 function Get-ProjectFor([string]$text) {
-  foreach ($p in $PROJECT_PATTERNS) {
-    if ($text -and $text.IndexOf($p.pat, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) { return $p.id }
-  }
+  if (-not $text) { return $null }
+  $m = $PROJ_RX.Match($text)
+  if ($m.Success) { return $PROJ_MAP[$m.Value.ToLowerInvariant()] }
+  return $null
+}
+
+# Field extractors for raw transcript lines (no per-line JSON parse; a full
+# ConvertFrom-Json on every usage line is what made big ingests crawl).
+$RXC = [System.Text.RegularExpressions.RegexOptions]::Compiled
+$RX_IN  = New-Object regex '"input_tokens"\s*:\s*(\d+)', $RXC
+$RX_OUT = New-Object regex '"output_tokens"\s*:\s*(\d+)', $RXC
+$RX_CR  = New-Object regex '"cache_read_input_tokens"\s*:\s*(\d+)', $RXC
+$RX_CW  = New-Object regex '"cache_creation_input_tokens"\s*:\s*(\d+)', $RXC
+$RX_MODEL = New-Object regex '"model"\s*:\s*"([^"]+)"', $RXC
+$RX_TS  = New-Object regex '"timestamp"\s*:\s*"([^"]+)"', $RXC
+$RX_CWD = New-Object regex '"cwd"\s*:\s*"([^"]*)"', $RXC
+$RX_MID = New-Object regex '"id"\s*:\s*"(msg_[^"]+)"', $RXC
+function RxVal([System.Text.RegularExpressions.Regex]$rx, [string]$s) {
+  $m = $rx.Match($s)
+  if ($m.Success) { return $m.Groups[1].Value }
   return $null
 }
 
@@ -188,6 +236,7 @@ $fileTotals = @()   # audit detail: per-file resolved project + token sum
 foreach ($root in $SCAN_ROOTS) {
   if (-not (Test-Path $root)) { Write-Host "INFO: $root not found, skipping." -ForegroundColor DarkGray; continue }
   $logs = Get-ChildItem -Path $root -Filter *.jsonl -Recurse -File -ErrorAction SilentlyContinue
+  Write-Host ("  root {0} -> {1} log file(s)" -f $root, @($logs).Count) -ForegroundColor DarkGray
   foreach ($f in $logs) {
     $key = $f.FullName
     $prev = $null
@@ -202,8 +251,11 @@ foreach ($root in $SCAN_ROOTS) {
       $lastMsgId = $prev.lastMsgId
     }
     $scannedFiles++
+    if ($scannedFiles % 25 -eq 0) { Write-Host ("  ...{0} file(s) in, {1} usage record(s) so far" -f $scannedFiles, $usageRecords) -ForegroundColor DarkGray }
 
-    $fs = [System.IO.File]::Open($key, "Open", "Read", "ReadWrite")
+    $fs = $null
+    try { $fs = [System.IO.File]::Open($key, "Open", "Read", "ReadWrite") }
+    catch { Write-Host "WARN: cannot open $key ($($_.Exception.Message)); skipped." -ForegroundColor Yellow; continue }
     try {
       if ($processed -gt 0 -and $processed -le $fs.Length) { $fs.Seek($processed, "Begin") | Out-Null } else { $processed = 0 }
       $sr = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
@@ -218,25 +270,36 @@ foreach ($root in $SCAN_ROOTS) {
 
       # Pass 1: vote + buffer usage records. Attribution resolves AFTER the
       # whole chunk has voted, so early records aren't stamped by whatever
-      # project name happened to appear first.
+      # project name happened to appear first. All field extraction is
+      # regex-on-raw-line; no per-line JSON parsing.
       $records = New-Object System.Collections.Generic.List[object]
       foreach ($line in $body -split "`n") {
         if (-not $line) { continue }
         $newLines++
         $lineHit = Get-ProjectFor $line
         if ($lineHit) { if ($votes.ContainsKey($lineHit)) { $votes[$lineHit]++ } else { $votes[$lineHit] = 1 } }
-        if ($line.IndexOf('"usage"') -lt 0) { continue }
-        $obj = $null
-        try { $obj = $line | ConvertFrom-Json } catch { continue }
-        $usage = $null; $model = $null; $msgId = $null
-        if ($obj.message -and $obj.message.usage) { $usage = $obj.message.usage; $model = $obj.message.model; $msgId = $obj.message.id }
-        elseif ($obj.usage) { $usage = $obj.usage; $model = $obj.model }
-        if (-not $usage) { continue }
-        if (-not $msgId -and $obj.requestId) { $msgId = $obj.requestId }
+        $ui = $line.IndexOf('"usage"')
+        if ($ui -lt 0) { continue }
+        # read the token counts only from a small window starting at the usage
+        # object, so token-count-looking text elsewhere in the line can't hit
+        $win = $line.Substring($ui, [Math]::Min(600, $line.Length - $ui))
+        $inS = RxVal $RX_IN $win
+        $outS = RxVal $RX_OUT $win
+        if ($inS -eq $null -and $outS -eq $null) { continue }
+        $usage = @{
+          input_tokens = [long]$(if ($inS) { $inS } else { 0 })
+          output_tokens = [long]$(if ($outS) { $outS } else { 0 })
+          cache_read_input_tokens = [long]$(if (($v = RxVal $RX_CR $win)) { $v } else { 0 })
+          cache_creation_input_tokens = [long]$(if (($v2 = RxVal $RX_CW $win)) { $v2 } else { 0 })
+        }
+        $model = RxVal $RX_MODEL $line
+        $msgId = RxVal $RX_MID $line
         $strong = $null
-        if ($obj.cwd) { $strong = Get-ProjectFor $obj.cwd }
+        $cwdS = RxVal $RX_CWD $line
+        if ($cwdS) { $strong = Get-ProjectFor $cwdS }
         $ts = $null
-        if ($obj.timestamp) { try { $ts = [datetime]$obj.timestamp } catch { $ts = $null } }
+        $tsS = RxVal $RX_TS $line
+        if ($tsS) { try { $ts = [datetime]$tsS } catch { $ts = $null } }
         if (-not $ts) { $ts = $f.LastWriteTime }
         $rec = @{ strong = $strong; lineHit = $lineHit; msgId = $msgId; ts = $ts; usage = $usage; model = $model }
         # Dedupe: repeated transcript lines for the same message id carry the
@@ -272,6 +335,8 @@ foreach ($root in $SCAN_ROOTS) {
         $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "YaE" }); tokens = $fileTok }
       }
       $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId }
+    } catch {
+      Write-Host "WARN: error reading $key ($($_.Exception.Message)); file skipped this run." -ForegroundColor Yellow
     } finally {
       $fs.Dispose()
     }
