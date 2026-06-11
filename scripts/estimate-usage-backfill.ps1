@@ -1,21 +1,34 @@
-# estimate-usage-backfill.ps1 - calibrated estimate of Claude spend that predates
-# the surviving session logs.
+# estimate-usage-backfill.ps1 - calibrated estimate of Claude spend the surviving
+# session logs do not cover.
 #
 # Premise (per Kane, 2026-06-11): every piece of work in every project was built
-# in Claude, so each repo's git history is a complete record of Claude work
-# units. The surviving transcript window gives a MEASURED exchange rate per
-# project (tokens per commit, blended $ per token including that project's
-# model mix and cache behavior). Commits older than the log horizon get the
-# project's measured rate applied to them. The result is an estimate with
-# honest error bars, kept in a separate file so measured and estimated numbers
-# are never silently mixed.
+# in Claude, so each repo's git history is a complete record of work volume.
+# The 31-day commit record runs ~49 commits/day all month (peaks of 100-158),
+# flat-to-heavier than today, while measured spend thins out going backward:
+# transcripts get purged not just before one horizon date but progressively
+# inside the window too. So this is a DAY-LEVEL RECONCILIATION, not a simple
+# pre-horizon extrapolation:
+#
+#   expected(project, day) = commits(project, day) x rate(project)
+#   shortfall(project, day) = max(0, expected - measured)
+#   estimate(project) = sum of shortfall over all days before today
+#
+# rate(project) is the median cost-per-commit / tokens-per-commit over the
+# project's most recent 7 active days (commits > 0 AND measured > 0), the
+# best-retained stretch of the logs. The median keeps one monster session from
+# setting the rate. Projects without enough samples use portfolio-median rates.
+# Days where measured >= expected contribute nothing; measured data is never
+# scaled down. Tokens are in+out only (cache is priced into dollars but never
+# displayed as volume). Estimates land in a separate file and render with an
+# approx mark; they are never mixed into measured data.
 #
 #   cd X:\YesAndEverything
 #   .\scripts\estimate-usage-backfill.ps1            # estimate + commit + push
 #   .\scripts\estimate-usage-backfill.ps1 -NoPush    # estimate only
 #
-# Output: dashboard\data\backfill.json. Re-run whenever the horizon moves or
-# after a -Rescan; it is cheap (git log only, no transcript scanning).
+# Output: dashboard\data\backfill.json. Cheap to re-run (git log only).
+# Caveat: usage.json's daily series is capped at 60 days; once the portfolio
+# is older than that, extend the cap in collect-usage.ps1 before trusting this.
 
 param([switch]$NoPush)
 
@@ -37,61 +50,99 @@ $UsagePath = Join-Path $RepoRoot "dashboard\data\usage.json"
 if (-not (Test-Path $UsagePath)) { throw "usage.json not found; run collect-usage.ps1 first." }
 $usage = Get-Content -Raw $UsagePath | ConvertFrom-Json
 
-# The horizon: oldest surviving usage record. Everything before it is estimated.
-$horizon = $null
-if ($usage.oldestRecord) { try { $horizon = [datetime]$usage.oldestRecord } catch { $horizon = $null } }
-if (-not $horizon) {
-  # fallback: oldest day in any project's daily series
-  foreach ($pp in $usage.projects.PSObject.Properties) {
-    foreach ($d in $pp.Value.daily) {
-      $dd = [datetime]$d.d
-      if (-not $horizon -or $dd -lt $horizon) { $horizon = $dd }
-    }
-  }
-}
-if (-not $horizon) { throw "no horizon derivable from usage.json." }
-$horizonKey = $horizon.ToString("yyyy-MM-dd")
-Write-Host "Log horizon: $horizonKey. Commits before this date get estimated at each project's measured rate." -ForegroundColor Cyan
+$todayKey = (Get-Date).ToString("yyyy-MM-dd")
 
-$projects = [ordered]@{}
-$totEstTok = [long]0; $totEstCost = [double]0
+function Median($arr) {
+  $s = @($arr | Sort-Object)
+  $n = $s.Count
+  if ($n -eq 0) { return 0 }
+  if ($n % 2 -eq 1) { return $s[[int](($n - 1) / 2)] }
+  return ($s[$n / 2 - 1] + $s[$n / 2]) / 2
+}
+
+# ----- Pass 1: per-project day tables --------------------------------------
+$P = @{}   # id -> @{ commits = @{date->n}; cost = @{date->$}; tok = @{date->n} }
 foreach ($r in $REPOS) {
   if (-not (Test-Path $r.path)) { Write-Host "INFO: $($r.path) not found, skipping." -ForegroundColor DarkGray; continue }
   $lock = Join-Path $r.path ".git\index.lock"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
   $dates = & git -C $r.path log --pretty=%ad --date=short 2>$null
   if (-not $dates) { Write-Host "WARN: no git history readable at $($r.path); skipped." -ForegroundColor Yellow; continue }
-  $pre = 0; $in = 0
-  foreach ($d in $dates) {
-    if ($d -lt $horizonKey) { $pre++ } else { $in++ }
-  }
+  $cByDay = @{}
+  foreach ($d in $dates) { if ($cByDay.ContainsKey($d)) { $cByDay[$d]++ } else { $cByDay[$d] = 1 } }
+  $cost = @{}; $tok = @{}
   $u = $usage.projects.PSObject.Properties[$r.id]
-  $measTok = [long]0; $measCost = [double]0
   if ($u) {
-    $at = $u.Value.allTime
-    $measTok = [long]$at.input + [long]$at.output + [long]$at.cacheRead + [long]$at.cacheWrite
-    $measCost = [double]$at.costUSD
+    foreach ($d in $u.Value.daily) {
+      $cost[$d.d] = [double]$d.costUSD
+      $tok[$d.d] = [long]$d.input + [long]$d.output
+    }
   }
-  # tokens-per-commit and blended $/token from the measured window only
-  $rateTok = if ($in -gt 0) { $measTok / $in } else { 0 }
-  $dollarPerTok = if ($measTok -gt 0) { $measCost / $measTok } else { 0 }
-  $estTok = [long]($rateTok * $pre)
-  $estCost = [math]::Round($estTok * $dollarPerTok, 2)
+  $P[$r.id] = @{ commits = $cByDay; cost = $cost; tok = $tok }
+}
+
+# ----- Pass 2: per-project rates from the best-retained recent days --------
+$rates = @{}   # id -> @{ cost = $/commit; tok = tok/commit; samples = n }
+$allCostRates = @(); $allTokRates = @()
+foreach ($id in $P.Keys) {
+  $t = $P[$id]
+  $sampleDays = @($t.commits.Keys | Where-Object { $_ -lt $todayKey -and $t.cost[$_] -gt 0 } | Sort-Object -Descending | Select-Object -First 7)
+  $cr = @(); $tr = @()
+  foreach ($d in $sampleDays) {
+    $n = $t.commits[$d]
+    if ($n -gt 0) {
+      $cr += $t.cost[$d] / $n
+      $tr += $t.tok[$d] / $n
+    }
+  }
+  $rates[$id] = @{ cost = (Median $cr); tok = (Median $tr); samples = $cr.Count }
+  $allCostRates += $cr; $allTokRates += $tr
+}
+$pfCostRate = Median $allCostRates
+$pfTokRate = Median $allTokRates
+
+# ----- Pass 3: day-level shortfall ------------------------------------------
+$projects = [ordered]@{}
+$totEstTok = [long]0; $totEstCost = [double]0
+foreach ($r in $REPOS) {
+  if (-not $P.ContainsKey($r.id)) { continue }
+  $t = $P[$r.id]
+  $rate = $rates[$r.id]
+  $useOwn = ($rate.samples -ge 4)
+  $rc = if ($useOwn) { $rate.cost } else { $pfCostRate }
+  $rt = if ($useOwn) { $rate.tok } else { $pfTokRate }
+  $estCost = [double]0; $estTok = [long]0; $shortDays = 0; $commitsCovered = 0
+  foreach ($d in $t.commits.Keys) {
+    if ($d -ge $todayKey) { continue }   # today is in-flight; never estimated
+    $n = $t.commits[$d]
+    $mC = [double]$t.cost[$d]
+    $mT = [long]$t.tok[$d]
+    $dC = ($n * $rc) - $mC
+    if ($dC -gt 0) {
+      $estCost += $dC
+      $estTok += [long][Math]::Max(0, ($n * $rt) - $mT)
+      $shortDays++
+      $commitsCovered += $n
+    }
+  }
+  $estCost = [math]::Round($estCost, 2)
   $totEstTok += $estTok; $totEstCost += $estCost
   $projects[$r.id] = [ordered]@{
-    preCommits = $pre
-    inCommits = $in
-    tokensPerCommit = [long]$rateTok
+    ratePerCommitUSD = [math]::Round($rc, 2)
+    rateSamples = $rate.samples
+    rateBasis = $(if ($useOwn) { "own median (7 recent active days)" } else { "portfolio median" })
+    shortfallDays = $shortDays
+    commitsOnShortfallDays = $commitsCovered
     estTokens = $estTok
     estCostUSD = $estCost
   }
-  Write-Host ("  {0,-6} {1,4} commits pre-horizon x {2,10:n0} tok/commit ~ {3,12:n0} tok / `${4,8:n2}" -f $r.id, $pre, $rateTok, $estTok, $estCost) -ForegroundColor DarkGray
+  Write-Host ("  {0,-6} rate `${1,6:n2}/commit ({2}) -> {3,3} thin day(s), {4,4} commits ~ {5,12:n0} tok / `${6,9:n2}" -f $r.id, $rc, $(if ($useOwn) { "own" } else { "pf" }), $shortDays, $commitsCovered, $estTok, $estCost) -ForegroundColor DarkGray
 }
 
 $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-  horizon = $horizonKey
-  method = "git commits before the log horizon x each project's measured tokens-per-commit and blended dollars-per-token from surviving transcripts; everything was built in Claude, so commit history is a complete work record. Estimate, not measurement; expect real error bars."
+  horizon = $(if ($usage.oldestRecord) { $usage.oldestRecord } else { $null })
+  method = "day-level reconciliation: expected = commits x median cost-per-commit from each project's 7 most recent active days; estimate = sum of max(0, expected - measured) per day before today. Covers purged pre-horizon history AND thinned days inside the window. Tokens are in+out only. Estimate, not measurement."
   totals = [ordered]@{ estTokens = $totEstTok; estCostUSD = [math]::Round($totEstCost, 2) }
   projects = $projects
 }
@@ -106,7 +157,7 @@ Move-Item -Force $tmp $OutPath
 $back = [System.IO.File]::ReadAllText($OutPath)
 if ($back.Contains([char]0)) { throw "NUL bytes in $OutPath after write" }
 $null = ($back | ConvertFrom-Json)
-Write-Host ("Wrote {0}: ~{1:n0} tokens / ~`${2:n2} estimated before {3}." -f $OutPath, $totEstTok, $totEstCost, $horizonKey) -ForegroundColor Green
+Write-Host ("Wrote {0}: ~{1:n0} tokens / ~`${2:n2} estimated beyond what the logs still hold." -f $OutPath, $totEstTok, $totEstCost) -ForegroundColor Green
 
 if ($NoPush) { exit 0 }
 $ErrorActionPreference = "Continue"

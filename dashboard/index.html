@@ -1672,8 +1672,8 @@
     }
     var bf = backfillFor(FILTER);
     if (bf) {
-      setCell(3, tAll.tok + bf.estTokens, function (n) { return "≈" + fmtTok(n); }, "tok", "all-time" + scopeTag);
-      setCell(4, tAll.cost + bf.estCostUSD, function (n) { return "≈" + fmtUSD(n); }, "est", "all-time cost" + scopeTag);
+      setCell(3, tAll.tok + bf.estTokens, fmtTok, "tok est", "all-time" + scopeTag);
+      setCell(4, tAll.cost + bf.estCostUSD, fmtUSD, "est", "all-time cost" + scopeTag);
       var hz = LAST.backfill.horizon || "the log horizon";
       TOT[3].n.parentNode.title = "measured " + fmtTok(tAll.tok) + " since " + hz + " + ~" + fmtTok(bf.estTokens) + " estimated from pre-log commits · click for the full stats view";
       TOT[4].n.parentNode.title = "measured " + fmtUSD(tAll.cost) + " since " + hz + " + ~" + fmtUSD(bf.estCostUSD) + " estimated from pre-log commits · click for the full stats view";
@@ -1976,7 +1976,9 @@
     });
     // right column row 2: all-time cost with per-project bars
     var bfS = backfillFor(FILTER);
-    var b5 = block("mag", "all-time cost", tAll.cost, fmtUSD, "est");
+    var b5 = bfS
+      ? block("mag", "all-time cost", tAll.cost + bfS.estCostUSD, fmtUSD, "est")
+      : block("mag", "all-time cost", tAll.cost, fmtUSD, "est");
     perCost.slice(0, 7).forEach(function (r) {
       var mr = el("div", { className: "meterrow" });
       mr.appendChild(el("span", { className: "mid", text: r.id }));
@@ -1989,8 +1991,8 @@
     if (bfS) {
       b5.appendChild(el("div", {
         className: "blabel",
-        text: "+ ~" + fmtUSD(bfS.estCostUSD) + " estimated before " + ((LAST.backfill && LAST.backfill.horizon) || "the log horizon"),
-        title: "pre-log spend, estimated from git commits x this scope's measured tokens-per-commit; transcripts that old are purged"
+        text: "measured " + fmtUSD(tAll.cost) + " (bars) + ~" + fmtUSD(bfS.estCostUSD) + " estimated from purged logs",
+        title: "the bars above show measured spend only; the estimate reconciles git commit volume against thin or missing transcript days"
       }));
     }
     // row 3: all-time tokens · cost this week · burn rate today (3-across, aligns with the row below)
@@ -2007,7 +2009,7 @@
       else { n.textContent = value; if (unit) n.appendChild(el("span", { className: "unit", text: unit })); }
       row3.appendChild(d);
     }
-    if (bfS) mini3("all-time tokens", tAll.tok + bfS.estTokens, function (n) { return "≈" + fmtTok(n); }, "tok", "measured " + fmtTok(tAll.tok) + " + ~" + fmtTok(bfS.estTokens) + " estimated from pre-log commits");
+    if (bfS) mini3("all-time tokens", tAll.tok + bfS.estTokens, fmtTok, "tok est", "measured " + fmtTok(tAll.tok) + " + ~" + fmtTok(bfS.estTokens) + " estimated from pre-log commits");
     else mini3("all-time tokens", tAll.tok, fmtTok, "tok", "every token tracked, all time");
     mini3("cost this week", costThisWeek, fmtUSD, "est", "estimated cost over the last 7 days");
     mini3("burn rate today", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k tok", TIPS.burnRate);
@@ -2144,9 +2146,9 @@
     ul.appendChild(txt(" ("));
     ul.appendChild(el("span", { className: "cost", text: fmtUSD(today.cost) }));
     ul.appendChild(txt(") / all-time "));
-    ul.appendChild(el("b", { text: (bfI ? "≈" : "") + fmtTok(allTok + (bfI ? bfI.estTokens : 0)) }));
+    ul.appendChild(el("b", { text: fmtTok(allTok + (bfI ? bfI.estTokens : 0)) }));
     ul.appendChild(txt(" ("));
-    ul.appendChild(el("span", { className: "cost", text: (bfI ? "≈" : "") + fmtUSD(allCost + (bfI ? bfI.estCostUSD : 0)) }));
+    ul.appendChild(el("span", { className: "cost", text: fmtUSD(allCost + (bfI ? bfI.estCostUSD : 0)) }));
     ul.appendChild(txt(")"));
     if (sess) ul.appendChild(txt(" / " + sess + " sessions"));
     head.appendChild(ul);
