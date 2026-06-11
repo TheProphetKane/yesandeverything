@@ -1588,27 +1588,21 @@
       n3.appendChild(el("span", { className: pct >= 0 ? "up" : "dn", text: (pct >= 0 ? "▲ " : "▼ ") + Math.abs(pct) + "%" }));
       n3.appendChild(el("span", { className: "unit", text: "vs prior 7-day avg" }));
     } else { n3.textContent = "--"; }
-    var wk = el("div", { title: "tokens per day, last 7 days" });
-    wk.style.cssText = "display:flex;align-items:flex-end;gap:6px;height:74px;margin-top:10px;";
     var mx7 = Math.max.apply(null, last7.concat([1]));
     var WD = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
     last7.forEach(function (v, i) {
       var k = dayKey(6 - i), isToday = i === 6;
-      var col = el("div", { title: k + " · " + fmtTok(v) + " tok" });
-      col.style.cssText = "flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:4px;min-width:0;";
-      var bar = el("div");
-      bar.style.cssText = "width:100%;border-radius:3px 3px 0 0;min-height:2px;height:2px;transition:height .7s cubic-bezier(.2,.8,.2,1);" +
-        (isToday ? "background:linear-gradient(180deg,#ff00ff,#02a4d3);box-shadow:0 0 8px rgba(255,0,255,.4);" : "background:#3a4250;");
-      col.appendChild(bar);
-      var lab = el("div", { text: WD[new Date(k + "T00:00:00").getDay()] });
-      lab.style.cssText = "font-size:9px;letter-spacing:.08em;text-align:center;flex-shrink:0;color:" + (isToday ? "#ff66ff" : "#697381") + ";";
-      col.appendChild(lab);
-      wk.appendChild(col);
+      var mr = el("div", { className: "meterrow", title: k + " · " + fmtTok(v) + " tok" });
+      mr.appendChild(el("span", { className: "mid", text: WD[new Date(k + "T00:00:00").getDay()] }));
+      var m = el("div", { className: "meter" }); var f = el("div", { className: "mf" });
+      f.style.background = isToday ? "linear-gradient(90deg,#ff00ff,#02a4d3)" : "#5fd6ff";
+      m.appendChild(f); mr.appendChild(m);
+      mr.appendChild(el("span", { className: "mval", text: fmtTok(v) }));
+      b3.appendChild(mr);
       requestAnimationFrame(function () { requestAnimationFrame(function () {
-        bar.style.height = Math.max(4, Math.round(v / mx7 * 100)) + "%";
+        f.style.width = Math.max(2, Math.round(v / mx7 * 100)) + "%";
       }); });
     });
-    b3.appendChild(wk);
     // right column row 2: all-time cost with per-project bars
     var b5 = block("mag", "all-time cost", tAll.cost, fmtUSD, "est");
     perCost.slice(0, 7).forEach(function (r) {
@@ -1620,9 +1614,24 @@
       b5.appendChild(mr);
       requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.width = (r.cost / maxCost * 100) + "%"; }); });
     });
-    // row 3: all-time tokens (left), burn rate today (right, under all-time cost)
-    block("", "all-time tokens", tAll.tok, fmtTok, "tok");
-    block("", "burn rate today", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k tok");
+    // row 3: all-time tokens · cost this week · burn rate today (3-across, aligns with the row below)
+    var costThisWeek = costSeries.slice(7).reduce(function (a, b) { return a + b; }, 0);
+    var row3 = el("div", { className: "bigstat" });
+    row3.style.cssText = "grid-column:1/-1;display:flex;gap:28px;flex-wrap:wrap;";
+    function mini3(label, value, formatter, unit, tip) {
+      var d = el("div", { title: tip || "" });
+      d.style.cssText = "flex:1;min-width:120px;";
+      d.appendChild(el("div", { className: "blabel", text: label }));
+      var n = el("div", { className: "bnum" });
+      d.appendChild(n);
+      if (typeof value === "number") countUp(n, value, formatter, unit);
+      else { n.textContent = value; if (unit) n.appendChild(el("span", { className: "unit", text: unit })); }
+      row3.appendChild(d);
+    }
+    mini3("all-time tokens", tAll.tok, fmtTok, "tok", "every token tracked, all time");
+    mini3("cost this week", costThisWeek, fmtUSD, "est", "estimated cost over the last 7 days");
+    mini3("burn rate today", tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k tok", TIPS.burnRate);
+    grid.appendChild(row3);
     // bottom row, full width: sessions · review actions · last collected
     var brow = el("div", { className: "bigstat" });
     brow.style.cssText = "grid-column:1/-1;display:flex;gap:28px;flex-wrap:wrap;";
