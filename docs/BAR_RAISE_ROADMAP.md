@@ -302,4 +302,8 @@ If you are a Claude session opening this file fresh, here is how to continue.
 | 0 - roadmap + contract + URL lock | DONE | 2026-05-26 |
 | 1 - static dashboard reading existing signals (BR + YaC pilot) | DONE | 2026-05-26 |
 | 1b - extend dashboard to HBH / Scheduler / YaA / YaB | DONE | 2026-05-26 |
-| 2 - per-project bar-raise skill (SKILL.md + orchestrator + Waves 2/3/5 + Wave 4 dir scaffolded) | DONE | 2026-05-26 
+| 2 - per-project bar-raise skill (SKILL.md + orchestrator + Waves 2/3/5 + Wave 4 dir scaffolded) | DONE | 2026-05-26 |
+| 3 - constellation orchestrator (Wave 1 + constellation orchestrator filled, JSON contract locked) | DONE | 2026-05-26 |
+| 4 - domain lens set (42 lenses across 9 domains) | DONE | 2026-05-26 |
+| 5 - scheduling (Task Scheduler shims + register/unregister + README; 7 tasks registered live 2026-05-26, first runs at 06:00-06:25 the following morning) | DONE | 2026-05-26 |
+| 6 - polish + handover (BAR_RAISE_HANDOVER.md + PERSONAL_CLAUDE_ARCHITECTURE.md cross-ref) | DONE | 2026-05-26 |
