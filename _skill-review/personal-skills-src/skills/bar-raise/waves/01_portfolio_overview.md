@@ -8,7 +8,7 @@ Only on a constellation bar-raise (invoked via `orchestrators/constellation.md`)
 
 ## What to harvest
 
-For the six projects (BR, HBH, YaC, Scheduler, YaA, YaB), read each of the following and capture the salient cross-project pattern. Be tight: per-project detail belongs in Wave 2; Wave 1 is the bird's-eye view.
+For the six projects (BR, HBH, YaC, YaS, YaA, YaB), read each of the following and capture the salient cross-project pattern. Be tight: per-project detail belongs in Wave 2; Wave 1 is the bird's-eye view.
 
 ### Active set
 

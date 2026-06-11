@@ -1,17 +1,17 @@
 # Orchestrator: per-project bar-raise
 
-This is the procedure you (Claude) follow when the user invokes a per-project bar-raise. The user names a project (BR, HBH, YaC, Scheduler, YaA, or YaB). You run Waves 2 + 3 + 4 + 5 against it and write the artifacts.
+This is the procedure you (Claude) follow when the user invokes a per-project bar-raise. The user names a project (BR, HBH, YaC, YaS, YaA, or YaB; "Scheduler" is a legacy alias for YaS). You run Waves 2 + 3 + 4 + 5 against it and write the artifacts.
 
 The model: every lens is an independent check that runs as its own subagent, inspects the project for that one dimension, and returns a structured report. The orchestrator collects every report and weighs them. No single lens gets veto power and no lens outranks another by default; the synthesis balances all dimensions and surfaces the tradeoffs.
 
 ## Inputs
 
-- `$project` -- the short project ID (BR, HBH, YaC, Scheduler, YaA, YaB).
+- `$project` -- the short project ID (BR, HBH, YaC, YaS, YaA, YaB). Map the legacy alias "Scheduler" to YaS on entry; every artifact (report header, status JSON filename, queue item project field) uses YaS.
 - `$projectRoot` -- the absolute path to the project (derive from the ID):
   - BR -> `X:\BrackishRising`
   - HBH -> `X:\HereBeHordes`
   - YaC -> `X:\YesAndChains`
-  - Scheduler -> `X:\YesAndScheduler`
+  - YaS -> `X:\YesAndScheduler`
   - YaA -> `X:\YesAndApothecary`
   - YaB -> `X:\YesAndBudget`
 - `$today` -- ISO date in `YYYY-MM-DD`.

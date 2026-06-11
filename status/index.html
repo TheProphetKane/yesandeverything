@@ -297,7 +297,7 @@
     { id: "BR",        displayName: "Brackish Rising",  short: "rising" },
     { id: "YaC",       displayName: "Yes& Chains",      short: "chains" },
     { id: "HBH",       displayName: "Here Be Hordes",   short: "hordes" },
-    { id: "Scheduler", displayName: "Yes& Scheduler",   short: "scheduler" },
+    { id: "YaS",       displayName: "Yes& Scheduler",   short: "scheduler" },
     { id: "YaA",       displayName: "Yes& Apothecary",  short: "apothecary" },
     { id: "YaB",       displayName: "Yes& Budget",      short: "budget" }
   ];
@@ -569,6 +569,11 @@
     return Promise.all(jobs).then(function (results) {
       var cn = results[0];
       USAGE = results[1];
+      // legacy id: pre-uniform usage data keyed Scheduler instead of YaS
+      if (USAGE && USAGE.projects && USAGE.projects.Scheduler && !USAGE.projects.YaS) {
+        USAGE.projects.YaS = USAGE.projects.Scheduler;
+        delete USAGE.projects.Scheduler;
+      }
       var projData = results.slice(2);
       renderConstellation(cn);
       grid.innerHTML = "";

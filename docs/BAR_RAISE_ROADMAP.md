@@ -189,7 +189,7 @@ Constellation JSON shape:
 {
   "generatedAt": "2026-05-26T06:00:00Z",
   "portfolioVerdict": "healthy",
-  "projects": ["BR", "YaC", "HBH", "Scheduler", "YaA", "YaB"],
+  "projects": ["BR", "YaC", "HBH", "YaS", "YaA", "YaB"],
   "summary": "...",
   "topActions": [
     { "project": "BR", "severity": "high", "label": "..." }

@@ -42,7 +42,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
-$ATTRIB_VERSION = 2
+$ATTRIB_VERSION = 3   # v3: YaS id, transcript-only roots, global msg dedupe, timestamp chain
 
 # ----- Pricing (USD per million tokens; Anthropic published API rates) ----
 # Verified against the published price list on the date below. When rates
@@ -70,8 +70,8 @@ $PROJECT_PATTERNS = @(
   @{ pat = "bar-raise-br";        id = "BR" },
   @{ pat = "audit-yac";           id = "YaC" },
   @{ pat = "bar-raise-yac";       id = "YaC" },
-  @{ pat = "audit-scheduler";     id = "Scheduler" },
-  @{ pat = "bar-raise-scheduler"; id = "Scheduler" },
+  @{ pat = "audit-scheduler";     id = "YaS" },
+  @{ pat = "bar-raise-scheduler"; id = "YaS" },
   @{ pat = "audit-apothecary";    id = "YaA" },
   @{ pat = "bar-raise-yaa";       id = "YaA" },
   @{ pat = "audit-yab";           id = "YaB" },
@@ -84,7 +84,7 @@ $PROJECT_PATTERNS = @(
   @{ pat = "brackish-rising";     id = "BR" },
   @{ pat = "YesAndChains";        id = "YaC" },
   @{ pat = "yesandchains";        id = "YaC" },
-  @{ pat = "YesAndScheduler";     id = "Scheduler" },
+  @{ pat = "YesAndScheduler";     id = "YaS" },
   @{ pat = "YesAndApothecary";    id = "YaA" },
   @{ pat = "yesandapothecary";    id = "YaA" },
   @{ pat = "YesAndBudget";        id = "YaB" },
@@ -95,7 +95,7 @@ $PROJECT_PATTERNS = @(
   @{ pat = "Claude\\Scheduled";   id = "YaE" },   # JSON-escaped form in raw lines
   @{ pat = "mnt/Scheduled";       id = "YaE" },
   # legacy X:\Scheduler path; last so it never shadows the YesAnd* names
-  @{ pat = "Scheduler";           id = "Scheduler" }
+  @{ pat = "Scheduler";           id = "YaS" }
 )
 
 # ----- Scan roots: Claude Code transcripts + every Cowork session log ------
@@ -197,11 +197,12 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     foreach ($prop in $state.files.PSObject.Properties) {
       $votes = @{}
       if ($prop.Value.votes) { foreach ($v in $prop.Value.votes.PSObject.Properties) { $votes[$v.Name] = [int]$v.Value } }
-      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId }
+      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs }
     }
     foreach ($row in $state.agg) {
       $rp = $row.p
       if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }
+      if ($rp -eq "Scheduler") { $rp = "YaS" }   # id layer is uniform Ya* codes
       if (-not $Agg.ContainsKey($rp)) { $Agg[$rp] = @{} }
       if (-not $Agg[$rp].ContainsKey($row.d)) { $Agg[$rp][$row.d] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
       $b = $Agg[$rp][$row.d]
@@ -229,14 +230,23 @@ function Add-Usage([string]$proj, [string]$day, $u, [string]$model) {
 }
 
 # ----- Scan -----------------------------------------------------------------
-$scannedFiles = 0; $newLines = 0; $usageRecords = 0; $dupSkipped = 0; $fallbackYaE = 0
+$scannedFiles = 0; $newLines = 0; $usageRecords = 0; $dupSkipped = 0; $fallbackYaE = 0; $tsFallbacks = 0
+# one message id = one usage, across ALL files in the run (transcript copies
+# and interleaved repeats otherwise double-count)
+$SeenMsg = New-Object 'System.Collections.Generic.HashSet[string]'
 $oldestTs = $null; $newestTs = $null
 $fileTotals = @()   # audit detail: per-file resolved project + token sum
 
 foreach ($root in $SCAN_ROOTS) {
   if (-not (Test-Path $root)) { Write-Host "INFO: $root not found, skipping." -ForegroundColor DarkGray; continue }
   $logs = Get-ChildItem -Path $root -Filter *.jsonl -Recurse -File -ErrorAction SilentlyContinue
-  Write-Host ("  root {0} -> {1} log file(s)" -f $root, @($logs).Count) -ForegroundColor DarkGray
+  # Only session TRANSCRIPTS carry billable usage. App roots also hold
+  # file-history and other jsonl logs whose text can look usage-shaped and
+  # whose mtimes are always fresh; counting those inflates "today".
+  if ($root -notlike "*\.claude\projects") {
+    $logs = @($logs | Where-Object { $_.FullName -match "\\\.claude\\projects\\" })
+  }
+  Write-Host ("  root {0} -> {1} transcript file(s)" -f $root, @($logs).Count) -ForegroundColor DarkGray
   foreach ($f in $logs) {
     $key = $f.FullName
     $prev = $null
@@ -245,10 +255,12 @@ foreach ($root in $SCAN_ROOTS) {
     $processed = 0
     $votes = @{}
     $lastMsgId = $null
+    $lastTs = $null
     if ($prev) {
       $processed = $prev.processed
       if ($prev.votes) { $votes = $prev.votes }
       $lastMsgId = $prev.lastMsgId
+      if ($prev.lastTs) { try { $lastTs = [datetime]$prev.lastTs } catch { $lastTs = $null } }
     }
     $scannedFiles++
     if ($scannedFiles % 25 -eq 0) { Write-Host ("  ...{0} file(s) in, {1} usage record(s) so far" -f $scannedFiles, $usageRecords) -ForegroundColor DarkGray }
@@ -300,15 +312,19 @@ foreach ($root in $SCAN_ROOTS) {
         $ts = $null
         $tsS = RxVal $RX_TS $line
         if ($tsS) { try { $ts = [datetime]$tsS } catch { $ts = $null } }
-        if (-not $ts) { $ts = $f.LastWriteTime }
+        # Timestamp chain: a line without its own timestamp inherits the last
+        # one seen in this file. Falling back to the file's WRITE time dumped
+        # whole histories into "today" whenever the app touched a file, which
+        # is exactly the today-inflation bug. Creation time is the last resort.
+        if ($ts) { $lastTs = $ts }
+        elseif ($lastTs) { $ts = $lastTs }
+        else { $ts = $f.CreationTime; $tsFallbacks++ }
         $rec = @{ strong = $strong; lineHit = $lineHit; msgId = $msgId; ts = $ts; usage = $usage; model = $model }
-        # Dedupe: repeated transcript lines for the same message id carry the
-        # same final usage. Keep the LAST occurrence (overwrite in place).
+        # Dedupe: one message id = one usage, globally. Transcript copies and
+        # interleaved repeats of the same message must not double-count.
         if ($msgId) {
-          if ($records.Count -gt 0 -and $records[$records.Count - 1].msgId -eq $msgId) {
-            $records[$records.Count - 1] = $rec; $dupSkipped++; continue
-          }
-          if ($records.Count -eq 0 -and $lastMsgId -eq $msgId) { $dupSkipped++; continue }
+          if ($msgId -eq $lastMsgId) { $dupSkipped++; continue }
+          if (-not $SeenMsg.Add($msgId)) { $dupSkipped++; continue }
         }
         $records.Add($rec)
       }
@@ -334,7 +350,7 @@ foreach ($root in $SCAN_ROOTS) {
       if ($Audit -and $fileTok -gt 0) {
         $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "YaE" }); tokens = $fileTok }
       }
-      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId }
+      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }) }
     } catch {
       Write-Host "WARN: error reading $key ($($_.Exception.Message)); file skipped this run." -ForegroundColor Yellow
     } finally {
@@ -342,7 +358,7 @@ foreach ($root in $SCAN_ROOTS) {
     }
   }
 }
-Write-Host "Scanned $scannedFiles file(s), $newLines line(s), $usageRecords usage record(s), $dupSkipped duplicate(s) merged, $fallbackYaE unattributed->YaE." -ForegroundColor Green
+Write-Host "Scanned $scannedFiles file(s), $newLines line(s), $usageRecords usage record(s), $dupSkipped duplicate(s) merged, $fallbackYaE unattributed->YaE, $tsFallbacks timestamp fallback(s)." -ForegroundColor Green
 if ($oldestTs) { Write-Host ("Log horizon: oldest surviving record {0:yyyy-MM-dd}, newest {1:yyyy-MM-dd}. Transcripts older than the retention window are purged from disk and cannot be recovered." -f $oldestTs, $newestTs) -ForegroundColor DarkGray }
 
 # ----- Roll up --------------------------------------------------------------

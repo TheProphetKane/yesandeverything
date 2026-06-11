@@ -11,7 +11,7 @@ Same model as the per-project run, applied portfolio-wide: every lens is an inde
   - BR -> `X:\BrackishRising`
   - HBH -> `X:\HereBeHordes`
   - YaC -> `X:\YesAndChains`
-  - Scheduler -> `X:\YesAndScheduler`
+  - YaS -> `X:\YesAndScheduler` (legacy alias: Scheduler)
   - YaA -> `X:\YesAndApothecary`
   - YaB -> `X:\YesAndBudget`
 
@@ -105,7 +105,7 @@ Format:
 
 Portfolio verdict: <working | in-progress | needs-attention | stalled>
 Portfolio health: <int 0-100> (mean of six per-project health scores)
-Projects: BR, HBH, YaC, Scheduler, YaA, YaB
+Projects: BR, HBH, YaC, YaS, YaA, YaB
 Summary: <one paragraph, 3-5 sentences>
 
 ## Per-project verdicts
@@ -159,7 +159,7 @@ Contract (locked in `BAR_RAISE_ROADMAP.md` Phase 3):
 {
   "generatedAt": "<ISO-8601 UTC now>",
   "portfolioVerdict": "<verdict>",
-  "projects": ["BR", "HBH", "YaC", "Scheduler", "YaA", "YaB"],
+  "projects": ["BR", "HBH", "YaC", "YaS", "YaA", "YaB"],
   "summary": "<one paragraph from the Markdown>",
   "topActions": [
     { "project": "BR", "severity": "high", "label": "..." },

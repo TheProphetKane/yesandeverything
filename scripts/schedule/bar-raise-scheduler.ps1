@@ -47,7 +47,7 @@ if (-not $ClaudeBin) {
 
 # Trigger phrase. The bar-raise skill triggers on this; the orchestrator at
 # orchestrators/per_project.md runs against Scheduler.
-$Prompt = "bar-raise Scheduler"
+$Prompt = "bar-raise YaS"
 
 # Non-interactive flag. `--print` is the documented Claude Code flag at the
 # time of buildout; if a future CC version renames it, update here.
