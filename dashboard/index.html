@@ -386,7 +386,7 @@
     border-radius: 10px;
     box-shadow: 0 24px 90px rgba(0, 0, 0, 0.6), 0 0 50px rgba(255, 0, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     padding: 24px 30px 28px;
-    width: min(940px, 94vw); max-height: 88vh; overflow: auto;
+    width: min(1120px, 94vw); max-height: 88vh; overflow: auto;
     animation: glassIn 0.35s var(--ease-out-quart);
   }
   @keyframes glassIn { from { opacity: 0; transform: scale(0.92) translateY(16px); } to { opacity: 1; transform: none; } }
@@ -401,16 +401,32 @@
   .glass-body > *:nth-child(2) { animation-delay: 0.06s; }
   .glass-body > *:nth-child(3) { animation-delay: 0.12s; }
   @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-  .bigviz svg { display: block; width: min(520px, 80vw); height: auto; margin: 0 auto; }
+  /* big-overlay split: visual left, key right, no page scroll */
+  .bigviz-split { display: grid; grid-template-columns: 440px 1fr; gap: 28px; align-items: center; }
+  @media (max-width: 980px) { .bigviz-split { grid-template-columns: 1fr; } }
+  .bigviz svg { display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto; }
   .bigviz .blabel-svg { font-family: var(--mono); }
-  .keyrows { margin-top: 16px; }
-  .keyrow { display: flex; align-items: center; gap: 12px; font-size: 13.5px; padding: 7px 0; border-bottom: 1px dashed var(--ink-3); animation: riseIn 0.4s var(--ease-out-quart) both; }
-  .keyrow .kdot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
-  .keyrow .kname { width: 170px; color: var(--fg-0); font-weight: 600; flex: 0 0 auto; }
-  .keyrow .kmeter { flex: 1; height: 6px; background: var(--ink-3); border-radius: 3px; overflow: hidden; }
-  .keyrow .kmeter .kf { height: 100%; width: 0%; border-radius: 3px; transition: width 1s var(--ease-out-quart); }
-  .keyrow .kval { width: 120px; text-align: right; color: var(--fg-1); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
-  .keyrow .kextra { width: 150px; text-align: right; color: var(--fg-3); font-size: 11.5px; flex: 0 0 auto; }
+  .gsummary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .keyrows { min-width: 0; }
+  .keyrow {
+    display: grid;
+    grid-template-columns: 12px 150px 1fr 64px;
+    gap: 4px 12px; align-items: center;
+    font-size: 13.5px; padding: 8px 0;
+    border-bottom: 1px dashed var(--ink-3);
+    animation: riseIn 0.4s var(--ease-out-quart) both;
+  }
+  .keyrow .kdot { width: 10px; height: 10px; border-radius: 3px; }
+  .keyrow .kname { color: var(--fg-0); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .keyrow .kmeter { width: 100%; height: 6px; background: var(--ink-3); border-radius: 3px; overflow: hidden; }
+  .keyrow .kmeter .kf { display: block; height: 100%; width: 0%; border-radius: 3px; transition: width 1s var(--ease-out-quart); box-shadow: 0 0 8px var(--accent-glow); }
+  .keyrow .kval { text-align: right; color: var(--fg-0); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .keyrow .ksub {
+    grid-column: 2 / -1;
+    font-size: 11px; color: var(--fg-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .keyrow .ksub b { color: var(--fg-2); font-weight: 400; }
   .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 26px; }
   .bigstat { padding: 6px 2px; min-width: 0; animation: riseIn 0.45s var(--ease-out-quart) both; }
   .bigstat:nth-child(2) { animation-delay: 0.05s; }
@@ -1352,18 +1368,23 @@
     hoverHold = true;
     $("glass-close").focus();
   }
-  function keyRow(hue, name, frac, val, extra, color) {
+  function keyRow(hue, name, frac, val, sub, color) {
     var r = el("div", { className: "keyrow" });
     var d = el("span", { className: "kdot" }); d.style.background = hue; d.style.boxShadow = "0 0 8px " + hue + "66";
     r.appendChild(d);
     r.appendChild(el("span", { className: "kname", text: name }));
-    var m = el("span", { className: "kmeter" });
-    var f = el("span", { className: "kf" });
+    var m = el("div", { className: "kmeter" });
+    var f = el("div", { className: "kf" });
     f.style.background = color || hue;
     m.appendChild(f);
     r.appendChild(m);
     r.appendChild(el("span", { className: "kval", text: val }));
-    if (extra) r.appendChild(el("span", { className: "kextra", text: extra }));
+    if (sub) {
+      var s = el("span", { className: "ksub" });
+      s.innerHTML = sub;
+      s.title = s.textContent;
+      r.appendChild(s);
+    }
     requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.width = Math.max(2, Math.min(100, frac * 100)) + "%"; }); });
     return r;
   }
@@ -1411,39 +1432,81 @@
     cl.textContent = (VIEW === "cost" ? "EST COST" : VIEW === "cache" ? "CACHE" : "TOKENS") + " TODAY";
     svg.appendChild(cl);
     box.appendChild(svg);
-    // full key with in/out split
+    // full key with in/out split and per-project detail
+    var todayK2 = dayKey(0);
     var keys = el("div", { className: "keyrows" });
     rows.forEach(function (r, i) {
-      var row = keyRow(r.hue, metaFor(r.id).displayName, sum > 0 ? r.val / sum : 0, fmt(r.val),
-        VIEW === "flow" ? ("in " + fmtTok(r.inT) + " / out " + fmtTok(r.outT)) : Math.round((sum > 0 ? r.val / sum : 0) * 100) + "% of today");
-      row.style.animationDelay = (0.1 + i * 0.05) + "s";
+      var st = LAST.statuses[r.id];
+      var byDay2 = byDayFor(r.id);
+      var costT = byDay2[todayK2] ? byDay2[todayK2].costUSD : 0;
+      var bits = [];
+      bits.push(Math.round((sum > 0 ? r.val / sum : 0) * 100) + "% of today");
+      if (VIEW === "flow") bits.push("in " + fmtTok(r.inT) + " / out " + fmtTok(r.outT));
+      bits.push(fmtUSD(costT) + " est");
+      if (st && st.barRaise && st.barRaise.verdict) bits.push("<b>" + st.barRaise.verdict + "</b>");
+      if (st && st.lastReleaseAt) bits.push("pushed " + fmtAgo(st.lastReleaseAt));
+      var row = keyRow(r.hue, metaFor(r.id).displayName, sum > 0 ? r.val / sum : 0, fmt(r.val), bits.join(" · "));
+      row.style.animationDelay = (0.08 + i * 0.05) + "s";
       keys.appendChild(row);
     });
     if (!rows.length) keys.appendChild(el("div", { text: "nothing burned yet today" }));
-    var wrap2 = el("div");
+    var wrap2 = el("div", { className: "bigviz-split" });
     wrap2.appendChild(box);
     wrap2.appendChild(keys);
     openOverlay($("core-title").textContent, wrap2);
   }
   function openRadarBig() {
     if (!LAST) return;
+    var todayK = dayKey(0);
+    var outer = el("div");
+    // portfolio summary chips
+    var sum = el("div", { className: "gsummary" });
+    var meanC = 0, nC = 0, acts = 0, leftSum = 0, counts = {};
+    PROJECTS.filter(function (p) { return p.id !== "YaE"; }).forEach(function (p) {
+      var st = LAST.statuses[p.id];
+      if (st && st.completion && st.completion.pct != null) { meanC += st.completion.pct; nC++; }
+      if (st && st.barRaise) {
+        if (st.barRaise.actionsOpen != null) acts += st.barRaise.actionsOpen;
+        if (st.barRaise.verdict) counts[st.barRaise.verdict] = (counts[st.barRaise.verdict] || 0) + 1;
+      }
+      if (st && st.itemsLeft && st.itemsLeft.open != null) leftSum += st.itemsLeft.open;
+    });
+    if (nC) sum.appendChild(el("span", { className: "chip", text: "mean " + Math.round(meanC / nC) + "% complete", title: "average of the owner-anchored completion scores" }));
+    Object.keys(counts).forEach(function (v) {
+      sum.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
+    });
+    sum.appendChild(el("span", { className: "chip", text: acts + " actions open", title: TIPS.reviewActions }));
+    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " items left", title: "queue + backlogs + completion gates" }));
+    outer.appendChild(sum);
+
+    var split = el("div", { className: "bigviz-split" });
     var box = el("div", { className: "bigviz" });
-    box.appendChild(radarSvg(LAST.statuses, 480, "big").svg);
+    box.appendChild(radarSvg(LAST.statuses, 460, "big").svg);
+    split.appendChild(box);
     var keys = el("div", { className: "keyrows" });
     PROJECTS.filter(function (p) { return p.id !== "YaE"; }).forEach(function (p, i) {
       var st = LAST.statuses[p.id];
       var pct = st && st.completion ? st.completion.pct : null;
       var br = st && st.barRaise ? st.barRaise : {};
+      var byDay = byDayFor(p.id);
+      var tk = byDay[todayK] ? (byDay[todayK].input + byDay[todayK].output) : 0;
+      var bits = [];
+      if (st && st.version) bits.push("v" + st.version);
+      if (st && st.milestone && st.milestone.id) bits.push(st.milestone.id + " " + (st.milestone.label || "").slice(0, 26));
+      if (br.verdict) bits.push("<b>" + br.verdict + "</b>");
+      if (br.actionsOpen != null) bits.push(br.actionsOpen + " open");
+      if (st && st.itemsLeft && st.itemsLeft.open != null) bits.push(st.itemsLeft.open + " left");
+      if (st && st.lastReleaseAt) bits.push("pushed " + fmtAgo(st.lastReleaseAt));
+      bits.push("today " + fmtTok(tk));
       var row = keyRow(p.hue, p.displayName, (pct || 0) / 100, (pct != null ? pct + "%" : "?"),
-        (br.verdict || "no review") + (br.actionsOpen != null ? " · " + br.actionsOpen + " open" : ""),
+        bits.join(" · "),
         pct != null ? completionColor(pct) : p.hue);
-      row.style.animationDelay = (0.1 + i * 0.05) + "s";
+      row.style.animationDelay = (0.08 + i * 0.05) + "s";
       keys.appendChild(row);
     });
-    var wrap2 = el("div");
-    wrap2.appendChild(box);
-    wrap2.appendChild(keys);
-    openOverlay("completion radar · distance to done", wrap2);
+    split.appendChild(keys);
+    outer.appendChild(split);
+    openOverlay("completion radar · distance to done", outer);
   }
   function sparkSvg(series, color) {
     var smax = 1;

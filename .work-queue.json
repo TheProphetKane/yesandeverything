@@ -159,11 +159,12 @@
    "kind": "operational",
    "prompt": "YesAndBudget working tree carries 14 modified tracked files (BACKLOG.md, CHANGELOG.md, docs/DESIGN.md, docs/DECISIONS.md, apps/api/src/backup.ts, db.ts, import-pipeline.ts, rules-engine.ts, server.ts, analytics.test.ts, apps/web/src/api.ts, pages/Settings.tsx, scripts/release.ps1, scripts/write-dashboard-status.ps1) plus a large batch of untracked BAR_RAISE + CANONICAL_AUDIT report files. HEAD last touched the modified files on 2026-05-28 (8 days ago), so this set has been sitting uncommitted across a full week. FUSE-truncation risk grows the longer source edits sit unshipped. Triage: review git status + git diff --stat for X:\\YesAndBudget, group the api/web/docs/scripts edits into coherent commits, ship through scripts/release.ps1. The untracked docs/*.md audit reports should be committed or gitignored so they stop accumulating in the working tree.",
    "priority": "P2",
-   "status": "pending",
+   "status": "done",
    "auto_safe": false,
    "attempts": 0,
    "result_path": null,
-   "notes": "Surfaced by working-tree-scan-weekly 2026-06-05. docs/sample-statement.csv is git-tracked but contains synthetic payroll fixtures (round amounts, zero balances), not real bank data, so not flagged as exposure."
+   "notes": "Surfaced by working-tree-scan-weekly 2026-06-05. docs/sample-statement.csv is git-tracked but contains synthetic payroll fixtures (round amounts, zero balances), not real bank data, so not flagged as exposure. | Done/superseded: the 06-05 14-file doc batch was committed via the v0.13.0/v0.13.1 releases. Any residual uncommitted files are a new occurrence tracked by BAR_RAISE-2026-06-11 Maintainability, not this row. Marked done per BAR_RAISE-2026-06-11 action #6.",
+   "completedAt": "2026-06-11T15:34:33Z"
   },
   {
    "id": "yab-doc-batch-blocked-lock-and-voice-2026-06-05",
@@ -364,9 +365,11 @@
    "kind": "code-fix",
    "auto_safe": false,
    "priority": "P1",
-   "status": "pending",
+   "status": "done",
    "prompt": "Locked-decision violation in shipped YaB code: apps/api/src/server.ts:758 returns a generic 400 where decision D-011 mandates a 409. Add one branch before the generic 400, mirroring the existing BackupFailedError branch: else if ((e as any)?.code === \"account_plaid_driven\") return c.json({ error: (e as Error).message, code: \"account_plaid_driven\" }, 409); Then run cd X:\\YesAndBudget; .\\scripts\\release.ps1 -Message \"fix(yab): D-011 409 on account_plaid_driven\" -Bump patch. Verify with the existing api tests before release.",
-   "source": "bar-raise-action: 2026-06-10 YaB bar-raise (D-011 route fix; canonical-audit auto-enqueues failed to reach work-queue for 3 cycles, surfaced manually by loop tick 301)"
+   "source": "bar-raise-action: 2026-06-10 YaB bar-raise (D-011 route fix; canonical-audit auto-enqueues failed to reach work-queue for 3 cycles, surfaced manually by loop tick 301)",
+   "completedAt": "2026-06-11T15:34:33Z",
+   "notes": "Done: v0.13.1 ('Orchestrator Push') shipped the 409 account_plaid_driven branch at apps/api/src/server.ts and the regression test apps/api/src/d011-conflict.test.ts. Marked done per BAR_RAISE-2026-06-11 action #6."
   },
   {
    "id": "yab-tracked-bak-rm-2026-06-10",
@@ -668,7 +671,7 @@
    "source": "2026-06-11 weekly BR canonical audit"
   }
  ],
- "updated": "2026-06-11T13:09:03Z",
+ "updated": "2026-06-11T15:34:33Z",
  "last_triage": "2026-06-11T13:07:33Z",
  "_triage_log": [
   {
