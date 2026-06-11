@@ -496,6 +496,64 @@ function Write-ValidatedJson([string]$path, $obj) {
 
 Write-ValidatedJson $OutPath $payload
 Write-Host "Wrote $OutPath ($([math]::Round((Get-Item $OutPath).Length / 1kb, 1)) KB)." -ForegroundColor Green
+
+# ----- Per-project usage log (lives ONLY in this repo) ---------------------
+# Transcripts get purged on retention; git does not. Each collect run appends
+# a cumulative per-model snapshot per project to usage-log\<id>.jsonl (skipped
+# when nothing changed), stamping the project's current version + HEAD commit
+# read from its repo WITHOUT writing anything there. The snapshot series in
+# this repo's git history makes model attribution and cost calculable for any
+# era, forever, with zero assumptions. Delta for a span = last line minus
+# first line of the span.
+$REPO_PATHS = @{
+  HBH = "X:\HereBeHordes"; BR = "X:\BrackishRising"; YaC = "X:\YesAndChains"
+  YaS = "X:\YesAndScheduler"; YaA = "X:\YesAndApothecary"; YaB = "X:\YesAndBudget"
+  YaE = "X:\YesAndEverything"
+}
+$LogDir = Join-Path $RepoRoot "usage-log"
+if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
+foreach ($proj in $projects.Keys) {
+  try {
+    $at = $projects[$proj].allTime
+    $sig = "$($at.input)|$($at.output)|$($at.cacheRead)|$($at.cacheWrite)|$($at.costUSD)"
+    $logPath = Join-Path $LogDir "$proj.jsonl"
+    if (Test-Path $logPath) {
+      $lastLine = Get-Content $logPath -Tail 1
+      try { $prevE = $lastLine | ConvertFrom-Json } catch { $prevE = $null }
+      if ($prevE -and $prevE.sig -eq $sig) { continue }   # nothing new to document
+    }
+    $ver = $null; $head = $null
+    $rp = $REPO_PATHS[$proj]
+    if ($rp -and (Test-Path $rp)) {
+      $pkg = Join-Path $rp "package.json"
+      if (Test-Path $pkg) { try { $ver = (Get-Content -Raw $pkg | ConvertFrom-Json).version } catch {} }
+      if (-not $ver) {
+        $pg = Join-Path $rp "project.godot"
+        if (Test-Path $pg) {
+          $mv = [regex]::Match((Get-Content -Raw $pg), 'config/version="([^"]+)"')
+          if ($mv.Success) { $ver = $mv.Groups[1].Value }
+        }
+      }
+      $head = (& git -C $rp rev-parse --short HEAD 2>$null)
+    }
+    $entry = [ordered]@{
+      at = $payload.generatedAt
+      project = $proj
+      version = $ver
+      commit = $head
+      sig = $sig
+      allTime = $at
+      models = $projects[$proj].models
+    }
+    $line = ($entry | ConvertTo-Json -Depth 5 -Compress)
+    $null = ($line | ConvertFrom-Json)   # validate before touching the log
+    [System.IO.File]::AppendAllText($logPath, $line + "`n", [System.Text.UTF8Encoding]::new($false))
+    $tail = Get-Content $logPath -Tail 1
+    $null = ($tail | ConvertFrom-Json)   # fresh-read re-parse (FUSE guard)
+  } catch {
+    Write-Host "WARN: usage-log snapshot for $proj failed ($_)" -ForegroundColor Yellow
+  }
+}
 foreach ($proj in $projects.Keys) {
   $a = $projects[$proj].allTime
   Write-Host ("  {0,-14} {1,12:n0} in / {2,12:n0} out  ~ `${3,9:n2}" -f $proj, $a.input, $a.output, $a.costUSD) -ForegroundColor DarkGray
@@ -528,7 +586,7 @@ foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
 }
-& git add dashboard/data/usage.json 2>&1 | Out-Null
+& git add dashboard/data/usage.json usage-log 2>&1 | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
 & git commit -m "work: usage refresh" 2>&1 | Out-Null
