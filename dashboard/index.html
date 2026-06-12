@@ -2306,13 +2306,7 @@
       Object.keys(counts).forEach(function (v) {
         chipsA.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
       });
-      var qLive = queuedFor("ALL");
-      if (qLive != null) {
-        var cq = el("span", { className: "chip", title: "work-queue items set for the next sweeps (live)" });
-        cq.appendChild(el("span", { className: "k", text: "queued" }));
-        cq.appendChild(txt(String(qLive)));
-        chipsA.appendChild(cq);
-      }
+      // same order as the per-project chips: milestones · queued · open actions
       var gatesSum = 0, haveGates = false;
       PROJECTS.forEach(function (p) {
         var gv2 = gatesOf(LAST.statuses[p.id]);
@@ -2324,6 +2318,17 @@
         cg.appendChild(txt(String(gatesSum)));
         chipsA.appendChild(cg);
       }
+      var qLive = queuedFor("ALL");
+      if (qLive != null) {
+        var cq = el("span", { className: "chip", title: "work-queue items set for the next sweeps (live)" });
+        cq.appendChild(el("span", { className: "k", text: "queued" }));
+        cq.appendChild(txt(String(qLive)));
+        chipsA.appendChild(cq);
+      }
+      var ca = el("span", { className: "chip", title: TIPS.reviewActions });
+      ca.appendChild(el("span", { className: "k", text: "open actions" }));
+      ca.appendChild(txt(String(acts)));
+      chipsA.appendChild(ca);
       inner.appendChild(chipsA);
       return inner;
     }
@@ -2361,15 +2366,11 @@
       if (ro.children.length) inner.appendChild(ro);
     }
 
+    // chip order (Nick, 2026-06-12): status · current milestone · milestones ·
+    // queued · open actions, then the transient pushed/dirty flags
     var chips = el("div", { className: "chips" });
     if (status) {
       if (br.verdict) chips.appendChild(el("span", { className: "chip " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict }));
-      if (br.actionsOpen != null) {
-        var c1 = el("span", { className: "chip", title: TIPS.actions });
-        c1.appendChild(el("span", { className: "k", text: "open actions" }));
-        c1.appendChild(txt(String(br.actionsOpen)));
-        chips.appendChild(c1);
-      }
       if (status.milestone && status.milestone.id) {
         var mlabel = (status.milestone.label || "").slice(0, 32);
         var c2 = el("span", { className: "chip", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") });
@@ -2379,6 +2380,12 @@
       }
       var qP = queuedFor(id);
       var gP = gatesOf(status);
+      if (gP != null && gP > 0) {
+        var c7 = el("span", { className: "chip", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json)" });
+        c7.appendChild(el("span", { className: "k", text: "milestones" }));
+        c7.appendChild(txt(String(gP)));
+        chips.appendChild(c7);
+      }
       if (qP != null) {
         var allClear = qP === 0 && (gP || 0) === 0;
         var c6 = el("span", {
@@ -2389,11 +2396,11 @@
         c6.appendChild(txt(allClear ? "0 · scouting" : String(qP)));
         chips.appendChild(c6);
       }
-      if (gP != null && gP > 0) {
-        var c7 = el("span", { className: "chip", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json)" });
-        c7.appendChild(el("span", { className: "k", text: "milestones" }));
-        c7.appendChild(txt(String(gP)));
-        chips.appendChild(c7);
+      if (br.actionsOpen != null) {
+        var c1 = el("span", { className: "chip", title: TIPS.actions });
+        c1.appendChild(el("span", { className: "k", text: "open actions" }));
+        c1.appendChild(txt(String(br.actionsOpen)));
+        chips.appendChild(c1);
       }
       if (status.lastReleaseAt && (Date.now() - new Date(status.lastReleaseAt).getTime()) < 86400000) {
         chips.appendChild(el("span", { className: "chip fresh", text: "pushed today", title: "a commit landed in the last 24h" }));
