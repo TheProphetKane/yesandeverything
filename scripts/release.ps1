@@ -18,7 +18,7 @@ $here = $PSScriptRoot
 Push-Location
 
 try {
-    Write-Host "==== Step 0: dashboard JSON integrity guard ====" -ForegroundColor Magenta
+    Write-Host "==== Step 1/4: dashboard JSON integrity guard ====" -ForegroundColor Magenta
     & (Join-Path $here "check-status-json.ps1")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Aborting release: corrupt status JSON would ship to the live dashboard." -ForegroundColor Red
@@ -26,7 +26,17 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 1/2: push YaE to GitHub ====" -ForegroundColor Magenta
+    Write-Host "==== Step 2/4: write YaE's own dashboard status JSON ====" -ForegroundColor Magenta
+    # Non-fatal: a failed status write never unships a release.
+    try {
+        $global:LASTEXITCODE = 0
+        & (Join-Path $here "write-dashboard-status.ps1")
+    } catch {
+        Write-Host "WARN: YaE status write failed ($_). Dashboard card may be stale." -ForegroundColor Yellow
+    }
+
+    Write-Host ""
+    Write-Host "==== Step 3/4: push YaE to GitHub ====" -ForegroundColor Magenta
     & (Join-Path $here "push-to-github.ps1")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "push-to-github.ps1 exited $LASTEXITCODE." -ForegroundColor Red
@@ -34,7 +44,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 2/2: post to #yae-dev-log on Discord ====" -ForegroundColor Magenta
+    Write-Host "==== Step 4/4: post to #yae-dev-log on Discord ====" -ForegroundColor Magenta
     # If scripts\.discord_webhook.txt is missing, discord-notify.ps1 logs a
     # warning and exits 0. Release is unaffected; Discord is optional.
     & (Join-Path $here "discord-notify.ps1")

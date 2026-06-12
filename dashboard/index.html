@@ -2941,24 +2941,37 @@
     var tiles = document.querySelectorAll(".totals > *");
     function addTip(i, extra) {
       var t = tiles[i]; if (!t) return;
-      var base = t.getAttribute("title") || "";
-      if (base.indexOf(extra) > -1) return;
+      // anchor on the original title so repeated runs REPLACE the enrichment
+      // segment instead of appending a new copy every cycle
+      if (t.dataset.baseTitle == null) t.dataset.baseTitle = t.getAttribute("title") || "";
+      var base = t.dataset.baseTitle;
       t.setAttribute("title", (base ? base + "  |  " : "") + extra);
     }
     addTip(3, "lifetime cache-hit " + port.chr.toFixed(1) + "% over " + M.ids.length + " projects, " + port.sessions + " sessions");
     addTip(4, "cache reads hold the effective rate down; portfolio cache-hit " + port.chr.toFixed(1) + "%");
     if (M.mover && M.quiet) addTip(5, "biggest mover wk/wk: " + nameFor(M.mover.id) + " " + pctStr(M.mover.wow) + "  |  quietest: " + nameFor(M.quiet.id));
 
+    // Reactive stale badge: appears past 24h, updates its count, and REMOVES
+    // itself when fresh data lands (the old version was add-only, so a badge
+    // born against a stale cache outlived the recovery).
     var ga = d.generatedAt ? new Date(d.generatedAt).getTime() : 0;
     var ageH = ga ? (Date.now() - ga) / 3.6e6 : 999;
-    if (ageH > 24 && !document.querySelector(".stale-badge")) {
-      var host = tiles[7] || document.querySelector(".totals");
-      if (host) {
-        var b = document.createElement("span");
-        b.className = "stale-badge"; b.textContent = "stale " + Math.round(ageH) + "h";
-        b.setAttribute("title", "collector last pushed " + Math.round(ageH) + "h ago; data may be behind");
-        host.appendChild(b);
+    var badge = document.querySelector(".stale-badge");
+    if (ageH > 24) {
+      if (!badge) {
+        var host = tiles[7] || document.querySelector(".totals");
+        if (host) {
+          badge = document.createElement("span");
+          badge.className = "stale-badge";
+          host.appendChild(badge);
+        }
       }
+      if (badge) {
+        badge.textContent = "stale " + Math.round(ageH) + "h";
+        badge.setAttribute("title", "collector last pushed " + Math.round(ageH) + "h ago; data may be behind");
+      }
+    } else if (badge && badge.parentNode) {
+      badge.parentNode.removeChild(badge);
     }
 
     document.querySelectorAll("#strip .mini, .clegend > *, .core-legend > *").forEach(function (node) {
@@ -2979,14 +2992,20 @@
   }
 
   function go() {
-    fetch("data/usage.json", { cache: "force-cache" })
+    // no-store: the force-cache here once pinned the stale badge to an old
+    // HTTP-cache copy while the main app was already showing fresh data
+    fetch("data/usage.json", { cache: "no-store" })
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d && d.projects) { try { enrich(d); } catch (e) {} } })
       .catch(function () {});
   }
   function wait() {
     var app = document.getElementById("app");
-    if (app && !app.hidden) { setTimeout(go, 400); return; }
+    if (app && !app.hidden) {
+      setTimeout(go, 400);
+      setInterval(go, 300000);   // re-evaluate every 5 min so the badge tracks reality
+      return;
+    }
     setTimeout(wait, 300);
   }
   if (document.readyState !== "loading") wait();
