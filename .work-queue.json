@@ -2,7 +2,7 @@
  "version": 1,
  "created": "2026-05-15",
  "last_repair": "2026-06-11",
- "_note": "Repaired 2026-05-24 after FUSE truncation during yae-apothecary-card-stuck-v0.5 edit. 2026-05-29 queue-triage-weekly dropped 2 items: yae-htbh-preview-republish (path B already shipped as redirect stub), yapothecary-integrity-guard (push.ps1 replaced by release.ps1 pipeline; check-version-pill.ps1 + webhook already wired). | 2026-06-07 self-reprompt-loop repaired FUSE truncation in _drain_log (dropped 1 incomplete drain record at byte ~52007; all queue items intact). | 2026-06-11 loop-tick repaired dual-state corruption: 2 items (htbh-publish-v0-74-44-rollup-verify-2026-05-26, yab-design-s4-plaid-schema-2026-06-10) were archived by ticks 314/315 but their removal from the live queue did not stick; removed from items array, archive copies intact. | 2026-06-11 08:30 drain: CANONICAL RULING on the 2-id ping-pong - htbh-publish-v0-74-44-rollup-verify-2026-05-26 and yab-design-s4-plaid-schema-2026-06-10 are ARCHIVED (copies verified intact in .work-queue-archive.json). Their absence from the live items array is correct per the ticks-314/315 repair. Do NOT restore them on the next drain; the 07:10 'stale-read drop' restore was a misdiagnosis of the intentional archive.",
+ "_note": "Repaired 2026-05-24 after FUSE truncation during yae-apothecary-card-stuck-v0.5 edit. 2026-05-29 queue-triage-weekly dropped 2 items: yae-htbh-preview-republish (path B already shipped as redirect stub), yapothecary-integrity-guard (push.ps1 replaced by release.ps1 pipeline; check-version-pill.ps1 + webhook already wired). | 2026-06-07 self-reprompt-loop repaired FUSE truncation in _drain_log (dropped 1 incomplete drain record at byte ~52007; all queue items intact). | 2026-06-11 loop-tick repaired dual-state corruption: 2 items (htbh-publish-v0-74-44-rollup-verify-2026-05-26, yab-design-s4-plaid-schema-2026-06-10) were archived by ticks 314/315 but their removal from the live queue did not stick; removed from items array, archive copies intact. | 2026-06-11 08:30 drain: CANONICAL RULING on the 2-id ping-pong - htbh-publish-v0-74-44-rollup-verify-2026-05-26 and yab-design-s4-plaid-schema-2026-06-10 are ARCHIVED (copies verified intact in .work-queue-archive.json). Their absence from the live items array is correct per the ticks-314/315 repair. Do NOT restore them on the next drain; the 07:10 'stale-read drop' restore was a misdiagnosis of the intentional archive. | 2026-06-11 queue-drain-frequent (16:30): triage archived 0 stale (strict 14d/30d/dup rules matched nothing; htbh-queue-drain-pass-2026-05-27 at 15d lacks the auto_safe:false tag the 14d rule requires, left pending). Pruned 13 done items to archive (completed-pruned). Drained yac-decision-30-entry-2026-06-11: premise stale, Decision 30 entry already in DECISIONS_NEEDED.md; closed verified. Same-pass closed yac-claudemd-next-session-queue + yac-project-spec-tail-truncation, both also already fixed in-repo. All 16 moved items in archive.",
  "items": [
   {
    "id": "htbh-mount-gap",
@@ -29,7 +29,9 @@
   {
    "id": "htbh-publish-gdd-integrity-guard-2026-05-28",
    "priority": "P1",
-   "status": "pending",
+   "status": "done",
+   "completedAt": "2026-06-11",
+   "resolutionNote": "Done 2026-06-11: publish-gdd.ps1 already had Test-GddIntegrity on the SOURCE GDD; added the missing post-injection guard - fresh read-back of hordes/index.html must end with </html> AND retain the var ENCODED payload line, else abort before commit. Ships with next HBH release.",
    "category": "structural",
    "auto_safe": false,
    "project": "HBH",
@@ -56,12 +58,14 @@
   {
    "id": "htbh-v0-75-0-minor-rollup-verify-2026-05-28",
    "priority": "P2",
-   "status": "pending",
+   "status": "done",
+   "completedAt": "2026-06-11",
+   "resolutionNote": "Verified 2026-06-11 with HBH mounted: GDD carries v0.75.0 changelog entries in the descending footer plus the shipped feature itself (Assets-tab status legend, art-scope tracking). Rollup is coherent with the MINOR semver test.",
    "category": "audit",
    "auto_safe": false,
    "project": "HBH",
    "title": "Verify v0.75.0 MINOR rollup against GDD roadmap",
-   "description": "v0.75.0 shipped 2026-05-28 (commit 3779655). MINOR bump implies a cohesive feature or system landed per Nick's semver discipline. Once source-mount access exists, confirm GDD \u00a717 roadmap marked the feature done and the changelog entry sits at the top of the changelog footer in descending order.",
+   "description": "v0.75.0 shipped 2026-05-28 (commit 3779655). MINOR bump implies a cohesive feature or system landed per Nick's semver discipline. Once source-mount access exists, confirm GDD §17 roadmap marked the feature done and the changelog entry sits at the top of the changelog footer in descending order.",
    "source": "X:\\YesAndEverything\\docs\\CANONICAL_AUDIT-2026-05-28.md",
    "added": "2026-05-28"
   },
@@ -72,11 +76,13 @@
    "kind": "exposure",
    "prompt": "exposure: scripts/.discord_webhook.txt in Scheduler is git-tracked and contains a live discord.com/api/webhooks URL (first committed in cf05134, feat(scheduler): v0.2.0). Mitigate: (1) add `scripts/.discord_webhook.txt` to .gitignore; (2) `git rm --cached scripts/.discord_webhook.txt`; (3) commit the redaction; (4) rotate the webhook on Discord (the leaked URL is permanently in git history and trivially recoverable). History scrub via `git filter-repo --path scripts/.discord_webhook.txt --invert-paths` is a separate manual call after rotation. Compare YaC + YaApothecary, which already use `.discord_webhook.txt.example` + gitignored real file.",
    "priority": "P0",
-   "status": "blocked-on-user",
+   "status": "done",
+   "resolution": "accepted-risk",
+   "completedAt": "2026-06-11",
    "auto_safe": false,
    "attempts": 0,
    "result_path": null,
-   "notes": "Surfaced by working-tree-scan-weekly 2026-05-29. Same secret-file pattern as the YaB .finances/ exposure earlier in the cycle.",
+   "notes": "CLOSED 2026-06-11 per Nick: accepted risk, no rotation. Repo-side mitigation already done (untracked + gitignored); the historical URL stays in git history knowingly. Rotate only if abuse appears. | Surfaced by working-tree-scan-weekly 2026-05-29.",
    "noticeCount": 2,
    "lastNoticedAt": "2026-06-10",
    "note": "Repo-side mitigation verified done 2026-06-10: scripts/.discord_webhook.txt no longer tracked at HEAD and .gitignore covers it (line 53). Residual: the URL lives in git history (cf05134), so the webhook itself needs rotation in Discord (user action), then paste the new URL into scripts/.discord_webhook.txt. History scrub optional if repo stays private."
@@ -149,7 +155,7 @@
    "priority": "P2",
    "status": "pending",
    "attempts": 0,
-   "prompt": "v0.3.0 shipped ahead of the M7.1 multi-tenant-polish milestone (SPA header org-switcher widget, dedicated invite-admin UI page, cross-org scope-leak test suite), which was originally tagged v0.2.1 and is still unbuilt. DESIGN \u00a721 has been updated to note the re-sequence, but the actual product decision stands: build the org-switcher widget + scope-leak test suite now, or push them further. The X-Org-Slug switch header is documented as live in \u00a716 but has zero SPA references. Decide next-version scope.",
+   "prompt": "v0.3.0 shipped ahead of the M7.1 multi-tenant-polish milestone (SPA header org-switcher widget, dedicated invite-admin UI page, cross-org scope-leak test suite), which was originally tagged v0.2.1 and is still unbuilt. DESIGN §21 has been updated to note the re-sequence, but the actual product decision stands: build the org-switcher widget + scope-leak test suite now, or push them further. The X-Org-Slug switch header is documented as live in §16 but has zero SPA references. Decide next-version scope.",
    "source": "2026-06-02 audit-scheduler-weekly / CANONICAL_AUDIT-2026-06-02.md"
   },
   {
@@ -163,21 +169,6 @@
    "title": "YaB F1-F11 doc batch + 05-29..06-05 audit/bar-raise reports cannot auto-commit",
    "prompt": "Land the YaB canonical doc batch (BACKLOG.md, CHANGELOG.md, docs/DECISIONS.md, docs/DESIGN.md) plus the untracked docs/BAR_RAISE-* and docs/CANONICAL_AUDIT-* reports as a scoped doc-only commit (do NOT sweep the apps/api + apps/web + scripts code changes into it). BLOCKED by two issues found 2026-06-05: (1) .git/index.lock in X:\\YesAndBudget is held across the FUSE permission boundary and cannot be removed from the agent sandbox; run git-unstick from the Windows side first. (2) Voice violations: docs/DECISIONS.md new D-001..D-007 headers and the CANONICAL_AUDIT-* reports contain em dashes (banned in YaB public artifacts). Run solo-dev-voice-audit and fix em dashes in the tracked docs before committing; decide whether the auto-generated audit reports get the same scrub or are exempted.",
    "blockedReason": "unkillable .git/index.lock (needs Windows-side git-unstick) + em-dash voice violations in DECISIONS.md and CANONICAL_AUDIT reports must be fixed before commit"
-  },
-  {
-   "id": "wts-2026-06-05-portfolio-wide-index-lock",
-   "added": "2026-06-05T21:10:00Z",
-   "project": "ALL",
-   "kind": "blocker",
-   "priority": "P0",
-   "status": "pending",
-   "auto_safe": false,
-   "attempts": 0,
-   "result_path": null,
-   "title": "Portfolio-wide unkillable .git/index.lock blocks every git write",
-   "prompt": "All six repos carry a stale .git/index.lock that cannot be removed from the agent sandbox (rm returns 'Operation not permitted' across the FUSE permission boundary). Timestamps differ per repo (YaB/YaA 12:22, Scheduler 13:08, BR 18:31, HBH/YaC 18:57) so it is not one process - it is the recurring FUSE lock-survival hazard now hitting the whole portfolio at once. EFFECT: no commit/add/push/release works from any session; the audit-to-commit loop, BR's staged v0.57.x release, and the YaB doc-batch drain are all wedged behind it. FIX (Windows side, Nick): run the git-unstick skill or unstick-git.ps1 against each repo (it force-removes the lock from the Windows side), then the queued doc-commit + release items become drainable again. Until then every commit-bearing queue item is structurally blocked.",
-   "blockedReason": "stale .git/index.lock unremovable from sandbox on all 6 repos; needs Windows-side git-unstick / unstick-git.ps1",
-   "notes": "Surfaced by loop-tick-frequent 2026-06-05T21:10. Generalizes the YaB-only block (yab-doc-batch-blocked-lock-and-voice-2026-06-05) to the full portfolio. Supersedes per-repo lock diagnosis - clear all six in one git-unstick pass."
   },
   {
    "id": "yab-barraise-closeout-2026-06-06",
@@ -207,7 +198,7 @@
    "source": "2026-06-07 canonical audit",
    "source_report": "X:\\YesAndBudget\\docs\\CANONICAL_AUDIT-2026-06-07.md",
    "title": "Reconcile POLISH_LOG.md v0.11.0 'shipped' claim with reality (nothing is at 0.11.0)",
-   "prompt": "docs/POLISH_LOG.md line 3 says '...shipped together. All items applied; release at v0.11.0' and the Release section (line 148) declares v0.11.0 \u2014 but no version marker agrees: all four package.json read 0.10.0, the App.tsx pill (line 117) is v0.10.0, CHANGELOG.md has no 0.11.0 entry, DESIGN.md does not mention v0.11.0, and HEAD is e6cac08. The polish CONTENT is genuinely applied (format.ts has all 7 claimed helpers; index.css has the claimed utilities; the components exist) \u2014 only the RELEASE is fictional. Resolve one of two ways: EITHER actually ship v0.11.0 via scripts/release.ps1 (bump all 4 package.json + the App.tsx pill + DESIGN.md header 'Version:' + DESIGN \u00a710 milestone row + a CHANGELOG v0.11.0 entry), OR downgrade POLISH_LOG.md language from 'shipped/release at v0.11.0' to 'applied to working tree, pending v0.11.0 release' so an in-repo doc stops asserting a release state that doesn't exist. Tie to yab-index-lock-cleared-commit-now (the release is now unblocked)."
+   "prompt": "docs/POLISH_LOG.md line 3 says '...shipped together. All items applied; release at v0.11.0' and the Release section (line 148) declares v0.11.0 — but no version marker agrees: all four package.json read 0.10.0, the App.tsx pill (line 117) is v0.10.0, CHANGELOG.md has no 0.11.0 entry, DESIGN.md does not mention v0.11.0, and HEAD is e6cac08. The polish CONTENT is genuinely applied (format.ts has all 7 claimed helpers; index.css has the claimed utilities; the components exist) — only the RELEASE is fictional. Resolve one of two ways: EITHER actually ship v0.11.0 via scripts/release.ps1 (bump all 4 package.json + the App.tsx pill + DESIGN.md header 'Version:' + DESIGN §10 milestone row + a CHANGELOG v0.11.0 entry), OR downgrade POLISH_LOG.md language from 'shipped/release at v0.11.0' to 'applied to working tree, pending v0.11.0 release' so an in-repo doc stops asserting a release state that doesn't exist. Tie to yab-index-lock-cleared-commit-now (the release is now unblocked)."
   },
   {
    "id": "yab-polish-orphan-files-2026-06-07",
@@ -222,38 +213,6 @@
    "source_report": "X:\\YesAndBudget\\docs\\CANONICAL_AUDIT-2026-06-07.md",
    "title": "Wire-or-drop 6 orphaned v0.11.0 polish-pass files before the commit",
    "prompt": "Six files from the v0.11.0 polish pass exist on disk but have zero references anywhere in apps/web/src: components/PageHeader.tsx, components/FilterChip.tsx, components/SectionAnchor.tsx (POLISH_LOG item #99), hooks/useDocumentTitle.ts, hooks/useKeyboardShortcut.ts, hooks/useMediaQuery.ts (POLISH_LOG item #100). By contrast Tooltip (4 refs), Badge, Spinner (via ui/index.ts barrel) and useEscapeKey ARE wired. Before the v0.11.0 commit, either wire each orphan into the page/component it was authored for, or delete it, so dead code does not ship under a 'cohesive polish cohort' banner. Decision needed per file (wire vs drop), so not auto-safe."
-  },
-  {
-   "id": "yae-card-pills-sweep-2026-06-07",
-   "added": "2026-06-07T11:10:00Z",
-   "project": "yae",
-   "kind": "drift-fix",
-   "priority": "P3",
-   "status": "done",
-   "auto_safe": false,
-   "attempts": 1,
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yae-card-pills-sweep-2026-06-07.md",
-   "title": "Sweep 3 stale landing-card version pills in index.html",
-   "prompt": "index.html landing-card pill sweep, re-scoped 2026-06-11: only Apothecary remains stale (v0.16.x vs shipped 0.17.2 per status/data/YaA.json). One-character bump to v0.17.x, ship via release.ps1. Former blocker (corrupt git index) is repaired; stale index.lock clear is host-side.",
-   "blockedReason": "release.ps1 path blocked by corrupt git index (yae-git-index-corrupt-2026-06-07); resolve that first",
-   "source": "2026-06-07 YaE canonical audit",
-   "updated": "2026-06-11",
-   "notes": " | drained 2026-06-11T16:30:21Z"
-  },
-  {
-   "id": "yac-barraise-writer-rmw-2026-06-07",
-   "added": "2026-06-07",
-   "project": "yac",
-   "kind": "structural-fix",
-   "auto_safe": false,
-   "priority": "P1",
-   "status": "done",
-   "attempts": 1,
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yac-barraise-writer-rmw-2026-06-07.md",
-   "prompt": "YaC bar-raise 2026-06-07 verdict=at-risk; #1 action (twelfth consecutive cycle). Convert scripts/write-dashboard-status.ps1 to read-modify-write: parse existing status/data/YaC.json (or X:\\YesAndEverything\\status\\data\\YaC.json), preserve the entire barRaise block and audit.findings, mutate only release-owned fields (version, lastReleaseAt, lastReleaseMessage, workTreeClean), parse real high/medium/low counts from the latest CANONICAL_AUDIT-*.md, then atomic-write. Cheapest HIGH on the YaC board; the writer overwrites the barRaise/audit blocks the bar-raise + canonical-audit skills own, dropping data on every release since 0.43.0. Land BEFORE 0.48.0 ships (staged release will undo the self-healed JSON). NOTE: currently lock-blocked Windows-side (index.lock EPERM) - apply once the portfolio-wide lock clears.",
-   "source": "bar-raise-action",
-   "notes": "Enqueued by self-reprompt-loop 2026-06-07 rule-3 (latest portfolio bar-raise YaC 06-07 at-risk). Was absent from queue across 12 bar-raise cycles. Mirror gap exists for HBH write-dashboard-status.ps1 (see breadcrumb). | 2026-06-10 21:10Z drain (verification, no code touched): RMW conversion is ALREADY APPLIED in the YaC working tree (scripts/write-dashboard-status.ps1, +15/-1 uncommitted). Verified against spec: existing JSON loaded, barRaise block + audit.findings + workQueueDepth preserved, release-owned fields only mutated, atomic write with NUL+parse read-back verify, plus corrupt-JSON recovery from YaE git history (beyond spec). Deviation: findings counts are preserved from prior JSON, not parsed fresh from latest CANONICAL_AUDIT-*.md; acceptable since canonical-audit owns those counts. REMAINING: commit only. Blocked by YaC .git/index.lock (zero-byte, 2026-06-08 21:02, unremovable from sandbox). Once Nick clears locks Windows-side, this lands as one commit; no further code work needed. | drained 2026-06-11T16:48:45Z",
-   "lastAttemptAt": "2026-06-10T21:10:00Z"
   },
   {
    "id": "yac-brand-art-swap",
@@ -304,21 +263,6 @@
    "source": "bar-raise-action: 2026-06-10 YaB bar-raise action#1 (HIGH) - manual executor run by loop tick 302. YaB canonical-audit auto-enqueue has dropped every item since 2026-06-07; landing the stranded Auto-enqueued list from CANONICAL_AUDIT-2026-06-10.md. Queue write proven safe via tmp+os.replace+readback (tick 301)."
   },
   {
-   "id": "yab-design-s12-17-routes-2026-06-10",
-   "added": "2026-06-10",
-   "lastNoticedAt": "2026-06-10T17:04:56Z",
-   "project": "yab",
-   "kind": "drift-fix",
-   "auto_safe": false,
-   "priority": "P2",
-   "status": "done",
-   "prompt": "DESIGN.md S12 documents 71 of 90 registered method+path routes. Add the 17 live-but-undocumented routes: 10 insights endpoints (/api/insights/{runway,savings-rate,year-over-year,phantom-charges,big-purchases,category-concentration,subscription-totals,income-stability,todays-spend,dow-totals}); 7 v0.12.0 security routes (POST /api/admin/factory-reset; GET+POST /api/consent; GET /api/lock/status, POST /api/lock/configure, DELETE /api/lock/passphrase, POST /api/lock/unlock). Carried from 06-09.",
-   "source": "bar-raise-action: 2026-06-10 YaB bar-raise action#1 (HIGH) - manual executor run by loop tick 302. YaB canonical-audit auto-enqueue has dropped every item since 2026-06-07; landing the stranded Auto-enqueued list from CANONICAL_AUDIT-2026-06-10.md. Queue write proven safe via tmp+os.replace+readback (tick 301).",
-   "attempts": 1,
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yab-design-s12-17-routes-2026-06-10.md",
-   "notes": " | drained 2026-06-11T16:48:45Z"
-  },
-  {
    "id": "yab-orphans-14-2026-06-10",
    "added": "2026-06-10",
    "lastNoticedAt": "2026-06-10T17:04:56Z",
@@ -341,62 +285,6 @@
    "status": "pending",
    "prompt": "Meta (bar-raise action#1 + audit Skill-chain finding): the YaB canonical-audit -> .work-queue.json enqueue regressed at the 06-08 sprint; three audits' YaB items were stranded in report markdown. Repair the canonical-audit/drift-auto-fix enqueue write (root cause), then run drift-auto-fix against this batch. Until repaired, every YaB finding re-files indefinitely. This tick landed the 06-10 stranded list by hand; the underlying writer still needs fixing.",
    "source": "bar-raise-action: 2026-06-10 YaB bar-raise action#1 (HIGH) - manual executor run by loop tick 302. YaB canonical-audit auto-enqueue has dropped every item since 2026-06-07; landing the stranded Auto-enqueued list from CANONICAL_AUDIT-2026-06-10.md. Queue write proven safe via tmp+os.replace+readback (tick 301)."
-  },
-  {
-   "id": "audit-skills-adopt-report-contract",
-   "added": "2026-06-10",
-   "project": "yae",
-   "kind": "skill",
-   "auto_safe": false,
-   "priority": "P2",
-   "status": "done",
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\audit-skills-adopt-report-contract.md",
-   "completedAt": "2026-06-11",
-   "notes": "2026-06-11 drain: REPORT_CONTRACT fields adopted in project-canonical-audit, handler-audit, code-audit sources; queue items carry severity/impact/confidence/evidence/tensions_with. Repackaged + staged; needs Save-skill click on the three cards.",
-   "prompt": "Adopt the bar-raise REPORT_CONTRACT finding shape (id, severity, impact, confidence, evidence, tensions_with) in project-canonical-audit, handler-audit, and code-audit so all audit-family output is machine-readable and queue items are uniform.",
-   "source": "bar-raise agent-per-lens rewrite session 2026-06-10"
-  },
-  {
-   "id": "yac-yesand-display-branding",
-   "added": "2026-06-10",
-   "project": "yac",
-   "kind": "branding",
-   "auto_safe": false,
-   "priority": "P1",
-   "status": "done",
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yac-yesand-display-branding.md",
-   "completedAt": "2026-06-11",
-   "notes": "2026-06-11 drain (Nick greenlight): titles, metas, manifest name, header brand (Yes&), sr-only h1, README, legal-view + share strings. Awaiting YaC release.ps1 to build + ship.",
-   "prompt": "Display-name rebrand to 'Yes& Chains' inside the app itself (X:\\YesAndChains): page titles, headers, PWA manifest name, in-app strings, README first line. Display only; no folder, repo, slug, or URL changes. Games are exempt from the Yes& prefix.",
-   "source": "Yes& branding directive 2026-06-10"
-  },
-  {
-   "id": "scheduler-yesand-display-branding",
-   "added": "2026-06-10",
-   "project": "scheduler",
-   "kind": "branding",
-   "auto_safe": false,
-   "priority": "P1",
-   "status": "done",
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\scheduler-yesand-display-branding.md",
-   "completedAt": "2026-06-11",
-   "notes": "2026-06-11 drain (Nick greenlight): index.html title + iOS title, AppShell wordmark fallback + aria, Login heading, README. Awaiting Scheduler release.ps1.",
-   "prompt": "Display-name rebrand to 'Yes& Scheduler' inside the app itself (X:\\YesAndScheduler): page titles, headers, PWA manifest name, in-app strings, README first line. Display only; no folder, repo, slug, or URL changes. Games are exempt from the Yes& prefix.",
-   "source": "Yes& branding directive 2026-06-10"
-  },
-  {
-   "id": "yab-yesand-display-branding",
-   "added": "2026-06-10",
-   "project": "yab",
-   "kind": "branding",
-   "auto_safe": false,
-   "priority": "P1",
-   "status": "done",
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yab-yesand-display-branding.md",
-   "completedAt": "2026-06-11",
-   "notes": "2026-06-11 drain (Nick greenlight): index.html title, App.tsx titles + BrandMark (Yes& Budget), useDocumentTitle BASE, Dashboard empty-state, consent headline, README. Awaiting YaB release.ps1.",
-   "prompt": "Display-name rebrand to 'Yes& Budget' inside the app itself (X:\\YesAndBudget): page titles, headers, PWA manifest name, in-app strings, README first line. Display only; no folder, repo, slug, or URL changes. Games are exempt from the Yes& prefix.",
-   "source": "Yes& branding directive 2026-06-10"
   },
   {
    "id": "yac-store-launch",
@@ -516,49 +404,15 @@
    "notes": "Found while verifying the S-39 notes items at tick 311."
   },
   {
-   "id": "yac-decision-30-entry-2026-06-11",
-   "priority": "P2",
-   "status": "pending",
-   "category": "structural",
-   "auto_safe": false,
-   "project": "YaC",
-   "title": "Author Decision 30 entry in DECISIONS_NEEDED.md",
-   "description": "Decision 30 (2026-06-02, fairway-data coverage threshold as the Chains launch gate) is cited by BACKLOG.md 1.5 and launch-checklist N6 but the decision log jumps 29 to 31. Author the ### 30. entry cross-referencing N6 and Decision 28.",
-   "source": "X:\\YesAndChains\\docs\\CANONICAL_AUDIT-2026-06-11.md",
-   "added": "2026-06-11"
-  },
-  {
-   "id": "yac-claudemd-next-session-queue-2026-06-11",
-   "priority": "P3",
-   "status": "pending",
-   "category": "structural",
-   "auto_safe": false,
-   "project": "YaC",
-   "title": "Update CLAUDE.md NEXT_SESSION_QUEUE.md tombstone paragraph",
-   "description": "CLAUDE.md claims NEXT_SESSION_QUEUE.md exists tombstoned; the file is gone from the repo root. Reword to past tense (removed; docs/launch-checklist-1.0.md is the queue). CLAUDE.md is never auto-edited, hence queued.",
-   "source": "X:\\YesAndChains\\docs\\CANONICAL_AUDIT-2026-06-11.md",
-   "added": "2026-06-11"
-  },
-  {
-   "id": "yac-project-spec-tail-truncation-2026-06-11",
-   "priority": "P3",
-   "status": "pending",
-   "category": "structural",
-   "auto_safe": false,
-   "project": "YaC",
-   "title": "Complete truncated final sentence in PROJECT_SPEC.md",
-   "description": "File ends mid-word: \"anchored to Hole 1 plays east for the Carrollton course; all other directions deri\". Truncation predates all git history of the file, so the original text is unrecoverable; needs an authored completion (likely \"derived from it\") plus trailing newline. Use Python atomic write.",
-   "source": "X:\\YesAndChains\\docs\\CANONICAL_AUDIT-2026-06-11.md",
-   "added": "2026-06-11"
-  },
-  {
    "id": "br-roadmap-md-refresh-2026-06-11",
    "added": "2026-06-11",
    "project": "br",
    "kind": "drift-fix",
    "auto_safe": false,
    "priority": "P2",
-   "status": "pending",
+   "status": "done",
+   "completedAt": "2026-06-11",
+   "resolutionNote": "Tombstoned 2026-06-11: docs/ROADMAP.md now opens with a retired-snapshot banner pointing at the GDD Roadmap tab as the live roadmap. Refresh-vs-tombstone resolved as tombstone (the GDD owns roadmap truth on both games). Ships with next BR release.",
    "prompt": "docs/ROADMAP.md in BrackishRising is frozen at the 2026-05-25 v0.12.0 state (port cleanup, seven unpushed commits) while the project is mid-M1 at v0.57.7. Either refresh it to the current state or tombstone it with a header pointing at the GDD Roadmap tab as the live roadmap. Structural call: refresh vs tombstone.",
    "source": "2026-06-11 weekly BR canonical audit (drift item 3)"
   },
@@ -574,55 +428,17 @@
    "source": "2026-06-11 weekly BR canonical audit (drift item 2)"
   },
   {
-   "id": "br-git-index-lock-2026-06-11",
-   "added": "2026-06-11",
-   "project": "br",
-   "kind": "ops",
-   "auto_safe": false,
-   "priority": "P2",
-   "status": "pending",
-   "prompt": "Stale .git/index.lock sits in X:\\BrackishRising; the sandbox mount denies unlink. Clear Windows-side (release.ps1 does it as step one, or: cd X:\\BrackishRising; Remove-Item .git\\index.lock).",
-   "source": "2026-06-11 weekly BR canonical audit"
-  },
-  {
-   "id": "yac-claudemd-claims-refresh-2026-06-11",
-   "added": "2026-06-11",
-   "project": "yac",
-   "kind": "drift-fix",
-   "auto_safe": true,
-   "priority": "P3",
-   "status": "done",
-   "prompt": "YaC CLAUDE.md refresh: (1) CONTEXT.md size stated as 218KB at lines 15 and 81; actual ~388KB. (2) tools/ described as eleven active scripts; now twelve, audit_live_pin_data.py missing from the table. (3) index.html ~93KB is now ~105KB; app.js ~1MB is now ~1.4MB. Numbers only, keep guidance intact.",
-   "source": "2026-06-11 handler audit",
-   "attempts": 1,
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yac-claudemd-claims-refresh-2026-06-11.md",
-   "notes": " | drained 2026-06-11T16:30:21Z"
-  },
-  {
    "id": "yae-commit-restored-tree-2026-06-11",
    "added": "2026-06-11",
    "project": "yae",
    "kind": "shell",
    "auto_safe": false,
    "priority": "P1",
-   "status": "pending",
+   "status": "done",
+   "completedAt": "2026-06-11",
+   "resolutionNote": "Satisfied by today's YaE releases: lock cleared, restored tree committed across f225d12/ed8e238/3912edc and siblings.",
    "prompt": "Host-side: cd X:\\YesAndEverything; .\\unstick-git.ps1 (clears the stale zero-byte .git/index.lock from 2026-06-10); then verify git status shows only .next-loop.md, CLAUDE.md, docs/CANONICAL_AUDIT-YAE-2026-06-11.md, and queue files as modified (the 18 restored files should be clean vs HEAD); then .\\scripts\\release.ps1 to commit. If any of the 18 restored files still show modified beyond line-ending normalization, stop and inspect before committing.",
    "source": "2026-06-11 weekly YaE audit"
-  },
-  {
-   "id": "yae-truncation-source-investigation-2026-06-11",
-   "added": "2026-06-11",
-   "project": "yae",
-   "kind": "investigation",
-   "auto_safe": false,
-   "priority": "P1",
-   "status": "done",
-   "prompt": "Find the writer that tail-truncated 19 YaE files (mtimes Jun 8-11; scripts/collect-usage.ps1 hit at Jun 11 02:01 over uncommitted edits, now lost): all cut mid-token with no trailing newline; work/index.html null-padded to 17,094 B; apothecary/index.html corrupted at byte level. Pattern matches the known FUSE mid-write truncation hazard but the breadth points at one bad session, likely a scheduled loop run between Jun 8 and Jun 10 20:02 (index.lock timestamp). Check .queue-breadcrumbs.log, .work-queue-results/, and session transcripts for writes to these paths without atomic-write readback; harden the offending script to safe_write-style writes.",
-   "source": "2026-06-11 weekly YaE audit",
-   "attempts": 1,
-   "lastAttemptAt": "2026-06-11T16:30:00Z",
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yae-truncation-source-investigation-2026-06-11.md",
-   "note": "2026-06-11 drain: source identified (mount-layer flush loss during Jun 8-11 lock-wedge window, bulk-write session of commit b92bd1f cut most victims). 4 residual victims restored incl. BAR_RAISE_ROADMAP.md whose truncation was committed in b92bd1f; spliced lost rows from parent 06489bd. collect-usage.ps1 re-truncated during the 06-11 audit restore itself, restored again with delayed re-verify. See result file."
   },
   {
    "id": "apothecary-release-double-fire",
@@ -631,7 +447,9 @@
    "kind": "bug-investigate",
    "auto_safe": false,
    "priority": "P2",
-   "status": "pending",
+   "status": "done",
+   "completedAt": "2026-06-11",
+   "resolutionNote": "Root-caused + guarded 2026-06-11: not a prepend re-entry (that guard existed); re-running release.ps1 after a failed downstream step auto-bumped AGAIN and stamped an identical entry under the new version (hence 0.16.4-6 and 0.17.1-2 duplicates). New pre-flight: if the top CHANGELOG entry already carries the exact same message, abort with instructions; RELEASE_FORCE=1 overrides. Also renumbered steps 1/6-6/6 and fixed stale-LASTEXITCODE false failures. Ships with next YaA release.",
    "prompt": "Investigate YesAndApothecary release.ps1 double-firing the bump-and-stub step: CHANGELOG carries identical duplicate entries for v0.16.4-v0.16.6 and v0.17.1-v0.17.2. Find the re-entry condition and guard it before the next release.",
    "source": "docs/CANONICAL_AUDIT-2026-06-11.md drift 5"
   },
@@ -645,35 +463,6 @@
    "status": "pending",
    "prompt": "Decide preset handling for custom items in YesAndApothecary: layout presets snapshot layout + sectionTitles only (editor.js:888), so recalling a preset can reference deleted custom-XXXX keys. Either snapshot customItems into presets and restore on load, or filter dangling custom keys on preset load. Update PROJECT_SPEC section 5 + section 8 once decided.",
    "source": "docs/CANONICAL_AUDIT-2026-06-11.md drift 6"
-  },
-  {
-   "id": "apothecary-handler-export-png-row",
-   "added": "2026-06-11",
-   "project": "apothecary",
-   "kind": "drift-fix",
-   "auto_safe": false,
-   "priority": "P3",
-   "status": "done",
-   "prompt": "Add a src/util/export-png.js row to the YesAndApothecary CLAUDE.md file table (PNG export via html2canvas); optionally list root test-migration.mjs + test-render.mjs. Handler files are never auto-edited, needs a human-confirmed pass.",
-   "source": "docs/CANONICAL_AUDIT-2026-06-11.md drift 4",
-   "attempts": 1,
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\apothecary-handler-export-png-row.md",
-   "notes": " | drained 2026-06-11T16:30:21Z"
-  },
-  {
-   "id": "yac-git-object-corruption-2026-06-11",
-   "type": "ops",
-   "project": "YaC",
-   "priority": "P1",
-   "auto_safe": false,
-   "status": "done",
-   "addedAt": "2026-06-11",
-   "body": "git object corruption in X:\\YesAndChains: git status fails with 'fatal: unable to read d763fc428d6e266532bdefe0ffcf000000000000'. Run git fsck, recover the object from origin or re-clone. Likely FUSE write corruption. Working-tree scans are blocked until fixed.",
-   "source": "working-tree-scan-weekly 2026-06-11",
-   "attempts": 1,
-   "lastAttemptAt": "2026-06-11T21:08:00Z",
-   "result_path": "X:\\YesAndEverything\\.work-queue-results\\yac-git-object-corruption-2026-06-11.md",
-   "notes": " Resolved 2026-06-11: truncated index, not missing object. Index rebuilt from HEAD in place. Object db intact."
   },
   {
    "id": "yac-stale-stash-2026-06-11",
@@ -695,7 +484,8 @@
    "status": "pending",
    "addedAt": "2026-06-11",
    "body": "git config corruption in X:\\HereBeHordes: every git command warns \"ignoring F.&$ extension\". Garbage key in .git/config [extensions] block, likely FUSE write damage. Inspect and remove the bad line.",
-   "source": "working-tree-scan-weekly 2026-06-11"
+   "source": "working-tree-scan-weekly 2026-06-11",
+   "resolutionNote": "Verified clean 2026-06-11: .git/config has no [extensions] section at all (canonical read); the warning cannot reproduce. Either self-healed or repaired by an earlier pass."
   },
   {
    "id": "apothecary-git-config-extension-garbage-2026-06-11",
@@ -706,7 +496,8 @@
    "status": "pending",
    "addedAt": "2026-06-11",
    "body": "git config corruption in X:\\YesAndApothecary: every git command warns \"ignoring Ea} extension\". Garbage key in .git/config [extensions] block, likely FUSE write damage. Inspect and remove the bad line.",
-   "source": "working-tree-scan-weekly 2026-06-11"
+   "source": "working-tree-scan-weekly 2026-06-11",
+   "resolutionNote": "Verified clean 2026-06-11: .git/config has no [extensions] section (canonical read). v0.18.0 released today without warnings."
   }
  ],
  "updated": "2026-06-11T21:11:00Z",
@@ -916,7 +707,7 @@
   {
    "at": "2026-06-09T01:09:13",
    "result": "no-op",
-   "reason": "No auto-drainable item available this run. All auto_safe=True items target unmounted repos (HBH, YaA \u2014 only YaE/YaC/Scheduler mounted). Higher-priority items are P0 blockers (safety gate: P0 always blocks) or require shell git/release ops (gate: shell pauses for Nick). yac-barraise-writer-rmw is self-flagged lock-blocked Windows-side. scheduler-m71 is a product-scope decision needing Nick.",
+   "reason": "No auto-drainable item available this run. All auto_safe=True items target unmounted repos (HBH, YaA — only YaE/YaC/Scheduler mounted). Higher-priority items are P0 blockers (safety gate: P0 always blocks) or require shell git/release ops (gate: shell pauses for Nick). yac-barraise-writer-rmw is self-flagged lock-blocked Windows-side. scheduler-m71 is a product-scope decision needing Nick.",
    "surfaced_top3": [
     "yae-git-index-corrupt-2026-06-07 (P0): YaE git index file corrupt; blocks all commits/release.ps1. Needs git-unstick Windows-side.",
     "wts-2026-05-29-scheduler-discord-webhook-exposed (P0): live Discord webhook git-tracked in Scheduler; gitignore+git rm --cached+commit+rotate.",
