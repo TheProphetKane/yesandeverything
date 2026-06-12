@@ -89,6 +89,8 @@ $PROJECT_PATTERNS = @(
   @{ pat = "YesAndApothecary";    id = "YaA" },
   @{ pat = "yesandapothecary";    id = "YaA" },
   @{ pat = "YesAndBudget";        id = "YaB" },
+  @{ pat = "YesAndAgents";        id = "YaAg" },
+  @{ pat = "yesandagents";        id = "YaAg" },
   @{ pat = "YesAndEverything";    id = "YaE" },
   @{ pat = "yesandeverything";    id = "YaE" },
   # generic scheduled-task dir -> Everything (after project task names above)
@@ -508,7 +510,7 @@ Write-Host "Wrote $OutPath ($([math]::Round((Get-Item $OutPath).Length / 1kb, 1)
 $REPO_PATHS = @{
   HBH = "X:\HereBeHordes"; BR = "X:\BrackishRising"; YaC = "X:\YesAndChains"
   YaS = "X:\YesAndScheduler"; YaA = "X:\YesAndApothecary"; YaB = "X:\YesAndBudget"
-  YaE = "X:\YesAndEverything"
+  YaE = "X:\YesAndEverything"; YaAg = "X:\YesAndAgents"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
@@ -589,6 +591,7 @@ $QUEUE_ALIAS = @{
   yaa = "YaA"; apothecary = "YaA"; yaapothecary = "YaA"; yesandapothecary = "YaA"
   yab = "YaB"; budget = "YaB"; yesandbudget = "YaB"
   yae = "YaE"; everything = "YaE"; yesandeverything = "YaE"
+  yaag = "YaAg"; agents = "YaAg"; yesandagents = "YaAg"
   all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
 }
 try {

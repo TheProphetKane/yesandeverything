@@ -43,7 +43,8 @@ $REPOS = @(
   @{ id = "YaS"; path = "X:\YesAndScheduler" },
   @{ id = "YaA"; path = "X:\YesAndApothecary" },
   @{ id = "YaB"; path = "X:\YesAndBudget" },
-  @{ id = "YaE"; path = "X:\YesAndEverything" }
+  @{ id = "YaE"; path = "X:\YesAndEverything" },
+  @{ id = "YaAg"; path = "X:\YesAndAgents" }
 )
 
 $UsagePath = Join-Path $RepoRoot "dashboard\data\usage.json"
