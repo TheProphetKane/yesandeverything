@@ -1040,14 +1040,25 @@
     var p = b.projects[scope];
     return p && p.estTokens ? p : null;
   }
-  /* "left" = actionable work only: pending queue items + completion-gate
-     remainders. Backlog rows are wish-list depth, shown in tooltips but
-     never counted, so the chip stays a number worth acting on. */
-  function leftOf(st) {
-    if (!st || !st.itemsLeft) return null;
-    var il = st.itemsLeft;
-    if (il.queue != null || il.gates != null) return (il.queue || 0) + (il.gates || 0);
-    return il.open != null ? il.open : null;
+  /* Work vocabulary, uniform across every project and the ALL view:
+     - open actions: review findings still open (barRaise.actionsOpen)
+     - queued: live work-queue items set for the next sweeps; comes from
+       data/queue.json, refreshed every collector run, never release-stale
+     - gates: completion gates between here and done (.project-context.json
+       via the status writers) */
+  function queuedFor(scope) {
+    var q = LAST && LAST.queue;
+    if (!q || !q.queued) return null;
+    if (scope === "ALL") {
+      var s = 0;
+      Object.keys(q.queued).forEach(function (k) { s += q.queued[k] || 0; });
+      return s;
+    }
+    return q.queued[scope] || 0;
+  }
+  function gatesOf(st) {
+    if (st && st.itemsLeft && st.itemsLeft.gates != null) return st.itemsLeft.gates;
+    return null;
   }
   function fmtAgo(iso) {
     if (!iso) return "never";
@@ -1940,14 +1951,16 @@
         if (st.barRaise.actionsOpen != null) acts += st.barRaise.actionsOpen;
         if (st.barRaise.verdict) counts[st.barRaise.verdict] = (counts[st.barRaise.verdict] || 0) + 1;
       }
-      var lv = leftOf(st); if (lv != null) leftSum += lv;
+      var gv = gatesOf(st); if (gv != null) leftSum += gv;   // leftSum now = gates total
     });
     if (nC) sum.appendChild(el("span", { className: "chip", text: "mean " + Math.round(meanC / nC) + "% complete", title: "average of the owner-anchored completion scores" }));
     Object.keys(counts).forEach(function (v) {
       sum.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
     });
     sum.appendChild(el("span", { className: "chip", text: acts + " actions open", title: TIPS.reviewActions }));
-    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " items left", title: "actionable now: queue items + completion gates (backlog wish-lists not counted)" }));
+    var qAll = queuedFor("ALL");
+    if (qAll != null) sum.appendChild(el("span", { className: "chip", text: qAll + " queued", title: "work-queue items set for the next sweeps (live)" }));
+    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " milestones", title: "the owner-anchored conditions standing between here and 100% complete" }));
     outer.appendChild(sum);
 
     var split = el("div", { className: "bigviz-split" });
@@ -1966,7 +1979,7 @@
       if (st && st.milestone && st.milestone.id) bits.push(st.milestone.id + " " + (st.milestone.label || "").slice(0, 26));
       if (br.verdict) bits.push("<b>" + br.verdict + "</b>");
       if (br.actionsOpen != null) bits.push(br.actionsOpen + " open");
-      var lvb = leftOf(st); if (lvb != null) bits.push(lvb + " left");
+      var qb = queuedFor(p.id); if (qb != null) bits.push("queued " + qb);
       if (st && st.lastReleaseAt) bits.push("pushed " + fmtAgo(st.lastReleaseAt));
       bits.push("today " + fmtTok(tk));
       var row = keyRow(p.hue, p.displayName, (pct || 0) / 100, (pct != null ? pct + "%" : "?"),
@@ -2141,13 +2154,8 @@
     }
     mini("sessions logged", sessions, function (n) { return String(Math.round(n)); }, "", "distinct session logs scanned");
     mini("review actions open", actionsOpen, function (n) { return String(Math.round(n)); }, "", TIPS.reviewActions);
-    var leftSumS = 0;
-    Object.keys(statuses).forEach(function (k3) {
-      if (!inFilter(k3)) return;
-      var lvS = leftOf(statuses[k3]);
-      if (lvS != null) leftSumS += lvS;
-    });
-    mini("items left", leftSumS, function (n) { return String(Math.round(n)); }, "", "actionable now: queue items + completion gates");
+    var queuedS = queuedFor(FILTER);
+    mini("queued", queuedS != null ? queuedS : 0, function (n) { return String(Math.round(n)); }, "", "work-queue items set for the next sweeps (live)");
     mini("last collected", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", TIPS.lastCollected);
     grid.appendChild(brow);
     openOverlay("portfolio stats" + (FILTER === "ALL" ? "" : " · " + metaFor(FILTER).tag), grid);
@@ -2298,22 +2306,24 @@
       Object.keys(counts).forEach(function (v) {
         chipsA.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
       });
-      var qsum = 0, leftSum = 0, haveLeft = false;
-      PROJECTS.forEach(function (p) {
-        var s = LAST.statuses[p.id];
-        if (s && s.workQueueDepth != null) qsum += s.workQueueDepth;
-        var lvc = leftOf(s); if (lvc != null) { leftSum += lvc; haveLeft = true; }
-      });
-      if (haveLeft) {
-        var cl = el("span", { className: "chip", title: "actionable across the portfolio: queue items + completion gates (backlog wish-lists in each project's tooltip)" });
-        cl.appendChild(el("span", { className: "k", text: "left" }));
-        cl.appendChild(txt(String(leftSum)));
-        chipsA.appendChild(cl);
+      var qLive = queuedFor("ALL");
+      if (qLive != null) {
+        var cq = el("span", { className: "chip", title: "work-queue items set for the next sweeps (live)" });
+        cq.appendChild(el("span", { className: "k", text: "queued" }));
+        cq.appendChild(txt(String(qLive)));
+        chipsA.appendChild(cq);
       }
-      var cq = el("span", { className: "chip", title: TIPS.queue });
-      cq.appendChild(el("span", { className: "k", text: "queue" }));
-      cq.appendChild(txt(String(qsum)));
-      chipsA.appendChild(cq);
+      var gatesSum = 0, haveGates = false;
+      PROJECTS.forEach(function (p) {
+        var gv2 = gatesOf(LAST.statuses[p.id]);
+        if (gv2 != null) { gatesSum += gv2; haveGates = true; }
+      });
+      if (haveGates) {
+        var cg = el("span", { className: "chip", title: "the owner-anchored conditions standing between here and 100% complete" });
+        cg.appendChild(el("span", { className: "k", text: "milestones" }));
+        cg.appendChild(txt(String(gatesSum)));
+        chipsA.appendChild(cg);
+      }
       inner.appendChild(chipsA);
       return inner;
     }
@@ -2356,8 +2366,8 @@
       if (br.verdict) chips.appendChild(el("span", { className: "chip " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict }));
       if (br.actionsOpen != null) {
         var c1 = el("span", { className: "chip", title: TIPS.actions });
-        c1.appendChild(el("span", { className: "k", text: "actions" }));
-        c1.appendChild(txt(br.actionsOpen + " open"));
+        c1.appendChild(el("span", { className: "k", text: "open actions" }));
+        c1.appendChild(txt(String(br.actionsOpen)));
         chips.appendChild(c1);
       }
       if (status.milestone && status.milestone.id) {
@@ -2367,20 +2377,23 @@
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
         chips.appendChild(c2);
       }
-      if (status.itemsLeft && leftOf(status) != null) {
-        var lv6 = leftOf(status);
+      var qP = queuedFor(id);
+      var gP = gatesOf(status);
+      if (qP != null) {
+        var allClear = qP === 0 && (gP || 0) === 0;
         var c6 = el("span", {
-          className: "chip" + (lv6 === 0 ? " fresh" : ""),
-          title: "actionable now: queue " + (status.itemsLeft.queue || 0) + " + completion gates " + (status.itemsLeft.gates || 0) + " · backlog depth " + (status.itemsLeft.backlog || 0) + " (wish-list, not counted)" + (lv6 === 0 ? " · the improvement scout hunts for more at zero" : "")
+          className: "chip" + (allClear ? " fresh" : ""),
+          title: "work-queue items set for the next sweeps (live)" + (allClear ? " · the improvement scout hunts for more at zero" : "")
         });
-        c6.appendChild(el("span", { className: "k", text: "left" }));
-        c6.appendChild(txt(lv6 === 0 ? "0 · scouting" : String(lv6)));
+        c6.appendChild(el("span", { className: "k", text: "queued" }));
+        c6.appendChild(txt(allClear ? "0 · scouting" : String(qP)));
         chips.appendChild(c6);
-      } else if (status.workQueueDepth != null) {
-        var c4 = el("span", { className: "chip", title: TIPS.queue });
-        c4.appendChild(el("span", { className: "k", text: "queue" }));
-        c4.appendChild(txt(String(status.workQueueDepth)));
-        chips.appendChild(c4);
+      }
+      if (gP != null && gP > 0) {
+        var c7 = el("span", { className: "chip", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json)" });
+        c7.appendChild(el("span", { className: "k", text: "milestones" }));
+        c7.appendChild(txt(String(gP)));
+        chips.appendChild(c7);
       }
       if (status.lastReleaseAt && (Date.now() - new Date(status.lastReleaseAt).getTime()) < 86400000) {
         chips.appendChild(el("span", { className: "chip fresh", text: "pushed today", title: "a commit landed in the last 24h" }));
@@ -2444,7 +2457,7 @@
     sub.appendChild(txt("today "));
     sub.appendChild(el("span", { className: "cost", text: fmtUSD(todayCost) }));
     if (st && st.completion) sub.appendChild(txt(" · " + st.completion.pct + "% done"));
-    var lvm = leftOf(st); if (lvm != null) sub.appendChild(txt(" · " + lvm + " left"));
+    var qm = queuedFor(id); if (qm != null) sub.appendChild(txt(" · " + qm + " queued"));
     if (id === "ALL") sub.appendChild(txt(" · portfolio view"));
     return sub;
   }
@@ -2676,12 +2689,13 @@
     btn.disabled = true;
     btn.textContent = "syncing...";
     $("error-banner").style.display = "none";
-    var jobs = [fetchJson("data/usage.json"), fetchJson("data/backfill.json")].concat(
+    var jobs = [fetchJson("data/usage.json"), fetchJson("data/backfill.json"), fetchJson("data/queue.json")].concat(
       PROJECTS.map(function (p) { return fetchJson("../status/data/" + p.id + ".json"); })
     );
     return Promise.all(jobs).then(function (results) {
       var usage = results[0];
       var backfill = results[1];
+      var queueLive = results[2];
       // fold any legacy stray-chat buckets into Everything
       if (usage && usage.projects) {
         // legacy id: pre-uniform data keyed Scheduler instead of YaS
@@ -2707,8 +2721,8 @@
         });
       }
       var statuses = {};
-      PROJECTS.forEach(function (p, i) { statuses[p.id] = results[i + 2]; });
-      LAST = { usage: usage, statuses: statuses, backfill: backfill };
+      PROJECTS.forEach(function (p, i) { statuses[p.id] = results[i + 3]; });
+      LAST = { usage: usage, statuses: statuses, backfill: backfill, queue: queueLive };
       renderAll();
       $("last-refreshed").textContent = "refreshed " + new Date().toLocaleTimeString();
       btn.disabled = false;

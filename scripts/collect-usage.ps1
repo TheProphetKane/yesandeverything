@@ -576,6 +576,44 @@ foreach ($proj in $AggM.Keys) {
 }
 Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat; aggM = $flatM })
 
+# ----- Queue summary for the dashboard ---------------------------------------
+# Live "queued" counts per project, refreshed every collect run, so the
+# dashboard never shows release-stale work counts. queued = status pending
+# (set to be picked up by the next sweeps); waiting = blocked / blocked-on-user.
+$QueuePath = Join-Path $RepoRoot ".work-queue.json"
+$QUEUE_ALIAS = @{
+  htbh = "HBH"; hbh = "HBH"; herebehordes = "HBH"
+  br = "BR"; brackishrising = "BR"
+  yac = "YaC"; chains = "YaC"; yesandchains = "YaC"
+  scheduler = "YaS"; yas = "YaS"; yesandscheduler = "YaS"
+  yaa = "YaA"; apothecary = "YaA"; yaapothecary = "YaA"; yesandapothecary = "YaA"
+  yab = "YaB"; budget = "YaB"; yesandbudget = "YaB"
+  yae = "YaE"; everything = "YaE"; yesandeverything = "YaE"
+  all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
+}
+try {
+  if (Test-Path $QueuePath) {
+    $q = Get-Content -Raw $QueuePath | ConvertFrom-Json
+    $qCounts = @{}; $qWaiting = @{}
+    foreach ($it in $q.items) {
+      $qp = ("" + $it.project).ToLowerInvariant()
+      $key = $QUEUE_ALIAS[$qp]
+      if (-not $key) { $key = "YaE" }
+      $st = "" + $it.status
+      if ($st -eq "pending") { $qCounts[$key] = 1 + [int]$qCounts[$key] }
+      elseif ($st -eq "blocked" -or $st -eq "blocked-on-user") { $qWaiting[$key] = 1 + [int]$qWaiting[$key] }
+    }
+    Write-ValidatedJson (Join-Path $DataDir "queue.json") ([ordered]@{
+      generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+      queued = $qCounts
+      waiting = $qWaiting
+    })
+    Write-Host "Wrote queue.json (live queued counts per project)." -ForegroundColor Green
+  }
+} catch {
+  Write-Host "WARN: queue summary failed ($_)" -ForegroundColor Yellow
+}
+
 # ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
 # git writes normal progress to stderr; under ErrorActionPreference=Stop the
@@ -586,7 +624,7 @@ foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
 }
-& git add dashboard/data/usage.json usage-log 2>&1 | Out-Null
+& git add dashboard/data/usage.json dashboard/data/queue.json usage-log 2>&1 | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
 & git commit -m "work: usage refresh" 2>&1 | Out-Null

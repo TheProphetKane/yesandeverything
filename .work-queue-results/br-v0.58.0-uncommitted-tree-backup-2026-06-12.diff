@@ -1,0 +1,314 @@
+warning: CRLF will be replaced by LF in scripts/find-godot.ps1.
+The file will have its original line endings in your working directory
+warning: CRLF will be replaced by LF in scripts/find-godot.ps1.bak.
+The file will have its original line endings in your working directory
+warning: CRLF will be replaced by LF in scripts/publish-gdd.ps1.
+The file will have its original line endings in your working directory
+warning: CRLF will be replaced by LF in scripts/run_headless.ps1.
+The file will have its original line endings in your working directory
+warning: CRLF will be replaced by LF in scripts/run_headless.ps1.bak.
+The file will have its original line endings in your working directory
+warning: CRLF will be replaced by LF in scripts/run_tests.ps1.
+The file will have its original line endings in your working directory
+warning: CRLF will be replaced by LF in scripts/run_tests.ps1.bak.
+The file will have its original line endings in your working directory
+diff --git a/BACKLOG.md b/BACKLOG.md
+index 14a94af..364f765 100644
+--- a/BACKLOG.md
++++ b/BACKLOG.md
+@@ -62,9 +62,9 @@ Format: `| Priority | Item | Milestone | Notes |`. Mark `DONE` (with date) when
+ | DONE 2026-05-31 | Gold Deposit terrain: GOLD_DEPOSIT tile + 0-2 cells scattered in stone fields at world-gen + Quarry gold production + minimap color + render (v0.39.0). | M1 | Closed a long-standing doc-vs-code gap (GDD referenced Gold Deposits; code never had them). |
+ | DONE 2026-05-31 | Trench Sweeper cone distance-damage falloff + Full Choke removal gate (v0.39.0). | M1 | Falloff active; the Full Choke removal flips on with the M4 Keepers system (Keeper card 33). |
+ | P1 | Shambler + Lunger waves spawn on internal cadence (180s baseline). | M1 | Wave Cadence replaces the day/night clock. |
+-| P1 | Sonic Pressure threshold-based wave-tier scaling. | M1 | Central mechanic. |
++| DONE 2026-06-12 | Sonic Pressure threshold-based wave-tier scaling. | M1 | Central mechanic. Shipped in v0.58.0: wave director samples the meter at wave commit; thresholds 25/50/75/90+, count multipliers tuning. |
+ | P1 | Oil consumption + mission-fail on Oil-zero. | M1 | Lantern survives or falls. |
+-| P1 | Convoy delivery every 4-5 waves (Oil + Food + spendable resources per design). | M1 | Provisions + Ammo were cut in v0.13.0; the convoy now carries Oil for Lantern fuel + Food for colonists + the locked spendable mix. |
++| DONE 2026-06-12 | Convoy delivery every 4-5 waves (Oil + Food + spendable resources per design). | M1 | Shipped in v0.58.0: convoy lands on days 4, 9, 13, 18, 22, 27, ... with 20 Oil, 200 Food, 15 Wood, 15 Stone, 25 Gold (tuning). Provisions + Ammo were cut in v0.13.0; cargo is Oil for Lantern fuel + Food for colonists + the locked spendable mix. |
+ | P1 | Fog of War with continuous-position stamping. | M1 | HBH v0.74.38 pattern carried over. |
+ | P1 | Save / load between sessions. | M1 | Mid-mission save is open question; lean: between-mission only for v1. |
+ | DONE 2026-06-05 | Main menu + loading screen + pause menu. | M1 | main_menu.tscn + loading.tscn shipped; pause reworked to the build-through model in v0.57.0 (sim stops, unit/build commands stay live; in-game menu freezes via game_clock). |
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 71fa1e1..1ddb4d2 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -12,6 +12,10 @@ Apply the milestone test before every bump: if the work is part of an in-flight
+ 
+ ---
+ 
++## [v0.58.0] - 2026-06-12
++
++Sonic Pressure wave-tier scaling + convoy deliveries. MINOR. Wave director reads the meter and scales the committed wave (pulse on fire, horde at prep-day pre-spawn) per GDD section 11. Convoy deliveries land the M1 row: every 4-5 days (days 4, 9, 13, 18, 22, 27, ...) a convoy delivers 20 Oil, 200 Food, 15 Wood, 15 Stone, 25 Gold (tuning); cap-clamped, Keeper overflow hook, success toast, skipped after loss/win. Numbers-tab thresholds 25/50/75/90+; count multipliers 1.0/1.15/1.35/1.6/2.0 (tuning). Stamped horde counts flow through toasts, HUD countdown, auto-pause signals, and the live-spawn fallback. Also restores four tail-truncated working-tree files to release state. Same-day audit reconciliation: bk-sonic backlog row marked done, progress checklist row updated, Numbers tab lists the per-tier count multipliers.
++
+ ## [v0.57.10] - 2026-06-11
+ 
+ update scripts (1 file)
+diff --git a/docs/GDD.html b/docs/GDD.html
+index bd2daa2..879663f 100755
+--- a/docs/GDD.html
++++ b/docs/GDD.html
+@@ -1044,8 +1044,8 @@ body.editor .editor-toolbar { display: flex; }
+   <div class="title-row">
+     <h1 class="game-title">Brackish Rising</h1>
+     <span class="subtitle">Game Design Document</span>
+-    <span class="meta-pill">v0.57.10</span>
+-    <span class="meta-pill">2026-06-11</span>
++    <span class="meta-pill">v0.58.0</span>
++    <span class="meta-pill">2026-06-12</span>
+     <div class="v1-progress-header" id="v1-progress-header" aria-label="v1.0 progress">
+       <div class="v1-fill" id="v1-progress-header-fill"></div>
+       <div class="v1-label" id="v1-progress-header-label">0% to v1.0</div>
+@@ -1940,7 +1940,8 @@ var _t;window.addEventListener("resize",function(){clearTimeout(_t);_t=setTimeou
+ </tbody>
+ </table>
+ 
+-<p>Wave-tier thresholds: 25 (small wave bump), 50 (medium), 75 (heavy), 90+ (crisis).</p>
++<p>Wave-tier thresholds: 25 (small wave bump), 50 (medium), 75 (heavy), 90+ (crisis). Count multipliers per tier: 1.0 / 1.15 / 1.35 / 1.6 / 2.0 (tuning values pending playtest).</p>
++<p>Convoy delivery: every 4-5 days, arrival days 4, 9, 13, 18, 22, 27, and so on (alternating 4- and 5-day gaps, derived from the day number so saves carry no extra state). Cargo per arrival: 20 Oil, 200 Food, 15 Wood, 15 Stone, 25 Gold (tuning values pending playtest). Deliveries respect stockpile caps; overflow routes through the Keeper overflow hook.</p>
+ 
+ <h3>Sonic Pressure reduction sources</h3>
+ <p>Counterweights to the per-shot/per-second additions above. SP nets to climb only when offense + ambient outpace these reductions.</p>
+@@ -3170,6 +3171,9 @@ var _rt;window.addEventListener("resize",function(){clearTimeout(_rt);_rt=setTim
+ <hr class="changelog-sep">
+ <div class="footer-changelog">
+ <strong>Changelog</strong><br>
++      <strong>v0.58.0</strong> (2026-06-12) - <strong>Sonic Pressure wave-tier scaling + convoy deliveries</strong>. MINOR. The second half of the bk-sonic backlog row lands: the wave director now reads the Sonic Pressure meter and scales the wave that is already coming, per the section 11 rule that pressure never triggers a wave. Thresholds follow the Numbers tab (25 small bump, 50 medium, 75 heavy, 90+ crisis) with count multipliers 1.0 / 1.15 / 1.35 / 1.6 / 2.0, sampled at the moment a wave commits. Pulses sample as they fire. Hordes sample on the prep day when the dormant pre-spawn commits, and the stamped count flows through the announce toast, the HUD countdown, the landing toast, the auto-pause signals, and the live-spawn fallback, so every surface reports the same number even if the meter moves during the prep window. The crisis band opens at 90 per the Numbers tab, distinct from the player-debuff tier curve that opens its top band at 100. Multipliers are tuning values pending playtest. Same release lands the M1 convoy-delivery row: a supply convoy from the home fleet arrives every 4-5 days (days 4, 9, 13, 18, 22, 27, and so on, alternating 4- and 5-day gaps derived from the day number so saves need no extra state) carrying 20 Oil, 200 Food, 15 Wood, 15 Stone, 25 Gold per the post-v0.13.0 cargo lock (Provisions + Ammo cut). Deliveries clamp to stockpile caps with overflow routed through the Keeper hook, announce with a success toast, and skip once a loss or win screen is up. Cargo amounts are tuning values pending playtest; the schedule and amounts sit in the Numbers tab. Also restores four working-tree files (CHANGELOG, this document, project.godot, release.ps1) that a mount fault had truncated at the tail; all four verified byte-identical to the last release. Same-day audit reconciliation: the bk-sonic backlog row is marked done, the progress checklist row follows, and the Numbers tab lists the per-tier count multipliers. Source and Game Design Document integrity pass; zero em dashes.<br>
++      <strong>v0.57.10</strong> (2026-06-11) - <strong>Release-pipeline audit digests</strong>. PATCH. Script-only; entry backfilled. release.ps1 gains a non-fatal step that scans docs/ for newly added review and audit reports and posts a headline per file to the resources channel, capped per run.<br>
++      <strong>v0.57.9</strong> (2026-06-11) - <strong>ROADMAP.md tombstone</strong>. PATCH. Doc-only; entry backfilled. docs/ROADMAP.md, frozen at the 2026-05-25 v0.12.0 state, now points at the Roadmap tab of this document as the live source, closing a structural follow-up from the v0.57.7 audit.<br>
+       <strong>v0.57.8</strong> (2026-06-11) - <strong>Enemy move-speed constants, audit-driven fixes, audio on-hold</strong>. PATCH. move_speed joins the EnemyData.NUMBERS table as a per-type constant the pool reads directly, with the per-Node path matched to it, so an enemy's speed no longer depends on which spawner produced it and buffs like the Lantern hum multiply one base value. release.ps1 refuses a version that does not exceed the last released one, closing the same-version re-ship. save_load honors format_version on load. The dashboard milestone reads in-progress, backup files are gitignored, and a stale backlog audit claim was reconciled. Audio is recorded low-priority on-hold and non-gating, relaxing the v0.4.0 mute-MVP lock for the pre-1.0 window. Also commits the accumulated editor-visibility work: per-entity 2D previews, the asset-board and map-layout preview scenes, the universal asset-scale modifier, and the auto-swap placeholder previews. Source and Game Design Document integrity pass; zero em dashes.<br>
+       <strong>v0.57.7</strong> (2026-06-11) - <strong>Weekly canonical audit: roadmap badges and architecture counts reconciled</strong>. PATCH. Doc-only. The weekly audit cross-referenced this document against source at v0.57.6. Version markers agree across the pill, the CHANGELOG top entry, and project.godot, every source path the document references exists on disk, and the asset manifest count (164 PNG, zero audio) matches the tree exactly. Five stale spots corrected. The Roadmap tab still showed M0 Foundation in progress with the Population HUD readout and the save/load round-trip pending; both shipped (the HUD Workers readout and the save_load autoload with day-rollover autosave), so M0 is marked done and M1 Vertical Slice becomes the in-progress milestone, matching the mid-M1 state the README and BACKLOG have carried since 2026-05-31. The M4 keepers.gd autoload deliverable is struck with its v0.55.0 stamp. The Architecture tab and docs/ARCHITECTURE.md still described 14 autoloads and a 23-node tech tree from the v0.39.0 snapshot; both now carry the keepers autoload (15 total) and the 28-node tree the v0.55.1 unlock pass produced, and the progress checklist research row matches. A BACKLOG row credited the EnemyData.NUMBERS stat single-sourcing to a v0.58.0 that does not exist; corrected to v0.57.2. Structural follow-ups queued: docs/ROADMAP.md is frozen at the 2026-05-25 v0.12.0 state and needs a refresh or a tombstone pointing at the Roadmap tab, a full architecture-snapshot refresh is due, and the working tree carries uncommitted mission-fail work that needs its own entry before the next release. Source and Game Design Document integrity pass; zero em dashes.<br>
+       <strong>v0.57.6</strong> (2026-06-08) - <strong>Universal visual-asset scale modifier + art-pipeline direction set</strong>. PATCH. A single ASSET_SCALE_MASTER constant now lives in the constants autoload and multiplies every entity render size in one place: the unit sprite, the per-Node and pooled-MultiMesh enemy sprites, and the building texture. It is set to 1.0, so current visuals are unchanged; the value exists so the whole roster can be rescaled from one knob once art is re-exported at final size, replacing the scattered per-type scalers that had drifted apart (units at 0.3125, pooled enemies at 0.5, buildings footprint-derived). Gameplay values (collision radii, tile size, selection rings) are deliberately left off the knob. A tree_render_density export was added to the grid so the forest canopy can be thinned for art and preview passes without changing tile passability; it defaults to 1.0. The animation pipeline direction was set to Spine2D for units, buildings, and the Leviathan boss, with the enemy horde to be authored in Spine then baked to a frame atlas the existing MultiMesh shader samples so batched horde rendering survives; a performance spike sets the live-skeleton ceiling before any horde commit. Separately, every unit, enemy, and building scene that has shipped art now carries a self-hiding editor preview sprite so the Godot 2D scene view shows the asset instead of a blank node; it hides itself the moment the game runs, so there is no runtime change. A new asset-board scene (source/asset_preview.tscn) instances the whole roster so opening one scene shows every unit, enemy, and building at once for art review. A companion map-layout scene (source/world/map_preview.tscn) drops a base of buildings, units, and enemies onto a grass ground as the 2D analog of the Hordes nav_test layout; the live in-game map stays procedural via IsoGrid. Two ground controls were added for the art pass: an inspector ground-scale multiplier, and an opt-in chunk-ground draw that paints the ground texture once per N x N tile block (default off, gameplay grid untouched) so ground detail is not lost inside a single 32x16 tile. Full plan in docs/ART-PIPELINE-RESPONSE-2026-06-08.md. Source and Game Design Document integrity pass; zero em dashes.<br>
+@@ -4342,7 +4346,7 @@ var _rt;window.addEventListener("resize",function(){clearTimeout(_rt);_rt=setTim
+     ] },
+     { id: 'systems', name: 'Core systems', cats: [
+       { id: 'tension', name: 'Sonic Pressure', items: [
+-        { id: 'sp-meter', t: 'Sonic Pressure meter + wave-tier scaling', s: 'placeholder' },
++        { id: 'sp-meter', t: 'Sonic Pressure meter + wave-tier scaling', s: 'done' },
+         { id: 'sp-decay', t: 'Passive decay + Watch Doctrine doubling', s: 'todo' },
+         { id: 'sp-spawn-cost', t: 'Per-spawn SP cost + Sonic Insulation Keeper reduction', s: 'todo' },
+         { id: 'sp-shot-values', t: 'Per-shot SP wiring (Rifleman 0.15, Scout 0.05, etc.)', s: 'todo' },
+diff --git a/project.godot b/project.godot
+index bd4cc94..cbe6027 100644
+--- a/project.godot
++++ b/project.godot
+@@ -12,7 +12,7 @@ config_version=5
+ 
+ config/name="Brackish Rising"
+ config/description="A real-time strategy survival base-builder. Hold the lantern-anchored bastion on the inland ring after six generations of retreat against the Drowned. Industrial-medieval / WWI-naval grim horror in true 2:1 isometric."
+-config/version="0.57.10"
++config/version="0.58.0"
+ run/main_scene="res://source/main.tscn"
+ config/features=PackedStringArray("4.6", "Forward Plus")
+ config/icon="res://icon.svg"
+diff --git a/source/systems/wave_director.gd b/source/systems/wave_director.gd
+index 83a9e74..2bfae26 100644
+--- a/source/systems/wave_director.gd
++++ b/source/systems/wave_director.gd
+@@ -141,6 +141,16 @@ const PULSE_SIZE_BY_DAY: Array = [
+ 	{"day": 30, "count": 60},
+ ]
+ 
++# GDD Numbers tab wave-tier thresholds: 25 (small bump), 50 (medium),
++# 75 (heavy), 90+ (crisis). Sonic Pressure never TRIGGERS a wave; the
++# cadence is its own clock. It SCALES the wave that is already coming,
++# sampled at the moment the wave commits (pulse fire, horde prep-day
++# pre-spawn). Distinct from economy's player-debuff tiers, which open
++# the top band at 100; the wave crisis band opens at 90 per the
++# Numbers tab. Count multipliers are tuning values.
++const WAVE_TIER_THRESHOLDS: Array[float] = [25.0, 50.0, 75.0, 90.0]
++const WAVE_TIER_COUNT_MULTS: Array[float] = [1.0, 1.15, 1.35, 1.6, 2.0]
++
+ # v0.26.73 + GDD §11: horde days. Big multi-direction
+ # surges on specific in-game days. Each entry: the day it fires, the
+ # total enemy count, and the number of distinct spawn directions to
+@@ -198,6 +208,13 @@ var _spawn_drain_accum: float = 0.0
+ # horde so day-skip / fast-forward edge cases can't double-trigger.
+ var _hordes_fired: Dictionary = {}
+ 
++# Sonic Pressure wave-tier scaling: per-horde scaled counts keyed by
++# horde day. Stamped on the prep day when the dormant pre-spawn
++# commits, so the announce toast, HUD countdown, landed toast, and the
++# live-spawn fallback all agree on one number even if the meter moves
++# during the prep window.
++var _horde_scaled: Dictionary = {}
++
+ # v0.26.88 per GDD §11: wave-repelled milestone. Track enemies alive
+ # and the peak since the last "floor" reset; when count returns to
+ # 0 after a peak >= WAVE_RELIEF_PEAK_MIN, fire economy.record_wave_
+@@ -792,6 +809,28 @@ func _current_pulse_size() -> int:
+ 	return size
+ 
+ 
++# 0..4 wave tier from the live Sonic Pressure meter, against the
++# Numbers-tab wave thresholds. Tier 4 (crisis) opens at 90, not 100,
++# so a colony riding the top of the meter eats crisis waves before
++# the meter pegs.
++func get_wave_pressure_tier() -> int:
++	var sp: float = economy.get_amount(economy.SONIC_PRESSURE)
++	var tier: int = 0
++	for i in WAVE_TIER_THRESHOLDS.size():
++		if sp >= WAVE_TIER_THRESHOLDS[i]:
++			tier = i + 1
++	return tier
++
++
++# Scale a scheduled wave's enemy count by the current wave tier.
++# ceil so any tier above Calm adds at least one enemy to a small wave.
++func _scaled_wave_count(base_count: int) -> int:
++	if base_count <= 0:
++		return base_count
++	var mult: float = WAVE_TIER_COUNT_MULTS[get_wave_pressure_tier()]
++	return int(ceil(float(base_count) * mult))
++
++
+ func _pick_random_enemy() -> PackedScene:
+ 	var roster := _active_roster()
+ 	if roster.is_empty():
+@@ -869,7 +908,10 @@ func get_next_horde_count() -> int:
+ 	for entry in HORDE_DAYS:
+ 		var d: int = int(entry["day"])
+ 		if not _hordes_fired.has(d):
+-			return int(entry["count"])
++			# Stamped count once the prep day has committed the horde;
++			# before that, a live sample so the countdown reflects the
++			# wave the current meter would build.
++			return int(_horde_scaled.get(d, _scaled_wave_count(int(entry["count"]))))
+ 	return 0
+ 
+ 
+@@ -886,14 +928,20 @@ func _on_day_advanced(new_day: int) -> void:
+ 	for entry in HORDE_DAYS:
+ 		var horde_day: int = int(entry["day"])
+ 		if horde_day == new_day + 1 and not _hordes_fired.has(horde_day):
++			# GDD section 11: Sonic Pressure scales the wave that is
++			# already coming. Sample the meter as the horde commits and
++			# stamp the scaled count for every later consumer of this
++			# horde day.
++			var scaled: int = _scaled_wave_count(int(entry["count"]))
++			_horde_scaled[horde_day] = scaled
+ 			var hud := _find_hud()
+ 			if hud != null and hud.has_method("toast"):
+-				hud.toast("Horde incoming - Day %d (%d enemies, %d direction(s))" % [horde_day, int(entry["count"]), int(entry["dirs"])], "warning")
++				hud.toast("Horde incoming - Day %d (%d enemies, %d direction(s))" % [horde_day, scaled, int(entry["dirs"])], "warning")
+ 			# v0.51.0: auto-pause hook. Fires alongside the prep-day
+ 			# warning toast so auto_pause can lock the player on
+ 			# the prep day. Once per horde (guarded by _hordes_fired
+ 			# membership above + the early-return on the next loop).
+-			horde_day_announced.emit(horde_day, int(entry["count"]), int(entry["dirs"]))
++			horde_day_announced.emit(horde_day, scaled, int(entry["dirs"]))
+ 			# v0.61.29: first-time prompt for horde day. Fires only once
+ 			# across all sessions via tutorial_seen dedup.
+ 			tutorial.show("first_horde_day", "Horde Day", "A horde is coming. Multiple spawn directions. Use this prep window to repair walls and reposition units. F1-F4 set game speed; pause via the Space bar.")
+@@ -902,7 +950,7 @@ func _on_day_advanced(new_day: int) -> void:
+ 			# amortizes across the ~60s prep window instead of dumping
+ 			# into the wave-start frame. On horde-day we just call
+ 			# wake_all_dormant() - cheap O(N) flag flip, no instantiation.
+-			_pre_spawn_horde_dormant(int(entry["count"]), int(entry["dirs"]))
++			_pre_spawn_horde_dormant(scaled, int(entry["dirs"]))
+ 	for entry in HORDE_DAYS:
+ 		var horde_day: int = int(entry["day"])
+ 		if horde_day != new_day:
+@@ -910,12 +958,15 @@ func _on_day_advanced(new_day: int) -> void:
+ 		if _hordes_fired.has(horde_day):
+ 			return  # already fired this mission
+ 		_hordes_fired[horde_day] = true
++		# Use the count stamped at prep time; fall back to a live sample
++		# if the prep-day branch never ran (day skip, fast-forward).
++		var landed_count: int = int(_horde_scaled.get(horde_day, _scaled_wave_count(int(entry["count"]))))
+ 		# v0.26.97: announce the active horde so the player notices.
+ 		var hud := _find_hud()
+ 		if hud != null and hud.has_method("toast"):
+-			hud.toast("Horde landing - %d enemies from %d direction(s)!" % [int(entry["count"]), int(entry["dirs"])], "error")
++			hud.toast("Horde landing - %d enemies from %d direction(s)!" % [landed_count, int(entry["dirs"])], "error")
+ 		# v0.51.0: auto-pause hook for horde landing.
+-		horde_day_landed.emit(horde_day, int(entry["count"]), int(entry["dirs"]))
++		horde_day_landed.emit(horde_day, landed_count, int(entry["dirs"]))
+ 		# v0.67.0: pre-spawn warmup wake. The prep-day pre-spawn already
+ 		# queued every horde enemy dormant; the drain has been pushing
+ 		# them onto the map (dormant, idle) all prep day. Wake them now
+@@ -926,7 +977,7 @@ func _on_day_advanced(new_day: int) -> void:
+ 			# Pre-spawn either skipped (mission_active=false at the time)
+ 			# or all enemies finished waking - fall back to the live spawn
+ 			# path so the horde still lands.
+-			_spawn_horde(int(entry["count"]), int(entry["dirs"]))
++			_spawn_horde(landed_count, int(entry["dirs"]))
+ 		return
+ 
+ 
+@@ -1020,7 +1071,8 @@ func _spawn_horde(total_count: int, dir_count: int) -> void:
+ # of instantiating in one frame. The drain loop spreads them across
+ # count / SPAWN_RATE_PER_SECOND seconds at 1x game speed.
+ func _spawn_pulse() -> void:
+-	var count: int = _current_pulse_size()
++	# Sonic Pressure wave-tier scaling, sampled as the pulse commits.
++	var count: int = _scaled_wave_count(_current_pulse_size())
+ 	var n: int = _active_spawn_count()
+ 	if n <= 0:
+ 		return
+diff --git a/source/ui/gameplay/gameplay.gd b/source/ui/gameplay/gameplay.gd
+index 729918f..5c2f73f 100644
+--- a/source/ui/gameplay/gameplay.gd
++++ b/source/ui/gameplay/gameplay.gd
+@@ -295,6 +295,9 @@ func _ready() -> void:
+ 			economy.add(r, float(overrides[r]) - current)
+ 	economy.add(economy.SONIC_PRESSURE, mission_base_sonic_pressure - economy.get_amount(economy.SONIC_PRESSURE))
+ 	game_clock.day_advanced.connect(_on_day_advanced_sonic_pressure_relief)
++	# v0.58.0: convoy deliveries. Every 4-5 days a supply convoy lands
++	# with Oil + Food + the spendable mix (BACKLOG M1 row).
++	game_clock.day_advanced.connect(_on_day_advanced_convoy)
+ 	# v0.26.74: debug overlay (F12 toggle). Built once in _ready,
+ 	# hidden by default. WaveDirector ref is wired later in
+ 	# _start_wave_director so queue-depth reads work.
+@@ -1290,6 +1293,52 @@ func _on_day_advanced_sonic_pressure_relief(new_day: int) -> void:
+ 	_hud_toast("Day %d survived - Sonic Pressure -%d" % [new_day - 1, int(SONIC_PRESSURE_REDUCTION_PER_DAY)], "success")
+ 
+ 
++# Convoy deliveries per the BACKLOG M1 row: a supply convoy from the
++# home fleet arrives every 4-5 days carrying Oil for the Lantern,
++# Food for the colonists, and the locked spendable mix (Provisions +
++# Ammo were cut in v0.13.0). The schedule is deterministic from the
++# day number - arrivals on days 4, 9, 13, 18, 22, 27, ... (alternating
++# 4- and 5-day gaps) - so saves need no extra state: a loaded game
++# derives the next arrival from current_day. Cargo amounts are tuning
++# values pending playtest. economy.add clamps to stockpile caps and
++# routes overflow through the Keeper overflow hook like any other gain.
++const CONVOY_FIRST_DAY: int = 4
++
++
++func _convoy_cargo() -> Array:
++	# Built per-call rather than const so the resource ids come from
++	# the economy autoload constants - autoload identifiers don't
++	# resolve inside const expressions (known parser quirk).
++	return [
++		[economy.OIL, 20.0],
++		[economy.FOOD, 200.0],
++		[economy.WOOD, 15.0],
++		[economy.STONE, 15.0],
++		[economy.GOLD, 25.0],
++	]
++
++
++func _is_convoy_day(day: int) -> bool:
++	if day < CONVOY_FIRST_DAY:
++		return false
++	var m: int = day % 9
++	return m == 4 or m == 0
++
++
++func _on_day_advanced_convoy(new_day: int) -> void:
++	if _loss_screen_shown or _win_screen_shown:
++		return
++	if not _is_convoy_day(new_day):
++		return
++	var parts: Array[String] = []
++	for entry in _convoy_cargo():
++		var res: StringName = entry[0]
++		var amount: float = entry[1]
++		economy.add(res, amount)
++		parts.append("+%d %s" % [int(amount), String(res).capitalize()])
++	_hud_toast("Convoy arrived - %s" % ", ".join(parts), "success")
++
++
+ # v0.26.85: slow Sonic Pressure climbs. The colony starts at high
+ # Sonic Pressure because it just landed undefended, and several axes of
+ # anxiety keep climbing unless the player addresses each one with

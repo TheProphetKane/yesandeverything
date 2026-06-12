@@ -20,8 +20,9 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `robots.txt` | Allows crawlers on root, disallows the private paths: `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/sitemap/`. |
 | `.nojekyll` (implicit) | Tells GitHub Pages to skip Jekyll processing. |
 | `hordes/index.html` | Password-gated HBH GDD mirror. Password: `SneakPeak`. Contains base64-inlined GDD via `var ENCODED = "..."`. **Generated, not hand-edited.** |
-| `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a 3-line meta-refresh stub that redirects to `/hordes/` so any old bookmark still lands on the gate. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
+| `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a 16-line meta-refresh stub that redirects to `/hordes/` so any old bookmark still lands on the gate. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
 | `projects/scheduler/{index,design}.html` | Scheduler project landing + design preview. |
+| `projects/{apothecary,brackish-rising,budget,chains,here-be-hordes}/` | Per-project landing + design-preview pages (`index.html` + `design.html` each). `projects/budget/` also carries `pre-install`, `privacy`, `security`, and `security-notices` sub-pages. |
 | `apothecary/` | Celtic apothecary label designer — multi-file ES-module app, deployed by mirroring from `X:\YesAndApothecary` via that repo's `scripts/release.ps1` (which calls `scripts/deploy-to-yae.ps1` then commits + pushes this side). Multi-file by design; the "one file per page" convention does not apply to this subdir (it's a project mirror, same as `hordes/`). Do not edit files in `apothecary/` directly; edit in the source repo and run release. |
 | `brackish-rising/` | Password-gated Brackish Rising GDD mirror. Same base64-inlined gate pattern as `hordes/`; generated from the BR repo, not hand-edited. |
 | `budget/` | Budget project landing page. Single self-contained file; project mirror. |
@@ -57,7 +58,7 @@ cd X:\YesAndEverything
 .\scripts\release.ps1
 ```
 
-`release.ps1` clears any stale `.git\index.lock`, runs the integrity guards (`index.html` must end with `</html>`; `CNAME` must read `yesandeverything.com`), auto-detects what changed and writes a matching commit, pushes to `main`, then posts the changelog line to `#yae-dev-log` on Discord. GitHub Pages auto-deploys from `main` root within ~30s. Hard-refresh (Ctrl+Shift+R) to bust the CDN cache if a change doesn't appear.
+`release.ps1` first runs the dashboard JSON integrity guard (Step 0: `check-status-json.ps1`, aborting if a corrupt `status/data/*.json` would ship), clears any stale `.git\index.lock`, runs the integrity guards (`index.html` must end with `</html>`; `CNAME` must read `yesandeverything.com`), auto-detects what changed and writes a matching commit, pushes to `main`, then posts the changelog line to `#yae-dev-log` on Discord. GitHub Pages auto-deploys from `main` root within ~30s. Hard-refresh (Ctrl+Shift+R) to bust the CDN cache if a change doesn't appear.
 
 Raw git (`git add . && git commit && git push`) is the escape hatch only. It skips the integrity guards and the `index.lock` clear, so reserve it for one-off recovery when the release script itself is the thing being fixed.
 
