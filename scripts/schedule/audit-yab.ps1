@@ -1,9 +1,9 @@
-﻿## audit-yab.ps1 - scheduled canonical-audit run for YesAndBudget.
+## audit-yab.ps1 - scheduled canonical-audit run for YesAndBudget.
 ##
 ## Windows Task Scheduler invokes this script daily. It calls the Claude
 ## Code CLI with the project-canonical-audit trigger phrase, which writes
 ## docs/CANONICAL_AUDIT-YYYY-MM-DD.md and updates
-## X:\YesAndEverything\status\data\YaB.json's audit block.
+## X:\YesAndEverything\status\data\Budget.json's audit block.
 ##
 ## Companion to bar-raise-yab.ps1: same wrapper shape, different skill.
 ## The bar-raise is the structured deep review; the canonical-audit is the

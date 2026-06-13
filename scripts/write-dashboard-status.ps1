@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $DataDir = Join-Path $RepoRoot "status\data"
 if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Force | Out-Null }
-$JsonPath = Join-Path $DataDir "YaE.json"
+$JsonPath = Join-Path $DataDir "Everything.json"
 
 $ctx = $null
 try { $ctx = Get-Content -Raw (Join-Path $RepoRoot ".project-context.json") | ConvertFrom-Json } catch { $ctx = $null }
@@ -31,7 +31,7 @@ $msg = $head[2]
 if ($msg -and $msg.Length -gt 160) { $msg = $msg.Substring(0, 157) + "..." }
 
 $payload = [ordered]@{
-  project = "YaE"
+  project = "Everything"
   displayName = $(if ($ctx -and $ctx.display_name) { $ctx.display_name } else { "Yes& Everything" })
   version = $head[0]   # no semver on the umbrella site; HEAD short sha stands in
   lastReleaseAt = $head[1]
@@ -56,4 +56,4 @@ Move-Item -Force $tmp $JsonPath
 $back = [System.IO.File]::ReadAllText($JsonPath)
 if ($back.Contains([char]0)) { throw "NUL bytes in $JsonPath after write" }
 $null = ($back | ConvertFrom-Json)                   # fresh-read re-parse (FUSE guard)
-Write-Host "Wrote status/data/YaE.json (HEAD $($head[0]))." -ForegroundColor Green
+Write-Host "Wrote status/data/Everything.json (HEAD $($head[0]))." -ForegroundColor Green

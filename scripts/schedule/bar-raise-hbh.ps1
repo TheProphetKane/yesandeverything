@@ -1,4 +1,4 @@
-﻿# bar-raise-hbh.ps1 - scheduled per-project bar-raise for Here Be Hordes.
+# bar-raise-hbh.ps1 - scheduled per-project bar-raise for Here Be Hordes.
 #
 # Windows Task Scheduler invokes this script daily. It calls the Claude Code
 # CLI with the per-project bar-raise prompt, which fires the bar-raise skill
@@ -6,7 +6,7 @@
 #
 # Output lands in:
 #   - X:\HereBeHordes\docs\BAR_RAISE-YYYY-MM-DD.md
-#   - X:\YesAndEverything\status\data\HBH.json (barRaise block updated)
+#   - X:\YesAndEverything\status\data\Hordes.json (barRaise block updated)
 #   - X:\YesAndEverything\scripts\schedule\logs\bar-raise-hbh-YYYY-MM-DD.log
 #
 # The skill itself commits + pushes the YaE-side JSON change. This shim does

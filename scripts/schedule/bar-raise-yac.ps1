@@ -1,4 +1,4 @@
-﻿# bar-raise-yac.ps1 - scheduled per-project bar-raise for YesAndChains.
+# bar-raise-yac.ps1 - scheduled per-project bar-raise for YesAndChains.
 #
 # Windows Task Scheduler invokes this script daily. It calls the Claude Code
 # CLI with the per-project bar-raise prompt, which fires the bar-raise skill
@@ -6,7 +6,7 @@
 #
 # Output lands in:
 #   - X:\YesAndChains\docs\BAR_RAISE-YYYY-MM-DD.md
-#   - X:\YesAndEverything\status\data\YaC.json (barRaise block updated)
+#   - X:\YesAndEverything\status\data\Chains.json (barRaise block updated)
 #   - X:\YesAndEverything\scripts\schedule\logs\bar-raise-yac-YYYY-MM-DD.log
 #
 # The skill itself commits + pushes the YaE-side JSON change. This shim does
