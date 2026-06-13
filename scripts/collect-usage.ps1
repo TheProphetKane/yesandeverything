@@ -42,8 +42,13 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
-$ATTRIB_VERSION = 4   # v4: per-model breakdown, horizon derived from aggregates
-                      # (v3: YaS id, transcript-only roots, global msg dedupe, timestamp chain)
+$ATTRIB_VERSION = 6   # v6: dropped the bare "Scheduler" substring pattern that
+                      # hijacked cross-project scheduled-task sessions; the legacy
+                      # X:\Scheduler repo is now matched by anchored cwd path only.
+                      # v5: word ids everywhere (Hordes/Rising/Chains/Scheduler/
+                      # Apothecary/Budget/Everything/Agents); letter codes are
+                      # permanent aliases, never canonical
+                      # (v4: per-model breakdown + true horizon; v3: dedupe + ts chain)
 
 # ----- Pricing (USD per million tokens; Anthropic published API rates) ----
 # Verified against the published price list on the date below. When rates
@@ -62,44 +67,62 @@ $PRICING = @(
 $PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
 
 # ----- Project attribution (ordered; first hit wins WITHIN a line) ---------
+# Canonical ids are the WORDS. Letter codes (HBH, BR, YaC...) are aliases.
 $PROJECT_PATTERNS = @(
   # scheduled-task names first: a task session belongs to its project even when
   # its prompt also mentions the YaE queue or other repos
-  @{ pat = "audit-htbh";          id = "HBH" },
-  @{ pat = "bar-raise-hbh";       id = "HBH" },
-  @{ pat = "audit-brackish";      id = "BR" },
-  @{ pat = "bar-raise-br";        id = "BR" },
-  @{ pat = "audit-yac";           id = "YaC" },
-  @{ pat = "bar-raise-yac";       id = "YaC" },
-  @{ pat = "audit-scheduler";     id = "YaS" },
-  @{ pat = "bar-raise-scheduler"; id = "YaS" },
-  @{ pat = "audit-apothecary";    id = "YaA" },
-  @{ pat = "bar-raise-yaa";       id = "YaA" },
-  @{ pat = "audit-yab";           id = "YaB" },
-  @{ pat = "bar-raise-yab";       id = "YaB" },
+  @{ pat = "audit-htbh";          id = "Hordes" },
+  @{ pat = "bar-raise-hbh";       id = "Hordes" },
+  @{ pat = "audit-brackish";      id = "Rising" },
+  @{ pat = "bar-raise-br";        id = "Rising" },
+  @{ pat = "audit-yac";           id = "Chains" },
+  @{ pat = "bar-raise-yac";       id = "Chains" },
+  @{ pat = "audit-scheduler";     id = "Scheduler" },
+  @{ pat = "bar-raise-scheduler"; id = "Scheduler" },
+  @{ pat = "audit-apothecary";    id = "Apothecary" },
+  @{ pat = "bar-raise-yaa";       id = "Apothecary" },
+  @{ pat = "audit-yab";           id = "Budget" },
+  @{ pat = "bar-raise-yab";       id = "Budget" },
   # repo folder names (match X:\ paths, /mnt/ paths, and dir-encoded forms)
-  @{ pat = "HereBeHordes";        id = "HBH" },
-  @{ pat = "HereThereBeHordes";   id = "HBH" },
-  @{ pat = "here-be-hordes";      id = "HBH" },
-  @{ pat = "BrackishRising";      id = "BR" },
-  @{ pat = "brackish-rising";     id = "BR" },
-  @{ pat = "YesAndChains";        id = "YaC" },
-  @{ pat = "yesandchains";        id = "YaC" },
-  @{ pat = "YesAndScheduler";     id = "YaS" },
-  @{ pat = "YesAndApothecary";    id = "YaA" },
-  @{ pat = "yesandapothecary";    id = "YaA" },
-  @{ pat = "YesAndBudget";        id = "YaB" },
-  @{ pat = "YesAndAgents";        id = "YaAg" },
-  @{ pat = "yesandagents";        id = "YaAg" },
-  @{ pat = "YesAndEverything";    id = "YaE" },
-  @{ pat = "yesandeverything";    id = "YaE" },
+  @{ pat = "HereBeHordes";        id = "Hordes" },
+  @{ pat = "HereThereBeHordes";   id = "Hordes" },
+  @{ pat = "here-be-hordes";      id = "Hordes" },
+  @{ pat = "BrackishRising";      id = "Rising" },
+  @{ pat = "brackish-rising";     id = "Rising" },
+  @{ pat = "YesAndChains";        id = "Chains" },
+  @{ pat = "yesandchains";        id = "Chains" },
+  @{ pat = "YesAndScheduler";     id = "Scheduler" },
+  @{ pat = "YesAndApothecary";    id = "Apothecary" },
+  @{ pat = "yesandapothecary";    id = "Apothecary" },
+  @{ pat = "YesAndBudget";        id = "Budget" },
+  @{ pat = "YesAndAgents";        id = "Agents" },
+  @{ pat = "yesandagents";        id = "Agents" },
+  @{ pat = "YesAndEverything";    id = "Everything" },
+  @{ pat = "yesandeverything";    id = "Everything" },
   # generic scheduled-task dir -> Everything (after project task names above)
-  @{ pat = "Claude\Scheduled";    id = "YaE" },
-  @{ pat = "Claude\\Scheduled";   id = "YaE" },   # JSON-escaped form in raw lines
-  @{ pat = "mnt/Scheduled";       id = "YaE" },
-  # legacy X:\Scheduler path; last so it never shadows the YesAnd* names
-  @{ pat = "Scheduler";           id = "YaS" }
+  @{ pat = "Claude\Scheduled";    id = "Everything" },
+  @{ pat = "Claude\\Scheduled";   id = "Everything" },   # JSON-escaped form in raw lines
+  @{ pat = "mnt/Scheduled";       id = "Everything" },
+  # legacy X:\Scheduler repo, anchored to the cwd/path form. The bare word
+  # "Scheduler" in prose (e.g. "Windows Task Scheduler", or a cross-project task
+  # whose prompt lists every repo) must NOT hijack a session. Real Scheduler dev
+  # still attributes via YesAndScheduler + audit-scheduler above and these path
+  # forms; cross-project scheduled tasks fall through to Scheduled -> Everything.
+  @{ pat = "X--Scheduler";        id = "Scheduler" },
+  @{ pat = "X:\Scheduler";        id = "Scheduler" },
+  @{ pat = "X:\\Scheduler";       id = "Scheduler" }
 )
+
+# Permanent alias fold: anything keyed by an old id resolves to its word.
+$ID_FOLD = @{
+  HBH = "Hordes"; HTBH = "Hordes"; BR = "Rising"; YaC = "Chains"; YaS = "Scheduler"
+  YaA = "Apothecary"; YaB = "Budget"; YaE = "Everything"; YaAg = "Agents"
+  Other = "Everything"; unattributed = "Everything"
+}
+function Resolve-ProjectId([string]$id) {
+  if ($id -and $ID_FOLD.ContainsKey($id)) { return $ID_FOLD[$id] }
+  return $id
+}
 
 # ----- Scan roots: Claude Code transcripts + every Cowork session log ------
 # The desktop app's data dir depends on the install type: classic exe writes
@@ -214,9 +237,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
       $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs }
     }
     foreach ($row in $state.agg) {
-      $rp = $row.p
-      if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }
-      if ($rp -eq "Scheduler") { $rp = "YaS" }   # id layer is uniform Ya* codes
+      $rp = Resolve-ProjectId $row.p
       if (-not $Agg.ContainsKey($rp)) { $Agg[$rp] = @{} }
       if (-not $Agg[$rp].ContainsKey($row.d)) { $Agg[$rp][$row.d] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
       $b = $Agg[$rp][$row.d]
@@ -225,9 +246,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     }
     if ($state.aggM) {
       foreach ($row in $state.aggM) {
-        $rp = $row.p
-        if ($rp -eq "Other" -or $rp -eq "unattributed") { $rp = "YaE" }
-        if ($rp -eq "Scheduler") { $rp = "YaS" }
+        $rp = Resolve-ProjectId $row.p
         if (-not $AggM.ContainsKey($rp)) { $AggM[$rp] = @{} }
         if (-not $AggM[$rp].ContainsKey($row.m)) { $AggM[$rp][$row.m] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
         $bm = $AggM[$rp][$row.m]
@@ -370,7 +389,7 @@ foreach ($root in $SCAN_ROOTS) {
         $proj = $r.strong
         if (-not $proj) { $proj = $r.lineHit }
         if (-not $proj) { $proj = $fileProj }
-        if (-not $proj) { $proj = "YaE"; $fallbackYaE++ }
+        if (-not $proj) { $proj = "Everything"; $fallbackYaE++ }
         $usageRecords++
         if (-not $oldestTs -or $r.ts -lt $oldestTs) { $oldestTs = $r.ts }
         if (-not $newestTs -or $r.ts -gt $newestTs) { $newestTs = $r.ts }
@@ -380,7 +399,7 @@ foreach ($root in $SCAN_ROOTS) {
         if ($r.msgId) { $lastMsgId = $r.msgId }
       }
       if ($Audit -and $fileTok -gt 0) {
-        $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "YaE" }); tokens = $fileTok }
+        $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "Everything" }); tokens = $fileTok }
       }
       $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }) }
     } catch {
@@ -508,9 +527,9 @@ Write-Host "Wrote $OutPath ($([math]::Round((Get-Item $OutPath).Length / 1kb, 1)
 # era, forever, with zero assumptions. Delta for a span = last line minus
 # first line of the span.
 $REPO_PATHS = @{
-  HBH = "X:\HereBeHordes"; BR = "X:\BrackishRising"; YaC = "X:\YesAndChains"
-  YaS = "X:\YesAndScheduler"; YaA = "X:\YesAndApothecary"; YaB = "X:\YesAndBudget"
-  YaE = "X:\YesAndEverything"; YaAg = "X:\YesAndAgents"
+  Hordes = "X:\HereBeHordes"; Rising = "X:\BrackishRising"; Chains = "X:\YesAndChains"
+  Scheduler = "X:\YesAndScheduler"; Apothecary = "X:\YesAndApothecary"; Budget = "X:\YesAndBudget"
+  Everything = "X:\YesAndEverything"; Agents = "X:\YesAndAgents"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
@@ -584,14 +603,14 @@ Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; a
 # (set to be picked up by the next sweeps); waiting = blocked / blocked-on-user.
 $QueuePath = Join-Path $RepoRoot ".work-queue.json"
 $QUEUE_ALIAS = @{
-  htbh = "HBH"; hbh = "HBH"; herebehordes = "HBH"
-  br = "BR"; brackishrising = "BR"
-  yac = "YaC"; chains = "YaC"; yesandchains = "YaC"
-  scheduler = "YaS"; yas = "YaS"; yesandscheduler = "YaS"
-  yaa = "YaA"; apothecary = "YaA"; yaapothecary = "YaA"; yesandapothecary = "YaA"
-  yab = "YaB"; budget = "YaB"; yesandbudget = "YaB"
-  yae = "YaE"; everything = "YaE"; yesandeverything = "YaE"
-  yaag = "YaAg"; agents = "YaAg"; yesandagents = "YaAg"
+  htbh = "Hordes"; hbh = "Hordes"; herebehordes = "Hordes"; hordes = "Hordes"
+  br = "Rising"; brackishrising = "Rising"; rising = "Rising"
+  yac = "Chains"; chains = "Chains"; yesandchains = "Chains"
+  scheduler = "Scheduler"; yas = "Scheduler"; yesandscheduler = "Scheduler"
+  yaa = "Apothecary"; apothecary = "Apothecary"; yaapothecary = "Apothecary"; yesandapothecary = "Apothecary"
+  yab = "Budget"; budget = "Budget"; yesandbudget = "Budget"
+  yae = "Everything"; everything = "Everything"; yesandeverything = "Everything"
+  yaag = "Agents"; agents = "Agents"; yesandagents = "Agents"
   all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
 }
 try {
@@ -601,7 +620,7 @@ try {
     foreach ($it in $q.items) {
       $qp = ("" + $it.project).ToLowerInvariant()
       $key = $QUEUE_ALIAS[$qp]
-      if (-not $key) { $key = "YaE" }
+      if (-not $key) { $key = "Everything" }
       $st = "" + $it.status
       if ($st -eq "pending") { $qCounts[$key] = 1 + [int]$qCounts[$key] }
       elseif ($st -eq "blocked" -or $st -eq "blocked-on-user") { $qWaiting[$key] = 1 + [int]$qWaiting[$key] }
