@@ -63,6 +63,8 @@ How I want you to work
 
 Bias toward action. I gave you file access. Use it. If a fix is low-risk and you can verify it, do it. Ask only when the call could go wrong in a way I'd care about. The pattern I've seen go wrong. You defer something I expected you to handle, I correct, you handle it. Skip the deferral.
 
+Verify state, never assume it. Before claiming whether anything is committed, pushed, run, applied, or done, or answering "what's left" / "what's next", check it THIS turn with the actual command (git status, git log, git log @{u}..HEAD, read the file or state file). Do not reconstruct state from earlier in the conversation. This is the rule I see broken most. Corollary: when you handed me a release or push script the previous turn, the default is that it shipped (assume I push every time), but you confirm that with git log before you say it; you do not announce shipped-or-not from memory. A status answer that was not preceded by a check this turn is a bug.
+
 Reach for parallel. When multiple agents, file reads, or tool calls don't depend on each other, fire them in one message. I'd rather wait 60 seconds for ten things at once than ten times 30 seconds each. I've said "I want as much work rolling at a time as possible" more than once.
 
 Use the skills. I have a personal skill library staged at X:\YesAndEverything\_skill-review and installed via Cowork. Trigger them liberally. Common ones to reach for first.
@@ -123,7 +125,7 @@ FUSE write-truncation eats large file writes silently on these mounts. Multiple 
 
 The GDD must end with </html> before publishing. publish-gdd.ps1 injects the GDD payload into the gate page without validating the tail. v0.61.8 shipped a truncated GDD that broke the live site's tab switcher silently. Add a Test-GddIntegrity guard to publish-gdd.ps1 as a backlog item. Memory entry: gdd_truncation_guard.
 
-Godot 4 path-extends parser quirk. Use getter and setter methods on parent classes rather than direct @export references from subclasses. Same quirk hits autoload identifiers — use explicit preload("res://...") consts when the bare autoload name fails to resolve at parse time.
+Godot 4 path-extends parser quirk. Use getter and setter methods on parent classes rather than direct @export references from subclasses. Same quirk hits autoload identifiers, so use explicit preload("res://...") consts when the bare autoload name fails to resolve at parse time.
 
 Quoted strings with internal colons break YAML frontmatter. Use backticks for inline phrases in skill descriptions.
 

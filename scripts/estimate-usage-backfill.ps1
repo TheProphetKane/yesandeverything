@@ -37,14 +37,14 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
 $REPOS = @(
-  @{ id = "HBH"; path = "X:\HereBeHordes" },
-  @{ id = "BR";  path = "X:\BrackishRising" },
-  @{ id = "YaC"; path = "X:\YesAndChains" },
-  @{ id = "YaS"; path = "X:\YesAndScheduler" },
-  @{ id = "YaA"; path = "X:\YesAndApothecary" },
-  @{ id = "YaB"; path = "X:\YesAndBudget" },
-  @{ id = "YaE"; path = "X:\YesAndEverything" },
-  @{ id = "YaAg"; path = "X:\YesAndAgents" }
+  @{ id = "Hordes";     path = "X:\HereBeHordes" },
+  @{ id = "Rising";     path = "X:\BrackishRising" },
+  @{ id = "Chains";     path = "X:\YesAndChains" },
+  @{ id = "Scheduler";  path = "X:\YesAndScheduler" },
+  @{ id = "Apothecary"; path = "X:\YesAndApothecary" },
+  @{ id = "Budget";     path = "X:\YesAndBudget" },
+  @{ id = "Everything"; path = "X:\YesAndEverything" },
+  @{ id = "Agents";     path = "X:\YesAndAgents" }
 )
 
 $UsagePath = Join-Path $RepoRoot "dashboard\data\usage.json"
