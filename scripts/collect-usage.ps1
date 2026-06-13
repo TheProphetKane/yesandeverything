@@ -42,7 +42,10 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
-$ATTRIB_VERSION = 6   # v6: dropped the bare "Scheduler" substring pattern that
+$ATTRIB_VERSION = 7   # v7: path-less usage records inherit the last project actually
+                      # touched (carry-forward context) instead of the whole-session
+                      # majority, so mixed sessions split by what was touched.
+                      # v6: dropped the bare "Scheduler" substring pattern that
                       # hijacked cross-project scheduled-task sessions; the legacy
                       # X:\Scheduler repo is now matched by anchored cwd path only.
                       # v5: word ids everywhere (Hordes/Rising/Chains/Scheduler/
@@ -351,11 +354,12 @@ foreach ($root in $SCAN_ROOTS) {
       # project name happened to appear first. All field extraction is
       # regex-on-raw-line; no per-line JSON parsing.
       $records = New-Object System.Collections.Generic.List[object]
+      $ctxProj = $null   # last project actually touched; carried forward to path-less records
       foreach ($line in $body -split "`n") {
         if (-not $line) { continue }
         $newLines++
         $lineHit = Get-ProjectFor $line
-        if ($lineHit) { if ($votes.ContainsKey($lineHit)) { $votes[$lineHit]++ } else { $votes[$lineHit] = 1 } }
+        if ($lineHit) { if ($votes.ContainsKey($lineHit)) { $votes[$lineHit]++ } else { $votes[$lineHit] = 1 }; $ctxProj = $lineHit }
         $ui = $line.IndexOf('"usage"')
         if ($ui -lt 0) { continue }
         # read the token counts only from a small window starting at the usage
@@ -374,7 +378,7 @@ foreach ($root in $SCAN_ROOTS) {
         $msgId = RxVal $RX_MID $line
         $strong = $null
         $cwdS = RxVal $RX_CWD $line
-        if ($cwdS) { $strong = Get-ProjectFor $cwdS }
+        if ($cwdS) { $strong = Get-ProjectFor $cwdS; if ($strong) { $ctxProj = $strong } }
         $ts = $null
         $tsS = RxVal $RX_TS $line
         if ($tsS) { try { $ts = [datetime]$tsS } catch { $ts = $null } }
@@ -385,7 +389,7 @@ foreach ($root in $SCAN_ROOTS) {
         if ($ts) { $lastTs = $ts }
         elseif ($lastTs) { $ts = $lastTs }
         else { $ts = $f.CreationTime; $tsFallbacks++ }
-        $rec = @{ strong = $strong; lineHit = $lineHit; msgId = $msgId; ts = $ts; usage = $usage; model = $model }
+        $rec = @{ strong = $strong; lineHit = $lineHit; ctx = $ctxProj; msgId = $msgId; ts = $ts; usage = $usage; model = $model }
         # Dedupe: one message id = one usage, globally. Transcript copies and
         # interleaved repeats of the same message must not double-count.
         if ($msgId) {
@@ -403,7 +407,8 @@ foreach ($root in $SCAN_ROOTS) {
       foreach ($r in $records) {
         $proj = $r.strong
         if (-not $proj) { $proj = $r.lineHit }
-        if (-not $proj) { $proj = $fileProj }
+        if (-not $proj) { $proj = $r.ctx }      # follow the work: last project touched
+        if (-not $proj) { $proj = $fileProj }   # session majority is the last resort, not the default
         if (-not $proj) { $proj = "Everything"; $fallbackYaE++ }
         $usageRecords++
         if (-not $oldestTs -or $r.ts -lt $oldestTs) { $oldestTs = $r.ts }
