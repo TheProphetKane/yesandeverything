@@ -1104,7 +1104,11 @@
     requestAnimationFrame(tick);
   }
   function fetchJson(path) {
-    return fetch(path, { cache: "no-store" }).then(function (r) {
+    // Cache-bust: GitHub Pages' CDN can serve a stale data file even when the
+    // page is fresh, and {cache:"no-store"} only governs the browser, not the
+    // CDN edge. A unique query string per load forces a fresh fetch every time.
+    var bust = (path.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
+    return fetch(path + bust, { cache: "no-store" }).then(function (r) {
       if (!r.ok) return null;
       return r.json().catch(function () { return null; });
     }).catch(function () { return null; });
