@@ -83,6 +83,21 @@ $PROJECT_PATTERNS = @(
   @{ pat = "bar-raise-yaa";       id = "Apothecary" },
   @{ pat = "audit-yab";           id = "Budget" },
   @{ pat = "bar-raise-yab";       id = "Budget" },
+  # renamed (2026-06-13) project audit slugs; old htbh/brackish/yac/yab kept above as aliases
+  @{ pat = "audit-hordes";        id = "Hordes" },
+  @{ pat = "audit-rising";        id = "Rising" },
+  @{ pat = "audit-chains";        id = "Chains" },
+  @{ pat = "audit-budget";        id = "Budget" },
+  @{ pat = "audit-everything";    id = "Everything" },
+  # cross-project scheduled tasks -> Everything: they touch every repo by design,
+  # so they must never attribute to whichever repo their prompt happens to mention.
+  @{ pat = "loop-tick";           id = "Everything" },
+  @{ pat = "queue-drain";         id = "Everything" },
+  @{ pat = "queue-triage";        id = "Everything" },
+  @{ pat = "handler-audit";       id = "Everything" },
+  @{ pat = "working-tree-scan";   id = "Everything" },
+  @{ pat = "cross-project-digest"; id = "Everything" },
+  @{ pat = "self-reprompt-loop";  id = "Everything" },
   # repo folder names (match X:\ paths, /mnt/ paths, and dir-encoded forms)
   @{ pat = "HereBeHordes";        id = "Hordes" },
   @{ pat = "HereThereBeHordes";   id = "Hordes" },
