@@ -42,7 +42,10 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 
-$ATTRIB_VERSION = 7   # v7: path-less usage records inherit the last project actually
+$ATTRIB_VERSION = 8   # v8: scheduled-task runs attribute wholly to their task's
+                      # project by the <scheduled-task name> tag, beating the
+                      # queue-driven majority (fixes nightly audits landing in Everything).
+                      # v7: path-less usage records inherit the last project actually
                       # touched (carry-forward context) instead of the whole-session
                       # majority, so mixed sessions split by what was touched.
                       # v6: dropped the bare "Scheduler" substring pattern that
@@ -400,12 +403,21 @@ foreach ($root in $SCAN_ROOTS) {
       }
 
       # Pass 2: resolve attribution and bank the records.
+      # Scheduled-task identity override: a scheduled run carries a
+      # <scheduled-task name="<id>"> tag at the top of its transcript. Attribute
+      # the WHOLE session to that task's project (audit-scheduler -> Scheduler,
+      # cross-project tasks -> Everything), beating content majority - these
+      # sessions also write to the YaE work-queue, which otherwise drags the
+      # majority vote to Everything and zeroes the audited project.
+      $taskProj = $null
+      if ($body -match 'scheduled-task name=[''"\\]*([\w-]+)') { $taskProj = Get-ProjectFor $matches[1] }
       $fileProj = $null
-      if ($votes.Count -gt 0) { $fileProj = ($votes.GetEnumerator() | Sort-Object -Property Value -Descending | Select-Object -First 1).Key }
+      if ($taskProj) { $fileProj = $taskProj }
+      elseif ($votes.Count -gt 0) { $fileProj = ($votes.GetEnumerator() | Sort-Object -Property Value -Descending | Select-Object -First 1).Key }
       if (-not $fileProj) { $fileProj = Get-ProjectFor $key }
       $fileTok = [long]0
       foreach ($r in $records) {
-        $proj = $r.strong
+        $proj = if ($taskProj) { $taskProj } else { $r.strong }   # scheduled-task identity wins outright
         if (-not $proj) { $proj = $r.lineHit }
         if (-not $proj) { $proj = $r.ctx }      # follow the work: last project touched
         if (-not $proj) { $proj = $fileProj }   # session majority is the last resort, not the default
