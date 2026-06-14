@@ -286,3 +286,22 @@ Set-Location -LiteralPath $__repoRoot
 ```
 
 New scripts ship with this from the start. When providing a push or release command in chat, always lead with `cd X:\<repo>` so it never runs against the wrong repo. The one-time patcher that backfilled existing scripts is `scripts/enforce-self-cd.ps1` (idempotent, validates each file parses, writes .bak backups).
+
+
+## Git safety on FUSE mounts (added 2026-06-14)
+
+The workspace is a FUSE mount where two git hazards recur and have repeatedly corrupted `.git`:
+
+1. **Stale-vs-live lock.** A crashed or raced git op leaves `.git\index.lock` (or `HEAD.lock`). Blindly deleting it is wrong when a LIVE git process (a concurrent loop tick, scheduled audit, or a second session) holds it. Deleting a live lock is the race that NUL-truncated `.git\config` and knocked `refs/heads/main` out of loose refs on 2026-06-14.
+2. **Truncated git writes.** A git write can land truncated, leaving NUL bytes in `.git\config` / `packed-refs` or an unborn `HEAD`. Recovery: `unstick-git.ps1` clears locks; if `HEAD` is unborn but `packed-refs` has the sha, `git update-ref refs/heads/main <sha>`.
+
+Standard: any script or loop step that does a git write dot-sources `scripts/git-guard.ps1` and calls `Assert-GitSafe` before the write and `Confirm-GitIntact` after.
+
+```powershell
+. (Join-Path $PSScriptRoot "git-guard.ps1")
+Assert-GitSafe -RepoRoot $repoRoot      # clears stale locks; waits then aborts on a live one
+# ... git add / commit / push ...
+Confirm-GitIntact -RepoRoot $repoRoot   # fails loud on post-write .git corruption
+```
+
+`Assert-GitSafe` replaces the old blind `Remove-Item .git\index.lock` pattern. Propagate it to every project's `push-to-github.ps1`, `release.ps1`, and `write-dashboard-status.ps1`, and to the loop/audit skills' git steps. Per the cross-project-consistency rule, the standard is updated HERE first, then propagated. Wired into YaE `scripts/push-to-github.ps1` first as the reference adoption.

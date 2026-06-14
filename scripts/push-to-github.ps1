@@ -10,11 +10,9 @@ $here = $PSScriptRoot
 $repoRoot = Resolve-Path (Join-Path $here "..")
 Set-Location $repoRoot
 
-# --- FUSE bug guard: clear stale .git\index.lock. ---
-$lockFile = Join-Path $repoRoot ".git\index.lock"
-if (Test-Path $lockFile) {
-    Remove-Item $lockFile -Force -ErrorAction SilentlyContinue
-}
+# --- FUSE-mount git safety: clear stale locks ONLY if no live git process. ---
+. (Join-Path $here "git-guard.ps1")
+Assert-GitSafe -RepoRoot $repoRoot
 
 # Helper: bail if previous git command failed.
 function Assert-GitOk($step) {
@@ -126,5 +124,7 @@ git push origin main
 Assert-GitOk "push"
 
 Write-Host ""
+Confirm-GitIntact -RepoRoot $repoRoot
+
 Write-Host "Done. Latest commit:" -ForegroundColor Green
 git log -1 --oneline
