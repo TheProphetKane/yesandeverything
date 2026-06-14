@@ -34,7 +34,7 @@ $projects = @(
   @{ Key = "YaC"; Name = "Yes& Chains";     Path = "X:\YesAndChains" }
   @{ Key = "YaB"; Name = "Yes& Budget";     Path = "X:\YesAndBudget" }
   @{ Key = "YaA"; Name = "Yes& Apothecary"; Path = "X:\YesAndApothecary" }
-  @{ Key = "YaS"; Name = "Scheduler";       Path = "X:\Scheduler" }
+  @{ Key = "YaS"; Name = "Scheduler";       Path = "X:\YesAndScheduler" }
   @{ Key = "YaE"; Name = "Yes& Everything"; Path = "X:\YesAndEverything" }
 )
 
