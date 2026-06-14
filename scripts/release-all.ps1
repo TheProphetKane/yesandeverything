@@ -1,0 +1,118 @@
+<#
+release-all.ps1 - run every project's release.ps1 in sequence.
+
+One orchestrator over the per-project release scripts. Each project keeps owning
+its own bump, commit, push, and publish; this only walks them in order, clears
+any stale git lock first, keeps going when one fails, and prints a summary at
+the end. No prompts.
+
+Order: leaf projects first, the YaE hub last, so the hub release captures any
+landing-page or status-JSON changes the others mirror in.
+
+Per-project release.ps1 parameter shapes differ, so args are set per project:
+  HBH / BR / YaC / Scheduler / YaE  auto-detect, take no message
+  Apothecary                        builds a message from the tree if none given
+  Budget                            a bump needs a real message, else -Bump none
+
+Usage:
+  .\scripts\release-all.ps1
+  .\scripts\release-all.ps1 -Message "cross-project maintenance pass"
+  .\scripts\release-all.ps1 -Only HBH,YaC
+  .\scripts\release-all.ps1 -DryRun
+#>
+param(
+  [string]$Message = "",
+  [string[]]$Only,
+  [switch]$DryRun
+)
+
+$ErrorActionPreference = "Continue"
+
+$projects = @(
+  @{ Key = "HBH"; Name = "Here Be Hordes";  Path = "X:\HereBeHordes" }
+  @{ Key = "BR";  Name = "Brackish Rising"; Path = "X:\BrackishRising" }
+  @{ Key = "YaC"; Name = "Yes& Chains";     Path = "X:\YesAndChains" }
+  @{ Key = "YaB"; Name = "Yes& Budget";     Path = "X:\YesAndBudget" }
+  @{ Key = "YaA"; Name = "Yes& Apothecary"; Path = "X:\YesAndApothecary" }
+  @{ Key = "YaS"; Name = "Scheduler";       Path = "X:\Scheduler" }
+  @{ Key = "YaE"; Name = "Yes& Everything"; Path = "X:\YesAndEverything" }
+)
+
+function Get-ReleaseArgs([string]$key, [string]$msg) {
+  switch ($key) {
+    "YaA"   { if ($msg) { return @("-Message", $msg) } else { return @() } }
+    "YaB"   { if ($msg) { return @("-Message", $msg) } else { return @("-Bump", "none") } }
+    default { return @() }
+  }
+}
+
+$results = @()
+
+foreach ($p in $projects) {
+  if ($Only -and ($Only -notcontains $p.Key)) { continue }
+
+  $script = Join-Path $p.Path "scripts\release.ps1"
+  $line = [ordered]@{ Project = $p.Name; Key = $p.Key; Status = ""; Seconds = 0; Note = "" }
+
+  if (-not (Test-Path $p.Path)) {
+    $line.Status = "skipped"; $line.Note = "repo not found"
+    $results += [pscustomobject]$line; continue
+  }
+  if (-not (Test-Path $script)) {
+    $line.Status = "skipped"; $line.Note = "no scripts\release.ps1"
+    $results += [pscustomobject]$line; continue
+  }
+
+  $relArgs = Get-ReleaseArgs $p.Key $Message
+
+  Write-Host ""
+  Write-Host ("=" * 72) -ForegroundColor DarkCyan
+  Write-Host (">> {0}  ({1})" -f $p.Name, $p.Path) -ForegroundColor Cyan
+  Write-Host ("   release.ps1 {0}" -f ($relArgs -join " ")) -ForegroundColor DarkGray
+  Write-Host ("=" * 72) -ForegroundColor DarkCyan
+
+  if ($DryRun) {
+    $line.Status = "dry-run"; $line.Note = ("release.ps1 " + ($relArgs -join " ")).Trim()
+    $results += [pscustomobject]$line; continue
+  }
+
+  $sw = [System.Diagnostics.Stopwatch]::StartNew()
+  Push-Location $p.Path
+  try {
+    foreach ($lock in @(".git\index.lock", ".git\HEAD.lock")) {
+      if (Test-Path $lock) {
+        Remove-Item -Force $lock -ErrorAction SilentlyContinue
+        Write-Host ("   cleared stale {0}" -f $lock) -ForegroundColor Yellow
+      }
+    }
+
+    $global:LASTEXITCODE = 0
+    & $script @relArgs
+    $code = $LASTEXITCODE
+
+    if ($code -and $code -ne 0) { $line.Status = "failed"; $line.Note = "exit $code" }
+    else { $line.Status = "ok" }
+  }
+  catch {
+    $line.Status = "failed"; $line.Note = $_.Exception.Message
+  }
+  finally {
+    Pop-Location
+    $sw.Stop(); $line.Seconds = [math]::Round($sw.Elapsed.TotalSeconds, 1)
+  }
+
+  $results += [pscustomobject]$line
+}
+
+Write-Host ""
+Write-Host ("=" * 72) -ForegroundColor DarkCyan
+Write-Host "RELEASE-ALL SUMMARY" -ForegroundColor Cyan
+Write-Host ("=" * 72) -ForegroundColor DarkCyan
+$results | Format-Table Project, Key, Status, Seconds, Note -AutoSize
+
+$failed = @($results | Where-Object { $_.Status -eq "failed" })
+if ($failed.Count -gt 0) {
+  Write-Host ("{0} project(s) failed; the rest still ran. See output above." -f $failed.Count) -ForegroundColor Red
+  exit 1
+}
+Write-Host "All requested releases finished." -ForegroundColor Green
