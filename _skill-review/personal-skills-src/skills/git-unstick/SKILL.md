@@ -1,5 +1,7 @@
 ---
 name: git-unstick
+> **Git safety (FUSE mounts):** Before any `git add`/`commit`/`push`, dot-source `scripts/git-guard.ps1` and call `Assert-GitSafe` (clears a stale lock ONLY when no git process is live; waits then aborts on a live one), then `Confirm-GitIntact` after the push. Do NOT blind-delete `.git/index.lock` - deleting a lock a live process holds is what NUL-corrupts `.git/config` and knocks `refs/heads/main` out of loose refs on this mount. Standard: `CLAUDE_SETTINGS.md` section "Git safety on FUSE mounts".
+
 description: Diagnose and recover a stuck git repo on Nick's FUSE-mounted Windows workspace. Use whenever git fails with stale `.git/index.lock`, "Another git process seems to be running", non-fast-forward push rejections ("Updates were rejected because the remote contains work"), interrupted rebases, mid-merge state, or any "git is stuck / git won't push / fix my git / unstick git / push rejected / stale lock / rebase in progress / remote ahead / cant push" situation. Also trigger on terse forms like "git broken", "pull is jammed", "FUSE killed my repo again". Pushy triggering on purpose — false-positive cost is one extra `git status` read, false-negative cost is Nick fighting PowerShell. Works on any of his repos (HBH, YaC, Scheduler, YaE) by auto-detecting from cwd or accepting a path.
 ---
 

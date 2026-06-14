@@ -113,6 +113,8 @@ If the bar-raise was triggered manually (not scheduled) and the user wants the d
 
 ```
 cd X:\YesAndEverything
+> **Git safety (FUSE mounts):** Before any `git add`/`commit`/`push`, dot-source `scripts/git-guard.ps1` and call `Assert-GitSafe` (clears a stale lock ONLY when no git process is live; waits then aborts on a live one), then `Confirm-GitIntact` after the push. Do NOT blind-delete `.git/index.lock` - deleting a lock a live process holds is what NUL-corrupts `.git/config` and knocks `refs/heads/main` out of loose refs on this mount. Standard: `CLAUDE_SETTINGS.md` section "Git safety on FUSE mounts".
+
 git commit -m "status($project): bar-raise YYYY-MM-DD"
 git push
 ```

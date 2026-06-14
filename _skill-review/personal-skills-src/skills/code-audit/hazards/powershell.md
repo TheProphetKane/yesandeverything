@@ -32,6 +32,8 @@ These scripts auto-commit and auto-push with no y/n. Reintroducing prompts is a 
 
 Reference: memory `no_confirmation_prompts`.
 
+> **Git safety (FUSE mounts):** Before any `git add`/`commit`/`push`, dot-source `scripts/git-guard.ps1` and call `Assert-GitSafe` (clears a stale lock ONLY when no git process is live; waits then aborts on a live one), then `Confirm-GitIntact` after the push. Do NOT blind-delete `.git/index.lock` - deleting a lock a live process holds is what NUL-corrupts `.git/config` and knocks `refs/heads/main` out of loose refs on this mount. Standard: `CLAUDE_SETTINGS.md` section "Git safety on FUSE mounts".
+
 ### Stale .git/index.lock not cleared
 
 ```powershell
@@ -41,9 +43,10 @@ git commit -m "..."
 
 Fix:
 ```powershell
-$lock = ".git\index.lock"
-if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
+. (Join-Path $PSScriptRoot "git-guard.ps1")
+Assert-GitSafe          # process-aware: clears a stale lock, waits/aborts on a live one
 git commit -m "..."
+Confirm-GitIntact       # fails loud if the write truncated .git/config or refs
 ```
 
 Reference: memory `git_index_lock_quirk`.

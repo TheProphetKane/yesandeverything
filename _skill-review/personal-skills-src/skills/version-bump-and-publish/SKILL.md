@@ -140,6 +140,8 @@ Apply the edits to all files. Then run the project's release flow:
 | Project | Release command |
 |---|---|
 | HBH | `cd X:\HereBeHordes; .\scripts\release.ps1` (commit + push HBH + publish GDD to YaE in one shot) |
+> **Git safety (FUSE mounts):** Before any `git add`/`commit`/`push`, dot-source `scripts/git-guard.ps1` and call `Assert-GitSafe` (clears a stale lock ONLY when no git process is live; waits then aborts on a live one), then `Confirm-GitIntact` after the push. Do NOT blind-delete `.git/index.lock` - deleting a lock a live process holds is what NUL-corrupts `.git/config` and knocks `refs/heads/main` out of loose refs on this mount. Standard: `CLAUDE_SETTINGS.md` section "Git safety on FUSE mounts".
+
 | YaC | check `package.json` scripts or `sync.ps1` at repo root; otherwise manual: `git add -A; git commit -m "..."; git push` |
 | Scheduler | manual: `git add -A; git commit -m "..."; git push` (release is via `pnpm --filter api deploy` separately, not part of the version bump) |
 | YaE | manual: `git add -A; git commit -m "..."; git push` |

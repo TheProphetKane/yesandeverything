@@ -275,6 +275,8 @@ GDD changelog entries and GitHub-visible content **read as a solo dev tracking o
 
 ## Things that will bite you
 
+> **Git safety (FUSE mounts):** Before any `git add`/`commit`/`push`, dot-source `scripts/git-guard.ps1` and call `Assert-GitSafe` (clears a stale lock ONLY when no git process is live; waits then aborts on a live one), then `Confirm-GitIntact` after the push. Do NOT blind-delete `.git/index.lock` - deleting a lock a live process holds is what NUL-corrupts `.git/config` and knocks `refs/heads/main` out of loose refs on this mount. Standard: `CLAUDE_SETTINGS.md` section "Git safety on FUSE mounts".
+
 - **`.git/index.lock` can survive between sessions** on FUSE-mounted repos. Any PowerShell script that touches git should `rm -f .git/index.lock` first.
 - **Godot path-extends parser quirk:** referencing a parent class's `@export` directly from a subclass can fail. Use getter/setter methods on the parent.
 - **Asset paths drift.** Centralize tile sizes and frame counts in a constants autoload rather than re-defining them per scene.
