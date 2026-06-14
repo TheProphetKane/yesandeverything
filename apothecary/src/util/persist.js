@@ -1,9 +1,19 @@
-// persist.js — save and restore state to localStorage.
+// persist.js - save and restore state to localStorage.
 //
 // Versioned key so future schema migrations are explicit.
 // Debounced save so we don't write on every keystroke.
 
 const STORAGE_KEY = 'yesandapothecary.v1.state';
+
+// Broadcast a storage write failure so the editor can show a status line.
+// Detail carries which store failed and the error name (QuotaExceededError,
+// SecurityError when storage is disabled, etc).
+export function notifyStorageError(key, err) {
+  if (typeof document === 'undefined') return;
+  document.dispatchEvent(new CustomEvent('yaa:storage-error', {
+    detail: { key, error: err && err.name ? err.name : 'StorageError' },
+  }));
+}
 
 export function loadState() {
   try {
@@ -17,11 +27,21 @@ export function loadState() {
   }
 }
 
+// Warn once per failure streak; the debounced autosave fires constantly and
+// must not spam the status line while the quota stays exceeded. A successful
+// save resets the flag so a later failure warns again.
+let autosaveWarned = false;
+
 export function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Quota exceeded or storage disabled. Silent — persistence is a nice-to-have.
+    autosaveWarned = false;
+  } catch (err) {
+    // Persistence is best-effort, but silent loss used to masquerade as saved.
+    if (!autosaveWarned) {
+      autosaveWarned = true;
+      notifyStorageError('state', err);
+    }
   }
 }
 

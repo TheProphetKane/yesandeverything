@@ -1,4 +1,4 @@
-// autofit.js — shrink a single-line text element to fit its parent width.
+// autofit.js - shrink a single-line text element to fit its parent width.
 //
 // Caller is responsible for gating the first call on document.fonts.ready,
 // otherwise scrollWidth is read before the display font is loaded and the

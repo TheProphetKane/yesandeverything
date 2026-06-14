@@ -1,4 +1,4 @@
-// shop-name.js — inline edit affordance for the shop name in the header,
+// shop-name.js - inline edit affordance for the shop name in the header,
 // plus a color picker (v0.8.2) so users can tint the title independently of
 // the theme's gold-bright.
 //

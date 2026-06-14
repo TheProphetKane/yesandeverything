@@ -1,4 +1,4 @@
-// lookup.js — fuzzy match a user-entered herb name against the DB.
+// lookup.js - fuzzy match a user-entered herb name against the DB.
 //
 // Order of operations: normalize → alias → exact → prefix → contains.
 // Returns the herb record or null.

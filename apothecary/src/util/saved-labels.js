@@ -1,4 +1,6 @@
 // saved-labels.js - localStorage list of named label snapshots.
+
+import { notifyStorageError } from './persist.js';
 //
 // Schema per entry: { id, name, createdAt, updatedAt, state }
 // state is a full state snapshot from the main store.
@@ -17,8 +19,12 @@ function read() {
 function write(list) {
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
-  } catch {
-    // Quota exceeded — silent, since persistence is best-effort.
+    return true;
+  } catch (err) {
+    // Saving a label is an explicit user action, so every failed write
+    // surfaces a warning, not just the first.
+    notifyStorageError('saved-labels', err);
+    return false;
   }
 }
 

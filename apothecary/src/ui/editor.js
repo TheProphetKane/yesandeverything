@@ -279,6 +279,13 @@ export function mountEditor(root, ctx) {
   const statusMsg  = $('status-msg');
   const printBtn   = $('btn-print');
   const resetBtn   = $('btn-reset');
+
+  // localStorage write failures (quota exceeded, storage disabled) raised by
+  // persist.js / saved-labels.js land here as a one-line warning.
+  document.addEventListener('yaa:storage-error', () => {
+    statusMsg.textContent = 'Storage is full. Changes may not save. Delete unused saved labels.';
+    statusMsg.className = 'status-msg warn';
+  });
   const runeChar = [$('r1Char'), $('r2Char'), $('r3Char')];
   const runeMean = [$('r1Mean'), $('r2Mean'), $('r3Mean')];
 
