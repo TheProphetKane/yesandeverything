@@ -46,20 +46,22 @@ function Get-ReleaseArgs([string]$key, [string]$msg) {
   }
 }
 
-# Pull the real reason out of a failed project's captured output. Prefers the
-# last line that looks like an error; falls back to the last non-empty line.
-function Get-FailReason($cap, $code) {
-  $rx = '(?i)(pre-flight|fail|error|not recognized|cannot|unable|abort|denied|rejected|exception|missing|fatal|not found|conflict|no such|is not)'
-  for ($i = $cap.Count - 1; $i -ge 0; $i--) { $t = ([string]$cap[$i]).Trim(); if ($t -and $t -match $rx) { return $t } }
-  for ($i = $cap.Count - 1; $i -ge 0; $i--) { $t = ([string]$cap[$i]).Trim(); if ($t) { return $t } }
-  return "exit $code (no diagnostic text captured)"
+# A non-zero exit alone is NOT a failure: release scripts leak sub-command exit
+# codes (git diff, findstr, test runners) on a clean run. Decide from the output.
+# Returns the strongest genuine-failure line, or $null if nothing looks like one.
+function Get-StrongFail($cap) {
+  $strong = '(?i)(\bFAILED\b|fatal:|error:|\bException\b|not recognized|is not valid|ParserError|\brejected\b|cannot find path|unable to|index\.lock)'
+  $noise  = '(?i)(no conflict markers|integrity ok|^pass\b|\.test\.|tests?:)'
+  for ($i = $cap.Count - 1; $i -ge 0; $i--) {
+    $t = ([string]$cap[$i]).Trim()
+    if ($t -and ($t -match $strong) -and ($t -notmatch $noise)) { return $t }
+  }
+  return $null
 }
-# Last few meaningful lines, for the per-failure detail block.
-function Get-FailTail($cap) {
-  $lines = @($cap | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ })
-  if ($lines.Count -eq 0) { return "" }
-  $start = [Math]::Max(0, $lines.Count - 8)
-  return ($lines[$start..($lines.Count - 1)] -join "`n")
+# Did the release clearly complete its work despite a leaked non-zero exit?
+function Test-ReleaseSucceeded($cap) {
+  $blob = ($cap -join "`n")
+  return ($blob -match '(?i)(Release complete|Pushed to origin|pushed to|to https?://\S+\.git|everything up-to-date|nothing (new )?to commit|set up to track)')
 }
 
 $results = @()
@@ -95,7 +97,6 @@ foreach ($p in $projects) {
   $sw = [System.Diagnostics.Stopwatch]::StartNew()
   Push-Location $p.Path
   $cap = New-Object System.Collections.Generic.List[string]
-  $line.Detail = ""
   try {
     foreach ($lock in @(".git\index.lock", ".git\HEAD.lock")) {
       if (Test-Path $lock) {
@@ -105,23 +106,30 @@ foreach ($p in $projects) {
     }
 
     $global:LASTEXITCODE = 0
-    # Merge ALL streams (incl. Write-Host via the information stream, where the
-    # per-project pre-flight reasons print) so the failure cause is recoverable,
-    # while still echoing each line live.
-    & $script @relArgs *>&1 | ForEach-Object {
-      $text = if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.ToString() } else { [string]$_ }
+    # Capture all streams (incl. Write-Host) by ASSIGNMENT so the child's true
+    # exit code survives, then echo. Pass/fail is decided from the OUTPUT, not the
+    # raw exit code - release scripts leak sub-command codes on a clean run.
+    $capRaw = & $script @relArgs *>&1
+    $code = $LASTEXITCODE
+    foreach ($o in $capRaw) {
+      $text = if ($o -is [System.Management.Automation.ErrorRecord]) { $o.ToString() } else { [string]$o }
       $cap.Add($text); Write-Host $text
     }
-    $code = $LASTEXITCODE
 
-    if ($code -and $code -ne 0) {
-      $line.Status = "failed"; $line.Note = Get-FailReason $cap $code; $line.Detail = Get-FailTail $cap
+    $hard = Get-StrongFail $cap
+    if ($hard) {
+      if ($hard -match '(?i)(already shipped|nothing (new )?to commit|up-to-date|no changes)') { $line.Status = "skipped"; $line.Note = $hard }
+      else { $line.Status = "failed"; $line.Note = $hard }
+    }
+    elseif ($code -and $code -ne 0 -and -not (Test-ReleaseSucceeded $cap)) {
+      $line.Status = "failed"; $line.Note = "exit $code (no error text; check this project's output above)"
     }
     else { $line.Status = "ok" }
   }
   catch {
     $cap.Add($_.Exception.Message)
-    $line.Status = "failed"; $line.Note = Get-FailReason $cap 1; $line.Detail = Get-FailTail $cap
+    $hard = Get-StrongFail $cap
+    $line.Status = "failed"; $line.Note = if ($hard) { $hard } else { $_.Exception.Message }
   }
   finally {
     Pop-Location
@@ -137,21 +145,12 @@ Write-Host "RELEASE-ALL SUMMARY" -ForegroundColor Cyan
 Write-Host ("=" * 72) -ForegroundColor DarkCyan
 $results | Format-Table Project, Key, Status, Seconds, Note -AutoSize -Wrap
 
+$skipped = @($results | Where-Object { $_.Status -eq "skipped" })
+if ($skipped.Count -gt 0) { Write-Host ("{0} skipped - nothing new to ship." -f $skipped.Count) -ForegroundColor DarkGray }
+
 $failed = @($results | Where-Object { $_.Status -eq "failed" })
 if ($failed.Count -gt 0) {
-  Write-Host ""
-  Write-Host "WHY EACH FAILURE HAPPENED" -ForegroundColor Red
-  Write-Host ("-" * 72) -ForegroundColor DarkGray
-  foreach ($f in $failed) {
-    Write-Host ("{0} ({1}) - {2}s" -f $f.Project, $f.Key, $f.Seconds) -ForegroundColor Red
-    Write-Host ("  reason: {0}" -f $f.Note) -ForegroundColor Yellow
-    if ($f.Detail) {
-      Write-Host "  last output:" -ForegroundColor DarkGray
-      foreach ($dl in ($f.Detail -split "`n")) { Write-Host ("    | {0}" -f $dl) -ForegroundColor DarkGray }
-    }
-    Write-Host ""
-  }
-  Write-Host ("{0} project(s) failed; the rest still ran." -f $failed.Count) -ForegroundColor Red
+  Write-Host ("{0} failed - the reason for each is in the Note column above." -f $failed.Count) -ForegroundColor Red
   exit 1
 }
 Write-Host "All requested releases finished." -ForegroundColor Green

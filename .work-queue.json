@@ -36,7 +36,8 @@
                   {
                       "id":  "yac-mnew-tool-ref-repoint",
                       "title":  "After 0.34.2 ships: repoint live tool references to tools/_archived/ (CONTEXT.md:210 scrape_pipeline.py; BACKLOG.md:395/496/1051 seed_courses.py + scrape_pipeline.py). Leave historical changelog rows untouched.",
-                      "status":  "pending",
+                      "status":  "blocked-on-user",
+                      "triageNote":  "2026-06-15T13:06Z queue-drain-4h triage: crossed the 14d threshold (created 2026-06-01, now 14d+2h, auto_safe:false). NOT archived - this is live, repeatedly-grounded drift-fix work, not stale-no-action, so archiving would lose a real finding. Reclassified pending->blocked-on-user per the established precedent (scheduler-m71, yac-stale-stash): the sole remaining action is Nick confirming the manual 'Course Data Gathering - Sonnet' scraper session is retired (superseded by cron_course_refresh.py / ADR 0021) before the CONTEXT.md:236 rewrite + BACKLOG 30.2 obsolete-mark in a focused session over the 336KB file. Reclassifying stops the 4h drain from re-evaluating a decision-gated item every run.",
                       "priority":  "P3",
                       "kind":  "drift-fix",
                       "auto_safe":  false,
@@ -167,9 +168,11 @@
                       "kind":  "cleanup",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "pending",
+                      "status":  "done",
                       "prompt":  "Tracked .bak committed at HEAD: scripts/uninstall-yab-protocol.ps1.bak (added v0.11.0 9d9f07f, missed by the 7d5bbff drop-tracked-bak pass; .gitignore *.bak cannot exclude an already-tracked file). Run: cd X:\\YesAndBudget; git rm --cached scripts/uninstall-yab-protocol.ps1.bak; delete from disk; then commit via scripts/release.ps1. auto_safe:false because it is a git-index op, not a pure file edit.",
                       "source":  "bar-raise-action: 2026-06-10 YaB bar-raise action#1 (HIGH) - manual executor run by loop tick 302. YaB canonical-audit auto-enqueue has dropped every item since 2026-06-07; landing the stranded Auto-enqueued list from CANONICAL_AUDIT-2026-06-10.md. Queue write proven safe via tmp+os.replace+readback (tick 301).",
+                      "lastWorkedAt":  "2026-06-15T13:06:16Z",
+                      "drainNote":  "2026-06-15T13:06Z queue-drain-4h: CLOSED, premise fully resolved. Verified at YaB HEAD 6c4037c (v0.13.2): git ls-files shows ZERO tracked .bak files, so the item's git-index action (git rm --cached scripts/uninstall-yab-protocol.ps1.bak) is moot - the file is no longer tracked. .gitignore line 58 carries *.bak, so the 3 .bak files still on disk (discord-notify.ps1.bak, push-to-github.ps1.bak, uninstall-yab-protocol.ps1.bak) are untracked and cannot ship. The only residue (cosmetic disk deletion of those untracked snapshots) is a shell op that pauses for Nick and is already captured in yab-barraise-closeout-2026-06-06 step 2. Nothing left for this item to do; closed done.",
                       "notes":  " 2026-06-12 drain note: premise partially stale - no .bak is tracked at HEAD anymore (v0.13.2 3afd788 dropped them; git ls-files confirms zero). Remainder is disk-only deletion of the two untracked gitignored snapshots, EPERM from sandbox; fold into the yab-barraise-closeout Nick step."
                   },
                   {
@@ -466,7 +469,9 @@
                       "kind":  "drift-fix",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "committed-ready",
+                      "status":  "done",
+                      "resolved":  "2026-06-15",
+                      "resolution":  "Closed by audit-hordes-nightly 2026-06-15. The sections 2-5 rewrite shipped as v0.98.7 (commit 9caa94b, now at HEAD) and is verified on disk: Architecture tab sections 2 Buildings / 3 Units / 4 Enemies / 5 UI map the world3d stack, and the 2D files they used to cite (building.gd, unit.gd, enemy_base/enemy_pool/enemy_renderer, gameplay.gd, iso_grid.gd) are confirmed absent. Successor for the one section the v0.98.7 pass did not reach is htbh-gdd-architecture-section1-2d-boot-drift-2026-06-15.",
                       "attempts":  0,
                       "source":  "audit-hordes-nightly / docs/CANONICAL_AUDIT-2026-06-13.md#D1",
                       "prompt":  "GDD Architecture tab is half-migrated. The intro (section 0) and the annotated file map (section 7) were updated to the 3D-only v0.98.6 state, but the body sections still document the 2D file stack retired in v0.98.5 as if it were live, with path:LINE refs and no disclaimer. Stale sections: section 2 Buildings (building.gd, new_building.gd, building_placer.gd), section 3 Player units and combat (unit.gd, new_unit.gd, barracks.gd), section 4 \u0027Enemies and waves (the dual-path system)\u0027 (enemy_base.gd, enemy_pool.gd, enemy_renderer.gd), section 5 UI and world (ui/hud/hud.gd, ui/gameplay/gameplay.gd, world/iso_grid.gd). None of those files exist on disk. Rewrite sections 2 through 5 to map source/world3d/: building_catalog_3d.gd + building_registry_3d.gd + placement_3d.gd for buildings; the 3D unit path; the single pooled enemy_field_3d.gd + crowd3d.gd MultiMesh path (collapse the dual-path narrative); world_3d.gd + iso_cam_3d.gd + grid3d.gd + nav3d.gd + fog_3d.gd + minimap_3d.gd for UI and world. Each new reference needs a fresh path:LINE (symbol) lookup against the 3D sources. Code-aware doc rewrite, not a text swap; requires reading world3d/. GDD update rule applies: bump the version pill and add a changelog entry when the rewrite ships.",
@@ -564,11 +569,40 @@
                       "attempts":  0,
                       "notes":  "2026-06-14 overnight drain: GUARD HALF DONE. scripts/check-status-json.ps1 rewritten to strip a trailing-NUL run and atomically heal the working-tree file (byte-level ReadAllBytes -\u003e trim trailing 0x00 -\u003e tmp+Move-Item+byte-readback) instead of hard-failing on any NUL. Embedded NUL (mid-file truncation), empty/all-NUL, non-brace tail, and parse failures still exit 1. Logic ported to Python and unit-tested on 7 cases (clean/trailing-nul/embedded/empty/all-nul/nonbrace/bad-json) all correct; heal verified byte-exact. No pwsh in sandbox so the .ps1 itself was not executed; it is a direct transcription using standard .NET APIs. committed-ready: ship via cd X:\\YesAndEverything; .\\scripts\\release.ps1 (shell pauses; note YaE git index is reportedly corrupt per yae-index-lock-clear-2026-06-12, clear that first). REMAINING (separate, cross-repo): the writer half - each project release.ps1 dashboard-JSON writer + bar-raise status writer should write atomically (tmp+fsync+replace) so the pad stops being produced upstream. attempts NOT incremented: slice succeeded.",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\yae-status-json-fuse-nullpad-2026-06-14.md"
+                  },
+                  {
+                      "id":  "htbh-gdd-architecture-section1-2d-boot-drift-2026-06-15",
+                      "added":  "2026-06-15",
+                      "lastNoticedAt":  "2026-06-15T06:13:00Z",
+                      "project":  "hbh",
+                      "kind":  "drift-fix",
+                      "auto_safe":  false,
+                      "priority":  "P2",
+                      "status":  "pending",
+                      "attempts":  0,
+                      "source":  "audit-hordes-nightly / docs/CANONICAL_AUDIT-2026-06-15.md#D2",
+                      "prompt":  "GDD Architecture tab Section 1 + the Design tab idle-Shambler note still map the retired 2D boot path. v0.98.7 rewrote sections 2-5 to the world3d stack but stopped at section 2, so the same drift class now sits in section 1. (1) Section 1.3 Bootstrap (GDD ~line 4690-4691) describes main.gd/main.tscn -> logos -> main menu -> play picker -> briefing -> gameplay.tscn and gameplay._ready() at source/ui/gameplay/gameplay.gd:222; play_picker, briefing, gameplay.tscn, gameplay.gd are all gone (retired v0.98.5). Rewrite to the live chain main.gd -> logos -> main menu -> CHOOSE MODE -> world_3d, re-anchored against world_3d.gd (_ready, wave/enemy seeding) and choose_mode.gd / run_config. (2) Section 1.4 signal bus (~line 4744, 4749) lists wave_director.horde_day_announced and gameplay.building_selected / units_selection_changed as live; both retired. Refresh those rows (the economy/game_clock/research rows are still correct). (3) Section 1.5 'Save is partial' (~line 4760) describes the 2D save shape; live save is _save_run/_load_run in world_3d.gd at SAVE_VERSION:1055. (4) Design tab idle-Shambler note (~line 2918, sec10/sec11) points at is_idle_spawn on enemy_base and source/enemies/enemy_base.gd + source/ui/gameplay/gameplay.gd, both dead; re-point onto enemy_field_3d.gd. Each new reference needs a fresh path:LINE (symbol) lookup against world_3d.gd and enemy_field_3d.gd. Code-aware doc rewrite, not a text swap. GDD update rule applies on the ship: bump the pill, add a descending-order changelog entry, atomic-write docs/GDD.html and tail-check </html> before publish.",
+                      "notes":  "Enqueued by audit-hordes-nightly 2026-06-15. Successor to htbh-gdd-architecture-tab-2d-stack-drift-2026-06-13 (sections 2-5, shipped v0.98.7). Version markers in lockstep at v0.98.8; no safe text-only fix existed this run, this is the only finding. Same fix shape as D1."
                   }
               ],
-    "updated":  "2026-06-15T02:55:25.9641853Z",
-    "last_triage":  "2026-06-15T01:09:51Z",
+    "updated":  "2026-06-15T13:06:16Z",
+    "last_triage":  "2026-06-15T13:06:16Z",
     "_triage_log":  [
+                        {
+                            "at":  "2026-06-15T13:06:16Z",
+                            "task":  "queue-drain-4h",
+                            "pending_before":  15,
+                            "archived":  0,
+                            "reclassified":  1,
+                            "pending_after":  13,
+                            "rule_hits":  {
+                                              "stale_14d":  0,
+                                              "stale_30d":  0,
+                                              "duplicate":  0
+                                          },
+                            "note":  "0 archived (conservative). yac-mnew-tool-ref-repoint crossed the 14d threshold this run (created 2026-06-01, now 14d+2h, auto_safe:false) but is live, repeatedly-grounded drift work gated on a Nick confirm, NOT stale-no-action - reclassified pending->blocked-on-user instead of archiving so the finding is preserved and the 4h drain stops re-evaluating it (same precedent as scheduler-m71, yac-stale-stash). No item >30d. No byte-identical same-project bodies (yab orphan items 06-07 vs 06-10 are distinct file sets; yab landing-flip vs d013-adr distinct). Drain closed yab-tracked-bak-rm-2026-06-10 as done (premise resolved: zero tracked .bak at HEAD, *.bak gitignored). pending_after counts the reclassify + the 1 drained close.",
+                            "mounts":  "all repos mounted (BR/HBH/YaB/YaC/YaA/Scheduler/YaE)"
+                        },
                         {
                             "at":  "2026-06-15T01:09:51Z",
                             "task":  "queue-drain-4h",
@@ -837,8 +871,17 @@
                             "note":  "0 archived (conservative). Oldest pending yac-mnew-tool-ref-repoint (created 2026-06-01, ~13.3d) - under 14d threshold. No item \u003e30d. No byte-identical same-project bodies. All 18 pending retained."
                         }
                     ],
-    "last_drain":  "2026-06-14T21:09:52Z",
+    "last_drain":  "2026-06-15T13:06:16Z",
     "_drain_log":  [
+                       {
+                           "at":  "2026-06-15T13:06:16Z",
+                           "task":  "queue-drain-4h",
+                           "drained":  "yab-tracked-bak-rm-2026-06-10",
+                           "disposition":  "closed-done (premise resolved, no shell write)",
+                           "outcome":  "completed",
+                           "note":  "Verified at YaB HEAD 6c4037c (v0.13.2): git ls-files = ZERO tracked .bak, so the item's git rm --cached action is moot. *.bak gitignored (line 58); the 3 remaining .bak are untracked disk snapshots that cannot ship, and their cosmetic deletion is already in yab-barraise-closeout step 2 (Nick-side shell). Closed done; no edits/commits made. Higher/equal-priority pending items left queued: P1 yae-index-lock-clear (host-side shell, pauses); yab-landing-page-rename-flip + apothecary-preset-custom-items + yab-d013-rename-adr + yac-brand-art-swap (decision/public-artifact, routed to Nick); yac-css-deadcode + yab-orphans (need runtime/per-file judgment); br-architecture-snapshot-refresh already advanced at 01:09Z today and remaining is a 666KB-GDD full-session job unsuited to a 5-min window. Did not chain to a second item per stop condition.",
+                           "pending_after":  13
+                       },
                        {
                            "at":  "2026-06-05T13:10:00Z",
                            "task":  "queue-drain-frequent",
