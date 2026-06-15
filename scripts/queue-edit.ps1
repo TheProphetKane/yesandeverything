@@ -70,6 +70,12 @@ function Write-QueueAtomic($q) {
   $null = ([System.IO.File]::ReadAllText($tmp) | ConvertFrom-Json)   # parse before it may replace the live file
   Move-Item -Force $tmp $QueuePath
 }
+# Set a property, adding it if the JSON object doesn't already have it (PS 5.1
+# throws on assigning a non-existent property of a [pscustomobject]).
+function Set-Prop($obj, [string]$name, $val) {
+  if ($obj.PSObject.Properties[$name]) { $obj.$name = $val }
+  else { $obj | Add-Member -NotePropertyName $name -NotePropertyValue $val -Force }
+}
 # Lock -> read -> mutate -> atomic write -> unlock. The mutator gets $q and must return it.
 function Invoke-QueueMutation([scriptblock]$Mutator) {
   Acquire-QueueLock
@@ -102,10 +108,10 @@ switch ($Op) {
       param($q)
       $hit = $q.items | Where-Object { $_.id -eq $Id }
       if (-not $hit) { throw "id $Id not found" }
-      if ($Status) { $hit.status = $Status }
-      if ($IncAttempts) { $hit.attempts = [int]$hit.attempts + 1 }
-      if ($ResultPath) { $hit.result_path = $ResultPath }
-      if ($Notes) { $hit.notes = $Notes }
+      if ($Status) { Set-Prop $hit 'status' $Status }
+      if ($IncAttempts) { $cur = if ($hit.PSObject.Properties['attempts']) { [int]$hit.attempts } else { 0 }; Set-Prop $hit 'attempts' ($cur + 1) }
+      if ($ResultPath) { Set-Prop $hit 'result_path' $ResultPath }
+      if ($Notes) { Set-Prop $hit 'notes' $Notes }
       $q
     } | Out-Null
     Write-Host "queue-edit: set $Id" -ForegroundColor Green
