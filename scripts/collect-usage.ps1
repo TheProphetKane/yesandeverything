@@ -41,6 +41,7 @@ param([switch]$NoPush, [switch]$Audit, [switch]$Rescan)
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
+. (Join-Path $PSScriptRoot "git-guard.ps1")
 
 $ATTRIB_VERSION = 8   # v8: scheduled-task runs attribute wholly to their task's
                       # project by the <scheduled-task name> tag, beating the
@@ -445,6 +446,34 @@ if ($PrevOldest -and (-not $oldestTs -or $PrevOldest -lt $oldestTs)) { $oldestTs
 Write-Host "Scanned $scannedFiles file(s), $newLines line(s), $usageRecords usage record(s), $dupSkipped duplicate(s) merged, $fallbackYaE unattributed->YaE, $tsFallbacks timestamp fallback(s)." -ForegroundColor Green
 if ($oldestTs) { Write-Host ("Log horizon: oldest surviving record {0:yyyy-MM-dd}, newest {1:yyyy-MM-dd}. Transcripts older than the retention window are purged from disk and cannot be recovered." -f $oldestTs, $newestTs) -ForegroundColor DarkGray }
 
+# All-time must never regress. Transcripts purge on retention, so a full rescan
+# rebuilds the aggregate from a shrinking window and would otherwise ratchet the
+# total DOWN. The git-tracked usage-log ledger survives purges; use its per-field
+# high-water mark as a floor so each project's all-time can only ever rise.
+function Get-LedgerHighWater([string]$proj) {
+  $hw = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; costUSD = [double]0 }
+  $dir = Join-Path $RepoRoot "usage-log"
+  if (-not (Test-Path $dir)) { return $hw }
+  # Include EVERY ledger whose id folds to this project, so pre-migration short
+  # codes (HBH, YaC, YaE, ...) that hold the stranded historical peak still floor
+  # the post-migration word-id total. Per-field MAX, so no tokens are ever lost.
+  foreach ($lf in (Get-ChildItem -Path $dir -Filter *.jsonl -File -ErrorAction SilentlyContinue)) {
+    if ((Resolve-ProjectId ([System.IO.Path]::GetFileNameWithoutExtension($lf.Name))) -ne $proj) { continue }
+    foreach ($l in (Get-Content $lf.FullName)) {
+      if (-not $l -or -not $l.Trim()) { continue }
+      try { $e = $l | ConvertFrom-Json } catch { continue }
+      if (-not $e.allTime) { continue }
+      $a = $e.allTime
+      if ([long]$a.input     -gt $hw.input)     { $hw.input     = [long]$a.input }
+      if ([long]$a.output    -gt $hw.output)    { $hw.output    = [long]$a.output }
+      if ([long]$a.cacheRead -gt $hw.cacheRead) { $hw.cacheRead = [long]$a.cacheRead }
+      if ([long]$a.cacheWrite -gt $hw.cacheWrite) { $hw.cacheWrite = [long]$a.cacheWrite }
+      if ([double]$a.costUSD -gt $hw.costUSD)   { $hw.costUSD   = [double]$a.costUSD }
+    }
+  }
+  return $hw
+}
+
 # ----- Roll up --------------------------------------------------------------
 $cutoff = (Get-Date).Date.AddDays(-60)
 $projects = [ordered]@{}
@@ -461,6 +490,13 @@ foreach ($proj in ($Agg.Keys | Sort-Object)) {
     }
   }
   $allTime.costUSD = [math]::Round($allTime.costUSD, 2)
+  # floor at the durable ledger high-water so a purge-shrunk rescan can't regress all-time
+  $hw = Get-LedgerHighWater $proj
+  if ($hw.input     -gt $allTime.input)     { $allTime.input     = $hw.input }
+  if ($hw.output    -gt $allTime.output)    { $allTime.output    = $hw.output }
+  if ($hw.cacheRead -gt $allTime.cacheRead) { $allTime.cacheRead = $hw.cacheRead }
+  if ($hw.cacheWrite -gt $allTime.cacheWrite) { $allTime.cacheWrite = $hw.cacheWrite }
+  if ($hw.costUSD   -gt $allTime.costUSD)   { $allTime.costUSD   = [math]::Round($hw.costUSD, 2) }
   $sessions = @($Files.Keys | Where-Object { $Files[$_].project -eq $proj }).Count
   $models = [ordered]@{}
   if ($AggM.ContainsKey($proj)) {
@@ -678,13 +714,17 @@ foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
 }
+Assert-GitSafe
 & git add dashboard/data/usage.json dashboard/data/queue.json usage-log 2>&1 | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
+Assert-GitSafe
 & git commit -m "work: usage refresh" 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) { Write-Host "WARN: commit failed; staged only." -ForegroundColor Yellow; exit 0 }
 $branch = git rev-parse --abbrev-ref HEAD 2>$null
 if (-not $branch) { $branch = "main" }
+Assert-GitSafe
 & git push origin $branch 2>&1 | Out-Null
+Confirm-GitIntact
 if ($LASTEXITCODE -ne 0) { Write-Host "WARN: push failed; committed locally." -ForegroundColor Yellow; exit 0 }
 Write-Host "Pushed usage refresh; dashboard updates in ~30s." -ForegroundColor Green

@@ -79,7 +79,7 @@ For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHord
 - **Robots.txt disallows `/hordes/`** because the GDD is private. Don't add public links to it from `index.html`.
 - **The HBH GDD mirror is base64-inlined**, not fetched. The whole GDD ships in the page. That's intentional (zero-dependency, works offline).
 - **GDD payload integrity is not checked before injection.** `publish-gdd.ps1` will happily base64-inline a truncated GDD into `hordes/index.html`. v0.61.8 shipped a GDD that lost 70 lines off the tail (FUSE write-truncation on the HBH side), which broke the live tab switcher silently. Add a `Test-GddIntegrity` guard that asserts the source GDD ends with `</html>` before injection. Recovery for the actual truncation lives in `X:\HereBeHordes\outputs\v0_61_10_gdd_tail_recover.py`. Memory entry: gdd_truncation_guard.
-- **DNS on Cloudflare** for `yesandeverything.com` since 2026-05-06. Registrar transfer from Squarespace was initiated on the same date; if registrar status comes up, verify completion at the Cloudflare dashboard.
+- **DNS and registrar on Cloudflare** for `yesandeverything.com` since 2026-05-06. The registrar transfer from Squarespace completed in May 2026; both DNS and registrar now sit on Cloudflare.
 
 ## When in doubt
 

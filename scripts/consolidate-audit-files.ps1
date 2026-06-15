@@ -36,7 +36,8 @@ foreach ($name in $repos.Keys) {
   $root = $repos[$name]
   if (-not (Test-Path $root)) { Write-Host "$name : MISSING, skipped"; continue }
   Set-Location $root
-  Remove-Item -Force .git\index.lock -ErrorAction SilentlyContinue
+. (Join-Path $PSScriptRoot "git-guard.ps1")
+  # [git-guard] superseded by Assert-GitSafe: Remove-Item -Force .git\index.lock -ErrorAction SilentlyContinue
 
   $docs = Join-Path $root 'docs'
   if (-not (Test-Path $docs)) { Write-Host "$name : no docs/, gitignore only"; }
@@ -62,11 +63,15 @@ foreach ($name in $repos.Keys) {
     }
   }
 
+  Assert-GitSafe
+
   git add -- .gitignore 2>$null
+  Assert-GitSafe
   git commit -m "chore: untrack + prune audit/scheduled-task reports, keep latest per type" --quiet 2>$null
   if ($LASTEXITCODE -eq 0) { git push --quiet 2>$null }
   Write-Host "$name : kept $keepCount latest, removed $delCount old"
 }
 
 Set-Location 'X:\YesAndEverything'
+. (Join-Path $PSScriptRoot "git-guard.ps1")
 Write-Host "`nDone. Future audit/report files are gitignored in every repo."

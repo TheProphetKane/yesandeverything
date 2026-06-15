@@ -35,6 +35,7 @@ param([switch]$NoPush)
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
+. (Join-Path $PSScriptRoot "git-guard.ps1")
 
 $REPOS = @(
   @{ id = "Hordes";     path = "X:\HereBeHordes" },
@@ -188,9 +189,13 @@ foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
 }
+Assert-GitSafe
 & git add dashboard/data/backfill.json 2>&1 | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
+Assert-GitSafe
 & git commit -m "work: usage backfill estimate" 2>&1 | Out-Null
+Assert-GitSafe
 & git push origin (git rev-parse --abbrev-ref HEAD 2>$null) 2>&1 | Out-Null
+Confirm-GitIntact
 Write-Host "Pushed backfill estimate." -ForegroundColor Green

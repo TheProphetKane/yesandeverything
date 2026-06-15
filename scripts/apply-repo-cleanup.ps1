@@ -1,4 +1,4 @@
-﻿# apply-repo-cleanup.ps1
+# apply-repo-cleanup.ps1
 # Cleanup dead files + recover from FUSE-corrupted git indexes on HBH and YaE.
 #
 # Generated 2026-05-29 alongside apply-github-parity.ps1.
@@ -30,11 +30,11 @@ function Unstick-Repo($repoPath) {
   try {
     # Clear stale locks
     if (Test-Path ".git\index.lock") {
-      Remove-Item -Force ".git\index.lock" -ErrorAction SilentlyContinue
+      # [git-guard] superseded by Assert-GitSafe: Remove-Item -Force ".git\index.lock" -ErrorAction SilentlyContinue
       Step "removed stale index.lock"
     }
     if (Test-Path ".git\HEAD.lock") {
-      Remove-Item -Force ".git\HEAD.lock" -ErrorAction SilentlyContinue
+      # [git-guard] superseded by Assert-GitSafe: Remove-Item -Force ".git\HEAD.lock" -ErrorAction SilentlyContinue
       Step "removed stale HEAD.lock"
     }
     # Test if index is corrupt
@@ -85,14 +85,17 @@ try {
     Step "deleted docs/NEXT_STEPS.md (tombstone)"
   }
   # Stage gitignore (sandbox already wrote the addition)
+  Assert-GitSafe
   git add .gitignore 2>$null | Out-Null
   Step "staged .gitignore"
   # Commit if anything staged
   $staged = git diff --cached --name-only 2>$null
   if ($staged) {
+    Assert-GitSafe
     git commit -m "chore(htbh): untrack __pycache__ + remove tombstoned NEXT_STEPS.md"
     if ($LASTEXITCODE -eq 0) {
       Done "committed"
+      Assert-GitSafe
       git push
       if ($LASTEXITCODE -eq 0) { Done "pushed" } else { Warn "push failed" }
     }
@@ -109,12 +112,15 @@ Push-Location "X:\BrackishRising"
 try {
   git rm --cached --ignore-unmatch scripts/__pycache__/check_gdscript_parse.cpython-310.pyc 2>$null | Out-Null
   Step "untracked check_gdscript_parse.cpython-310.pyc"
+  Assert-GitSafe
   git add .gitignore 2>$null | Out-Null
   $staged = git diff --cached --name-only 2>$null
   if ($staged) {
+    Assert-GitSafe
     git commit -m "chore(brackish): untrack __pycache__"
     if ($LASTEXITCODE -eq 0) {
       Done "committed"
+      Assert-GitSafe
       git push
       if ($LASTEXITCODE -eq 0) { Done "pushed" } else { Warn "push failed" }
     }
@@ -143,14 +149,18 @@ try {
       Step "deleted $f"
     }
   }
+  Assert-GitSafe
   git add .gitignore 2>$null | Out-Null
   Step "staged .gitignore"
   $staged = git diff --cached --name-only 2>$null
   if ($staged) {
+    Assert-GitSafe
     git commit -m "chore(yae): untrack __pycache__ + remove 3 tombstones + empty files.txt"
     if ($LASTEXITCODE -eq 0) {
       Done "committed"
+      Assert-GitSafe
       git push
+      Confirm-GitIntact
       if ($LASTEXITCODE -eq 0) { Done "pushed" } else { Warn "push failed" }
     }
   } else {

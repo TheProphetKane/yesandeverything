@@ -1,6 +1,6 @@
 ---
 name: handler-audit
-description: Audit the four project-level CLAUDE.md handler files (HBH, YaC, Scheduler, YaE) against the current state of each project to surface stale paths, stale version pills, stale email or URL references, stale convention claims, and cross-handler inconsistency. Use whenever the user says "audit the handlers", "check CLAUDE.md drift", "verify the handler files", "audit my CLAUDE.md", "are the handlers still accurate", "do the handler files match reality", "sweep the CLAUDE.md files", or any request to validate that what the per-project handler primers claim still matches the project they describe. The skill walks all four handlers, harvests every concrete claim, verifies each against the project, and writes a dated findings report to X:\YesAndEverything\docs\. Report-only by default; auto-fixes safe items only when the user says "fix as you go".
+description: Audit the six project-level CLAUDE.md handler files (HBH, YaC, Scheduler, YaE, Apothecary, Budget) against the current state of each project to surface stale paths, stale version pills, stale email or URL references, stale convention claims, and cross-handler inconsistency. Use whenever the user says "audit the handlers", "check CLAUDE.md drift", "verify the handler files", "audit my CLAUDE.md", "are the handlers still accurate", "do the handler files match reality", "sweep the CLAUDE.md files", or any request to validate that what the per-project handler primers claim still matches the project they describe. The skill walks all six handlers, harvests every concrete claim, verifies each against the project, and writes a dated findings report to X:\YesAndEverything\docs\. Report-only by default; auto-fixes safe items only when the user says "fix as you go".
 ---
 
 ## Step 0: Load project context (schema v1)
@@ -17,11 +17,11 @@ If the file is missing or its `schema_version` is unsupported, fall back to read
 
 # Handler audit (CLAUDE.md drift sweep)
 
-Audit the four project-level CLAUDE.md handler files against the current state of each project they describe. Surface stale paths, stale version pills, stale email/URL references, stale convention claims, and cross-handler inconsistency. Optionally apply low-risk text fixes.
+Audit the six project-level CLAUDE.md handler files against the current state of each project they describe. Surface stale paths, stale version pills, stale email/URL references, stale convention claims, and cross-handler inconsistency. Optionally apply low-risk text fixes.
 
 ## Why this exists
 
-The four CLAUDE.md handlers (HBH, YaC, Scheduler, YaE) are the first thing every new Claude session reads for each project. Each one is a primer: "this is what this repo is, this is what to watch for, these are the conventions." When a handler drifts from reality, it actively teaches the wrong thing for the rest of the session. The drift is usually small (a renamed file, an old email, a version pill that didn't get bumped) but the cost is high because the handler runs at the top of every conversation.
+The six CLAUDE.md handlers (HBH, YaC, Scheduler, YaE, Apothecary, Budget) are the first thing every new Claude session reads for each project. Each one is a primer: "this is what this repo is, this is what to watch for, these are the conventions." When a handler drifts from reality, it actively teaches the wrong thing for the rest of the session. The drift is usually small (a renamed file, an old email, a version pill that didn't get bumped) but the cost is high because the handler runs at the top of every conversation.
 
 `canonical-doc-handler-init` creates these files; nothing currently re-audits them. This skill closes that gap.
 
@@ -36,24 +36,26 @@ Trigger on requests like:
 - "Sweep the CLAUDE.md files"
 - "Do the handler files match reality"
 
-Also trigger proactively after big cross-project shifts (e.g., DNS migration, sender-email change, monorepo restructure) where any of the four handlers might now describe yesterday's truth.
+Also trigger proactively after big cross-project shifts (e.g., DNS migration, sender-email change, monorepo restructure) where any of the six handlers might now describe yesterday's truth.
 
-## The four handler paths
+## The six handler paths
 
-The audit is hard-coded to these four files. Don't expand scope without asking.
+The audit is hard-coded to these six files. Don't expand scope without asking.
 
 | Handler | Project |
 |---|---|
-| `X:\HereBeHordes\CLAUDE.md` | Here There Be Hordes (Godot 4.6 RTS) |
+| `X:\HereBeHordes\CLAUDE.md` | Here Be Hordes (Godot 4.6 RTS) |
 | `X:\YesAndChains\CLAUDE.md` | YesAndChains (pocket disc-golf caddy PWA) |
-| `X:\YesAndScheduler\CLAUDE.md` | Yes and Scheduler (employee-scheduling web app) |
+| `X:\YesAndScheduler\CLAUDE.md` | Yes& Scheduler (employee-scheduling web app) |
 | `X:\YesAndEverything\CLAUDE.md` | YesAndEverything (umbrella static site) |
+| `X:\YesAndApothecary\CLAUDE.md` | YesAndApothecary (Celtic apothecary label designer) |
+| `X:\YesAndBudget\CLAUDE.md` | Yes& Budget (local-first personal budget tool) |
 
 ## How to run an audit
 
-Run all four phases in order. Each phase produces evidence the next phase consumes.
+Run all phases in order. Each phase produces evidence the next phase consumes.
 
-### Phase 1 — Read all four handlers and extract claims
+### Phase 1 — Read all six handlers and extract claims
 
 For each CLAUDE.md, harvest every concrete claim into a working table. The categories to capture:
 
@@ -82,6 +84,8 @@ Walk every harvested claim. For each, decide if it still holds.
 | YaC | Top of `CONTEXT.md` "Version & changelog" section |
 | Scheduler | `package.json` `version` field, plus DESIGN.md milestone status |
 | YaE | No formal pill — check recent commit messages for the latest sub-project version |
+| Apothecary | Three must agree: `PROJECT_SPEC.md` `Version pill: **vX.Y.Z**`, first `## vX.Y.Z` heading in `CHANGELOG.md`, and the `<span class="version-pill">` in `index.html`. `scripts/check-version-pill.ps1` enforces it |
+| Budget | `CHANGELOG.md` first `## [vX.Y.Z]` heading; semver, bumped in lockstep with releases not per-commit |
 
 **Email claims.** Check the project's actual sender configuration (Supabase auth settings, Resend SMTP, feedback inbox docs). YaC notably moved feedback from `chains@yesandeverything.com` to `kane@yesandeverything.com` per v0.25.2 — that's an exemplar of the email drift pattern.
 
@@ -99,7 +103,7 @@ Some things are described in more than one handler. They MUST agree.
 |---|---|
 | `hordes/index.html` publish flow (base64 injection) | HBH + YaE |
 | `auth@yesandeverything.com` sender on YaE umbrella | YaC + YaE |
-| Personal settings doc location | All four implicitly through the memory layer |
+| Personal settings doc location | All six implicitly through the memory layer |
 | DNS state for `yesandeverything.com` (Cloudflare vs. Squarespace) | YaC + YaE |
 | Git index.lock FUSE quirk | HBH + Scheduler |
 | Release-script flow (`scripts/release.ps1`) | HBH + YaC |
@@ -108,7 +112,7 @@ For each, read both handlers' descriptions side by side. If the descriptions con
 
 ### Phase 4 — Write the findings report
 
-Default output path: `X:\YesAndEverything\docs\HANDLER_AUDIT-YYYY-MM-DD.md` using today's actual date. Create the `docs/` folder if it doesn't exist. If a report already exists for today, append a new section rather than overwriting.
+Default output path: `X:\YesAndEverything\docs\HANDLER_AUDIT-YYYY-MM-DD.md` using today's actual date. `X:\YesAndEverything\docs\` already exists and holds the dated audit history. If a report already exists for today, append a new section rather than overwriting.
 
 Structure:
 
@@ -117,7 +121,7 @@ Structure:
 
 ## TL;DR
 
-[1-3 sentences about overall handler health. State whether the four handlers are mostly aligned or have significant drift, and call out the worst category if there is one.]
+[1-3 sentences about overall handler health. State whether the six handlers are mostly aligned or have significant drift, and call out the worst category if there is one.]
 
 ## HIGH severity (handler is teaching the wrong thing)
 
@@ -166,7 +170,7 @@ For each numbered item under `## Recommended actions`:
    {
      "id": "handler-<project>-<short-slug>",
      "added": "YYYY-MM-DD",
-     "project": "<htbh|yac|scheduler|yae>",
+     "project": "<htbh|yac|scheduler|yae|apothecary|yab>",
      "kind": "handler-drift",
      "auto_safe": true | false,
      "priority": "P0" | "P1" | "P2" | "P3",
@@ -208,11 +212,11 @@ Both YaC and YaE CLAUDE.md mention DNS state. Per the dated note in both ("regis
 
 ### Version pill cross-check on YaC
 
-YaC's CLAUDE.md says "Pre-1.0, currently at v0.25.2 (2026-05-13)". The actual canonical pill lives in `CONTEXT.md`. If `CONTEXT.md` has moved past 0.25.2, the handler is lagging. This is the most-frequent drift pattern across the four handlers because the version moves often and the handler doesn't auto-bump.
+YaC's CLAUDE.md says "Pre-1.0, currently at v0.25.2 (2026-05-13)". The actual canonical pill lives in `CONTEXT.md`. If `CONTEXT.md` has moved past 0.25.2, the handler is lagging. This is the most-frequent drift pattern across the six handlers because the version moves often and the handler doesn't auto-bump.
 
 ## What not to do
 
-- Don't audit other CLAUDE.md files outside the four named paths. The user can run this skill again with a different scope, but the default is the four handlers only.
+- Don't audit other CLAUDE.md files outside the six named paths. The user can run this skill again with a different scope, but the default is the six handlers only.
 - Don't refactor the handlers. The skill checks alignment; it doesn't redesign the primer structure.
 - Don't flag every cosmetic phrasing inconsistency. Group small wording drift under a single LOW bullet.
 - Don't leave the user with a wall of text. The TL;DR has to be short. Findings can be long; the summary cannot.
@@ -226,4 +230,4 @@ Default report path:
 X:\YesAndEverything\docs\HANDLER_AUDIT-YYYY-MM-DD.md
 ```
 
-Use today's actual date in `YYYY-MM-DD` format. Create the `docs/` folder if it doesn't exist (YaE may not have one yet — the YaE handler doesn't list `docs/` in its files-at-a-glance table). If a report exists for today, append a new section rather than overwriting. Audit history is itself useful.
+Use today's actual date in `YYYY-MM-DD` format. `X:\YesAndEverything\docs\` exists and is listed in the YaE handler's files-at-a-glance table; the dated CANONICAL_AUDIT / HANDLER_AUDIT / BAR_RAISE reports live there. If a report exists for today, append a new section rather than overwriting. Audit history is itself useful.

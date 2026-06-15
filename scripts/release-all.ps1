@@ -46,6 +46,22 @@ function Get-ReleaseArgs([string]$key, [string]$msg) {
   }
 }
 
+# Pull the real reason out of a failed project's captured output. Prefers the
+# last line that looks like an error; falls back to the last non-empty line.
+function Get-FailReason($cap, $code) {
+  $rx = '(?i)(pre-flight|fail|error|not recognized|cannot|unable|abort|denied|rejected|exception|missing|fatal|not found|conflict|no such|is not)'
+  for ($i = $cap.Count - 1; $i -ge 0; $i--) { $t = ([string]$cap[$i]).Trim(); if ($t -and $t -match $rx) { return $t } }
+  for ($i = $cap.Count - 1; $i -ge 0; $i--) { $t = ([string]$cap[$i]).Trim(); if ($t) { return $t } }
+  return "exit $code (no diagnostic text captured)"
+}
+# Last few meaningful lines, for the per-failure detail block.
+function Get-FailTail($cap) {
+  $lines = @($cap | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ })
+  if ($lines.Count -eq 0) { return "" }
+  $start = [Math]::Max(0, $lines.Count - 8)
+  return ($lines[$start..($lines.Count - 1)] -join "`n")
+}
+
 $results = @()
 
 foreach ($p in $projects) {
@@ -78,6 +94,8 @@ foreach ($p in $projects) {
 
   $sw = [System.Diagnostics.Stopwatch]::StartNew()
   Push-Location $p.Path
+  $cap = New-Object System.Collections.Generic.List[string]
+  $line.Detail = ""
   try {
     foreach ($lock in @(".git\index.lock", ".git\HEAD.lock")) {
       if (Test-Path $lock) {
@@ -87,14 +105,23 @@ foreach ($p in $projects) {
     }
 
     $global:LASTEXITCODE = 0
-    & $script @relArgs
+    # Merge ALL streams (incl. Write-Host via the information stream, where the
+    # per-project pre-flight reasons print) so the failure cause is recoverable,
+    # while still echoing each line live.
+    & $script @relArgs *>&1 | ForEach-Object {
+      $text = if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.ToString() } else { [string]$_ }
+      $cap.Add($text); Write-Host $text
+    }
     $code = $LASTEXITCODE
 
-    if ($code -and $code -ne 0) { $line.Status = "failed"; $line.Note = "exit $code" }
+    if ($code -and $code -ne 0) {
+      $line.Status = "failed"; $line.Note = Get-FailReason $cap $code; $line.Detail = Get-FailTail $cap
+    }
     else { $line.Status = "ok" }
   }
   catch {
-    $line.Status = "failed"; $line.Note = $_.Exception.Message
+    $cap.Add($_.Exception.Message)
+    $line.Status = "failed"; $line.Note = Get-FailReason $cap 1; $line.Detail = Get-FailTail $cap
   }
   finally {
     Pop-Location
@@ -108,11 +135,23 @@ Write-Host ""
 Write-Host ("=" * 72) -ForegroundColor DarkCyan
 Write-Host "RELEASE-ALL SUMMARY" -ForegroundColor Cyan
 Write-Host ("=" * 72) -ForegroundColor DarkCyan
-$results | Format-Table Project, Key, Status, Seconds, Note -AutoSize
+$results | Format-Table Project, Key, Status, Seconds, Note -AutoSize -Wrap
 
 $failed = @($results | Where-Object { $_.Status -eq "failed" })
 if ($failed.Count -gt 0) {
-  Write-Host ("{0} project(s) failed; the rest still ran. See output above." -f $failed.Count) -ForegroundColor Red
+  Write-Host ""
+  Write-Host "WHY EACH FAILURE HAPPENED" -ForegroundColor Red
+  Write-Host ("-" * 72) -ForegroundColor DarkGray
+  foreach ($f in $failed) {
+    Write-Host ("{0} ({1}) - {2}s" -f $f.Project, $f.Key, $f.Seconds) -ForegroundColor Red
+    Write-Host ("  reason: {0}" -f $f.Note) -ForegroundColor Yellow
+    if ($f.Detail) {
+      Write-Host "  last output:" -ForegroundColor DarkGray
+      foreach ($dl in ($f.Detail -split "`n")) { Write-Host ("    | {0}" -f $dl) -ForegroundColor DarkGray }
+    }
+    Write-Host ""
+  }
+  Write-Host ("{0} project(s) failed; the rest still ran." -f $failed.Count) -ForegroundColor Red
   exit 1
 }
 Write-Host "All requested releases finished." -ForegroundColor Green

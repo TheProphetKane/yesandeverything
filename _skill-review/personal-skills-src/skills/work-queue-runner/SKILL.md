@@ -15,6 +15,24 @@ The queue is the bridge. Items get added when needs are discovered (manually or 
 
 This skill is the only thing that touches `work-queue.json`. Other skills can recommend additions via chat, but this skill owns the file.
 
+## Single-flight (mandatory)
+
+Multiple drain instances (scheduled `regular-queue-drain`, `queue-drain-4h`, `loop-tick-hourly`, plus the Agents console) can fire close together. A lock-free read-modify-write of `.work-queue.json` lost-updates and corrupts the file (incident `queue-concurrency-race-2026-06-14`).
+
+**Never hand-edit `.work-queue.json` directly.** Every mutation - append, status flip, attempt increment, result_path, drop - goes through the single-flight helper, which holds `.work-queue.lock` (atomic create-exclusive, 30s stale-break, atomic tmp+rename) for the brief read-modify-write only:
+
+```powershell
+# append an item
+pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op add  -Json '<item-json>'
+# flip status / bump attempts / set result_path
+pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op set  -Id <id> -Status in-progress -IncAttempts
+pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op set  -Id <id> -Status done -ResultPath <path>
+# drop a superseded item
+pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op drop -Id <id>
+```
+
+Reading for status/selection (mode D, and the read in modes A/B/C) can use `-Op get` or a plain read; only the WRITE must hold the lock. Hold the lock only for the file mutation, never across a running prompt. The Agents `server.mjs` `/queue` endpoint honors the same lock. The helper is dot-sourceable (`Invoke-QueueMutation { param($q) ...; $q }`) for compound edits.
+
 ## When to use this
 
 Trigger on requests like:
