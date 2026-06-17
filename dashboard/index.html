@@ -144,6 +144,8 @@
   .list-meta { font-size: 11px; color: var(--fg-3); margin-top: 3px; }
   .list-link { display: inline-block; font-size: 11px; color: var(--cyan-hot); margin-top: 5px; }
   .list-empty { color: var(--fg-3); font-size: 12px; padding: 16px 2px; text-align: center; }
+  .chip-link { cursor: pointer; transition: border-color .15s, color .15s; }
+  .chip-link:hover { border-color: var(--cyan-hot); color: var(--fg-0); }
   .list-item { border-top: 1px solid var(--ink-2); padding: 7px 2px; }
   .list-item .li-id { color: var(--fg-4); font-size: 10px; margin-top: 2px; }
   .hud-clock { font-size: 12px; color: var(--cyan-hot); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
@@ -1919,10 +1921,10 @@
     return null;
   }
   // best-effort: the real queued items live in .work-queue.json; list them if it's served
-  function loadQueueItems(bodyEl) {
+  function loadQueueItems(bodyEl, scope) {
     fetch("../.work-queue.json?t=" + Date.now()).then(function (r) { return r.ok ? r.json() : null; }).then(function (q) {
       if (!q || !q.items) return;
-      var items = q.items.filter(function (it) { return it.status === "pending" && (FILTER === "ALL" || projByLoose(it.project).id === FILTER); });
+      var items = q.items.filter(function (it) { return it.status === "pending" && (scope === "ALL" || projByLoose(it.project).id === scope); });
       if (!items.length) return;
       bodyEl.innerHTML = "";
       bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " pending item" + (items.length === 1 ? "" : "s") }));
@@ -1936,7 +1938,8 @@
       });
     }).catch(function () {});
   }
-  function openLists(metric) {
+  function openLists(metric, forProject) {
+    var scope = forProject || FILTER;
     var statuses = LAST.statuses || {};
     var wrap = el("div", { className: "lists" });
     var tabBar = el("div", { className: "list-tabs" });
@@ -1948,12 +1951,12 @@
       bodyEl.innerHTML = "";
       var any = false;
       PROJECTS.forEach(function (p) {
-        if (FILTER !== "ALL" && p.id !== FILTER) return;
+        if (scope !== "ALL" && p.id !== scope) return;
         var s = statuses[p.id]; if (!s) return;
         var r = buildListRow(m, p, s); if (r) { bodyEl.appendChild(r); any = true; }
       });
-      if (!any) bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing here" + (FILTER !== "ALL" ? " for " + metaFor(FILTER).tag : "") }));
-      if (m === "queue") loadQueueItems(bodyEl);
+      if (!any) bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing here" + (scope !== "ALL" ? " for " + metaFor(scope).tag : "") }));
+      if (m === "queue") loadQueueItems(bodyEl, scope);
     }
     METRICS.forEach(function (mt) {
       var t = el("button", { className: "list-tab", text: mt[1] }); t.setAttribute("data-k", mt[0]);
@@ -1962,7 +1965,7 @@
     });
     wrap.appendChild(tabBar); wrap.appendChild(bodyEl);
     render(metric || "actions");
-    openOverlay("lists" + (FILTER !== "ALL" ? " · " + metaFor(FILTER).tag : ""), wrap);
+    openOverlay("lists" + (scope !== "ALL" ? " · " + metaFor(scope).tag : ""), wrap);
   }
   function keyRow(hue, name, frac, val, sub, color) {
     var r = el("div", { className: "keyrow" });
@@ -2487,33 +2490,37 @@
       if (br.verdict) chips.appendChild(el("span", { className: "chip " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict }));
       if (status.milestone && status.milestone.id) {
         var mlabel = (status.milestone.label || "").slice(0, 32);
-        var c2 = el("span", { className: "chip", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") });
+        var c2 = el("span", { className: "chip chip-link", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") + " · click for this project's lists" });
         c2.appendChild(el("span", { className: "k", text: "milestone" }));
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
+        c2.addEventListener("click", function (e) { e.stopPropagation(); openLists("milestones", id); });
         chips.appendChild(c2);
       }
       var qP = queuedFor(id);
       var gP = gatesOf(status);
       if (gP != null && gP > 0) {
-        var c7 = el("span", { className: "chip", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json)" });
+        var c7 = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json) · click for this project's lists" });
         c7.appendChild(el("span", { className: "k", text: "milestones" }));
         c7.appendChild(txt(String(gP)));
+        c7.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", id); });
         chips.appendChild(c7);
       }
       if (qP != null) {
         var allClear = qP === 0 && (gP || 0) === 0;
         var c6 = el("span", {
-          className: "chip" + (allClear ? " fresh" : ""),
-          title: "work-queue items set for the next sweeps (live)" + (allClear ? " · the improvement scout hunts for more at zero" : "")
+          className: "chip chip-link" + (allClear ? " fresh" : ""),
+          title: "work-queue items set for the next sweeps (live)" + (allClear ? " · the improvement scout hunts for more at zero" : "") + " · click for this project's lists"
         });
         c6.appendChild(el("span", { className: "k", text: "queued" }));
         c6.appendChild(txt(allClear ? "0 · scouting" : String(qP)));
+        c6.addEventListener("click", function (e) { e.stopPropagation(); openLists("queue", id); });
         chips.appendChild(c6);
       }
       if (br.actionsOpen != null) {
-        var c1 = el("span", { className: "chip", title: TIPS.actions });
+        var c1 = el("span", { className: "chip chip-link", title: TIPS.actions + " · click for this project's lists" });
         c1.appendChild(el("span", { className: "k", text: "open actions" }));
         c1.appendChild(txt(String(br.actionsOpen)));
+        c1.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", id); });
         chips.appendChild(c1);
       }
       if (status.lastReleaseAt && (Date.now() - new Date(status.lastReleaseAt).getTime()) < 86400000) {
