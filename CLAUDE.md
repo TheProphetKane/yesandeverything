@@ -42,7 +42,6 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `.work-queue.json` | Cross-project drain queue. Items get added by audits, processed by `work-queue-runner` skill on the every-4-hours `queue-drain-frequent` scheduled task. |
 | `_skill-review/` | Staged personal `.skill` files (installable) plus their review viewer. |
 | `invoices/` | Generated contract-drafting invoices and email templates (md + pdf + txt). Working files, not part of the public site. |
-| `digest-2026-05-15.md` | Archived cross-project weekly digest snapshot from 2026-05-15. Output of the digest task; superseded by later runs. |
 
 ## The hordes/ injection rule (critical)
 

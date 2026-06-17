@@ -131,6 +131,21 @@
     50% { opacity: 0.4; box-shadow: 0 0 16px var(--accent-glow); }
   }
   .controls { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fg-2); }
+  .lists { display: flex; flex-direction: column; min-width: 280px; }
+  .list-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .list-tab { background: var(--ink-2); border: 1px solid var(--ink-4); color: var(--fg-2); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+  .list-tab.on { color: var(--cyan-hot); border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+  .list-row { border-top: 1px solid var(--ink-3); padding: 9px 2px; }
+  .list-row:first-child { border-top: none; }
+  .list-row-head { display: flex; align-items: center; gap: 8px; }
+  .list-pj { font-weight: 600; color: var(--fg-0); }
+  .list-count { margin-left: auto; font-size: 11px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+  .list-sub { font-size: 12px; color: var(--fg-2); margin-top: 4px; line-height: 1.5; word-break: break-word; }
+  .list-meta { font-size: 11px; color: var(--fg-3); margin-top: 3px; }
+  .list-link { display: inline-block; font-size: 11px; color: var(--cyan-hot); margin-top: 5px; }
+  .list-empty { color: var(--fg-3); font-size: 12px; padding: 16px 2px; text-align: center; }
+  .list-item { border-top: 1px solid var(--ink-2); padding: 7px 2px; }
+  .list-item .li-id { color: var(--fg-4); font-size: 10px; margin-top: 2px; }
   .hud-clock { font-size: 12px; color: var(--cyan-hot); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
   button.refresh, .auto-btn {
     background: var(--ink-2); color: var(--fg-1);
@@ -881,6 +896,7 @@
       <button class="auto-btn" id="auto-btn" type="button" title="auto-spin the wheel: off / drift 25s / jump 12s">auto: off</button>
       <span class="last-refreshed" id="last-refreshed" title="when this page last fetched data">never refreshed</span>
       <button class="refresh" id="refresh-btn" type="button" title="re-fetch all dashboard data now">refresh</button>
+      <button class="refresh" id="lists-btn" type="button" title="open the lists behind the numbers: actions, milestones, queued, items left">lists</button>
     </div>
   </header>
 
@@ -1743,10 +1759,10 @@
         { cls: "", tip: TIPS.burnRate },
         { cls: "", tip: TIPS.reviewActions },
         { cls: "", tip: TIPS.lastCollected }
-      ].forEach(function (d) {
+      ].forEach(function (d, i) {
         var t = el("div", { className: "panel total clickable " + d.cls }, [el("span", { className: "ck" })]);
-        t.title = d.tip + " · click for the full stats view";
-        t.addEventListener("click", openStats);
+        t.title = d.tip + (i === 6 ? " · click for the list of open actions" : " · click for the full stats view");
+        t.addEventListener("click", i === 6 ? function () { openLists("actions"); } : openStats);
         var n = el("div", { className: "num" });
         t.appendChild(n);
         var l = el("div", { className: "label" });
@@ -1854,6 +1870,99 @@
     document.body.style.overflow = "hidden";
     hoverHold = true;
     $("glass-close").focus();
+  }
+  function listRowHead(p, countText) {
+    var d = el("span", { className: "kdot" }); d.style.background = p.hue; d.style.boxShadow = "0 0 8px " + p.hue + "66";
+    var head = el("div", { className: "list-row-head" }, [d, el("span", { className: "list-pj", text: p.tag })]);
+    if (countText) head.appendChild(el("span", { className: "list-count", text: countText }));
+    return head;
+  }
+  function projByLoose(id) {
+    if (!id) return ALL_META;
+    var lo = String(id).toLowerCase();
+    for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id.toLowerCase() === lo || PROJECTS[i].tag.toLowerCase() === lo) return PROJECTS[i];
+    return ALL_META;
+  }
+  function buildListRow(metric, p, s) {
+    if (metric === "actions") {
+      var br = s.barRaise || {};
+      if (!(br.actionsOpen > 0)) return null;
+      var row = el("div", { className: "list-row" }, [listRowHead(p, br.actionsOpen + " open")]);
+      if (br.topFinding) { var f = el("div", { className: "list-sub" }); f.textContent = br.topFinding; row.appendChild(f); }
+      if (br.latestReportPath) row.appendChild(el("a", { className: "list-link", text: "open review report", href: "/" + String(br.latestReportPath).replace(/\\/g, "/"), target: "_blank", rel: "noopener" }));
+      return row;
+    }
+    if (metric === "milestones") {
+      var ms = s.milestone || {};
+      if (!ms.label && !ms.id) return null;
+      var row2 = el("div", { className: "list-row" }, [listRowHead(p, ms.status || "")]);
+      row2.appendChild(el("div", { className: "list-sub", text: ms.label || ms.id }));
+      if (s.completion && s.completion.pct != null) row2.appendChild(el("div", { className: "list-meta", text: s.completion.pct + "% complete" }));
+      return row2;
+    }
+    if (metric === "queue") {
+      var depth = (s.workQueueDepth != null) ? s.workQueueDepth : (s.itemsLeft && s.itemsLeft.queue) || 0;
+      if (!(depth > 0)) return null;
+      return el("div", { className: "list-row" }, [listRowHead(p, depth + " queued")]);
+    }
+    if (metric === "items") {
+      var il = s.itemsLeft || {};
+      if (!il.open && !il.backlog && !il.gates) return null;
+      var row3 = el("div", { className: "list-row" }, [listRowHead(p, (il.open || 0) + " open")]);
+      var parts = [];
+      if (il.backlog) parts.push(il.backlog + " backlog");
+      if (il.gates) parts.push(il.gates + " gates");
+      if (il.queue) parts.push(il.queue + " queued");
+      if (parts.length) row3.appendChild(el("div", { className: "list-meta", text: parts.join(" · ") }));
+      return row3;
+    }
+    return null;
+  }
+  // best-effort: the real queued items live in .work-queue.json; list them if it's served
+  function loadQueueItems(bodyEl) {
+    fetch("../.work-queue.json?t=" + Date.now()).then(function (r) { return r.ok ? r.json() : null; }).then(function (q) {
+      if (!q || !q.items) return;
+      var items = q.items.filter(function (it) { return it.status === "pending" && (FILTER === "ALL" || projByLoose(it.project).id === FILTER); });
+      if (!items.length) return;
+      bodyEl.innerHTML = "";
+      bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " pending item" + (items.length === 1 ? "" : "s") }));
+      items.slice(0, 80).forEach(function (it) {
+        var p = projByLoose(it.project);
+        var d = el("span", { className: "kdot" }); d.style.background = p.hue;
+        var row = el("div", { className: "list-item" }, [el("div", { className: "list-row-head" }, [d, el("span", { className: "list-pj", text: p.tag }), el("span", { className: "list-count", text: it.priority || "" })])]);
+        var pr = el("div", { className: "list-sub" }); pr.textContent = String(it.prompt || it.id || "").slice(0, 220); row.appendChild(pr);
+        if (it.id) row.appendChild(el("div", { className: "li-id", text: it.id }));
+        bodyEl.appendChild(row);
+      });
+    }).catch(function () {});
+  }
+  function openLists(metric) {
+    var statuses = LAST.statuses || {};
+    var wrap = el("div", { className: "lists" });
+    var tabBar = el("div", { className: "list-tabs" });
+    var bodyEl = el("div", { className: "list-body" });
+    var METRICS = [["actions", "Open actions"], ["milestones", "Milestones"], ["queue", "Queued"], ["items", "Items left"]];
+    function render(m) {
+      var i;
+      for (i = 0; i < tabBar.children.length; i++) tabBar.children[i].classList.toggle("on", tabBar.children[i].getAttribute("data-k") === m);
+      bodyEl.innerHTML = "";
+      var any = false;
+      PROJECTS.forEach(function (p) {
+        if (FILTER !== "ALL" && p.id !== FILTER) return;
+        var s = statuses[p.id]; if (!s) return;
+        var r = buildListRow(m, p, s); if (r) { bodyEl.appendChild(r); any = true; }
+      });
+      if (!any) bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing here" + (FILTER !== "ALL" ? " for " + metaFor(FILTER).tag : "") }));
+      if (m === "queue") loadQueueItems(bodyEl);
+    }
+    METRICS.forEach(function (mt) {
+      var t = el("button", { className: "list-tab", text: mt[1] }); t.setAttribute("data-k", mt[0]);
+      t.addEventListener("click", function () { render(mt[0]); });
+      tabBar.appendChild(t);
+    });
+    wrap.appendChild(tabBar); wrap.appendChild(bodyEl);
+    render(metric || "actions");
+    openOverlay("lists" + (FILTER !== "ALL" ? " · " + metaFor(FILTER).tag : ""), wrap);
   }
   function keyRow(hue, name, frac, val, sub, color) {
     var r = el("div", { className: "keyrow" });
@@ -2812,6 +2921,7 @@
     }
   });
   $("refresh-btn").addEventListener("click", refresh);
+  $("lists-btn").addEventListener("click", function () { openLists("actions"); });
   // local HUD clock
   (function clock() {
     function tickClock() {
