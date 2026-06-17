@@ -146,6 +146,12 @@
   .list-empty { color: var(--fg-3); font-size: 12px; padding: 16px 2px; text-align: center; }
   .chip-link { cursor: pointer; transition: border-color .15s, color .15s; }
   .chip-link:hover { border-color: var(--cyan-hot); color: var(--fg-0); }
+  .kr-link { cursor: pointer; transition: background .15s; }
+  .kr-link:hover { background: var(--ink-2); }
+  .gauge-link { cursor: pointer; transition: transform .12s; }
+  .gauge-link:hover { transform: translateY(-2px); }
+  .rel-link { cursor: pointer; transition: background .15s; }
+  .rel-link:hover { background: var(--ink-2); }
   .list-item { border-top: 1px solid var(--ink-2); padding: 7px 2px; }
   .list-item .li-id { color: var(--fg-4); font-size: 10px; margin-top: 2px; }
   .hud-clock { font-size: 12px; color: var(--cyan-hot); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
@@ -2046,6 +2052,9 @@
       if (st && st.lastReleaseAt) bits.push("pushed " + fmtAgo(st.lastReleaseAt));
       var row = keyRow(r.hue, metaFor(r.id).displayName, sum > 0 ? r.val / sum : 0, fmt(r.val), bits.join(" · "));
       row.style.animationDelay = (0.08 + i * 0.05) + "s";
+      row.classList.add("kr-link");
+      row.title = "spotlight " + metaFor(r.id).displayName;
+      (function (pid) { row.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(r.id);
       keys.appendChild(row);
     });
     if (!rows.length) keys.appendChild(el("div", { text: "nothing burned yet today" }));
@@ -2103,6 +2112,9 @@
         bits.join(" · "),
         pct != null ? completionColor(pct) : p.hue);
       row.style.animationDelay = (0.08 + i * 0.05) + "s";
+      row.classList.add("kr-link");
+      row.title = "spotlight " + p.displayName;
+      (function (pid) { row.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(p.id);
       keys.appendChild(row);
     });
     split.appendChild(keys);
@@ -2282,13 +2294,15 @@
     var items = [];
     PROJECTS.forEach(function (p) {
       var s = LAST.statuses[p.id];
-      if (s && s.lastReleaseAt) items.push({ id: p.tag, v: s.version, msg: s.lastReleaseMessage || "", ago: fmtAgo(s.lastReleaseAt), t: new Date(s.lastReleaseAt).getTime() });
+      if (s && s.lastReleaseAt) items.push({ id: p.tag, pid: p.id, v: s.version, msg: s.lastReleaseMessage || "", ago: fmtAgo(s.lastReleaseAt), t: new Date(s.lastReleaseAt).getTime() });
     });
     items.sort(function (a, b) { return b.t - a.t; });
     var box = el("div");
     items.forEach(function (it, i) {
-      var r = el("div", { className: "rel-row" });
+      var r = el("div", { className: "rel-row rel-link" });
       r.style.animationDelay = (i * 0.05) + "s";
+      r.title = "spotlight " + it.id;
+      (function (pid) { r.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(it.pid);
       r.appendChild(el("span", { className: "rid", text: it.id }));
       r.appendChild(el("span", { className: "rv", text: "v" + it.v }));
       r.appendChild(el("span", { className: "rmsg", text: it.msg }));
@@ -2430,34 +2444,39 @@
         if (gv2 != null) { gatesSum += gv2; haveGates = true; }
       });
       if (haveGates) {
-        var cg = el("span", { className: "chip", title: "the owner-anchored conditions standing between here and 100% complete" });
+        var cg = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete · click for the portfolio lists" });
         cg.appendChild(el("span", { className: "k", text: "milestones" }));
         cg.appendChild(txt(String(gatesSum)));
+        cg.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", "ALL"); });
         chipsA.appendChild(cg);
       }
       var qLive = queuedFor("ALL");
       if (qLive != null) {
-        var cq = el("span", { className: "chip", title: "work-queue items set for the next sweeps (live)" });
+        var cq = el("span", { className: "chip chip-link", title: "work-queue items set for the next sweeps (live) · click for the portfolio lists" });
         cq.appendChild(el("span", { className: "k", text: "queued" }));
         cq.appendChild(txt(String(qLive)));
+        cq.addEventListener("click", function (e) { e.stopPropagation(); openLists("queue", "ALL"); });
         chipsA.appendChild(cq);
       }
-      var ca = el("span", { className: "chip", title: TIPS.reviewActions });
+      var ca = el("span", { className: "chip chip-link", title: TIPS.reviewActions + " · click for the portfolio lists" });
       ca.appendChild(el("span", { className: "k", text: "open actions" }));
       ca.appendChild(txt(String(acts)));
+      ca.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", "ALL"); });
       chipsA.appendChild(ca);
       inner.appendChild(chipsA);
       return inner;
     }
 
     var br = status ? (status.barRaise || {}) : {};
+    function gWire(gEl, fn, hint) { gEl.classList.add("gauge-link"); if (hint) gEl.title = (gEl.title ? gEl.title + " · " : "") + hint; gEl.addEventListener("click", fn); return gEl; }
+    function openReport() { if (br.latestReportPath) window.open("/" + String(br.latestReportPath).replace(/\\/g, "/"), "_blank", "noopener"); else openLists("actions", id); }
     if (status && status.completion && status.completion.pct != null) {
-      gauges.appendChild(arcGauge(status.completion.pct, 100, completionColor(status.completion.pct), "complete", status.completion.pct + "%", TIPS.complete));
+      gauges.appendChild(gWire(arcGauge(status.completion.pct, 100, completionColor(status.completion.pct), "complete", status.completion.pct + "%", TIPS.complete), function () { openLists("items", id); }, "click for what's left to 100%"));
     }
     if (br.health != null) {
-      gauges.appendChild(arcGauge(br.health, 100, verdictColor(br.verdict), "health", String(br.health), TIPS.health));
+      gauges.appendChild(gWire(arcGauge(br.health, 100, verdictColor(br.verdict), "health", String(br.health), TIPS.health), openReport, "click for the review report"));
     } else if (br.verdict) {
-      gauges.appendChild(arcGauge(VERDICT_APPROX[br.verdict] || 50, 100, verdictColor(br.verdict), "verdict", br.verdict, TIPS.verdict));
+      gauges.appendChild(gWire(arcGauge(VERDICT_APPROX[br.verdict] || 50, 100, verdictColor(br.verdict), "verdict", br.verdict, TIPS.verdict), openReport, "click for the review report"));
     }
     var ctxDen = today.input + today.cr;
     if (ctxDen > 0) {
@@ -2467,7 +2486,7 @@
     if (status && status.lastReleaseAt) {
       var daysAgo = (Date.now() - new Date(status.lastReleaseAt).getTime()) / 86400000;
       var fresh = Math.max(0, Math.min(1, 1 - daysAgo / 14));
-      gauges.appendChild(arcGauge(fresh * 100, 100, fresh > 0.5 ? "#00d68f" : (fresh > 0.15 ? "#cc8400" : "#ff5b6e"), "push pulse", fmtAgo(status.lastReleaseAt), TIPS.ship));
+      gauges.appendChild(gWire(arcGauge(fresh * 100, 100, fresh > 0.5 ? "#00d68f" : (fresh > 0.15 ? "#cc8400" : "#ff5b6e"), "push pulse", fmtAgo(status.lastReleaseAt), TIPS.ship), openReleases, "click for latest pushes"));
     }
     if (gauges.children.length) inner.appendChild(gauges);
 
@@ -2487,7 +2506,11 @@
     // queued · open actions, then the transient pushed/dirty flags
     var chips = el("div", { className: "chips" });
     if (status) {
-      if (br.verdict) chips.appendChild(el("span", { className: "chip " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict }));
+      if (br.verdict) {
+        var cv = el("span", { className: "chip chip-link " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict + " · click for the review report" });
+        cv.addEventListener("click", function (e) { e.stopPropagation(); openReport(); });
+        chips.appendChild(cv);
+      }
       if (status.milestone && status.milestone.id) {
         var mlabel = (status.milestone.label || "").slice(0, 32);
         var c2 = el("span", { className: "chip chip-link", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") + " · click for this project's lists" });
