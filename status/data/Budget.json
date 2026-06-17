@@ -31,11 +31,11 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-16.md",
-        "latestReportAt": "2026-06-16T11:32:34Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-17.md",
+        "latestReportAt": "2026-06-17T11:31:39Z",
         "verdict": "needs-attention",
-        "topFinding": "The code is healthy; the process loop is leaking. This morning's autonomous audit-budget-nightly -> drift-auto-fix pass wrote two correct doc edits (DESIGN.md endpoint version tags v0.15.0 -> v0.12.0, and the real CHANGELOG.md v0.13.2 body replacing the -Bump stub), and both sit uncommitted in the working tree behind a stale .git/index.lock present since Jun 15. The CHANGELOG backfill flagged yesterday is the same uncommitted edit, now a day older, with a DESIGN.md edit joining it. The committed dashboard JSON is two audit cycles stale, and the YaB work-queue grew from 8 to 11 rows without draining the done/committed-ready ones. None of it is a code bug; all of it is the absence of an in-session step that commits what the audit-to-fix loop produces. Five MEDIUM, zero HIGH. The verdict holds at needs-attention for the second straight day, but the residue is now process drift rather than the security HIGH that defined the prior nine audits.",
-        "actionsOpen": 5,
+        "topFinding": "The code stays healthy; the commit step is the single broken link, and it has been broken three days running. A stale .git/index.lock (zero-byte, Jun 15 10:06, no live git process behind it) blocks every write to the index, so three correct doc fixes sit uncommitted (CHANGELOG.md v0.13.2 backfill, docs/DESIGN.md section 12/5/9 wording, CLAUDE.md YaB.json -> Budget.json path) and six work-queue rows sit committed-ready with nowhere to land. Today's canonical audit ran twice, found zero net-new drift, and its one standing recommendation is to commit the pending files. The lock is the root cause; the uncommitted pile and the undrained queue are symptoms. Remove-Item the lock then run release.ps1 -Bump none clears all of it. Six MEDIUM, zero HIGH; needs-attention for the third straight day, residue growing each day the loop runs unattended.",
+        "actionsOpen": 6,
         "actionsClosed": 0
     },
     "metrics": [
