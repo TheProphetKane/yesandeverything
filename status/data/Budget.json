@@ -36,7 +36,39 @@
         "verdict": "needs-attention",
         "topFinding": "The code stays healthy; the commit step is the single broken link, and it has been broken three days running. A stale .git/index.lock (zero-byte, Jun 15 10:06, no live git process behind it) blocks every write to the index, so three correct doc fixes sit uncommitted (CHANGELOG.md v0.13.2 backfill, docs/DESIGN.md section 12/5/9 wording, CLAUDE.md YaB.json -> Budget.json path) and six work-queue rows sit committed-ready with nowhere to land. Today's canonical audit ran twice, found zero net-new drift, and its one standing recommendation is to commit the pending files. The lock is the root cause; the uncommitted pile and the undrained queue are symptoms. Remove-Item the lock then run release.ps1 -Bump none clears all of it. Six MEDIUM, zero HIGH; needs-attention for the third straight day, residue growing each day the loop runs unattended.",
         "actionsOpen": 6,
-        "actionsClosed": 0
+        "actionsClosed": 0,
+        "actions": [
+            {
+                "severity": "MED",
+                "title": "Clear the stale `.git/index.lock` (`Remove-Item X:\\YesAndBudget\\.git\\index.lock`), then commit the three uncommitted doc edits (`CHANGELOG.md`, `docs/DESIGN.md`, `CLAUDE.md`) via `scripts/release.ps1 -Bump none`.",
+                "lens": "maintainability + incident-runbook"
+            },
+            {
+                "severity": "MED",
+                "title": "After committing, prune the six `committed-ready` YaB rows and the one `done` row, and escalate or close the 11-day-old `yab-barraise-closeout-2026-06-06`.",
+                "lens": "work-queue"
+            },
+            {
+                "severity": "MED",
+                "title": "From an authed machine, confirm the old SHAs (`44b7b10`, `f670d17`, `43ea16b`) and the `.finances/` tree 404 on github.com; request a GitHub GC if a hard guarantee is needed, then retire the finding.",
+                "lens": "security"
+            },
+            {
+                "severity": "MED",
+                "title": "Action the P2 keytar migration before at-rest encryption goes from opt-in to default.",
+                "lens": "dependency"
+            },
+            {
+                "severity": "MED",
+                "title": "Confirm the canonical-audit and release runs write and commit their `audit`/release blocks into `status/data/Budget.json`; the `audit` block is three cycles stale.",
+                "lens": "observability"
+            },
+            {
+                "severity": "MED",
+                "title": "Add the stale `.git/index.lock` hazard entry to `CLAUDE.md` (symptom, check, fix) so the next occurrence is self-service.",
+                "lens": "incident-runbook"
+            }
+        ]
     },
     "metrics": [
         {

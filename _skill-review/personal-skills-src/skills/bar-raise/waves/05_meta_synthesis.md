@@ -70,6 +70,8 @@ Never order by which lens emitted the action. The lens appears only as a provena
 
 The JSON `barRaise.actionsOpen` field counts HIGH + MEDIUM findings. LOW is excluded from that count.
 
+The JSON `barRaise.actions[]` array carries the same HIGH + MEDIUM action items as structured rows so the dashboard can list them inline instead of only showing the count. One object per counted action, kept in the ranked order of the Action items list above, each `{ "severity": "HIGH"|"MED", "title": "<the imperative action sentence, with the leading priority/severity/lens markers stripped>", "lens": "<provenance lens id>" }`. Optionally add `"priority": <impact x confidence int>` when a per-line priority is carried, and `"id": "<finding id>"` when known; both may be omitted. The array length equals `actionsOpen`. LOW items are excluded, matching the count. Keep each `title` to one sentence; the report Markdown holds the full evidence, the array is the index. This field is additive inside the locked `barRaise` block; the dashboard ignores it when absent.
+
 A finding open for 5+ consecutive runs carries a `[CHRONIC xN]` tag on its action line (see Run state below).
 
 ## What got better / what got worse
@@ -180,7 +182,7 @@ Verify before overwriting, always. A corrupt input never propagates and a bad wr
 1. Read the current `X:\YesAndEverything\status\data\$project.json`. If it fails to parse (truncation, NUL padding, cut strings), do NOT mutate it in place and do NOT rebuild from nulls: restore the last good version from YaE git history (`git -C X:\YesAndEverything show HEAD:status/data/$project.json`) first, then apply this run's update on top. Note the restoration in the report's Notes.
 2. Build the Markdown as a Python multiline string. Build the updated JSON in memory and `json.loads` it BEFORE any write. Never write content that does not parse.
 3. Write both files through atomic-write-with-readback: write a tmp sibling, fsync, replace, then reopen a fresh handle and verify. Verification means byte-compare AND re-parse (JSON) or tail-check (Markdown ends with a newline; no NUL bytes anywhere). The FUSE cache can echo back the bytes just written while the disk holds a truncated file, so the re-parse of a fresh read is the real check, not the byte compare. Five-attempt retry.
-4. Mutate ONLY the `barRaise` block. Preserve every other field. The locked fields keep their shape (`latestReportPath`, `latestReportAt`, `verdict`, `topFinding`, `actionsOpen`, `actionsClosed`); `health`, `lensScores`, `openFindings`, `tensionsOpen` are additive inside the same block.
+4. Mutate ONLY the `barRaise` block. Preserve every other field. The locked fields keep their shape (`latestReportPath`, `latestReportAt`, `verdict`, `topFinding`, `actionsOpen`, `actionsClosed`); `health`, `lensScores`, `openFindings`, `tensionsOpen`, `actions` are additive inside the same block. Rebuild `actions` from scratch each run so it never carries a stale row; its length must equal `actionsOpen`.
 5. Stage the JSON in YaE's git index: `git -C X:\YesAndEverything add status/data/$project.json`. Do not commit; let the next push pick it up.
 6. Final gate: re-validate every status JSON touched this run (parse, no NUL bytes, closing brace). `X:\YesAndEverything\scripts\check-status-json.ps1` is the Windows-side equivalent and runs as Step 0 of the YaE release; the run is not done until the same checks pass here.
 

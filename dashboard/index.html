@@ -154,6 +154,9 @@
   .rel-link:hover { background: var(--ink-2); }
   .list-item { border-top: 1px solid var(--ink-2); padding: 7px 2px; }
   .list-item .li-id { color: var(--fg-4); font-size: 10px; margin-top: 2px; }
+  .list-item .li-sev { font-size: 10px; font-weight: 700; letter-spacing: .5px; margin-right: 8px; font-family: var(--mono); }
+  .list-item .li-title { font-size: 12px; color: var(--fg-1); }
+  .list-item .li-lens { float: right; color: var(--fg-4); font-size: 10px; font-family: var(--mono); }
   .hud-clock { font-size: 12px; color: var(--cyan-hot); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
   button.refresh, .auto-btn {
     background: var(--ink-2); color: var(--fg-1);
@@ -1897,6 +1900,18 @@
       if (!(br.actionsOpen > 0)) return null;
       var row = el("div", { className: "list-row" }, [listRowHead(p, br.actionsOpen + " open")]);
       if (br.topFinding) { var f = el("div", { className: "list-sub" }); f.textContent = br.topFinding; row.appendChild(f); }
+      if (Array.isArray(br.actions) && br.actions.length) {
+        br.actions.forEach(function (a) {
+          var it = el("div", { className: "list-item" });
+          var sev = String(a.severity || "").toUpperCase();
+          var sv = el("span", { className: "li-sev", text: sev || "·" });
+          sv.style.color = sev === "HIGH" ? "#ff5b6e" : (sev === "MED" || sev === "MEDIUM" ? "#cc8400" : "#5fd6ff");
+          it.appendChild(sv);
+          it.appendChild(el("span", { className: "li-title", text: a.title || a.id || "" }));
+          if (a.lens) it.appendChild(el("span", { className: "li-lens", text: a.lens }));
+          row.appendChild(it);
+        });
+      }
       if (br.latestReportPath) row.appendChild(el("a", { className: "list-link", text: "open review report", href: "/" + String(br.latestReportPath).replace(/\\/g, "/"), target: "_blank", rel: "noopener" }));
       return row;
     }

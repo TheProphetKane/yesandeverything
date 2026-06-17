@@ -36,7 +36,19 @@
         "verdict": "healthy",
         "topFinding": "Twenty-second review, third straight healthy verdict. No commits have landed since the 06-15 release (f61c179), so the code is byte-for-byte the board from the last two reviews: zero HIGH, two AI-owned MEDIUMs that neither block 1.0, and four LOWs. The one thing that moved is the observability item, and it moved the wrong way again. Today's clean 06-17 canonical audit landed, but the dashboard's audit.latestReportPath in Chains.json still points at CANONICAL_AUDIT-2026-06-14; that pointer is now three audits stale (06-15, 06-16, 06-17 all clean on disk), up from two on 06-16 and one on 06-15. The gap widens by one every day the daily audit fires and no release does, because the dashboard audit-block refresh is welded to release time. It stays MEDIUM and benign only because all three skipped audits are genuinely clean. Decoupling that refresh is now the most-deferred, slowest-compounding chore on the board and the highest-value AI-ownable fix left before 1.0.",
         "actionsOpen": 2,
-        "actionsClosed": 0
+        "actionsClosed": 0,
+        "actions": [
+            {
+                "severity": "MED",
+                "title": "Decouple the dashboard `audit` block from release time: have the daily canonical-audit writer parse the high/medium/low counts from the latest `CANONICAL_AUDIT-*.md` TL;DR and advance `audit.latestReportPath`, so a between-release HIGH cannot sit invisible. The pointer is now three audits stale (06-14 on the JSON, clean 06-15/06-16/06-17 on disk). This is the highest-value AI-ownable chore on the board.",
+                "lens": "observability"
+            },
+            {
+                "severity": "MED",
+                "title": "Post-1.0, split the `worker/src/index.js` monolith into modules. No pre-1.0 action.",
+                "lens": "architecture"
+            }
+        ]
     },
     "metrics": [
         {
