@@ -31,10 +31,10 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-17.md",
-        "latestReportAt": "2026-06-17T11:31:39Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-18.md",
+        "latestReportAt": "2026-06-18T12:00:00Z",
         "verdict": "needs-attention",
-        "topFinding": "The code stays healthy; the commit step is the single broken link, and it has been broken three days running. A stale .git/index.lock (zero-byte, Jun 15 10:06, no live git process behind it) blocks every write to the index, so three correct doc fixes sit uncommitted (CHANGELOG.md v0.13.2 backfill, docs/DESIGN.md section 12/5/9 wording, CLAUDE.md YaB.json -> Budget.json path) and six work-queue rows sit committed-ready with nowhere to land. Today's canonical audit ran twice, found zero net-new drift, and its one standing recommendation is to commit the pending files. The lock is the root cause; the uncommitted pile and the undrained queue are symptoms. Remove-Item the lock then run release.ps1 -Bump none clears all of it. Six MEDIUM, zero HIGH; needs-attention for the third straight day, residue growing each day the loop runs unattended.",
+        "topFinding": "Same diagnosis, fourth straight day: the code is healthy and the commit step is the one broken link. The stale .git/index.lock (zero-byte, Jun 15 10:06, ~3 days old, no live git process behind it) still blocks every write to the index, so the same three correct doc edits sit uncommitted (CHANGELOG.md v0.13.2 backfill, docs/DESIGN.md section 12/4/5/9 wording, CLAUDE.md YaB.json -> Budget.json path) and five work-queue rows sit committed-ready with nowhere to land. Today's canonical audit ran twice, found zero net-new drift, and its one standing recommendation is unchanged: commit the three pending files. The uncommitted pile held steady at three this cycle rather than growing, but the lock aged another day, the dashboard audit block widened to four cycles stale, and the blocked-on-user closeout row is now twelve days old. Remove-Item X:\\YesAndBudget\\.git\\index.lock then scripts/release.ps1 -Bump none clears all of it. Six MEDIUM, zero HIGH.",
         "actionsOpen": 6,
         "actionsClosed": 0,
         "actions": [
@@ -45,8 +45,18 @@
             },
             {
                 "severity": "MED",
-                "title": "After committing, prune the six `committed-ready` YaB rows and the one `done` row, and escalate or close the 11-day-old `yab-barraise-closeout-2026-06-06`.",
+                "title": "After committing, prune the five `committed-ready` YaB rows and the one `done` row, and escalate or close the 12-day-old `yab-barraise-closeout-2026-06-06`.",
                 "lens": "work-queue"
+            },
+            {
+                "severity": "MED",
+                "title": "Add the stale `.git/index.lock` hazard entry to `CLAUDE.md` (symptom, check, fix) so the next occurrence is self-service.",
+                "lens": "incident-runbook"
+            },
+            {
+                "severity": "MED",
+                "title": "Confirm the canonical-audit and release runs write and commit their `audit`/release blocks into `status/data/Budget.json`; the `audit` block is four cycles stale.",
+                "lens": "observability"
             },
             {
                 "severity": "MED",
@@ -57,16 +67,6 @@
                 "severity": "MED",
                 "title": "Action the P2 keytar migration before at-rest encryption goes from opt-in to default.",
                 "lens": "dependency"
-            },
-            {
-                "severity": "MED",
-                "title": "Confirm the canonical-audit and release runs write and commit their `audit`/release blocks into `status/data/Budget.json`; the `audit` block is three cycles stale.",
-                "lens": "observability"
-            },
-            {
-                "severity": "MED",
-                "title": "Add the stale `.git/index.lock` hazard entry to `CLAUDE.md` (symptom, check, fix) so the next occurrence is self-service.",
-                "lens": "incident-runbook"
             }
         ]
     },
