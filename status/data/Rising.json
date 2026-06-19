@@ -27,47 +27,32 @@
         "findings": null
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-18.md",
-        "latestReportAt": "2026-06-18T06:00:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-19.md",
+        "latestReportAt": "2026-06-19T11:03:11Z",
         "verdict": "needs-attention",
-        "topFinding": "The code is healthy and version markers track perfectly at v0.58.40, but the project is four consecutive cycles into the same compounding documentation drift and the loop built to fix it is now failing in a new way. The 06-17 day produced sixteen same-day releases (v0.58.25 through v0.58.40), every one a maintenance or source-sync pass with no new entity and no M1 mechanics, each minting a pill bump without a GDD footer entry or a real CHANGELOG body, so the footer-vs-pill gap blew out from eleven versions to twenty-seven and the bare-auto-message band grew from two entries to sixteen. The three structural items the 06-17 audit queued were absent from the work queue at the 06-18 run and had to be re-queued fresh, so the audit-to-fix handoff is now dropping its own items, not just failing to apply them. The single highest-leverage move is one focused session that lands br-release-footer-and-automsg-gate (the two release.ps1 guards) and in the same pass drains the GDD footer backfill, the ASSETS.md regen, and the bare-CHANGELOG rewrite; the guard is the only thing that stops this re-opening a fifth time. M1 is not mechanically blocked, but it has not advanced in roughly two and a half cycles while the automation churns.",
-        "actionsOpen": 9,
-        "actionsClosed": 1,
+        "topFinding": "The trajectory improved this cycle but the loop surfaced a new failure mode. The sixteen-release maintenance burst from 06-17 stopped (HEAD has not moved off v0.58.40 for roughly two days), the queue stopped dropping its own items, and the ASSETS.md manifest drift flagged for three straight cycles was finally regenerated. But the regen is sitting uncommitted in the live working tree while both the 06-19 canonical audit and drift-fix credited it as resolved and the audit reported a clean tree, so the loop is now reporting work as shipped that has not shipped and Rising.json workTreeClean is a false positive. Highest-leverage: commit the stranded ASSETS regen (one command), then land br-release-footer-and-automsg-gate (the two release.ps1 guards), then make the next session an M1 mechanics row. M1 has held at 40% since 2026-06-10, nine days.",
+        "actionsOpen": 8,
+        "actionsClosed": 3,
         "actions": [
             {
-                "severity": "HIGH",
-                "lens": "audit-loop",
-                "title": "Land br-release-footer-and-automsg-gate-2026-06-18 (two release.ps1 guards) and drain the GDD footer backfill, ASSETS.md regen, and bare-CHANGELOG rewrite in one focused session."
+                "severity": "MED",
+                "lens": "reliability",
+                "title": "Commit the stranded docs/ASSETS.md regen (uncommitted since 06-18, credited as resolved by two reports but never shipped); then close br-assets-manifest-regen-2026-06-18."
             },
             {
                 "severity": "MED",
-                "lens": "maintainability",
-                "title": "git rm --cached scripts/*.ps1.bak (seventh review) and update the stale path-extends rationale comment in building.gd."
+                "lens": "audit-loop",
+                "title": "Land br-release-footer-and-automsg-gate-2026-06-18 (two release.ps1 preship guards); fifth audit running, the only durable closer for the footer-gap and bare-message classes."
             },
             {
                 "severity": "MED",
                 "lens": "observability",
-                "title": "Wire the canonical-audit skill to populate the Rising.json audit block; re-run write-dashboard-status so workQueueDepth (12 -> 16) and lastReleaseMessage reflect reality."
+                "title": "Re-run write-dashboard-status (corrects workTreeClean and workQueueDepth 12 -> 18) and wire the canonical-audit skill to populate the Rising.json audit block."
             },
             {
                 "severity": "MED",
                 "lens": "strategic",
-                "title": "Make the next focused session an M1 mechanics row (Hold the Wall mission script or save/load), not another maintenance drain."
-            },
-            {
-                "severity": "MED",
-                "lens": "asset-pipeline",
-                "title": "Regenerate docs/ASSETS.md against the current 31-PNG tree. Queued as br-assets-manifest-regen-2026-06-18."
-            },
-            {
-                "severity": "MED",
-                "lens": "work-queue",
-                "title": "Drain or explicitly age-out the three pre-week BR queue items (br-architecture-snapshot-refresh-2026-06-11, br-v0581-changelog-reconcile-2026-06-14, br-asset-production-pass)."
-            },
-            {
-                "severity": "MED",
-                "lens": "skill-chain-handoff",
-                "title": "Trace why the 06-17 drift-auto-fix enqueue did not persist; add a check that enqueued items survive to the next run."
+                "title": "Make the next focused session an M1 mechanics row (Hold the Wall mission script or save/load); M1 has held at 40% for nine days."
             },
             {
                 "severity": "MED",
@@ -78,6 +63,16 @@
                 "severity": "MED",
                 "lens": "public-voice",
                 "title": "Rewrite the sixteen bare CHANGELOG entries v0.58.25-v0.58.40 to describe their work. Queued as br-changelog-bare-automsg-v05825-v05840-2026-06-18."
+            },
+            {
+                "severity": "MED",
+                "lens": "maintainability",
+                "title": "git rm --cached scripts/*.ps1.bak (eighth review) and update the stale path-extends rationale comment in building.gd."
+            },
+            {
+                "severity": "MED",
+                "lens": "work-queue",
+                "title": "Close the duplicate ASSETS rows (br-assets-manifest-regen-2026-06-18 plus the phantom wts-2026-06-19-br-stale-assets-md), and triage the P1 wts-2026-06-16-br-git-index-corrupt and the eight-day br-architecture-snapshot-refresh-2026-06-11."
             }
         ]
     },
