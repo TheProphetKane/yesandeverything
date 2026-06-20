@@ -25,22 +25,27 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-19.md",
-        "latestReportAt": "2026-06-19T11:20:15Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-20.md",
+        "latestReportAt": "2026-06-20T11:22:19Z",
         "verdict": "needs-attention",
-        "topFinding": "Twelfth daily run, sixth day with HEAD frozen at 890b493 (2026-06-13, six days cold), same single HIGH. Two things changed since 06-18 and both cut the same way. The tree is no longer byte-identical: the 06-19 canonical audit applied its DESIGN.md v0.3.0 date fix into the working copy, so git diff --stat grew 13/6 to 14/7; a second drift-fix landed in the tree without shipping. And the uncommitted docs/DESIGN.md diff is not the cosmetic rebrand the 06-18 report assumed: it retracts a false claim that a daily Cron Trigger fires preference_window_opened, which the code does not implement (no [triggers] block, no scheduled() handler), so the canonical doc on HEAD currently documents a non-existent producer. main is level with origin/main (0 0); nothing external blocks a commit. One release.ps1 run ships the rebrand, the date fix, the cron-trigger correction, and git-guard.ps1, closes the HIGH, and reverts the verdict to healthy.",
-        "actionsOpen": 2,
+        "topFinding": "Thirteenth daily run, seventh day with HEAD frozen at 890b493 (2026-06-13), and the working tree is byte-identical to the 06-19 pass: same four modified files, same two untracked .bak files, same two .bak files already tracked in HEAD, same uncommitted git-guard.ps1. Nothing in the project changed since the last report; today's canonical audit ran clean (zero doc-vs-code drift) and flagged only that *.bak is not gitignored, so the next release.ps1 git add -A will sweep more .bak residue in. The single HIGH is unchanged: one release.ps1 run ships the rebrand, the DESIGN cron-trigger correction, the v0.3.0 date fix, and git-guard.ps1, closes the HIGH, and reverts the verdict to healthy. The highest-leverage action this cycle is not in the project but in the cadence: pause bar-raise-scheduler-daily; it is now re-deriving an identical report against a frozen tree.",
+        "actionsOpen": 3,
         "actionsClosed": 0,
         "actions": [
             {
                 "severity": "HIGH",
-                "title": "Ship the whole working tree in one pass: `cd X:\\YesAndScheduler; .\\scripts\\release.ps1` (or `git add -A; git commit`). Lands the rebrand, the DESIGN v0.3.0 date fix, the cron-trigger correction, and `git-guard.ps1`. Nothing external blocks it (origin/main...HEAD = 0 0). Closes the reliability HIGH, the maintainability and audit-loop MEDIUMs, and the observability/version-pill cross-references at once.",
+                "title": "Ship the whole working tree in one pass: `cd X:\\YesAndScheduler; .\\scripts\\release.ps1` (or `git add -A; git commit`). Lands the rebrand, the DESIGN cron-trigger correction, the v0.3.0 date fix, and git-guard.ps1. origin/main...HEAD = 0 0, nothing external blocks it. Closes the reliability HIGH plus the maintainability/audit-loop MEDIUMs.",
                 "lens": "reliability"
             },
             {
                 "severity": "MED",
-                "title": "Pause `bar-raise-scheduler-daily`, or drop it to twice-weekly, until HEAD moves. The recommendation has ridden eight reports; apply it to the task registry instead of re-deriving it a twelfth time.",
+                "title": "Pause bar-raise-scheduler-daily (or drop to twice-weekly) in the task registry until HEAD moves. The daily run is now re-deriving a byte-identical report; the ship recommendation has ridden ~9 reports.",
                 "lens": "cost"
+            },
+            {
+                "severity": "MED",
+                "title": "Add *.bak to .gitignore and `git rm` the two tracked .bak files (scripts/discord-notify.ps1.bak, scripts/release.ps1.bak) so the next git add -A does not sweep more residue into HEAD.",
+                "lens": "release-pipeline"
             }
         ]
     },

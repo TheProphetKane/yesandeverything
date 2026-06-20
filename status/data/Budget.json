@@ -31,17 +31,27 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-19.md",
-        "latestReportAt": "2026-06-19T12:00:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-20.md",
+        "latestReportAt": "2026-06-20T11:34:29Z",
         "verdict": "needs-attention",
-        "topFinding": "The five-day deadlock broke this cycle. The stale .git/index.lock (zero-byte, Jun 15 10:06) that blocked every commit across BAR_RAISE-06-14 through -06-18 was confirmed dead (no live git process, HEAD reads clean) and cleared during this run, so the three correct doc edits (CHANGELOG.md, docs/DESIGN.md, CLAUDE.md) and the nine committed-ready YaB queue rows can finally land. The code stayed healthy throughout: zero HIGH findings for the fifth straight cycle. What remains is independent standing work, not a single shared blocker: keytar is still archived on the encrypted-boot path, the .finances/ history leak is still unverified remote-side, the dashboard audit block is now five canonical-audit cycles stale, and the CLAUDE.md index.lock hazard entry recommended three cycles running is still absent. With the obstruction gone the path to healthy is short: scripts/release.ps1 -Bump none to commit the pending edits plus this report, add the runbook entry, prune the queue. Five MEDIUM, zero HIGH.",
+        "topFinding": "The 06-19 'deadlock broke' call was premature: a fresh zero-byte .git/index.lock re-orphaned at Jun 19 20:04, hours after that report hand-cleared the Jun 15 one, and HEAD still sits at 5b96058 (Jun 15) with the same four-plus queued doc edits uncommitted. This cycle pins the real fix the prior runs missed: YaB already ships scripts/git-guard.ps1, whose Assert-GitSafe clears a dead lock only when no live git process holds it, and it is dot-sourced by release.ps1 and push-to-github.ps1. The lock recurs because unguarded scheduled ticks orphan an index write on the FUSE mount while the safe clear only fires inside a release or push path, none of which has run since Jun 15. The fix is one guarded command, cd X:\\YesAndBudget; .\\scripts\\release.ps1 -Bump none, which clears the dead lock through Assert-GitSafe and lands the pending edits plus this report in a single commit. Do not hand-delete the lock; that is what failed to hold last cycle. The code stays healthy for the sixth straight cycle: zero HIGH on the app path, 22 test files, version pills aligned at 0.13.2. One HIGH, four MEDIUM.",
         "actionsOpen": 5,
-        "actionsClosed": 1,
+        "actionsClosed": 0,
         "actions": [
             {
+                "severity": "HIGH",
+                "title": "Run `cd X:\\YesAndBudget; .\\scripts\\release.ps1 -Bump none` to clear the dead .git/index.lock via Assert-GitSafe and land the pending doc edits plus this report; do not hand-delete the lock. Then add the index.lock/git-guard hazard entry to CLAUDE.md.",
+                "lens": "incident-runbook"
+            },
+            {
                 "severity": "MED",
-                "title": "From an authed machine, confirm the old SHAs (`44b7b10`, `f670d17`, `43ea16b`) and the `.finances/` tree 404 on github.com; request a GitHub GC if a hard guarantee is needed, then retire the finding.",
-                "lens": "security"
+                "title": "After the ship, prune the five committed-ready YaB rows and the done yab-tracked-bak-rm-2026-06-10, then escalate or close the 14-day yab-barraise-closeout-2026-06-06.",
+                "lens": "work-queue"
+            },
+            {
+                "severity": "MED",
+                "title": "Confirm the canonical-audit run writes and commits its audit block into status/data/Budget.json; it is six cycles stale (still CANONICAL_AUDIT-2026-06-14.md).",
+                "lens": "observability"
             },
             {
                 "severity": "MED",
@@ -50,18 +60,8 @@
             },
             {
                 "severity": "MED",
-                "title": "Confirm the canonical-audit and release runs write and commit their `audit`/release blocks into `status/data/Budget.json`; the `audit` block is five cycles stale.",
-                "lens": "observability"
-            },
-            {
-                "severity": "MED",
-                "title": "Commit the three doc edits via `scripts/release.ps1 -Bump none` (lock now clear), then prune the nine `committed-ready` YaB rows and the `done` row, and escalate or close the 13-day-old `yab-barraise-closeout-2026-06-06`.",
-                "lens": "work-queue"
-            },
-            {
-                "severity": "MED",
-                "title": "Add the stale `.git/index.lock` hazard entry to `CLAUDE.md` (symptom, check, fix) so the next occurrence is self-service.",
-                "lens": "incident-runbook"
+                "title": "From an authed machine, confirm the old .finances SHAs (44b7b10, f670d17, 43ea16b) and the tree 404 on github.com, then retire the finding.",
+                "lens": "security"
             }
         ]
     },
