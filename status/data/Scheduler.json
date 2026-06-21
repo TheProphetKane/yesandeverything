@@ -25,27 +25,27 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-20.md",
-        "latestReportAt": "2026-06-20T11:22:19Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-21.md",
+        "latestReportAt": "2026-06-21T11:20:18Z",
         "verdict": "needs-attention",
-        "topFinding": "Thirteenth daily run, seventh day with HEAD frozen at 890b493 (2026-06-13), and the working tree is byte-identical to the 06-19 pass: same four modified files, same two untracked .bak files, same two .bak files already tracked in HEAD, same uncommitted git-guard.ps1. Nothing in the project changed since the last report; today's canonical audit ran clean (zero doc-vs-code drift) and flagged only that *.bak is not gitignored, so the next release.ps1 git add -A will sweep more .bak residue in. The single HIGH is unchanged: one release.ps1 run ships the rebrand, the DESIGN cron-trigger correction, the v0.3.0 date fix, and git-guard.ps1, closes the HIGH, and reverts the verdict to healthy. The highest-leverage action this cycle is not in the project but in the cadence: pause bar-raise-scheduler-daily; it is now re-deriving an identical report against a frozen tree.",
+        "topFinding": "Fourteenth report, eighth day with HEAD frozen at 890b493 (2026-06-13); the working tree is byte-identical to the 06-19 and 06-20 passes (same four modified files, two untracked .bak, two tracked .bak, uncommitted git-guard.ps1). Today's canonical audit ran clean again, zero doc-vs-code drift. This run was triggered by hand, so the standing pause-the-cadence advice does not apply to it, but the scheduled bar-raise-scheduler-daily is still re-deriving an identical report. The single HIGH is unchanged: the ship gate has failed eight consecutive cycles. The sharpened nuance this cycle is that the fix is NOT a bare release.ps1 run; git add -A would sweep the untracked .bak files into HEAD while *.bak is still ungitignored. The clean ship is gitignore-*.bak, git rm the two tracked .bak, delete the two untracked, then release. Three small steps and the verdict reverts to healthy.",
         "actionsOpen": 3,
         "actionsClosed": 0,
         "actions": [
             {
                 "severity": "HIGH",
-                "title": "Ship the whole working tree in one pass: `cd X:\\YesAndScheduler; .\\scripts\\release.ps1` (or `git add -A; git commit`). Lands the rebrand, the DESIGN cron-trigger correction, the v0.3.0 date fix, and git-guard.ps1. origin/main...HEAD = 0 0, nothing external blocks it. Closes the reliability HIGH plus the maintainability/audit-loop MEDIUMs.",
+                "title": "Ship the tree in the right order so the release does not self-pollute: add *.bak to .gitignore, git rm --cached the two tracked .bak files, delete the two untracked .bak, then cd X:\\YesAndScheduler; .\\scripts\\release.ps1. Closes the reliability HIGH plus the maintainability/audit-loop/ps1-stack MEDIUMs and the observability/version-pill cross-references. origin/main...HEAD = 0 0, nothing external blocks it.",
                 "lens": "reliability"
             },
             {
                 "severity": "MED",
-                "title": "Pause bar-raise-scheduler-daily (or drop to twice-weekly) in the task registry until HEAD moves. The daily run is now re-deriving a byte-identical report; the ship recommendation has ridden ~9 reports.",
+                "title": "Pause bar-raise-scheduler-daily (or drop to twice-weekly) in the task registry until HEAD moves. The daily run is re-deriving a byte-identical report; manual bar-raise YaS runs stay available on demand.",
                 "lens": "cost"
             },
             {
                 "severity": "MED",
-                "title": "Add *.bak to .gitignore and `git rm` the two tracked .bak files (scripts/discord-notify.ps1.bak, scripts/release.ps1.bak) so the next git add -A does not sweep more residue into HEAD.",
-                "lens": "release-pipeline"
+                "title": "Rename package.json:5 description to 'Yes& Scheduler' without the U+2026 ellipsis and U+2014 em-dash, in the ship commit.",
+                "lens": "maintainability"
             }
         ]
     },

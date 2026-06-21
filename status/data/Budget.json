@@ -31,26 +31,26 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-20.md",
-        "latestReportAt": "2026-06-20T11:34:29Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-21.md",
+        "latestReportAt": "2026-06-21T11:30:00Z",
         "verdict": "needs-attention",
-        "topFinding": "The 06-19 'deadlock broke' call was premature: a fresh zero-byte .git/index.lock re-orphaned at Jun 19 20:04, hours after that report hand-cleared the Jun 15 one, and HEAD still sits at 5b96058 (Jun 15) with the same four-plus queued doc edits uncommitted. This cycle pins the real fix the prior runs missed: YaB already ships scripts/git-guard.ps1, whose Assert-GitSafe clears a dead lock only when no live git process holds it, and it is dot-sourced by release.ps1 and push-to-github.ps1. The lock recurs because unguarded scheduled ticks orphan an index write on the FUSE mount while the safe clear only fires inside a release or push path, none of which has run since Jun 15. The fix is one guarded command, cd X:\\YesAndBudget; .\\scripts\\release.ps1 -Bump none, which clears the dead lock through Assert-GitSafe and lands the pending edits plus this report in a single commit. Do not hand-delete the lock; that is what failed to hold last cycle. The code stays healthy for the sixth straight cycle: zero HIGH on the app path, 22 test files, version pills aligned at 0.13.2. One HIGH, four MEDIUM.",
+        "topFinding": "Seventh consecutive needs-attention, and the single HIGH is unchanged from 06-20: the .git/index.lock blocker was not cleared. The same zero-byte lock dated Jun 19 20:04 is still in place, no live git process holds it (confirmed dead orphan), HEAD still sits at 5b96058 (Jun 15), and the same three doc edits (CHANGELOG.md, CLAUDE.md, docs/DESIGN.md) remain uncommitted. The 06-20 recommendation to run `cd X:\\YesAndBudget; .\\scripts\release.ps1 -Bump none` is correct and still applies; it was simply not run. That one guarded command clears the dead lock through Assert-GitSafe and lands the pending edits plus the backed-up reports in a single commit. Do not hand-delete the lock; the Jun 19 hand-clear proved a bare delete does not hold. The code stays healthy for the seventh straight cycle: zero HIGH on the app path, 22 test files, version pills aligned at 0.13.2. The stall clock is now the live risk: last real commit was Jun 15. One HIGH, four MEDIUM.",
         "actionsOpen": 5,
         "actionsClosed": 0,
         "actions": [
             {
                 "severity": "HIGH",
-                "title": "Run `cd X:\\YesAndBudget; .\\scripts\\release.ps1 -Bump none` to clear the dead .git/index.lock via Assert-GitSafe and land the pending doc edits plus this report; do not hand-delete the lock. Then add the index.lock/git-guard hazard entry to CLAUDE.md.",
+                "title": "Run `cd X:\\YesAndBudget; .\\scripts\release.ps1 -Bump none` to clear the dead .git/index.lock via Assert-GitSafe and land the pending doc edits plus reports; do not hand-delete the lock. Then add the index.lock/git-guard hazard entry to CLAUDE.md.",
                 "lens": "incident-runbook"
             },
             {
                 "severity": "MED",
-                "title": "After the ship, prune the five committed-ready YaB rows and the done yab-tracked-bak-rm-2026-06-10, then escalate or close the 14-day yab-barraise-closeout-2026-06-06.",
+                "title": "After the ship, prune the five committed-ready YaB rows and the done yab-tracked-bak-rm-2026-06-10, then escalate or close the 15-day yab-barraise-closeout-2026-06-06.",
                 "lens": "work-queue"
             },
             {
                 "severity": "MED",
-                "title": "Confirm the canonical-audit run writes and commits its audit block into status/data/Budget.json; it is six cycles stale (still CANONICAL_AUDIT-2026-06-14.md).",
+                "title": "Confirm the canonical-audit run writes and commits its audit block into status/data/Budget.json; it is seven cycles stale (still CANONICAL_AUDIT-2026-06-14.md).",
                 "lens": "observability"
             },
             {
