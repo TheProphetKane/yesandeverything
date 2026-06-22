@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-15T12:05:10Z",
-  "portfolioVerdict": "needs-attention",
+  "generatedAt": "2026-06-22T12:05:08Z",
+  "portfolioVerdict": "at-risk",
   "projects": [
     "BR",
     "HBH",
@@ -9,61 +9,65 @@
     "YaA",
     "YaB"
   ],
-  "summary": "The portfolio climbed a full tier off last week's at-risk: 3 healthy / 3 needs-attention / 0 at-risk, nothing stalled. The dashboard-writer clobber that defined last week is closed across the board, and three long-standing HIGHs cleared in one week (YaC brand rename, HBH commit-per-patch, YaB .finances leak gone from history). Handler drift went clean. What holds it at needs-attention is the host side: 13 queue items are file-complete but stranded on a Windows .git/index.lock clear plus release.ps1, the pill-vs-changelog class recurred one cycle after BR closed it, and FUSE truncation escalated from files to .git metadata.",
+  "summary": "The portfolio tiered down: 1 healthy / 3 needs-attention / 1 at-risk / 1 stalled, off last week's 3 healthy / 3 needs-attention / 0 at-risk. The defining story is the host-side commit stall: five of seven repos are HEAD-frozen six to nine days, every HIGH on HBH, Scheduler, and YaB is correct file work that the attended release.ps1 never shipped, and committed-ready queue items grew from 13 to 21. HBH tipped to at-risk on a second HIGH (a corrupt tracked git object, FUSE damage reaching the object store) and YaA tipped to stalled on its tenth unactioned cut-v1.0 review. BR is the bright spot: a 57-commit single-day spike unfroze its tree and landed a month of deferred best-practices work.",
   "topActions": [
     {
       "project": "cross-cutting",
       "severity": "high",
-      "label": "Add a preship gate to every release.ps1 that refuses a version-pill bump with no matching changelog footer entry"
+      "label": "Run one attended Windows release pass to drain the 21 committed-ready items and unfreeze five repos; start Scheduler, then YaB, then HBH"
     },
     {
       "project": "cross-cutting",
       "severity": "high",
-      "label": "Clear the stale .git/index.lock portfolio-wide and run the 13 stranded committed-ready release.ps1 ships"
+      "label": "Repair HBH's corrupt loose object d188556 from origin and promote git-guard.ps1 to a shared helper wired into every release.ps1"
+    },
+    {
+      "project": "cross-cutting",
+      "severity": "high",
+      "label": "Build the preship gate owed since 06-08: refuse a pill bump with no matching changelog footer entry, plus a bare-auto-message guard"
+    },
+    {
+      "project": "HBH",
+      "severity": "high",
+      "label": "Land or revert v0.98.10 (eighth cycle) and run the deferred footprint defense-balance review"
     },
     {
       "project": "Scheduler",
-      "severity": "medium",
-      "label": "Commit Scheduler now: it is one command from healthy and the git-guard.ps1 safety subsystem is uncommitted"
-    },
-    {
-      "project": "cross-cutting",
       "severity": "high",
-      "label": "Promote Scheduler's git-guard.ps1 to a shared portfolio helper against FUSE .git corruption"
-    },
-    {
-      "project": "YaA",
-      "severity": "medium",
-      "label": "Cut Apothecary v1.0 (98%, 8 clean cycles) and drop it plus YaC to weekly review"
+      "label": "Ship in the self-non-polluting order: gitignore *.bak, git rm --cached the two tracked .bak, delete the untracked, then release"
     },
     {
       "project": "YaB",
+      "severity": "high",
+      "label": "release.ps1 -Bump none to clear the dead index.lock via Assert-GitSafe and land five doc edits; do not hand-delete the lock"
+    },
+    {
+      "project": "YaA",
+      "severity": "high",
+      "label": "Cut v1.0, mark 'Symbol + label polish' done, and drop Apothecary to weekly review (tenth carry)"
+    },
+    {
+      "project": "cross-cutting",
       "severity": "medium",
-      "label": "Re-verify the .finances leak scrub from an authed machine to drop YaB to healthy"
+      "label": "Move YaC and YaA to weekly review and pause bar-raise-scheduler-daily until HEAD moves"
     },
     {
       "project": "BR",
       "severity": "medium",
-      "label": "git rm --cached the five tracked scripts/*.ps1.bak files and add a *.bak gitignore rule"
+      "label": "Make the next BR session an M1 mechanics row (stuck at 40% for 12 days) and land the release-footer/auto-msg gate"
     },
     {
-      "project": "HBH",
+      "project": "cross-cutting",
       "severity": "medium",
-      "label": "Log the 3D-render profiler baseline before gameplay drives the crowd at scale"
-    },
-    {
-      "project": "Budget",
-      "severity": "low",
-      "label": "Fix handler dependency shorthand and refresh the handler-audit skill path table"
-    },
-    {
-      "project": "portfolio",
-      "severity": "low",
-      "label": "Wire new Yes& Agents project into the bar-raise loop and dashboard"
+      "label": "Normalize the queue to one project ID per project (BR rising/br/brackish, YaA apothecary/yaa/yaapothecary, HBH hbh/htbh)"
     }
   ],
-  "atRiskProjects": [],
-  "stalledProjects": [],
-  "totalOpenActions": 13,
-  "totalClosedSinceLastConstellation": 6
+  "atRiskProjects": [
+    "HBH"
+  ],
+  "stalledProjects": [
+    "YaA"
+  ],
+  "totalOpenActions": 25,
+  "totalClosedSinceLastConstellation": 2
 }
