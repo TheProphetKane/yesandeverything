@@ -968,6 +968,11 @@
     { id: "Scheduler",  tag: "Scheduler",  displayName: "Yes& Scheduler",   hue: "#b88aff" },
     { id: "Apothecary", tag: "Apothecary", displayName: "Yes& Apothecary",  hue: "#c2b24a" },
     { id: "Budget",     tag: "Budget",     displayName: "Yes& Budget",      hue: "#ffd23a" },
+    // usageOnly: token usage/cost only. No status JSON exists for these; they are
+    // deliberately excluded from every completion/status/progress surface (radar,
+    // completion bars, milestone views) and appear in usage/cost/flow views only.
+    { id: "Counselor",  tag: "Counselor",  displayName: "Counselor",        hue: "#e0609a", usageOnly: true },
+    { id: "Skylight",   tag: "Skylight",   displayName: "Skylight",         hue: "#82aaff", usageOnly: true },
     { id: "Agents",     tag: "Agents",     displayName: "Yes& Agents",      hue: "#2f5fd0" },
     { id: "Everything", tag: "Everything", displayName: "Yes& Everything",  hue: "#eef2f8" }
   ];
@@ -1402,7 +1407,7 @@
 
   var VERDICT_APPROX = { working: 90, healthy: 87, "in-progress": 70, "needs-attention": 55, "at-risk": 57, stalled: 40 };
   function radarVals(statuses) {
-    var axes = PROJECTS.filter(function (p) { return p.id !== "Everything"; });
+    var axes = PROJECTS.filter(function (p) { return p.id !== "Everything" && !p.usageOnly; });
     var vals = [], haveCompletion = false;
     axes.forEach(function (p) {
       var st = statuses[p.id];
@@ -2085,7 +2090,7 @@
     // portfolio summary chips
     var sum = el("div", { className: "gsummary" });
     var meanC = 0, nC = 0, acts = 0, leftSum = 0, counts = {};
-    PROJECTS.filter(function (p) { return p.id !== "Everything"; }).forEach(function (p) {
+    PROJECTS.filter(function (p) { return p.id !== "Everything" && !p.usageOnly; }).forEach(function (p) {
       var st = LAST.statuses[p.id];
       if (st && st.completion && st.completion.pct != null) { meanC += st.completion.pct; nC++; }
       if (st && st.barRaise) {
@@ -2109,7 +2114,7 @@
     box.appendChild(radarSvg(LAST.statuses, 460, "big").svg);
     split.appendChild(box);
     var keys = el("div", { className: "keyrows" });
-    PROJECTS.filter(function (p) { return p.id !== "Everything"; }).forEach(function (p, i) {
+    PROJECTS.filter(function (p) { return p.id !== "Everything" && !p.usageOnly; }).forEach(function (p, i) {
       var st = LAST.statuses[p.id];
       var pct = st && st.completion ? st.completion.pct : null;
       var br = st && st.barRaise ? st.barRaise : {};
@@ -2685,13 +2690,17 @@
       svg.appendChild(svgEl("path", { d: smoothPath(pts), fill: "none", stroke: meta.hue, "stroke-width": 1.2, opacity: 0.85 }));
       mini.appendChild(svg);
       var pct = st && st.completion ? st.completion.pct : null;
-      var bar = el("div", { className: "mbar", title: pct != null ? pct + "% to done" : (id === "ALL" ? "portfolio" : "no completion anchor yet") });
-      var fill = el("div", { className: "mfill" });
-      fill.style.width = "0%";
-      fill.style.background = pct != null ? completionColor(pct) : "var(--ink-4)";
-      bar.appendChild(fill);
-      mini.appendChild(bar);
-      requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = (pct != null ? pct : 0) + "%"; }); });
+      // usageOnly projects (Counselor, Skylight) carry no completion anchor and
+      // must not show a progress bar; their card is usage spark + tokens only.
+      if (!meta.usageOnly) {
+        var bar = el("div", { className: "mbar", title: pct != null ? pct + "% to done" : (id === "ALL" ? "portfolio" : "no completion anchor yet") });
+        var fill = el("div", { className: "mfill" });
+        fill.style.width = "0%";
+        fill.style.background = pct != null ? completionColor(pct) : "var(--ink-4)";
+        bar.appendChild(fill);
+        mini.appendChild(bar);
+        requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = (pct != null ? pct : 0) + "%"; }); });
+      }
       mini.title = meta.displayName + (pct != null ? " · " + pct + "% complete · click to spotlight" : " · click to spotlight");
       function go() { jumpTo(CYCLE.indexOf(id)); }
       mini.addEventListener("click", go);

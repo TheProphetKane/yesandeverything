@@ -43,7 +43,10 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 8   # v8: scheduled-task runs attribute wholly to their task's
+$ATTRIB_VERSION = 9   # v9: adds Counselor (X:\YesAndCounselor; no git, matched by
+                      # content strings) + Skylight (X:\YesAndSkylight); forces a
+                      # full re-scan that re-trues history.
+                      # v8: scheduled-task runs attribute wholly to their task's
                       # project by the <scheduled-task name> tag, beating the
                       # queue-driven majority (fixes nightly audits landing in Everything).
                       # v7: path-less usage records inherit the last project actually
@@ -105,6 +108,10 @@ $PROJECT_PATTERNS = @(
   @{ pat = "working-tree-scan";   id = "Everything" },
   @{ pat = "cross-project-digest"; id = "Everything" },
   @{ pat = "self-reprompt-loop";  id = "Everything" },
+  # Counselor (X:\YesAndCounselor) has no dedicated session dir; its work ran
+  # from root / Yes& Agents cwds, so it is matched by a strong content string,
+  # not a cwd path. Placed high so it wins like a task-name identity.
+  @{ pat = "appreciation-connections"; id = "Counselor" },
   # repo folder names (match X:\ paths, /mnt/ paths, and dir-encoded forms)
   @{ pat = "HereBeHordes";        id = "Hordes" },
   @{ pat = "HereThereBeHordes";   id = "Hordes" },
@@ -117,6 +124,11 @@ $PROJECT_PATTERNS = @(
   @{ pat = "YesAndApothecary";    id = "Apothecary" },
   @{ pat = "yesandapothecary";    id = "Apothecary" },
   @{ pat = "YesAndBudget";        id = "Budget" },
+  @{ pat = "YesAndCounselor";     id = "Counselor" },
+  @{ pat = "yesandcounselor";     id = "Counselor" },
+  @{ pat = "spouse.yesandeverything"; id = "Counselor" },
+  @{ pat = "YesAndSkylight";      id = "Skylight" },
+  @{ pat = "yesandskylight";      id = "Skylight" },
   @{ pat = "YesAndAgents";        id = "Agents" },
   @{ pat = "yesandagents";        id = "Agents" },
   @{ pat = "YesAndEverything";    id = "Everything" },
@@ -598,6 +610,7 @@ $REPO_PATHS = @{
   Hordes = "X:\HereBeHordes"; Rising = "X:\BrackishRising"; Chains = "X:\YesAndChains"
   Scheduler = "X:\YesAndScheduler"; Apothecary = "X:\YesAndApothecary"; Budget = "X:\YesAndBudget"
   Everything = "X:\YesAndEverything"; Agents = "X:\YesAndAgents"
+  Counselor = "X:\YesAndCounselor"; Skylight = "X:\YesAndSkylight"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
@@ -623,7 +636,11 @@ foreach ($proj in $projects.Keys) {
           if ($mv.Success) { $ver = $mv.Groups[1].Value }
         }
       }
-      $head = (& git -C $rp rev-parse --short HEAD 2>$null)
+      # Counselor has no .git; calling git there throws under EAP=Stop and would
+      # skip the whole snapshot. Guard so a non-repo just yields a null commit.
+      if (Test-Path (Join-Path $rp ".git")) {
+        try { $head = (& git -C $rp rev-parse --short HEAD 2>$null) } catch { $head = $null }
+      }
     }
     $entry = [ordered]@{
       at = $payload.generatedAt
@@ -679,6 +696,8 @@ $QUEUE_ALIAS = @{
   yab = "Budget"; budget = "Budget"; yesandbudget = "Budget"
   yae = "Everything"; everything = "Everything"; yesandeverything = "Everything"
   yaag = "Agents"; agents = "Agents"; yesandagents = "Agents"
+  counselor = "Counselor"; yesandcounselor = "Counselor"
+  skylight = "Skylight"; yesandskylight = "Skylight"
   all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
 }
 try {
