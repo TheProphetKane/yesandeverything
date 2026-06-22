@@ -882,6 +882,23 @@ function mountPresets({ select, saveBtn, actions }, state, deps) {
     const p = presets.find(x => x.id === select.value);
     if (!p) return;
     const layout = typeof p.layout === 'function' ? p.layout() : structuredClone(p.layout);
+    // A preset snapshots layout + sectionTitles only, not the custom-section
+    // bodies. If a custom-XXXX section was deleted since the preset was saved,
+    // its key still lingers in the snapshot and would reference a section that
+    // no longer exists. Filter those dangling custom keys out on recall so a
+    // stale preset can't break the layout. (Nick: filter dangling keys on load,
+    // not snapshot-and-restore.)
+    const liveCustom = new Set((state.get().customItems ?? []).map(c => c.id));
+    const keep = inst => {
+      const key = (typeof inst === 'string') ? inst : (inst && inst.key) || '';
+      return !key.startsWith('custom-') || liveCustom.has(key);
+    };
+    for (const side of ['front', 'back']) {
+      for (const z of (layout[side] || [])) {
+        z.items = (z.items || []).filter(keep);
+      }
+    }
+    layout.hidden = (layout.hidden || []).filter(keep);
     const sectionTitles = { ...DEFAULT_SECTION_TITLES, ...(p.sectionTitles ?? {}) };
     state.set({ layout, sectionTitles });
     paint();
