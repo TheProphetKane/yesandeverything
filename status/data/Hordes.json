@@ -31,21 +31,26 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-21.md",
-        "latestReportAt": "2026-06-21T11:00:00Z",
-        "verdict": "needs-attention",
-        "topFinding": "Seventh straight cycle at needs-attention on the same lone HIGH, and the working tree is now six days dirty. v0.98.10 is fully authored - GDD pill v0.98.10 (docs/GDD.html:1380), the paired footprint-rebalance changelog entry (:4913), and the roster-wide footprint edits in source/world3d/building_catalog_3d.gd - but HEAD is still 3918336 (v0.98.9, 2026-06-15) and project.godot config/version still reads 0.98.9 (:15). The FUSE-truncation-unacceptable files (GDD.html, project.godot) have sat dirty the whole stretch, and CLAUDE.md's own commit-per-patch hazard exists precisely because stacking versions between commits is how the May 2026 incident lost eight versions of work. Nothing structural blocks the commit: the doc-contradiction the 06-19 audit gated on is cleared, and the only open substance is the deferred defense-balance review plus three long-carried doc MEDIUMs (the v0.80.1 ARCHITECTURE.md, the 2D-residual GDD pointers, the missing world_3d profiler baseline). Run scripts/release.ps1 to land v0.98.10 or revert the rebalance; either way, stop the seventh cycle. The stalled tip is 2026-06-29, eight days out.",
-        "actionsOpen": 6,
+        "latestReportPath": "docs/BAR_RAISE-2026-06-22.md",
+        "latestReportAt": "2026-06-22T11:00:00Z",
+        "verdict": "at-risk",
+        "topFinding": "Eighth straight cycle on the uncommitted v0.98.10, and this cycle a second HIGH opened: the local git repo has a corrupt loose object. The footprint-rebalance work is still fully authored - GDD pill v0.98.10 (docs/GDD.html:1380), the changelog entry (:4913), the roster-wide edits in source/world3d/building_catalog_3d.gd - but HEAD is still 3918336 (v0.98.9, 2026-06-15), project.godot config/version reads 0.98.9 (:15), and the tree has been dirty seven days. Separately, blob d188556 (the tracked asset assets/art/temp/hoardes_commandcenter_gentest_v0_1.png) fails its zlib checksum on disk, so git fsck, git diff across the full tree, and git gc all error out - FUSE corruption reaching into .git itself. The good copy is on origin, so repair is low-risk, and the corruption does not block the release (the four dirty files do not reference that blob and it is already pushed). Land v0.98.10 with scripts/release.ps1 or revert it, and repair the object from origin; the two HIGHs are independent. Verdict drops to at-risk on the second HIGH.",
+        "actionsOpen": 7,
         "actionsClosed": 0,
         "actions": [
             {
                 "severity": "HIGH",
-                "title": "Run scripts/release.ps1 to commit + push v0.98.10 so HEAD, project.godot (0.98.9 -> 0.98.10), and the GDD pill reconcile and the dirty GDD.html / project.godot / building_catalog_3d.gd stop sitting exposed a seventh cycle (or revert the rebalance if it is not landing). Do not let an eighth cycle start.",
+                "title": "Repair the corrupt loose object d188556 (tracked asset assets/art/temp/hoardes_commandcenter_gentest_v0_1.png): remove .git/objects/d1/88556d... and re-fetch from origin (which holds the intact blob), then git fsck to confirm clean. git fsck / git diff full-tree / git gc currently fail with a zlib data-check error. Independent of the v0.98.10 commit.",
+                "lens": "data-integrity"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Run scripts/release.ps1 to commit + push v0.98.10 so HEAD, project.godot (0.98.9 -> 0.98.10), and the GDD pill reconcile and the dirty GDD.html / project.godot / building_catalog_3d.gd stop sitting exposed an eighth cycle. Revert the rebalance if it is not landing.",
                 "lens": "reliability"
             },
             {
                 "severity": "MED",
-                "title": "Run the deferred defense-balance review the v0.98.10 changelog flagged: the footprint rebalance pushed most buildings to 2x2+, which grants +1 defense under the v0.34.0 derived rule (GDD:1650). Confirm the roster-wide buff is intended or re-derive the affected values.",
+                "title": "Run the deferred defense-balance review the v0.98.10 changelog flagged: the footprint rebalance pushed most buildings to 2x2+, which grants +1 defense under the v0.34.0 rule (GDD:1650). Confirm the roster-wide buff is intended or re-derive the affected values.",
                 "lens": "playability / game-design"
             },
             {
@@ -55,7 +60,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Capture and log a world_3d profiler run at 1000-3000 enemies in docs/OPTIMIZATION_LOG.md (25 rows, no 3D-crowd baseline) before gameplay drives the 3D crowd; carried ~13 cycles and compounded by the footprint-density bump.",
+                "title": "Capture and log a world_3d profiler run at 1000-3000 enemies in docs/OPTIMIZATION_LOG.md (25 rows, no 3D-crowd baseline) before gameplay drives the 3D crowd; compounded by the footprint-density bump.",
                 "lens": "performance / scale-architecture"
             },
             {
@@ -65,7 +70,7 @@
             },
             {
                 "severity": "MED",
-                "title": "After the commit (which self-corrects workTreeClean), repoint the dashboard roster metrics (units/buildings/enemies/tests all read 0) at the 3D roster counts or mark them migrating so the card reflects live work.",
+                "title": "After the commit (which self-corrects workTreeClean), repoint the dashboard roster metrics (units/buildings/enemies/tests all read 0) at the 3D roster counts or mark them migrating, and re-run git fsck so the integrity signal is clean.",
                 "lens": "observability"
             }
         ]
