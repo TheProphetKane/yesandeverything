@@ -28,8 +28,10 @@ $repoRoot = Split-Path -Parent $here
 
 $webhookFile = Join-Path $here ".discord_webhook.txt"
 if (-not (Test-Path $webhookFile)) {
-    Write-Host "Discord webhook not configured - skipping notification." -ForegroundColor Yellow
-    Write-Host "Setup: create $webhookFile with a Discord webhook URL on a single line." -ForegroundColor Yellow
+    # Discord release notifications are intentionally off for YaE (Nick's call,
+    # 2026-06-22). Drop a webhook URL in .discord_webhook.txt to re-enable; no
+    # setup nag until then.
+    Write-Host "Discord notify off (intentional; no webhook configured)." -ForegroundColor DarkGray
     exit 0
 }
 
