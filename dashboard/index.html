@@ -387,9 +387,24 @@
   .chip.stalled { color: var(--bad); border-color: rgba(255, 91, 110, 0.4); }
   .chip.fresh { color: var(--ok); border-color: rgba(0, 214, 143, 0.3); }
 
-  .strip { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.7fr 1fr 1fr 1fr 1fr; gap: 10px; overflow: visible; }
-  @media (max-width: 1500px) { .strip { grid-template-columns: repeat(4, 1fr); } }
-  .strip .mini { will-change: transform; }
+  /* Project strip = one horizontal wheel: cards run off both edges, the selected
+     card stays centered, and spinning slides cards through the center slot.
+     (grid-template-columns rules in the media blocks below are inert now that
+     this is a flex track; left in place rather than chased through every query.) */
+  .strip {
+    position: relative;
+    display: flex; flex-wrap: nowrap; gap: 10px;
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x proximity; scroll-behavior: smooth;
+    padding: 10px 0; margin-top: -8px;
+    scrollbar-width: thin; scrollbar-color: var(--ink-4) transparent;
+    overscroll-behavior-x: contain;
+  }
+  .strip::-webkit-scrollbar { height: 6px; }
+  .strip::-webkit-scrollbar-thumb { background: var(--ink-4); border-radius: 3px; }
+  .strip::-webkit-scrollbar-track { background: transparent; }
+  .strip .mini { will-change: transform; flex: 0 0 152px; scroll-snap-align: center; }
+  .strip .mini.center { flex-basis: 224px; }
   .mini .msub { animation: msubIn 0.32s ease both; }
   @keyframes msubIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .mini {
@@ -2655,6 +2670,18 @@
     for (var i = 0; i < n; i++) ids.push(CYCLE[(SEL - CENTER + i + n) % n]);
     return ids;
   }
+  // The strip overflows horizontally; keep the centered (selected) card in the
+  // middle of the viewport. The center card is always at the same slot, so this
+  // scroll position is stable and cards slide through it as the wheel spins.
+  function centerStrip(smooth) {
+    var box = $("strip");
+    if (!box || !STRIP || !STRIP[FILTER] || !STRIP[FILTER].node) return;
+    var node = STRIP[FILTER].node;
+    var target = node.offsetLeft + node.offsetWidth / 2 - box.clientWidth / 2;
+    target = Math.max(0, Math.min(target, box.scrollWidth - box.clientWidth));
+    if (smooth && !REDUCED) box.scrollTo({ left: target, behavior: "smooth" });
+    else box.scrollLeft = target;
+  }
   function renderStrip() {
     if (!LAST) return;
     var statuses = LAST.statuses;
@@ -2714,6 +2741,7 @@
       box.appendChild(m);
     });
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
+    requestAnimationFrame(function () { centerStrip(false); });
   }
   function updateStrip() {
     var box = $("strip");
@@ -2726,6 +2754,7 @@
     });
     stripOrderIds().forEach(function (cid) { box.appendChild(STRIP[cid].node); });
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
+    centerStrip(false);
     if (REDUCED) return;
     var slotW = box.firstChild.getBoundingClientRect().width + 10;
     CYCLE.forEach(function (id) {
@@ -2913,6 +2942,11 @@
   }
 
   /* ---------- Wiring ---------- */
+  var stripResizeT = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(stripResizeT);
+    stripResizeT = setTimeout(function () { centerStrip(false); }, 120);
+  });
   $("auto-btn").addEventListener("click", function () {
     AUTO = AUTO === "off" ? "drift" : AUTO === "drift" ? "jump" : "off";
     try { localStorage.setItem("dashAuto", AUTO); } catch (e) {}

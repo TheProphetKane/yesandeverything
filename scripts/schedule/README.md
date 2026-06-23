@@ -12,9 +12,10 @@ Windows Task Scheduler wiring for the periodic-review pipeline. Phase 5 of `docs
 | `bar-raise-scheduler.ps1` | Per-project shim for Scheduler (06:15 daily). |
 | `bar-raise-yaa.ps1` | Per-project shim for YesAndApothecary (06:20 daily). |
 | `bar-raise-yab.ps1` | Per-project shim for YesAndBudget (06:25 daily). |
+| `bar-raise-yaag.ps1` | Per-project shim for YesAndAgents (06:30 daily). |
 | `bar-raise-constellation.ps1` | Portfolio-wide constellation shim (Monday 07:00). |
-| `register-all.ps1` | One-shot installer for all 7 Task Scheduler entries. |
-| `unregister-all.ps1` | Teardown for all 7 tasks. |
+| `register-all.ps1` | One-shot installer for all 8 Task Scheduler entries. |
+| `unregister-all.ps1` | Teardown for all 8 tasks. |
 | `logs/` | Per-run dated logs (gitignored, see .gitignore in repo root if added). |
 
 ## First-run verification
@@ -62,7 +63,7 @@ This should:
 
 If anything in that chain fails, the log captures it. Fix before registering the schedule.
 
-### Step 4: register all 7 tasks
+### Step 4: register all 8 tasks
 
 ```powershell
 .\register-all.ps1
@@ -74,7 +75,7 @@ Idempotent (tears down + re-registers if anything already exists). Confirm with:
 Get-ScheduledTask | Where-Object { $_.TaskName -like "bar-raise-*" } | Format-Table TaskName, State, NextRunTime
 ```
 
-You should see all 7 tasks with a `NextRunTime` set.
+You should see all 8 tasks with a `NextRunTime` set.
 
 ### Step 5: monitor for one week
 
@@ -102,9 +103,9 @@ Removes all 7 tasks. Idempotent. Log files in `logs/` are kept.
 
 ## Cost rough-cut
 
-- 6 per-project runs/day × ~30 lenses × ~2k tokens/lens = ~360k tokens/day.
-- 1 constellation/week × 6 projects × ~30 lenses + portfolio synthesis = ~450k tokens/week.
-- Roughly 11M tokens/month at full schedule.
+- 7 per-project runs/day × ~30 lenses × ~2k tokens/lens = ~420k tokens/day.
+- 1 constellation/week × 7 projects × ~30 lenses + portfolio synthesis = ~520k tokens/week.
+- Roughly 13M tokens/month at full schedule.
 
 If that proves heavy in practice, the simplest dial is shifting per-project to every other day (drops by half) or cutting domain lenses to Tier-1 only during the daily run, with full domain lenses only on constellation Mondays.
 

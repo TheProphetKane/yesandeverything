@@ -96,11 +96,11 @@
                       "kind":  "operational",
                       "priority":  "P2",
                       "auto_safe":  false,
-                      "status":  "pending",
+                      "status":  "completed",
                       "addedAt":  "2026-06-18",
                       "body":  "stale working tree in X:\\YesAndScheduler: an uncommitted release-tooling-hardening cohort is sitting in the tree. scripts/push-to-github.ps1 is modified with its head last touched 2026-05-15 (5 weeks cold); scripts/write-dashboard-status.ps1 is modified (head 2026-06-13); plus untracked scripts/git-guard.ps1 (a new FUSE-mount git-safety helper that push-to-github.ps1 and the dashboard writer now dot-source) and two untracked backups scripts/push-to-github.ps1.bak and scripts/write-dashboard-status.ps1.bak. Commit the git-guard wiring through scripts/release.ps1, or stash it if it is not ready to ship. Hygiene sub-item: *.bak is not in X:\\YesAndScheduler\\.gitignore, so a bare git add . would commit the two backup snapshots; add \u0027*.bak\u0027 to .gitignore and delete the snapshots on disk. docs/DESIGN.md and CHANGELOG.md are also dirty but those ride the committed-ready items scheduler-design-changelog-drift-fix-2026-06-14 and scheduler-cron-preference-window-0613, so they are not re-flagged here. Distinct cohort from the resolved wts-2026-05-29-scheduler-stale-working-tree (that was the ~75-file YaS rebrand, since committed).",
                       "source":  "2026-06-18 weekly working-tree scan",
-                      "notes":  "Found by working-tree-scan-nightly 2026-06-18 (Friday). The 5-week-cold push-to-github.ps1 edit is the stale signal; .bak files and git-guard.ps1 indicate a script-hardening session that never landed. auto_safe:false: remediation is a release.ps1 commit + a disk delete, both pause for user.",
+                      "notes":  "2026-06-22: shipped in Scheduler v0.4.2 (commit 4902e9a). git-guard.ps1 wiring committed (dot-sourced by push-to-github.ps1 + write-dashboard-status.ps1); *.bak added to .gitignore; both .bak snapshots deleted.",
                       "drainNote":  "2026-06-22T13:09Z queue-drain-4h: GROUNDED (first drain of this item), premise fully confirmed and current at HEAD. Read-only diagnostic: scripts/git-guard.ps1 is a 65-line FUSE git-safety helper dot-sourced by push-to-github.ps1:20 (+5) and write-dashboard-status.ps1:14 (+2); the tracked script diffs are exactly that wiring. Both .bak files are byte-clean pre-edit backups (diff-equal to HEAD). Hygiene risk STILL PRESENT: *.bak absent from .gitignore, so a bare git add . would commit both snapshots. DESIGN/CHANGELOG/CLAUDE dirt rides the other committed-ready Scheduler doc items, not this cohort. Remaining action is all attended shell/git (add *.bak to .gitignore, delete the 2 snapshots, ship the git-guard wiring via scripts/release.ps1 folded with the committed-ready Scheduler doc edits). Left pending; attempts NOT incremented (diagnostic succeeded). See result_path.",
                       "lastWorkedAt":  "2026-06-22T13:09:00Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\wts-2026-06-18-scheduler-stale-release-tooling.md"
@@ -112,14 +112,14 @@
                       "kind":  "drift-fix",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "committed-ready",
+                      "status":  "completed",
                       "attempts":  0,
                       "lastWorkedAt":  "2026-06-21T13:08:49Z",
                       "lastAttemptAt":  "2026-06-21T13:08:49Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\handler-scheduler-milestone-phase-stale-2026-06-18.md",
                       "source":  "X:\\YesAndEverything\\docs\\HANDLER_AUDIT-2026-06-18.md (HIGH H1)",
                       "prompt":  "X:\\YesAndScheduler\\CLAUDE.md \u0027Build order - do this milestone-by-milestone\u0027 section still teaches a mid-flight v1 build: \u0027breaks v1 into six milestones... Do them one at a time... infer the next milestone from git history.\u0027 But v1 (all six milestones) shipped in v0.1.0 on 2026-05-10 (docs/DESIGN.md:525) and the repo is at v0.4.1 past the v0.2.0 tenancy expansion. A new session is told to build a v1 that already exists. Rewrite the Build order section to describe the current post-v1 phase and point at the real next-scope decision (queue item scheduler-m71-resequence-0602 / M7.1 multi-tenant polish), or reframe the six milestones as historical. Prose rewrite, needs Nick\u0027s framing call. No em dashes, no AI vocabulary.",
-                      "notes":  "Caught by handler-audit-nightly 2026-06-18. HIGH: handler teaches the wrong project phase. auto_safe:false - judgment call on next-scope framing. | 2026-06-21T13:08Z queue-drain-4h: RESOLVED to committed-ready via the scope-neutral historical reframe. Premise verified at the repo (package.json v0.4.1; DESIGN.md sec21 line 525 marks M1-M6 shipped v0.1.0 on 2026-05-10 + M7 shipped v0.2.0). Rewrote CLAUDE.md Build order section: retitled to a shipped-history framing, stamped each milestone row Shipped v0.1.0/v0.2.0 (kept all rows + added M7), and repointed the unnamed-next-milestone guidance from git-history-inference onto DESIGN sec21 status + the queued M7.1 scope decision (scheduler-m71-resequence-0602). Chose the \u0027reframe as historical\u0027 option over \u0027author a current-phase narrative\u0027 because the latter is Nick\u0027s framing call; this edit invents no scope. No em dashes, solo-dev voice. NOT committed (release.ps1 pauses for shell): ship via cd X:\\YesAndScheduler; .\\scripts\\release.ps1, folds with the other committed-ready Scheduler doc edits. attempts NOT incremented: slice succeeded. See result_path."
+                      "notes":  "2026-06-22: shipped in v0.4.2 (4902e9a). CLAUDE.md build-order reframed as shipped history (M1-M7 stamped); next-scope guidance repointed to DESIGN s21 + M7.1 decision."
                   },
                   {
                       "id":  "handler-yab-sqlcipher-omission-2026-06-18",
@@ -282,11 +282,11 @@
                       "kind":  "operational",
                       "prompt":  "Scheduler working tree has ~75 modified files + 3 untracked carrying uncommitted edits; several were last touched by HEAD well over 7 days ago: apps/api/src/index.test.ts and apps/web/package.json (HEAD 2026-05-10, 19 days), scripts/discord-notify.ps1 and apps/api/wrangler.toml (HEAD 2026-05-18, 11 days). High likelihood of FUSE-truncation risk the longer it sits per `htbh-fuse-edit-tool-truncation` and `commit-per-patch-on-htbh`. Triage: `git -C X:\\YesAndScheduler status` + `git diff --stat`, group commits by area (api routes, migrations, tests, web), ship through `scripts/release.ps1`. If any of it is WIP not ready to ship, stash explicitly so the working tree isn\u0027t carrying it forward session after session.",
                       "priority":  "P2",
-                      "status":  "committed-ready",
+                      "status":  "completed",
                       "auto_safe":  false,
                       "attempts":  0,
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\wts-scheduler-stale-working-tree-2026-06-12.md",
-                      "notes":  "Surfaced by working-tree-scan-weekly 2026-05-29. The YaC equivalent is already covered by yac-m1-ship-0.33.1. | 2026-06-12 overnight drain: premise RESOLVED by interim commits. The ~75-file/19-day-stale tree is gone; HEAD 802b9aa (2026-06-11) and two prior commits landed the bulk. Residue triaged: 6 modified + 2 untracked, ALL one coherent cohort, the YaS rebrand (project-context schema 1.1 + milestone/completion/lens blocks, dashboard writer now sources identity from project-context + computes api-route/migration/test metrics + writes YaS.json, README/index.html/AppShell/Login wordmark to Yes\u0026 Scheduler) plus two REAL test files serving the scheduler-real-use-testing gate: schedule-fill.realistic.test.ts (416 lines, invariants I1-I10 incl. determinism + 250ms perf budget) and schedule-e2e.test.ts (325 lines). Tails verified clean on all 8 files; .project-context.json re-parses valid. Bonus: scrubbed 6 em dashes from README.md (public artifact, voice rule), atomic write + readback. Tests NOT run in sandbox (pnpm virtual-store symlinks do not cross the FUSE mount); run pnpm --filter api test before ship or trust the release gate. Remaining is Nick-side: clear stale .git/index.lock (EPERM from sandbox), bump version + CHANGELOG entry per release guards, then cd X:\\YesAndScheduler; .\\scripts\\release.ps1. NOTE: branch is 3 commits ahead of origin unpushed (802b9aa, 23d2e3d, e291b6b); release.ps1 step 1 push covers it. attempts NOT incremented: slice succeeded.",
+                      "notes":  "2026-06-22: residual YaS-rebrand cohort + realistic/e2e test files shipped across v0.4.1/v0.4.2; working tree clean. Tests now run green via X:\\Scheduler junction fix (stale post-rename node_modules junctions).",
                       "lastWorkedAt":  "2026-06-12T13:55:00Z"
                   },
                   {
@@ -332,14 +332,14 @@
                       "kind":  "structural",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "blocked-on-user",
+                      "status":  "completed",
                       "attempts":  0,
                       "prompt":  "v0.3.0 shipped ahead of the M7.1 multi-tenant-polish milestone (SPA header org-switcher widget, dedicated invite-admin UI page, cross-org scope-leak test suite), which was originally tagged v0.2.1 and is still unbuilt. DESIGN §21 has been updated to note the re-sequence, but the actual product decision stands: build the org-switcher widget + scope-leak test suite now, or push them further. The X-Org-Slug switch header is documented as live in §16 but has zero SPA references. Decide next-version scope.",
                       "source":  "2026-06-02 audit-scheduler-weekly / CANONICAL_AUDIT-2026-06-02.md",
                       "lastWorkedAt":  "2026-06-14T21:09:52Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\scheduler-m71-resequence-0602.md",
                       "slices_completed":  1,
-                      "notes":  "2026-06-12 overnight drain slice 1: premise re-verified at HEAD 802b9aa. sec21 re-sequence note already landed (stale half of premise). X-Org-Slug drift CONFIRMED (API live in scope.ts, zero SPA senders) and FIXED: one clarifying sentence appended to DESIGN sec16 line 361, atomic write + re-parse + tail verified; doc-only, rides the committed-ready Scheduler cohort, no version bump. Cross-org scope-leak tests confirmed absent (14 test files, zero isolation coverage). Invite-admin UI confirmed absent. Remaining: the scope DECISION is Nick\u0027s; brief with recommendation (M7.1 as v0.5.0, scope-leak suite first) at result_path. attempts NOT incremented: slice succeeded, no failure; do not auto-block.",
+                      "notes":  "2026-06-22: M7.1 BUILT + shipped in Scheduler v0.5.0 (commit f2b8c9b). (1) SPA header org-switcher OrgSwitcher.tsx sends X-Org-Slug via lib/api.ts (was zero senders); (2) GET /api/me now resolves active_org from the header with safe same-org fallback; (3) dedicated super-admin invite-admin page /admin/invites (AdminInvites.tsx); (4) cross-org scope-leak suite routes/scope-leak.test.ts (10 tests, all green) closing the zero-isolation-coverage gap. DESIGN s16/s21 updated to shipped. Scope decision resolved by Nick green-light.",
                       "blockedReason":  "Agent-side work exhausted. DESIGN sec16 doc-drift fix landed committed-ready (X-Org-Slug honored by API, no SPA sender yet, org-switcher named as M7.1); the M7.1=v0.5.0 scope recommendation is drafted at result_path. The remaining build (org-switcher widget + invite-admin UI + cross-org scope-leak suite) is gated on Nick\u0027s scope-approval decision; building it now would invent scope. Reclassified pending-\u003eblocked-on-user 2026-06-14 so the 4h drain stops re-picking a decision-gated item. Partial scope-leak coverage already exists via the sibling scheduler-real-use-testing e2e tests.",
                       "lastAttemptAt":  "2026-06-14T21:09:52Z"
                   },
@@ -511,14 +511,15 @@
                       "kind":  "completion-gate",
                       "auto_safe":  false,
                       "priority":  "P1",
-                      "status":  "blocked-on-user",
+                      "status":  "completed",
                       "prompt":  "Completion gate: real-use testing + iterate cycles. E2E coverage for schedule generation and multi-tenant flows; run a realistic org through a full preference-to-published-schedule cycle and fix what snags.",
                       "source":  "completion anchors set 2026-06-10",
                       "attempts":  2,
                       "lastAttemptAt":  "2026-06-11T07:03:42.902235Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\scheduler-real-use-testing.md",
                       "note":  "2026-06-11 drain run 2: route-level generate-\u003epublish E2E shipped - apps/api/src/routes/schedule-e2e.test.ts (full preference-to-published cycle: generate, 4 employees submit prefs via routes, regenerate honors prefs deterministically, manager override survives regenerate, publish, notification fan-out, 409 post-publish pref lock, CSV export; plus cross-org 404 leak test on generate/publish/export). tsc clean under repo strict flags vs real helpers+types. NOT executed: workerd in this install is windows-64 only, pool-workers cannot run in sandbox. NOT committed: .git/index.lock unremovable from sandbox (Windows-held). Remaining is user-side: (1) clear lock, (2) pnpm --filter api test (expect 22 green incl. 2 new E2E), (3) commit both new test files via release.ps1, (4) human real-use pass. Blocked-on-user so the overnight drain stops re-picking it; agent-side units are exhausted.",
-                      "lastWorkedAt":  "2026-06-11T07:10:51"
+                      "lastWorkedAt":  "2026-06-11T07:10:51",
+                      "notes":  "2026-06-22: api suite executed (junction fix). New gate files GREEN: schedule-fill.realistic.test.ts (8) + schedule-e2e.test.ts (2). 103/106 pass. 3 PRE-EXISTING unrelated failures (auth.test.ts x2 invite-only-provisioning drift since v0.2.0; change-requests.test.ts x1 fixture) flagged separately. Human real-use pass remains Nick-side."
                   },
                   {
                       "id":  "yaa-final-polish-close",
@@ -660,11 +661,11 @@
                       "kind":  "structural",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "committed-ready",
+                      "status":  "completed",
                       "attempts":  0,
                       "prompt":  "DESIGN.md sec18 claims \u0027A scheduled Cron Trigger runs daily to fire the preference_window_opened notification event.\u0027 No such trigger exists: apps/api/wrangler.toml has no [triggers]/crons block, apps/api/src/index.ts exports no scheduled() handler, and preference_window_opened is never written anywhere in apps/api/src (it is only a declared event-type string in sec14). Decide: build the daily scheduled() handler + crons trigger that emits preference_window_opened (the notifications table is in-app-only in v1, so it would also need a consumer), OR soften sec18 to mark the cron as planned/roadmap. Doc-softening is the cheaper, internally-consistent call since the event has no consumer yet. Code or doc-scope change, so not auto_safe.",
                       "source":  "2026-06-13 audit-scheduler-nightly / CANONICAL_AUDIT-2026-06-13.md",
-                      "notes":  "2026-06-14 overnight drain: RESOLVED via doc-softening (the cheaper, internally-consistent call the item itself flagged). Verified code-side: apps/api/wrangler.toml has no [triggers]/crons block, apps/api/src exports no scheduled() handler, and preference_window_opened is never produced in api/src (declared only as an event-type string in DESIGN sec14). Rewrote DESIGN.md sec18 (line 460) to mark the daily Cron Trigger as planned-not-built and point to the deferred scheduled-Worker notification work in sec19; no net-new infra built (that would be scope expansion with no consumer). Pre-existing FUSE tail-truncation found+repaired: the working-tree DESIGN.md had lost its final 5 lines (ended mid-word at \u0027The exact\u0027), rebuilt from HEAD via atomic write+readback, preserving the prior committed-ready brand x2 + DNS edits. Final diff vs HEAD is exactly 4 single-line swaps (brand title, display name, cron softening, DNS), tail intact, no em dash introduced by this edit. Tree committed-ready; sandbox can\u0027t clear .git/index.lock and release.ps1 pauses. Ship via cd X:\\YesAndScheduler; .\\scripts\\release.ps1 (folds with the other committed-ready Scheduler doc edits). attempts NOT incremented: slice succeeded.",
+                      "notes":  "2026-06-22: shipped in v0.4.2 (4902e9a). DESIGN s18 daily Cron Trigger marked planned-not-built.",
                       "lastWorkedAt":  "2026-06-14T05:36:07Z",
                       "lastAttemptAt":  "2026-06-14T05:36:07Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\scheduler-cron-preference-window-0613.md"
@@ -711,10 +712,10 @@
                       "kind":  "drift-fix",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "committed-ready",
+                      "status":  "completed",
                       "prompt":  "Close the one open Scheduler bar-raise MEDIUM (BAR_RAISE-2026-06-13): align docs/DESIGN.md brand to shipped \u0027Yes\u0026 Scheduler\u0027 and correct CHANGELOG dates. Ship via cd X:\\YesAndScheduler; .\\scripts\\release.ps1 (or commit; sandbox cannot clear .git/index.lock).",
                       "source":  "BAR_RAISE-2026-06-13 (verdict healthy, 1 open MEDIUM)",
-                      "notes":  "2026-06-14 overnight drain: working tree now committed-ready, 2-file diff (5/5). docs/DESIGN.md brand \u0027Yes and... Scheduler\u0027-\u003e\u0027Yes\u0026 Scheduler\u0027 x2 (matches README H1 + AppShell.tsx x3); ALSO repaired a live FUSE truncation in DESIGN.md (working-tree tail was cut at \u0027The website-hosted version at `\u0027 losing the closing line) by rebuilding from intact HEAD and reapplying the prior run\u0027s Squarespace-\u003eCloudflare DNS edit. CHANGELOG v0.4.0 date 2026-05-26-\u003e2026-06-07 and v0.4.1-\u003e2026-06-07 (both shipped 2026-06-07 per 79fb0f6/9aba867; 2026-05-26 was v0.3.0/505bfda). No em dashes introduced. Closes the bar-raise MEDIUM once shipped. Per rule 5: DESIGN.md truncation was a breakage signal and is now fixed; Scheduler verdict already healthy."
+                      "notes":  "2026-06-22: shipped in v0.4.2 (4902e9a). DESIGN brand -\u003e \u0027Yes\u0026 Scheduler\u0027; CHANGELOG v0.4.0/v0.4.1 dates corrected to 2026-06-07."
                   },
                   {
                       "id":  "yab-landing-page-rename-flip-2026-06-14",
@@ -1058,5 +1059,5 @@
                            "note":  "_drain_log history lost to FUSE write-truncation during loop tick 560 queue status-flip; reconstructed empty. items array verified intact (count preserved). Rotate _drain_log to a sidecar on next attended drain."
                        }
                    ],
-    "updated":  "2026-06-22T19:19:40.4055332Z"
+    "updated":  "2026-06-22T19:38:53.4721458Z"
 }

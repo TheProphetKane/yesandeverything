@@ -17,6 +17,7 @@ $tasks = @(
   "bar-raise-scheduler-daily",
   "bar-raise-yaa-daily",
   "bar-raise-yab-daily",
+  "bar-raise-yaag-daily",
   "bar-raise-constellation-weekly"
 )
 

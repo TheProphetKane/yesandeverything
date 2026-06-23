@@ -1,12 +1,13 @@
 ﻿# register-all.ps1 - one-shot Task Scheduler installer for the bar-raise pipeline.
 #
-# Registers 7 tasks (6 per-project daily + 1 constellation weekly):
+# Registers 8 tasks (7 per-project daily + 1 constellation weekly):
 #   - bar-raise-br-daily        06:00 daily
 #   - bar-raise-hbh-daily       06:05 daily
 #   - bar-raise-yac-daily       06:10 daily
 #   - bar-raise-scheduler-daily 06:15 daily
 #   - bar-raise-yaa-daily       06:20 daily
 #   - bar-raise-yab-daily       06:25 daily
+#   - bar-raise-yaag-daily      06:30 daily
 #   - bar-raise-constellation-weekly  Monday 07:00
 #
 # Staggering avoids YaE-side git push collisions. All tasks use:
@@ -77,12 +78,13 @@ Register-BarRaiseTask "bar-raise-yac-daily"       (Join-Path $ScriptDir "bar-rai
 Register-BarRaiseTask "bar-raise-scheduler-daily" (Join-Path $ScriptDir "bar-raise-scheduler.ps1") $base.AddMinutes(15)
 Register-BarRaiseTask "bar-raise-yaa-daily"       (Join-Path $ScriptDir "bar-raise-yaa.ps1")       $base.AddMinutes(20)
 Register-BarRaiseTask "bar-raise-yab-daily"       (Join-Path $ScriptDir "bar-raise-yab.ps1")       $base.AddMinutes(25)
+Register-BarRaiseTask "bar-raise-yaag-daily"      (Join-Path $ScriptDir "bar-raise-yaag.ps1")      $base.AddMinutes(30)
 
 # Constellation: Monday 07:00 (after the Monday per-project runs complete).
 $constTime = [datetime]"07:00"
 Register-BarRaiseTask "bar-raise-constellation-weekly" (Join-Path $ScriptDir "bar-raise-constellation.ps1") $constTime "Monday"
 
 Write-Host ""
-Write-Host "===== All 7 bar-raise tasks registered =====" -ForegroundColor Cyan
+Write-Host "===== All 8 bar-raise tasks registered =====" -ForegroundColor Cyan
 Write-Host "Check: Get-ScheduledTask | Where-Object { `$_.TaskName -like 'bar-raise-*' }"
 Write-Host "Logs:  X:\YesAndEverything\scripts\schedule\logs\"
