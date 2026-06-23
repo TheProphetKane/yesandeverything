@@ -387,25 +387,18 @@
   .chip.stalled { color: var(--bad); border-color: rgba(255, 91, 110, 0.4); }
   .chip.fresh { color: var(--ok); border-color: rgba(0, 214, 143, 0.3); }
 
-  /* Project strip = one horizontal wheel: cards run off both edges, the selected
-     card stays centered, and spinning slides cards through the center slot.
-     (grid-template-columns rules in the media blocks below are inert now that
-     this is a flex track; left in place rather than chased through every query.) */
-  .strip {
-    position: relative;
-    display: flex; flex-wrap: nowrap; gap: 10px;
-    overflow-x: auto; overflow-y: hidden;
-    scroll-snap-type: x proximity; scroll-behavior: smooth;
-    padding: 10px 0; margin-top: -8px;
-    scrollbar-width: thin; scrollbar-color: var(--ink-4) transparent;
-    overscroll-behavior-x: contain;
+  /* Project strip = a horizontal WHEEL. One row of every card lives in a track that
+     slides via transform so the selected card sits dead-center; cards run off both
+     edges and are clipped (no scrollbar, no manual scroll). The nav arrows / dots /
+     clicking a card turn the wheel; the row glides, cards slide off and on screen.
+     (grid-template-columns rules in the media blocks below are inert now.) */
+  .strip { position: relative; overflow: hidden; margin-top: -8px; padding: 8px 0; }
+  .strip-track {
+    position: relative; display: flex; flex-wrap: nowrap; gap: 10px;
+    width: max-content; will-change: transform;
+    transition: transform 0.42s var(--ease-out-quart);
   }
-  .strip::-webkit-scrollbar { height: 6px; }
-  .strip::-webkit-scrollbar-thumb { background: var(--ink-4); border-radius: 3px; }
-  .strip::-webkit-scrollbar-track { background: transparent; }
-  .strip .mini { flex: 0 0 152px; scroll-snap-align: center; }
-  /* edge spacers so the first/last card can still scroll to dead-center */
-  .strip::before, .strip::after { content: ""; flex: 0 0 calc(50% - 76px); }
+  .strip-track .mini { flex: 0 0 152px; }
   .mini .msub { animation: msubIn 0.32s ease both; }
   @keyframes msubIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .mini {
@@ -2666,17 +2659,22 @@
   // reordering the DOM, so cards slide on/off screen (consistent direction, no
   // pop-fade at the edges).
   function stripOrderIds() { return CYCLE.slice(); }
-  // The strip overflows horizontally; keep the centered (selected) card in the
-  // middle of the viewport. The center card is always at the same slot, so this
-  // scroll position is stable and cards slide through it as the wheel spins.
-  function centerStrip(smooth) {
-    var box = $("strip");
-    if (!box || !STRIP || !STRIP[FILTER] || !STRIP[FILTER].node) return;
+  // Turn the wheel: slide the whole track so the selected card sits dead-center.
+  // Transform-based, no scrollbar; off-screen cards are clipped and glide in/out.
+  function positionTrack(animate) {
+    var box = $("strip"), track = $("strip-track");
+    if (!box || !track || !STRIP || !STRIP[FILTER] || !STRIP[FILTER].node) return;
     var node = STRIP[FILTER].node;
-    var target = node.offsetLeft + node.offsetWidth / 2 - box.clientWidth / 2;
-    target = Math.max(0, Math.min(target, box.scrollWidth - box.clientWidth));
-    if (smooth && !REDUCED) box.scrollTo({ left: target, behavior: "smooth" });
-    else box.scrollLeft = target;
+    var tx = Math.round(box.clientWidth / 2 - (node.offsetLeft + node.offsetWidth / 2));
+    if (animate && !REDUCED) {
+      track.style.transform = "translateX(" + tx + "px)";
+    } else {
+      var prev = track.style.transition;
+      track.style.transition = "none";
+      track.style.transform = "translateX(" + tx + "px)";
+      void track.offsetWidth;            // commit instantly without animating
+      track.style.transition = prev || "";
+    }
   }
   function renderStrip() {
     if (!LAST) return;
@@ -2684,6 +2682,8 @@
     var box = $("strip");
     box.innerHTML = "";
     box.className = "strip";
+    var track = el("div", { className: "strip-track", id: "strip-track" });
+    box.appendChild(track);
     STRIP = {};
 
     function miniFor(meta, slot) {
@@ -2732,18 +2732,18 @@
       return mini;
     }
 
-    stripOrderIds().forEach(function (cid, i) {
+    CYCLE.forEach(function (cid, i) {
       var m = miniFor(metaFor(cid), i);
-      box.appendChild(m);
+      track.appendChild(m);
     });
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
-    requestAnimationFrame(function () { centerStrip(false); });
+    positionTrack(false);
   }
   function updateStrip() {
     var box = $("strip");
     if (!STRIP || !box.firstChild) { renderStrip(); return; }
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
-    centerStrip(!REDUCED);   // smooth-scroll the selected card to center; cards slide
+    positionTrack(true);   // turn the wheel: glide the selected card to center
   }
 
   /* ---------- Wheel nav: one continuous slide, nothing else re-renders ---------- */
@@ -2910,7 +2910,7 @@
   var stripResizeT = null;
   window.addEventListener("resize", function () {
     clearTimeout(stripResizeT);
-    stripResizeT = setTimeout(function () { centerStrip(false); }, 120);
+    stripResizeT = setTimeout(function () { positionTrack(false); }, 120);
   });
   $("auto-btn").addEventListener("click", function () {
     AUTO = AUTO === "off" ? "drift" : AUTO === "drift" ? "jump" : "off";
