@@ -31,47 +31,42 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-22.md",
-        "latestReportAt": "2026-06-22T11:00:00Z",
-        "verdict": "at-risk",
-        "topFinding": "Eighth straight cycle on the uncommitted v0.98.10, and this cycle a second HIGH opened: the local git repo has a corrupt loose object. The footprint-rebalance work is still fully authored - GDD pill v0.98.10 (docs/GDD.html:1380), the changelog entry (:4913), the roster-wide edits in source/world3d/building_catalog_3d.gd - but HEAD is still 3918336 (v0.98.9, 2026-06-15), project.godot config/version reads 0.98.9 (:15), and the tree has been dirty seven days. Separately, blob d188556 (the tracked asset assets/art/temp/hoardes_commandcenter_gentest_v0_1.png) fails its zlib checksum on disk, so git fsck, git diff across the full tree, and git gc all error out - FUSE corruption reaching into .git itself. The good copy is on origin, so repair is low-risk, and the corruption does not block the release (the four dirty files do not reference that blob and it is already pushed). Land v0.98.10 with scripts/release.ps1 or revert it, and repair the object from origin; the two HIGHs are independent. Verdict drops to at-risk on the second HIGH.",
-        "actionsOpen": 7,
-        "actionsClosed": 0,
+        "latestReportPath": "docs/BAR_RAISE-2026-06-23.md",
+        "latestReportAt": "2026-06-23T11:00:00Z",
+        "verdict": "needs-attention",
+        "topFinding": "Both HIGHs from 2026-06-22 closed: v0.98.10 landed (HEAD fd17866, project.godot 0.98.10) and the corrupt loose object d188556 is repaired (git fsck clean). Three versions of real work also shipped - v0.99.0 end screens plus v0.99.1/v0.99.2 moving the end screen, pause menu, and full HUD out of the world_3d.gd god-object into editor scenes, trimming world_3d.gd by 173 lines under an owned plan (docs/BEST_PRACTICES_PARITY.md). The one HIGH left is that all of v0.99.0-v0.99.2 is uncommitted: the GDD pill reads v0.99.2 while HEAD/project.godot read v0.98.10, the three new UI scene folders are untracked, and world_3d.gd sits dirty. Fresh (hours old, not a stall) but on a mount that corrupted a .git blob this week; one scripts/release.ps1 run closes it. Verdict up at-risk -> needs-attention.",
+        "actionsOpen": 6,
+        "actionsClosed": 2,
         "actions": [
             {
                 "severity": "HIGH",
-                "title": "Repair the corrupt loose object d188556 (tracked asset assets/art/temp/hoardes_commandcenter_gentest_v0_1.png): remove .git/objects/d1/88556d... and re-fetch from origin (which holds the intact blob), then git fsck to confirm clean. git fsck / git diff full-tree / git gc currently fail with a zlib data-check error. Independent of the v0.98.10 commit.",
-                "lens": "data-integrity"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Run scripts/release.ps1 to commit + push v0.98.10 so HEAD, project.godot (0.98.9 -> 0.98.10), and the GDD pill reconcile and the dirty GDD.html / project.godot / building_catalog_3d.gd stop sitting exposed an eighth cycle. Revert the rebalance if it is not landing.",
-                "lens": "reliability"
+                "lens": "reliability",
+                "title": "Run scripts/release.ps1 to commit + push v0.99.0-v0.99.2 so HEAD, project.godot, the GDD pill (v0.99.2), and the discord dedupe reconcile and the untracked UI scenes (source/ui/end_screen, game_hud, pause_menu) leave the no-git state. Closes version-pill-drift and FUSE-defense in the same pass."
             },
             {
                 "severity": "MED",
-                "title": "Run the deferred defense-balance review the v0.98.10 changelog flagged: the footprint rebalance pushed most buildings to 2x2+, which grants +1 defense under the v0.34.0 rule (GDD:1650). Confirm the roster-wide buff is intended or re-derive the affected values.",
-                "lens": "playability / game-design"
+                "lens": "playability / game-design",
+                "title": "Run the deferred defense-balance review the v0.98.10 changelog flagged: most buildings are now 2x2+, which grants +1 defense under the v0.34.0 rule (GDD:1650). Confirm the roster-wide buff is intended or re-derive the affected values."
             },
             {
                 "severity": "MED",
-                "title": "2D-residual GDD sweep: re-point the tile-constant note (GDD:4816 still cites retired enemy_base.gd / fog_of_war.gd / noise_heatmap.gd), the auto_pause frame-tick rows (~4648), and era-stamp the M3 roadmap deliverables (~2083).",
-                "lens": "architecture"
+                "lens": "architecture",
+                "title": "Re-point the GDD tile-constant note (GDD:4816) off the retired enemy_base.gd / fog_of_war.gd / noise_heatmap.gd onto the live 3D-stack constants."
             },
             {
                 "severity": "MED",
-                "title": "Capture and log a world_3d profiler run at 1000-3000 enemies in docs/OPTIMIZATION_LOG.md (25 rows, no 3D-crowd baseline) before gameplay drives the 3D crowd; compounded by the footprint-density bump.",
-                "lens": "performance / scale-architecture"
+                "lens": "performance / scale-architecture",
+                "title": "Capture and log a world_3d 1000-3000-enemy profiler run in docs/OPTIMIZATION_LOG.md (still 25 rows, no 3D-crowd baseline) before gameplay drives the 3D crowd; compounded by the footprint-density bump."
             },
             {
                 "severity": "MED",
-                "title": "Refresh or retire docs/ARCHITECTURE.md off its v0.80.1 / 2D-stack snapshot (GDD cites it as the synced source) and delete the orphaned source/vfx/damage_number.gd(.uid) in the same pass.",
-                "lens": "maintainability"
+                "lens": "maintainability",
+                "title": "Refresh or retire docs/ARCHITECTURE.md off its v0.80.1 2D snapshot (now contradicted by BEST_PRACTICES_PARITY.md) and delete the orphaned source/vfx/damage_number.gd(.uid)."
             },
             {
                 "severity": "MED",
-                "title": "After the commit (which self-corrects workTreeClean), repoint the dashboard roster metrics (units/buildings/enemies/tests all read 0) at the 3D roster counts or mark them migrating, and re-run git fsck so the integrity signal is clean.",
-                "lens": "observability"
+                "lens": "observability",
+                "title": "Re-run the dashboard writer after the commit and stage with the tracked casing (status/data/Hordes.json) so the card stops lagging (version 0.98.9 vs committed v0.98.10, workTreeClean stale); repoint or relabel the zero roster metrics."
             }
         ]
     },
