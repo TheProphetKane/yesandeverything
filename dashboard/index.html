@@ -387,9 +387,11 @@
   .chip.stalled { color: var(--bad); border-color: rgba(255, 91, 110, 0.4); }
   .chip.fresh { color: var(--ok); border-color: rgba(0, 214, 143, 0.3); }
 
-  .strip { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.7fr 1fr 1fr 1fr 1fr; gap: 10px; overflow: visible; }
-  @media (max-width: 1500px) { .strip { grid-template-columns: repeat(4, 1fr); } }
-  .strip .mini { will-change: transform; }
+  /* one centered row, clipped: cards are ~1/9 of the width so all 11 overflow by
+     ~2, which sit OFF-SCREEN and slide in/out at the edges (no second row). */
+  .strip { display: flex; flex-wrap: nowrap; justify-content: center; gap: 10px; overflow: hidden; position: relative; }
+  .strip .mini { will-change: transform; flex: 0 0 calc((100% - 80px) / 9); }
+  .strip .mini.center { flex-basis: calc((100% - 80px) / 9 * 1.6); }
   .mini .msub { animation: msubIn 0.32s ease both; }
   @keyframes msubIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .mini {
@@ -2651,7 +2653,7 @@
     }
   }
   function stripOrderIds() {
-    var CENTER = 4, n = CYCLE.length, ids = [];
+    var n = CYCLE.length, CENTER = Math.floor(n / 2), ids = [];
     for (var i = 0; i < n; i++) ids.push(CYCLE[(SEL - CENTER + i + n) % n]);
     return ids;
   }
@@ -2734,11 +2736,9 @@
       var dx = first[id] - rec.node.getBoundingClientRect().left;
       rec.node.style.transition = "none";
       if (Math.abs(dx) > slotW * 2.6 || !isFinite(dx)) {
-        rec.node.style.transform = "";
-        rec.node.style.opacity = "0";
+        rec.node.style.transform = "";   // wrap card snaps across while off-screen: no fade, no fly-across
       } else {
         rec.node.style.transform = "translateX(" + dx + "px)";
-        rec.node.style.opacity = "";
       }
     });
     requestAnimationFrame(function () { requestAnimationFrame(function () {
