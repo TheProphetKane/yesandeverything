@@ -387,18 +387,9 @@
   .chip.stalled { color: var(--bad); border-color: rgba(255, 91, 110, 0.4); }
   .chip.fresh { color: var(--ok); border-color: rgba(0, 214, 143, 0.3); }
 
-  /* Project strip = a horizontal WHEEL. One row of every card lives in a track that
-     slides via transform so the selected card sits dead-center; cards run off both
-     edges and are clipped (no scrollbar, no manual scroll). The nav arrows / dots /
-     clicking a card turn the wheel; the row glides, cards slide off and on screen.
-     (grid-template-columns rules in the media blocks below are inert now.) */
-  .strip { position: relative; overflow: hidden; margin-top: -8px; padding: 8px 0; }
-  .strip-track {
-    position: relative; display: flex; flex-wrap: nowrap; gap: 10px;
-    width: max-content; will-change: transform;
-    transition: transform 0.42s var(--ease-out-quart);
-  }
-  .strip-track .mini { flex: 0 0 152px; }
+  .strip { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.7fr 1fr 1fr 1fr 1fr; gap: 10px; overflow: visible; }
+  @media (max-width: 1500px) { .strip { grid-template-columns: repeat(4, 1fr); } }
+  .strip .mini { will-change: transform; }
   .mini .msub { animation: msubIn 0.32s ease both; }
   @keyframes msubIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .mini {
@@ -412,8 +403,8 @@
     background: radial-gradient(130% 150% at 50% 0%, rgba(255, 0, 255, 0.12), rgba(13, 17, 23, 0.94) 55%);
     box-shadow: 0 0 26px var(--accent-glow), 0 0 70px rgba(255, 0, 255, 0.10);
   }
-  /* center card: highlighted via border/glow/bg only, SAME size as the others so
-     the row height never changes as the wheel spins (no downward expansion) */
+  .mini.center .mhead { font-size: 13.5px; }
+  .mini.center svg { height: 24px; }
   .mini .mhead { display: flex; align-items: baseline; justify-content: space-between; font-size: 12px; font-weight: 600; }
   .mini .mhead .mdot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
   .mini .mhead .mtok { color: var(--fg-2); font-weight: 400; font-size: 11px; font-variant-numeric: tabular-nums; }
@@ -2646,8 +2637,12 @@
     if (!rec) return;
     var st = LAST.statuses[id];
     var meta = metaFor(id);
+    var was = rec.node.classList.contains("center");
     rec.node.classList.toggle("center", on);
+    var oldSub = rec.node.querySelector(".msub");
+    if (oldSub && (!on || !was)) oldSub.parentNode.removeChild(oldSub);
     if (on) {
+      if (!was || !rec.node.querySelector(".msub")) rec.node.insertBefore(buildMsub(id), rec.svg);
       rec.node.style.borderLeft = "";
       rec.dot.style.boxShadow = "0 0 8px " + meta.hue;
     } else {
@@ -2655,26 +2650,10 @@
       rec.node.style.borderLeft = (st && st.barRaise && st.barRaise.verdict) ? "2px solid " + verdictColor(st.barRaise.verdict) : "";
     }
   }
-  // Fixed card order. The carousel scrolls the selected card to center instead of
-  // reordering the DOM, so cards slide on/off screen (consistent direction, no
-  // pop-fade at the edges).
-  function stripOrderIds() { return CYCLE.slice(); }
-  // Turn the wheel: slide the whole track so the selected card sits dead-center.
-  // Transform-based, no scrollbar; off-screen cards are clipped and glide in/out.
-  function positionTrack(animate) {
-    var box = $("strip"), track = $("strip-track");
-    if (!box || !track || !STRIP || !STRIP[FILTER] || !STRIP[FILTER].node) return;
-    var node = STRIP[FILTER].node;
-    var tx = Math.round(box.clientWidth / 2 - (node.offsetLeft + node.offsetWidth / 2));
-    if (animate && !REDUCED) {
-      track.style.transform = "translateX(" + tx + "px)";
-    } else {
-      var prev = track.style.transition;
-      track.style.transition = "none";
-      track.style.transform = "translateX(" + tx + "px)";
-      void track.offsetWidth;            // commit instantly without animating
-      track.style.transition = prev || "";
-    }
+  function stripOrderIds() {
+    var CENTER = 4, n = CYCLE.length, ids = [];
+    for (var i = 0; i < n; i++) ids.push(CYCLE[(SEL - CENTER + i + n) % n]);
+    return ids;
   }
   function renderStrip() {
     if (!LAST) return;
@@ -2682,8 +2661,6 @@
     var box = $("strip");
     box.innerHTML = "";
     box.className = "strip";
-    var track = el("div", { className: "strip-track", id: "strip-track" });
-    box.appendChild(track);
     STRIP = {};
 
     function miniFor(meta, slot) {
@@ -2732,18 +2709,47 @@
       return mini;
     }
 
-    CYCLE.forEach(function (cid, i) {
+    stripOrderIds().forEach(function (cid, i) {
       var m = miniFor(metaFor(cid), i);
-      track.appendChild(m);
+      box.appendChild(m);
     });
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
-    positionTrack(false);
   }
   function updateStrip() {
     var box = $("strip");
     if (!STRIP || !box.firstChild) { renderStrip(); return; }
+    // FLIP: capture old positions, reorder, then animate the delta away
+    var first = {};
+    CYCLE.forEach(function (id) {
+      var rec = STRIP[id];
+      if (rec) first[id] = rec.node.getBoundingClientRect().left;
+    });
+    stripOrderIds().forEach(function (cid) { box.appendChild(STRIP[cid].node); });
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
-    positionTrack(true);   // turn the wheel: glide the selected card to center
+    if (REDUCED) return;
+    var slotW = box.firstChild.getBoundingClientRect().width + 10;
+    CYCLE.forEach(function (id) {
+      var rec = STRIP[id];
+      if (!rec) return;
+      var dx = first[id] - rec.node.getBoundingClientRect().left;
+      rec.node.style.transition = "none";
+      if (Math.abs(dx) > slotW * 2.6 || !isFinite(dx)) {
+        rec.node.style.transform = "";
+        rec.node.style.opacity = "0";
+      } else {
+        rec.node.style.transform = "translateX(" + dx + "px)";
+        rec.node.style.opacity = "";
+      }
+    });
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      CYCLE.forEach(function (id) {
+        var rec = STRIP[id];
+        if (!rec) return;
+        rec.node.style.transition = "transform 0.38s var(--ease-out-quart), opacity 0.3s ease, border-color 0.3s, box-shadow 0.3s, background 0.3s";
+        rec.node.style.transform = "";
+        rec.node.style.opacity = "";
+      });
+    }); });
   }
 
   /* ---------- Wheel nav: one continuous slide, nothing else re-renders ---------- */
@@ -2907,11 +2913,6 @@
   }
 
   /* ---------- Wiring ---------- */
-  var stripResizeT = null;
-  window.addEventListener("resize", function () {
-    clearTimeout(stripResizeT);
-    stripResizeT = setTimeout(function () { positionTrack(false); }, 120);
-  });
   $("auto-btn").addEventListener("click", function () {
     AUTO = AUTO === "off" ? "drift" : AUTO === "drift" ? "jump" : "off";
     try { localStorage.setItem("dashAuto", AUTO); } catch (e) {}
