@@ -403,8 +403,9 @@
   .strip::-webkit-scrollbar { height: 6px; }
   .strip::-webkit-scrollbar-thumb { background: var(--ink-4); border-radius: 3px; }
   .strip::-webkit-scrollbar-track { background: transparent; }
-  .strip .mini { will-change: transform; flex: 0 0 152px; scroll-snap-align: center; }
-  .strip .mini.center { flex-basis: 224px; }
+  .strip .mini { flex: 0 0 152px; scroll-snap-align: center; }
+  /* edge spacers so the first/last card can still scroll to dead-center */
+  .strip::before, .strip::after { content: ""; flex: 0 0 calc(50% - 76px); }
   .mini .msub { animation: msubIn 0.32s ease both; }
   @keyframes msubIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .mini {
@@ -418,8 +419,8 @@
     background: radial-gradient(130% 150% at 50% 0%, rgba(255, 0, 255, 0.12), rgba(13, 17, 23, 0.94) 55%);
     box-shadow: 0 0 26px var(--accent-glow), 0 0 70px rgba(255, 0, 255, 0.10);
   }
-  .mini.center .mhead { font-size: 13.5px; }
-  .mini.center svg { height: 24px; }
+  /* center card: highlighted via border/glow/bg only, SAME size as the others so
+     the row height never changes as the wheel spins (no downward expansion) */
   .mini .mhead { display: flex; align-items: baseline; justify-content: space-between; font-size: 12px; font-weight: 600; }
   .mini .mhead .mdot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
   .mini .mhead .mtok { color: var(--fg-2); font-weight: 400; font-size: 11px; font-variant-numeric: tabular-nums; }
@@ -2652,12 +2653,8 @@
     if (!rec) return;
     var st = LAST.statuses[id];
     var meta = metaFor(id);
-    var was = rec.node.classList.contains("center");
     rec.node.classList.toggle("center", on);
-    var oldSub = rec.node.querySelector(".msub");
-    if (oldSub && (!on || !was)) oldSub.parentNode.removeChild(oldSub);
     if (on) {
-      if (!was || !rec.node.querySelector(".msub")) rec.node.insertBefore(buildMsub(id), rec.svg);
       rec.node.style.borderLeft = "";
       rec.dot.style.boxShadow = "0 0 8px " + meta.hue;
     } else {
@@ -2665,11 +2662,10 @@
       rec.node.style.borderLeft = (st && st.barRaise && st.barRaise.verdict) ? "2px solid " + verdictColor(st.barRaise.verdict) : "";
     }
   }
-  function stripOrderIds() {
-    var CENTER = 4, n = CYCLE.length, ids = [];
-    for (var i = 0; i < n; i++) ids.push(CYCLE[(SEL - CENTER + i + n) % n]);
-    return ids;
-  }
+  // Fixed card order. The carousel scrolls the selected card to center instead of
+  // reordering the DOM, so cards slide on/off screen (consistent direction, no
+  // pop-fade at the edges).
+  function stripOrderIds() { return CYCLE.slice(); }
   // The strip overflows horizontally; keep the centered (selected) card in the
   // middle of the viewport. The center card is always at the same slot, so this
   // scroll position is stable and cards slide through it as the wheel spins.
@@ -2746,39 +2742,8 @@
   function updateStrip() {
     var box = $("strip");
     if (!STRIP || !box.firstChild) { renderStrip(); return; }
-    // FLIP: capture old positions, reorder, then animate the delta away
-    var first = {};
-    CYCLE.forEach(function (id) {
-      var rec = STRIP[id];
-      if (rec) first[id] = rec.node.getBoundingClientRect().left;
-    });
-    stripOrderIds().forEach(function (cid) { box.appendChild(STRIP[cid].node); });
     CYCLE.forEach(function (id) { setMiniCenter(id, id === FILTER); });
-    centerStrip(false);
-    if (REDUCED) return;
-    var slotW = box.firstChild.getBoundingClientRect().width + 10;
-    CYCLE.forEach(function (id) {
-      var rec = STRIP[id];
-      if (!rec) return;
-      var dx = first[id] - rec.node.getBoundingClientRect().left;
-      rec.node.style.transition = "none";
-      if (Math.abs(dx) > slotW * 2.6 || !isFinite(dx)) {
-        rec.node.style.transform = "";
-        rec.node.style.opacity = "0";
-      } else {
-        rec.node.style.transform = "translateX(" + dx + "px)";
-        rec.node.style.opacity = "";
-      }
-    });
-    requestAnimationFrame(function () { requestAnimationFrame(function () {
-      CYCLE.forEach(function (id) {
-        var rec = STRIP[id];
-        if (!rec) return;
-        rec.node.style.transition = "transform 0.38s var(--ease-out-quart), opacity 0.3s ease, border-color 0.3s, box-shadow 0.3s, background 0.3s";
-        rec.node.style.transform = "";
-        rec.node.style.opacity = "";
-      });
-    }); });
+    centerStrip(!REDUCED);   // smooth-scroll the selected card to center; cards slide
   }
 
   /* ---------- Wheel nav: one continuous slide, nothing else re-renders ---------- */
