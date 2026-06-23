@@ -1900,10 +1900,28 @@
     if (countText) head.appendChild(el("span", { className: "list-count", text: countText }));
     return head;
   }
+  // Work-queue items carry raw short-codes (yab, hbh, br, yac, yae, htbh, yaa, brackish...)
+  // not the dashboard's word ids. Fold them to the canonical word, same map the
+  // collector uses server-side, so each item shows its real project name + color.
+  var PROJ_ALIAS = {
+    htbh: "Hordes", hbh: "Hordes", herebehordes: "Hordes", hordes: "Hordes",
+    br: "Rising", brackishrising: "Rising", brackish: "Rising", rising: "Rising",
+    yac: "Chains", chains: "Chains", yesandchains: "Chains",
+    scheduler: "Scheduler", yas: "Scheduler", yesandscheduler: "Scheduler",
+    yaa: "Apothecary", apothecary: "Apothecary", yaapothecary: "Apothecary", yesandapothecary: "Apothecary",
+    yab: "Budget", budget: "Budget", yesandbudget: "Budget",
+    yae: "Everything", everything: "Everything", yesandeverything: "Everything",
+    yaag: "Agents", agents: "Agents", yesandagents: "Agents",
+    counselor: "Counselor", yesandcounselor: "Counselor",
+    skylight: "Skylight", yesandskylight: "Skylight",
+    all: "ALL", cross: "ALL", "cross-cutting": "ALL"
+  };
   function projByLoose(id) {
     if (!id) return ALL_META;
     var lo = String(id).toLowerCase();
-    for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id.toLowerCase() === lo || PROJECTS[i].tag.toLowerCase() === lo) return PROJECTS[i];
+    var word = (PROJ_ALIAS[lo] || lo).toLowerCase();
+    if (word === "all") return ALL_META;
+    for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id.toLowerCase() === word || PROJECTS[i].tag.toLowerCase() === word) return PROJECTS[i];
     return ALL_META;
   }
   function buildListRow(metric, p, s) {
