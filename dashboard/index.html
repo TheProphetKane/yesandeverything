@@ -1152,6 +1152,16 @@
       return r.json().catch(function () { return null; });
     }).catch(function () { return null; });
   }
+  // Live data is served by the usage-yesandeverything Worker (KV-backed): it updates
+  // in seconds on every push with no GitHub Pages build, so it never goes stale the
+  // way the rate-limited Pages build did. Fall back to the static file shipped with
+  // the site if the Worker is ever unreachable.
+  var DATA_API = "https://usage.yesandeverything.com";
+  function fetchData(name) {
+    return fetchJson(DATA_API + "/" + name + ".json").then(function (j) {
+      return j != null ? j : fetchJson("data/" + name + ".json");
+    });
+  }
   function smoothPath(pts) {
     if (!pts.length) return "";
     if (pts.length < 3) return "M" + pts.map(function (p) { return p[0] + "," + p[1]; }).join(" L");
@@ -2906,7 +2916,7 @@
     btn.disabled = true;
     btn.textContent = "syncing...";
     $("error-banner").style.display = "none";
-    var jobs = [fetchJson("data/usage.json"), fetchJson("data/backfill.json"), fetchJson("data/queue.json")].concat(
+    var jobs = [fetchData("usage"), fetchJson("data/backfill.json"), fetchData("queue")].concat(
       PROJECTS.map(function (p) { return fetchJson("../status/data/" + p.id + ".json"); })
     );
     return Promise.all(jobs).then(function (results) {
@@ -3207,10 +3217,13 @@
   }
 
   function go() {
-    // no-store: the force-cache here once pinned the stale badge to an old
-    // HTTP-cache copy while the main app was already showing fresh data
-    fetch("data/usage.json", { cache: "no-store" })
-      .then(function (r) { return r.json(); })
+    // Worker-first (live KV data), fall back to the static file. no-store: the
+    // force-cache here once pinned the stale badge to an old HTTP-cache copy while
+    // the main app was already showing fresh data.
+    var t = "?t=" + Date.now();
+    fetch("https://usage.yesandeverything.com/usage.json" + t, { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { return d || fetch("data/usage.json" + t, { cache: "no-store" }).then(function (r) { return r.json(); }); })
       .then(function (d) { if (d && d.projects) { try { enrich(d); } catch (e) {} } })
       .catch(function () {});
   }

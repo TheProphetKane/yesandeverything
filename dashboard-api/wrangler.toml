@@ -1,0 +1,21 @@
+# Cloudflare Worker config for usage.yesandeverything.com — the live data backend
+# for the /dashboard/ page. Read-only; serves usage.json + queue.json from KV.
+# Data is written to KV with `wrangler kv key put` (see scripts/collect-usage.ps1),
+# so there are NO secrets here.
+
+name = "usage-yesandeverything"
+main = "worker.js"
+compatibility_date = "2026-06-24"
+workers_dev = false
+
+account_id = "1a36e094b77857eedf7ceb5a99e007d1"
+
+# Custom domain (zone yesandeverything.com is already on Cloudflare).
+routes = [
+  { pattern = "usage.yesandeverything.com", custom_domain = true }
+]
+
+# KV: holds the dashboard JSON under keys "usage" and "queue".
+[[kv_namespaces]]
+binding = "DASHBOARD"
+id = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"

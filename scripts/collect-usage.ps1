@@ -723,6 +723,23 @@ try {
   Write-Host "WARN: queue summary failed ($_)" -ForegroundColor Yellow
 }
 
+# ----- Push to the live dashboard (Cloudflare KV) ----------------------------
+# The dashboard reads usage.json + queue.json from the usage-yesandeverything
+# Worker (KV-backed) so the live page updates in seconds on every run, with NO
+# GitHub Pages build (Pages rebuilds the whole site per push and is rate-limited
+# to ~10/hr, which froze the dashboard on 2026-06-23). Writes use the owner's
+# authenticated wrangler CLI, so there is no ingest secret in the repo. The git
+# commit below still runs as a durable history/backup of the same JSON.
+$KV_NS = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"
+foreach ($pair in @(@{ k = "usage"; f = $OutPath }, @{ k = "queue"; f = (Join-Path $DataDir "queue.json") })) {
+  if (-not (Test-Path $pair.f)) { continue }
+  try {
+    & wrangler kv key put --namespace-id=$KV_NS $pair.k --path=$pair.f --remote 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Write-Host "KV: pushed $($pair.k) to the live dashboard." -ForegroundColor Green }
+    else { Write-Host "KV: push of $($pair.k) failed (exit $LASTEXITCODE); live dashboard lags until the next push." -ForegroundColor Yellow }
+  } catch { Write-Host "KV: push of $($pair.k) errored ($_)" -ForegroundColor Yellow }
+}
+
 # ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
 # git writes normal progress to stderr; under ErrorActionPreference=Stop the
