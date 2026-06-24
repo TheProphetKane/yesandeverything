@@ -13,6 +13,7 @@ A periodic-review system that runs every day per project and every week across t
 ## Decisions locked
 
 - **Cadence**: per-project bar-raise daily, constellation bar-raise weekly. (2026-05-26)
+  - **Per-project exception, Apothecary**: weekly, constellation-only from v1.0 (2026-06-23). With v1.0 cut and the core label designer feature-complete, Apothecary drops the daily per-project bar-raise and is reviewed only in the weekly constellation pass plus its `audit-apothecary-weekly` task. The daily cadence produced reprints, not signal, once the product stopped converging.
 - **Dashboard data flow**: JSON committed to the YaE repo so GitHub Pages serves it. Each project's `release.ps1` writes its own JSON; the bar-raise skill rewrites it on each run. "Available on the webpage as it gets updated" maps to "a `git push` from the release script triggers a Pages rebuild, and the dashboard reflects the new state within ~30 seconds." (2026-05-26)
 - **Claude Code vs Cowork**: mixed by task type. Coding, git, scheduled bar-raise runs, audits, releases all move to Claude Code. File-creation work (docs, decks, spreadsheets, anything where the file-card UI matters) stays in Cowork. (2026-05-26)
 - **Terminology**: "orchestration" replaces "meta-tooling" as the umbrella term for skill suite, work-queue, audit loop, scheduled tasks, FUSE-truncation defense, incident-runbook hygiene, and skill-chain handoff integrity. One domain, eight lenses. (2026-05-26)
