@@ -1979,12 +1979,31 @@
       if (!items.length) return;
       bodyEl.innerHTML = "";
       bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " pending item" + (items.length === 1 ? "" : "s") }));
-      items.slice(0, 80).forEach(function (it) {
+      // group by project, like Open actions: one colored project header per group
+      var groups = {};
+      items.forEach(function (it) {
         var p = projByLoose(it.project);
-        var d = el("span", { className: "kdot" }); d.style.background = p.hue;
-        var row = el("div", { className: "list-item" }, [el("div", { className: "list-row-head" }, [d, el("span", { className: "list-pj", text: p.tag }), el("span", { className: "list-count", text: it.priority || "" })])]);
-        var pr = el("div", { className: "list-sub" }); pr.textContent = String(it.prompt || it.id || "").slice(0, 220); row.appendChild(pr);
-        if (it.id) row.appendChild(el("div", { className: "li-id", text: it.id }));
+        if (!groups[p.id]) groups[p.id] = { p: p, items: [] };
+        groups[p.id].items.push(it);
+      });
+      function prio(it) { var m = String(it.priority || "").match(/(\d+)/); return m ? +m[1] : 9; }
+      Object.keys(groups).sort(function (a, b) {
+        var ta = groups[a].p.tag.toLowerCase(), tb = groups[b].p.tag.toLowerCase();
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      }).forEach(function (key) {
+        var g = groups[key];
+        var row = el("div", { className: "list-row" }, [listRowHead(g.p, g.items.length + " queued")]);
+        g.items.sort(function (a, b) { return prio(a) - prio(b) || String(a.id || "").localeCompare(String(b.id || "")); }).forEach(function (it) {
+          var item = el("div", { className: "list-item" });
+          item.style.borderLeft = "2px solid " + g.p.hue; item.style.borderRadius = "0"; item.style.paddingLeft = "8px";
+          var pr = String(it.priority || "").toUpperCase();
+          var sv = el("span", { className: "li-sev", text: pr || "·" });
+          sv.style.color = pr === "P1" ? "#ff5b6e" : pr === "P2" ? "#cc8400" : "#5fd6ff";
+          item.appendChild(sv);
+          item.appendChild(el("span", { className: "li-title", text: String(it.prompt || it.id || "").slice(0, 200) }));
+          if (it.id) item.appendChild(el("div", { className: "li-id", text: it.id }));
+          row.appendChild(item);
+        });
         bodyEl.appendChild(row);
       });
     }).catch(function () {});
@@ -2001,7 +2020,7 @@
       for (i = 0; i < tabBar.children.length; i++) tabBar.children[i].classList.toggle("on", tabBar.children[i].getAttribute("data-k") === m);
       bodyEl.innerHTML = "";
       var any = false;
-      PROJECTS.forEach(function (p) {
+      PROJECTS.slice().sort(function (a, b) { return a.tag.toLowerCase() < b.tag.toLowerCase() ? -1 : a.tag.toLowerCase() > b.tag.toLowerCase() ? 1 : 0; }).forEach(function (p) {
         if (scope !== "ALL" && p.id !== scope) return;
         var s = statuses[p.id]; if (!s) return;
         var r = buildListRow(m, p, s); if (r) { bodyEl.appendChild(r); any = true; }
