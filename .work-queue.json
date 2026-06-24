@@ -1,18 +1,6 @@
 {
     "items":  [
                   {
-                      "id":  "yab-design-schema-constraint-annotations-2026-06-22",
-                      "added":  "2026-06-22",
-                      "project":  "yab",
-                      "kind":  "drift-fix",
-                      "priority":  "P3",
-                      "auto_safe":  false,
-                      "status":  "pending",
-                      "body":  "LOW doc/comment alignment. (1) Annotate DESIGN section 4 schema with the shipped NOT NULL / DEFAULT / ON DELETE CASCADE constraints from db.ts (most consequential: category_spike_flags + budget_targets carry ON DELETE CASCADE at db.ts:162,172, a real behavioral contract; transactions.source/raw_description/normalized_merchant/posted_date/amount are NOT NULL). (2) Fix DESIGN section 12 L329 link-flow wording: plaid-live\u0027s inputKind is link-flow, it is not a 6th standalone preset (IMPORTER_PRESETS has 5). (3) Correct the generic-csv.ts:46 tie-break comment which says \u0027break ties US-first\u0027 while the code is correctly iso \u003e us \u003e eu.",
-                      "source":  "CANONICAL_AUDIT-2026-06-22.md (weekly audit-budget-nightly)",
-                      "notes":  "RE-ENQUEUE. Same non-persisted 2026-06-21 enqueue as the D-011 item. Touches a code comment (generic-csv.ts) so routed rather than blind-applied. auto_safe:false to keep it bundled with the Nick-gated review."
-                  },
-                  {
                       "id":  "yac-css-deadcode-removal",
                       "added":  "2026-06-08",
                       "lastNoticedAt":  "2026-06-08T17:34:12",
@@ -29,30 +17,6 @@
                       "lastAttemptAt":  "2026-06-17T21:07:31Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\yac-css-deadcode-removal-2026-06-17.md",
                       "notes":  "2026-06-17T21:07Z queue-drain-4h slice 3: landed the safe half of the slice-2 re-scope. Repointed the 4 stale \u0027Pairs with styles-vN.css\u0027 comments in src/mobile-hooks*.ts to styles.css (mobile-hooks.ts:3 v7, mobile-hooks-3.ts:4 v9, mobile-hooks-4.ts:3 v11, mobile-hooks-5.ts:3 v12), after re-confirming index.html:1286 loads only styles.css?v=0.51.3 (the styles-v*.css split is dead since the 0.51.3 faf1223 consolidation). Comment-only edits, no runtime surface touched, committed-ready - rides any next YaC release (no version bump warranted for comment text). STILL PENDING: the 12 orphaned styles-v*.css file deletions (disk/git op, pauses) and the optional re-run of the dead-code scan against the consolidated 281KB styles.css. attempts NOT incremented: slice succeeded. | 2026-06-16T01:06Z queue-drain-4h slice 1: dynamic-construction vetting DONE (the gating analysis the item requires before any deletion). Re-checked all 61 candidates against X:\\YesAndChains\\src for runtime class composition on top of the 06-08 exact-string scan. Every dynamic ${cls} site resolves to fixed non-candidate classes (round.ts rh-cell/rh-head/rh-par/rh-score + scoreColorClass; caddy.ts caddy-rec-why-toggle; render-views.ts dot/wiz-tab). Composable prefix families (course-detail-, recap-, skeleton-, share-) use LIVE names distinct from the candidates. VERDICT: 60 of 61 confirmed safe to delete; carve out .leaflet-control-zoom (Leaflet library-owned override, never a textual ref in app source). Left pending: remaining work is the mechanical rule deletion in styles-v8/v9.css + a runtime visual smoke (not unit-testable) + PATCH release - not auto-safe, focused pass. attempts NOT incremented: slice succeeded. See result_path. | 2026-06-17T17:07Z queue-drain-4h slice 2: slice-1 premise STALE. The 0.51.3 consolidation (faf1223, 2026-06-11) flattened the split stylesheets into a single styles.css. Verified: index.html:1286 loads only styles.css?v=0.51.3, sw.js:35 precaches only /styles.css, and no build script (package.json/sync.ps1/tools/preship.sh/scripts) references or concatenates styles-v*.css - so styles-v2..v13.css (12 files, ~290KB) are now unreferenced orphans, not build inputs. Deleting rules from styles-v8/v9 prunes files the app no longer ships, so the 06-08 candidate list (docs/CSS_DEADCODE-2026-06-08.md) no longer maps to live files. RE-SCOPED: (a) remove the 12 orphaned styles-v*.css as a batch + reword the 4 stale src/mobile-hooks*.ts \u0027Pairs with styles-vN.css\u0027 comments to point at styles.css; (b) if per-rule pruning is still wanted, re-run the dead-code scan against the consolidated styles.css (281KB). Left pending: orphan-file removal is a disk/git op that pauses + needs a runtime visual smoke + PATCH release, not auto-safe for an unattended drain. attempts NOT incremented: slice succeeded. See yac-css-deadcode-removal-2026-06-17.md. | 2026-06-22 attended ship: slice-3 comment repoints SHIPPED in v0.52.0 (commit 1260bbf) - the 4 src/mobile-hooks*.ts Pairs-with-styles comments now point at styles.css. STILL PENDING (deferred, needs runtime visual smoke): the 12 orphaned styles-v*.css file deletions + optional dead-code re-scan of consolidated styles.css. Status kept."
-                  },
-                  {
-                      "id":  "yab-orphans-14-2026-06-10",
-                      "added":  "2026-06-10",
-                      "lastNoticedAt":  "2026-06-10T17:04:56Z",
-                      "project":  "yab",
-                      "kind":  "cleanup",
-                      "auto_safe":  false,
-                      "priority":  "P3",
-                      "status":  "pending",
-                      "prompt":  "14 orphaned web modules: components (AccountIcon, AnimatedNumber, FilterChip, IncomeStabilityChip, KpiCard, PageHeader, SectionAnchor) and hooks (useDebouncedValue, useDocumentTitle, useInterval, useKeyboardShortcut, useLocalStorage, useMediaQuery, usePrevious). Wire each into a view or drop it. Judgment call per module. Carried from 06-09.",
-                      "source":  "bar-raise-action: 2026-06-10 YaB bar-raise action#1 (HIGH) - manual executor run by loop tick 302. YaB canonical-audit auto-enqueue has dropped every item since 2026-06-07; landing the stranded Auto-enqueued list from CANONICAL_AUDIT-2026-06-10.md. Queue write proven safe via tmp+os.replace+readback (tick 301)."
-                  },
-                  {
-                      "id":  "yab-drain-audit-queue-2026-06-10",
-                      "added":  "2026-06-10",
-                      "lastNoticedAt":  "2026-06-10T17:04:56Z",
-                      "project":  "yab",
-                      "kind":  "meta",
-                      "auto_safe":  false,
-                      "priority":  "P2",
-                      "status":  "pending",
-                      "prompt":  "Meta (bar-raise action#1 + audit Skill-chain finding): the YaB canonical-audit -\u003e .work-queue.json enqueue regressed at the 06-08 sprint; three audits\u0027 YaB items were stranded in report markdown. Repair the canonical-audit/drift-auto-fix enqueue write (root cause), then run drift-auto-fix against this batch. Until repaired, every YaB finding re-files indefinitely. This tick landed the 06-10 stranded list by hand; the underlying writer still needs fixing.",
-                      "source":  "bar-raise-action: 2026-06-10 YaB bar-raise action#1 (HIGH) - manual executor run by loop tick 302. YaB canonical-audit auto-enqueue has dropped every item since 2026-06-07; landing the stranded Auto-enqueued list from CANONICAL_AUDIT-2026-06-10.md. Queue write proven safe via tmp+os.replace+readback (tick 301)."
                   },
                   {
                       "id":  "yac-store-launch",
@@ -141,18 +105,6 @@
                       "lastWorkedAt":  "2026-06-14T13:10:00Z"
                   },
                   {
-                      "id":  "agents-2026-06-15T15-40-28-346Z-agents",
-                      "added":  "2026-06-15",
-                      "project":  "agents",
-                      "kind":  "operational",
-                      "auto_safe":  false,
-                      "priority":  "P2",
-                      "status":  "pending",
-                      "prompt":  "We want this live on our site full time with a safe password block and any obfuscation we can implement to keep it hidden. I.e. not shown or connectable on our home page, but still redirected to on a page we build and decide the url for",
-                      "source":  "agents console 2026-06-15T15:40:28.346Z",
-                      "attempts":  0
-                  },
-                  {
                       "id":  "htbh-gdd-2d-retirement-residual-drift-2026-06-16",
                       "added":  "2026-06-16",
                       "lastNoticedAt":  "2026-06-16T06:08:00Z",
@@ -211,18 +163,6 @@
                       "notes":  "Deferred 2026-06-23: enemy stats + scale-mirror DONE; remaining (building stats to .tres + FRAMES_PER_ROW mirror) tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md (s9). Off the dashboard queue."
                   },
                   {
-                      "id":  "br-bp-input-map-to-editor-2026-06-16",
-                      "added":  "2026-06-16",
-                      "project":  "brackish",
-                      "kind":  "custom",
-                      "auto_safe":  false,
-                      "priority":  "P2",
-                      "status":  "done",
-                      "prompt":  "BR best-practices P2: move the input map from runtime registration in input_defaults.gd to the project.godot [input] section (editor-authored). Preserve bindings exactly. s5.",
-                      "source":  "2026-06-16 Godot best-practices audit (docs/GODOT_BEST_PRACTICES_ADHERENCE.md)",
-                      "notes":  "Done 2026-06-23: zero runtime InputMap.add_action calls; input map authored in project.godot [input] section (bp ratchet input_add_action=0)."
-                  },
-                  {
                       "id":  "br-bp-parser-quirk-class-name-2026-06-16",
                       "added":  "2026-06-16",
                       "project":  "brackish",
@@ -269,105 +209,6 @@
                       "prompt":  "BR best-practices P3: stand up Git LFS for binary art (*.png, audio, models) + .gitattributes EOL normalization BEFORE the real art set lands. s12. NOTE: git/shell ops - must be greenlit.",
                       "source":  "2026-06-16 Godot best-practices audit (docs/GODOT_BEST_PRACTICES_ADHERENCE.md)",
                       "notes":  "Deferred 2026-06-23: tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md (s12). Needs attended git ops (history rewrite); off the dashboard queue until an attended LFS migration."
-                  },
-                  {
-                      "id":  "br-bp-version-pill-and-shims-2026-06-16",
-                      "added":  "2026-06-16",
-                      "project":  "brackish",
-                      "kind":  "custom",
-                      "auto_safe":  false,
-                      "priority":  "P4",
-                      "status":  "done",
-                      "prompt":  "BR best-practices P4: reconcile project.godot config/version pill drift, and relocate stray building shims in source/world/ (brood_mound, hatchery, leviathan_cyst) to source/buildings/. s11.",
-                      "source":  "2026-06-16 Godot best-practices audit (docs/GODOT_BEST_PRACTICES_ADHERENCE.md)",
-                      "notes":  "Done 2026-06-23: building shims (brood_mound/hatchery/leviathan_cyst) live in source/buildings/, none remain in source/world/; version markers agree via preship. Adherence-doc corrections already noted shims relocated."
-                  },
-                  {
-                      "id":  "br-gdd-footer-v05814-v05840-2026-06-18",
-                      "added":  "2026-06-18",
-                      "lastNoticedAt":  "2026-06-19T17:10:00Z",
-                      "project":  "br",
-                      "kind":  "drift-fix",
-                      "auto_safe":  false,
-                      "priority":  "P2",
-                      "status":  "done",
-                      "attempts":  0,
-                      "source":  "audit-rising-nightly / docs/CANONICAL_AUDIT-2026-06-18.md#D1",
-                      "prompt":  "GDD changelog footer trails its own pill by 27 PATCH versions. docs/GDD.html footer newest entry is v0.58.13 (line ~3209); pill (line ~1047) reads v0.58.40. Add descriptive changelog-footer entries for v0.58.14 through v0.58.40, just below the Changelog label, descending-version order, so the footer reaches the pill. Source material: CHANGELOG.md bodies for the descriptive band v0.58.14-v0.58.22, plus reconstruction for the bare auto-message band v0.58.25-v0.58.40 (see br-changelog-bare-automsg item). Touches 675KB docs/GDD.html over FUSE: use Python atomic-write-with-readback, tail-check \u003c/html\u003e before done. Solo-dev voice: no em dashes (literal or \u0026mdash;/\u0026ndash;), no AI tool names, no first-person, no inline SVG, no \u0027per Nick\u0027. Supersedes br-gdd-footer-v05814-v05824-2026-06-17 (never applied).",
-                      "notes":  "Done 2026-06-23: GDD footer newest entry == pill (v0.59.3); recurring footer-trails-pill drift now gated by check_release_descriptive. Mid-footer historical gap is cosmetic; recurring class closed.",
-                      "lastWorkedAt":  "2026-06-19T17:10:00Z",
-                      "result_path":  "X:\\YesAndEverything\\.work-queue-results\\br-gdd-footer-v05814-v05840-2026-06-18.md"
-                  },
-                  {
-                      "id":  "br-changelog-bare-automsg-v05825-v05840-2026-06-18",
-                      "added":  "2026-06-18",
-                      "lastNoticedAt":  "2026-06-18T06:23:00Z",
-                      "project":  "br",
-                      "kind":  "drift-fix",
-                      "auto_safe":  false,
-                      "priority":  "P3",
-                      "status":  "done",
-                      "attempts":  0,
-                      "source":  "audit-rising-nightly / docs/CANONICAL_AUDIT-2026-06-18.md#D3",
-                      "prompt":  "CHANGELOG.md entries v0.58.25 through v0.58.40 (16 entries) are all bare auto-generated fallbacks (\u0027maintenance pass\u0027 or \u0027update source (N files)\u0027). Rewrite each to describe the actual work, derived from the per-version git diffs (git -C X:\\BrackishRising show \u003csha\u003e --stat for each of the 16 commits). Touches 180KB CHANGELOG.md over FUSE; atomic-write path. Solo-dev voice rules apply. Supersedes br-changelog-bare-automsg-v05823-v05824-2026-06-17 (band grew from 2 to 16 entries).",
-                      "notes":  "Superseded 2026-06-23: recurring bare-automsg class closed by check_release_descriptive (refuses a bare CHANGELOG top). Backfilling 16 historical entries deferred as low-value cosmetic."
-                  },
-                  {
-                      "id":  "br-release-footer-and-automsg-gate-2026-06-18",
-                      "added":  "2026-06-18",
-                      "lastNoticedAt":  "2026-06-18T06:23:00Z",
-                      "project":  "br",
-                      "kind":  "enhancement",
-                      "auto_safe":  false,
-                      "priority":  "P2",
-                      "status":  "done",
-                      "attempts":  0,
-                      "source":  "audit-rising-nightly / docs/CANONICAL_AUDIT-2026-06-18.md#D4",
-                      "prompt":  "Add two preship guards to scripts/release.ps1: (1) refuse a pill bump whose new version lacks a matching GDD changelog-footer entry; (2) refuse a CHANGELOG top entry whose body is a bare \u0027maintenance pass\u0027 / \u0027update ... (N files)\u0027 auto-message. Both would have caught this week\u0027s blow-out at the gate. Model on the existing Test-GddIntegrity / version-marker guards in the gauntlet. Needs a focused session plus a headless-test pass. Solo-dev voice in any message strings.",
-                      "notes":  "Done 2026-06-23: scripts/check_release_descriptive.py implements both guards (footer-matches-pill + descriptive CHANGELOG top); wired into preship.ps1 and the br-drift-check Stop hook.",
-                      "lastWorkedAt":  "2026-06-20T17:10:00Z",
-                      "lastAttemptAt":  "2026-06-20T17:10:00Z",
-                      "slices_completed":  1,
-                      "result_path":  "X:\\YesAndEverything\\.work-queue-results\\br-release-footer-and-automsg-gate-2026-06-20.md"
-                  },
-                  {
-                      "id":  "yaag-2026-06-22-dirty-tree-dashboard-flag",
-                      "added":  "2026-06-22",
-                      "project":  "agents",
-                      "kind":  "drift-fix",
-                      "priority":  "P2",
-                      "auto_safe":  false,
-                      "status":  "committed-ready",
-                      "body":  "MED data-integrity. scripts/write-dashboard-status.ps1 only runs inside push-to-github.ps1, so an uncommitted YaAg tree leaves status/data/Agents.json stale and workTreeClean wrong (it reported v0.6.0 / clean:true while the tree was dirty at v0.7.1). Make the writer stamp workTreeClean from a live `git status --porcelain` at write time (it already computes $dirty at line 25 but only persists on push), or warn when the tree is dirty. Optionally add a standalone refresh path so the dashboard updates without a full push. File: X:\\YesAndAgents\\scripts\\write-dashboard-status.ps1.",
-                      "source":  "BAR_RAISE-2026-06-22.md action 2 (bar-raise-yaag-daily)",
-                      "notes":  "Auto-surfaced by the first YaAg bar-raise. Resolved-once-pushed for the version, but the writer logic gap persists. | 2026-06-23 queue-drain-4h: APPLIED to X:\\YesAndAgents\\scripts\\write-dashboard-status.ps1. Added a -RefreshOnly switch (writes Agents.json with live version + workTreeClean, skips the YaE commit/push) so a dirty YaAg tree can refresh the dashboard standalone between releases, plus a dirty-tree WARN line right after the $dirty compute. Backward compatible: push-to-github.ps1 calls it with no args, default path unchanged. committed-ready; rides the next YaAg push (X:\\YesAndAgents scripts/push-to-github.ps1). Not run/parsed this drain (shell pauses unattended); parse-check on next attended run.",
-                      "lastWorkedAt":  "2026-06-23T18:05:00Z"
-                  },
-                  {
-                      "id":  "yaag-2026-06-22-tunnel-recovery-doc",
-                      "added":  "2026-06-22",
-                      "project":  "agents",
-                      "kind":  "doc",
-                      "priority":  "P2",
-                      "auto_safe":  false,
-                      "status":  "pending",
-                      "body":  "MED dependency. Remote access depends on cloudflared + a Cloudflare Access app that nothing in-repo pins for recovery (start-all.ps1:21 runs `cloudflared tunnel run agents`; ARCHITECTURE.md:20 references a hardcoded tunnel id + C:\\Users\\Kane\\.cloudflared\\config.yml + the Access policy). Add docs/TUNNEL-RECOVERY.md (or an ARCHITECTURE.md section) with the tunnel id, config.yml contents, and Access policy so remote access is rebuildable after machine/config loss. CAUTION: TheProphetKane/yesandagents is a PUBLIC repo. Do NOT commit the cloudflared credentials JSON/token (secret). Tunnel id + config structure + Access policy shape are non-secret; Nick to confirm what is safe to publish vs keep in a gitignored local note.",
-                      "source":  "BAR_RAISE-2026-06-22.md action 3",
-                      "notes":  "Needs Nick input on what tunnel/Access detail is publishable. Not auto-safe (public repo + infra secrets)."
-                  },
-                  {
-                      "id":  "yaag-2026-06-22-watchdog-observability",
-                      "added":  "2026-06-22",
-                      "project":  "agents",
-                      "kind":  "drift-fix",
-                      "priority":  "P2",
-                      "auto_safe":  false,
-                      "status":  "committed-ready",
-                      "body":  "MED observability + LOW reliability (bundled). scripts/start-all.ps1 runs node + cloudflared with -WindowStyle Hidden, no logging, and health-checks only `Get-NetTCPConnection -State Listen -LocalPort 4517` (start-all.ps1:13-17). So a silent crashloop is invisible and a wedged-but-listening process never relaunches. Add: (1) a timestamped line appended to a rotating log on each relaunch; (2) a cheap GET / liveness probe with short timeout that relaunches on non-200 as well as no-listener; (3) a tunnel last-seen/up field in status/data/Agents.json via write-dashboard-status.ps1 so a silent outage shows on yesandeverything.com/status. Files: X:\\YesAndAgents\\scripts\\start-all.ps1, scripts/write-dashboard-status.ps1.",
-                      "source":  "BAR_RAISE-2026-06-22.md action 4 + reliability lens",
-                      "notes":  "Watchdog hardening; pairs naturally with the dirty-tree-dashboard-flag item (same writer). | 2026-06-24T01:08Z queue-drain-4h: APPLIED. All three gaps closed across X:\\YesAndAgents\\scripts\\start-all.ps1 (rotating logs/watchdog.log on each relaunch; GET / liveness probe via Get-ServerHealth replacing the bare port-listen check, with owning-PID stop+relaunch of a wedged-but-listening process; logs/watchdog-heartbeat.json each loop) and write-dashboard-status.ps1 (reads the heartbeat, adds a tunnel{up,serverHealthy,lastSeen,heartbeatAgeMin} field; heartbeat \u003e5min forces up/serverHealthy false so a silent outage shows on /status). Not executed/parse-checked (shell pauses unattended); verify on next attended run and confirm logs/ is gitignored before push. committed-ready; rides next YaAg push-to-github.ps1 alongside yaag-2026-06-22-dirty-tree-dashboard-flag. See result_path.",
-                      "result_path":  "X:\\YesAndEverything\\.work-queue-results\\yaag-watchdog-observability-2026-06-23.md",
-                      "lastWorkedAt":  "2026-06-24T01:08:43Z"
                   }
               ],
     "last_drain":  "2026-06-24T01:08:43Z",
