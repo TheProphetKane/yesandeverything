@@ -729,6 +729,12 @@ if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -Foregr
 # 2>&1 redirect promotes that into a terminating NativeCommandError even on a
 # successful push. Relax EAP for the native git calls below.
 $ErrorActionPreference = "Continue"
+# Never block on a credential prompt. A scheduled run with no cached creds would
+# otherwise hang on `git push` forever; combined with the task's IgnoreNew, that
+# one zombie blocks every later run and freezes the dashboard (root cause of the
+# 2026-06-23 stall). Fail fast instead so the local commit still lands.
+$env:GIT_TERMINAL_PROMPT = "0"
+$env:GCM_INTERACTIVE = "Never"
 foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
