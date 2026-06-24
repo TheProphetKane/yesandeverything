@@ -732,12 +732,17 @@ try {
 # commit below still runs as a durable history/backup of the same JSON.
 $KV_NS = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"
 foreach ($pair in @(@{ k = "usage"; f = $OutPath }, @{ k = "queue"; f = (Join-Path $DataDir "queue.json") })) {
-  if (-not (Test-Path $pair.f)) { continue }
+  # NOTE: use simple local vars in the wrangler call. A bareword like "--path=$pair.f"
+  # expands only $pair (-> "System.Collections.Hashtable") and keeps ".f" literal, so
+  # wrangler gets a garbage path. Simple $vars expand correctly; property access does not.
+  $kvKey = $pair.k
+  $kvFile = $pair.f
+  if (-not (Test-Path $kvFile)) { continue }
   try {
-    & wrangler kv key put --namespace-id=$KV_NS $pair.k --path=$pair.f --remote 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "KV: pushed $($pair.k) to the live dashboard." -ForegroundColor Green }
-    else { Write-Host "KV: push of $($pair.k) failed (exit $LASTEXITCODE); live dashboard lags until the next push." -ForegroundColor Yellow }
-  } catch { Write-Host "KV: push of $($pair.k) errored ($_)" -ForegroundColor Yellow }
+    & wrangler kv key put --namespace-id=$KV_NS $kvKey --path=$kvFile --remote 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Write-Host "KV: pushed $kvKey to the live dashboard." -ForegroundColor Green }
+    else { Write-Host "KV: push of $kvKey failed (exit $LASTEXITCODE); live dashboard lags until the next push." -ForegroundColor Yellow }
+  } catch { Write-Host "KV: push of $kvKey errored ($_)" -ForegroundColor Yellow }
 }
 
 # ----- Commit + push ---------------------------------------------------------
