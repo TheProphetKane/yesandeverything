@@ -9,7 +9,7 @@ Windows Task Scheduler wiring for the periodic-review pipeline. Phase 5 of `docs
 | `bar-raise-br.ps1` | Per-project shim for Brackish Rising (06:00 daily). |
 | `bar-raise-hbh.ps1` | Per-project shim for Here Be Hordes (06:05 daily). |
 | `bar-raise-yac.ps1` | Per-project shim for YesAndChains (06:10 daily). |
-| `bar-raise-scheduler.ps1` | Per-project shim for Scheduler (06:15 daily). |
+| `bar-raise-scheduler.ps1` | Per-project shim for Scheduler (06:15 Mon,Thu — twice-weekly; app is feature-complete + parked). |
 | `bar-raise-yaa.ps1` | Per-project shim for YesAndApothecary (06:20 daily). |
 | `bar-raise-yab.ps1` | Per-project shim for YesAndBudget (06:25 daily). |
 | `bar-raise-yaag.ps1` | Per-project shim for YesAndAgents (06:30 daily). |
@@ -75,7 +75,7 @@ Idempotent (tears down + re-registers if anything already exists). Confirm with:
 Get-ScheduledTask | Where-Object { $_.TaskName -like "bar-raise-*" } | Format-Table TaskName, State, NextRunTime
 ```
 
-You should see all 8 tasks with a `NextRunTime` set.
+You should see all 8 tasks with a `NextRunTime` set (the Scheduler task is twice-weekly Mon,Thu; the rest daily).
 
 ### Step 5: monitor for one week
 

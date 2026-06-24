@@ -1,8 +1,8 @@
 {
     "project": "Chains",
     "displayName": "Yes& Chains",
-    "version": "0.52.0",
-    "lastReleaseAt": "2026-06-22T14:06:47-05:00",
+    "version": "0.52.1",
+    "lastReleaseAt": "2026-06-24T09:45:43-05:00",
     "lastReleaseMessage": "code update",
     "milestone": {
         "id": "1.0-launch-prep",
@@ -14,38 +14,39 @@
         "anchored": "2026-06-10"
     },
     "itemsLeft": {
-        "open": 100,
+        "open": 101,
         "queue": 2,
-        "backlog": 96,
+        "backlog": 97,
         "gates": 2
     },
     "repoUrl": "https://github.com/TheProphetKane/yesandchains",
-    "workTreeClean": true,
+    "workTreeClean": false,
     "audit": {
-        "latestReportPath": "docs/CANONICAL_AUDIT-2026-06-22.md",
-        "latestReportAt": "2026-06-22T06:45:26Z",
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-06-24.md",
+        "latestReportAt": "2026-06-24T06:46:49Z",
         "findings": {
+            "critical": 1,
             "high": 0,
             "medium": 0,
             "low": 0
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-23.md",
-        "latestReportAt": "2026-06-23T11:13:26Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-24.md",
+        "latestReportAt": "2026-06-24T11:18:22Z",
         "verdict": "healthy",
-        "topFinding": "Twenty-eighth review, ninth straight healthy. First code-board movement in eight reviews: v0.52.0 landed (1260bbf, 06-22 14:06), a doc/version-bump release that committed the long-carried mobile-hooks comment repoints and synced every anchor to 0.52.0. The cycle's real event is the 06-23 canonical audit: it caught a CRITICAL working-tree FUSE truncation across three canonical docs (CONTEXT.md, ROADMAP.md, BACKLOG.md) before any release could commit the corruption, and that truncation has since been recovered cleanly with zero loss. The detect-and-recover defense worked end to end. But the same event cashed the standing observability MEDIUM for the first time in eight reviews: the dashboard audit block still reads 0/0/0 clean from the 06-22 release-time refresh, so the 06-23 CRITICAL never reached the dashboard. Eight reviews of 'benign because every skipped audit is clean' ended the day a skipped audit was a CRITICAL. The truncation is fixed so no harm shipped, but the invisible-finding scenario this MEDIUM has warned about is no longer hypothetical. Decouple the dashboard audit refresh from release time before 1.0.",
+        "topFinding": "Twenty-ninth review, tenth straight healthy, and the cycle the board's longest-standing action finally closed. The observability MEDIUM that topped the action list for roughly nine reviews is resolved: the in-flight v0.52.1 ships tools/audit_dashboard.py + scripts/sync-audit-to-dashboard.ps1 + scripts/register-sync-audit.ps1 (a daily 02:30 sync-audit-yac-dashboard task) plus a write-dashboard-status.ps1 integration, a deterministic, no-LLM, FUSE-safe refresh shared by both the daily and the release writers. It is not theoretical: the dashboard Chains.json audit block now reads docs/CANONICAL_AUDIT-2026-06-24.md with critical=1, which the old release-welded refresh could not have shown (last commit v0.52.0, 06-22). The new standing risk is the other half of that same hazard: FUSE working-tree truncation recurred a second straight day, this time across three files at once (CONTEXT.md, BACKLOG.md, and the CLAUDE.md handler), each carrying real 0.52.1 edits and a chopped tail. The daily audit caught it and recovery is complete (all three tails now match HEAD), but two days running on a multi-file edit batch is a pattern, prevention on the edit path is still absent, and release.ps1 has no truncation tripwire, so a corrupted-canon commit is one mistimed release away. That is the finding to act on before 1.0.",
         "actionsOpen": 2,
-        "actionsClosed": 0,
+        "actionsClosed": 1,
         "actions": [
             {
                 "severity": "MED",
-                "title": "Decouple the dashboard audit block from release time: have the daily canonical-audit writer parse the high/medium/low counts from the latest CANONICAL_AUDIT-*.md TL;DR and advance audit.latestReportPath, so a between-release HIGH cannot sit invisible. On 06-23 this demonstrably masked a real CRITICAL (FUSE truncation audit). Highest-value AI-ownable chore on the board.",
-                "lens": "observability"
+                "title": "Add a working-tree truncation tripwire to tools/preship.sh and the release.ps1 PS-native path that hard-blocks a release on any canonical-doc tail mismatch vs HEAD, so prevention does not depend on the daily audit firing before release.ps1. Route canonical-doc edits through tools/safe_write.py. FUSE truncation has now recurred two straight days, including the CLAUDE.md handler.",
+                "lens": "reliability"
             },
             {
                 "severity": "MED",
-                "title": "Post-1.0, split the worker/src/index.js 5,510-line monolith into modules. No pre-1.0 action.",
+                "title": "Post-1.0, split the worker/src/index.js 5,510-line monolith into modules (now tracked as BACKLOG Â§2.3.6). No pre-1.0 action.",
                 "lens": "architecture"
             }
         ]
@@ -65,7 +66,7 @@
         },
         {
             "k": "tools",
-            "v": "11"
+            "v": "12"
         }
     ],
     "workQueueDepth": 2,

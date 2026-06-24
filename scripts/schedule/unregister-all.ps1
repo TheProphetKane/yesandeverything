@@ -14,7 +14,8 @@ $tasks = @(
   "bar-raise-br-daily",
   "bar-raise-hbh-daily",
   "bar-raise-yac-daily",
-  "bar-raise-scheduler-daily",
+  "bar-raise-scheduler-twice-weekly",
+  "bar-raise-scheduler-daily",  # legacy name (pre twice-weekly); kept so teardown clears any orphan
   "bar-raise-yaa-daily",
   "bar-raise-yab-daily",
   "bar-raise-yaag-daily",

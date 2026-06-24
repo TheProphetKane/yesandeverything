@@ -7,64 +7,54 @@ git. The nightly queue-triage task overwrites the "Current state" section below
 on each run, so this file always reflects the latest pass rather than spawning a
 new dated file.
 
-Last pass: 2026-06-22.
+Last pass: 2026-06-24.
 
 ## Current state
 
-Thirty-one non-auto-safe items are aging past 7 days, up from twenty-five last pass: the entire 2026-06-14 cohort crossed the threshold this run (seven items), against one drop. Worst offender remains `wts-2026-05-29-scheduler-stale-working-tree` at 24 days. Chains carries the largest backlog at nine items; Budget six, Scheduler five, Rising three, Apothecary three, Everything three, Hordes two, Agents zero. No unambiguous Drop this pass; nothing auto-removed.
+Fourteen non-auto-safe items are aging past 7 days, up from nine last pass: the four 2026-06-18 BR audit items are still inside the 7-day window this run, but the eight 2026-06-16 BR best-practices items and the 2026-06-14 handler-skill item have now crossed it. Worst offender by age is `yac-css-deadcode-removal` (2026-06-08, 16 days). Rising carries by far the largest backlog at eight items, though seven are deferred or wontfix best-practices entries already tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md and recommended for a bulk drop from the queue; Chains has three, Hordes two, Everything one. No item met the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is FUSE-truncation-prone (its `_drain_log` was lost and four items dropped out of the array on 06-22), so nothing was auto-removed this pass.
 
 ### Hordes
 
-- **hbh-asset-production-pass** (P1, added 2026-06-10) - defer to the HBH art-production pass. Agent-side inventory and concept batches are done (docs/ASSET_PRODUCTION-2026-06-11.md, GDD v0.98.2); the remainder is user-side Midjourney batches plus Erik modeling, gated on the external art pipeline.
-- **handler-hbh-3d-migration-drift-2026-06-13** (P2, added 2026-06-13) - do this session. All three handler fixes are applied committed-ready to X:\HereBeHordes\CLAUDE.md (source/ subdir list, dropped stale colorblind_mode bullet, corrected audit-dual-path.ps1 note); only the `release.ps1` ship remains.
+- **hbh-asset-production-pass** (P1, added 2026-06-10) - Defer to the HBH art pipeline. Agent-side inventory and concept batches are done (docs/ASSET_PRODUCTION-2026-06-11.md, GDD v0.98.2); the remainder is user-side Midjourney batches plus Erik modeling, gated on the external art pipeline, not an agent task.
+- **htbh-gdd-2d-retirement-residual-drift-2026-06-16** (P2, added 2026-06-16) - Do this session. Two grounding slices already ground-truthed all three regions (Design-tab Locked-Decision pointers, M3 roadmap deliverables, Architecture residuals); what remains is one attended 666KB docs/GDD.html atomic-write-with-readback to land parts 1-3, which the unattended drain keeps deferring for FUSE-write safety.
 
 ### Rising
 
-- **br-asset-production-pass** (P2, added 2026-06-10) - defer to BR M1 completion. Self-blocked per its own spec until the M1 survival loop lands (the gating milestone at ~40%); same shape as the HBH asset pass once unblocked.
-- **br-architecture-snapshot-refresh-2026-06-11** (P2, added 2026-06-11) - do this session. The BR git index is repaired (HEAD past v0.58.42, reads clean) and the ARCHITECTURE.md delta section is committed-ready; remaining is the attended body re-weave plus the 675KB GDD Architecture-tab refresh in a FUSE-safe atomic-write session.
-- **br-v0581-changelog-reconcile-2026-06-14** (P2, added 2026-06-14) - do this session. The v0.58.0/v0.58.1 version-smear reconcile is complete in the tree (CHANGELOG collapsed to one v0.58.1 entry, GDD footer retitled, a tail truncation repaired) and committed-ready; ship doc-only via `release.ps1 -Bump none`.
+- **br-asset-production-pass** (P2, added 2026-06-10) - Defer to Navy art delivery. Blocked on external art that is not on us; the asset pass is a post-art completion gate, nothing actionable until the art lands.
+- **br-bp-terrain-tilemaplayer-2026-06-16** (P1, added 2026-06-16) - Drop from queue. Tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md s5 and deliberately taken off the dashboard 06-23; the queue entry duplicates the doc, which is the system of record for this large editor-authoring refactor.
+- **br-bp-polling-to-event-2026-06-16** (P1, added 2026-06-16) - Drop from queue. Same shape: tracked s8, deferred off-dashboard to a focused perf pass; the doc holds it, the queue does not need to.
+- **br-bp-stats-to-resources-2026-06-16** (P2, added 2026-06-16) - Drop from queue. Enemy-stats and scale-mirror halves are already done; the remainder (building stats to .tres, FRAMES_PER_ROW mirror) is tracked s9.
+- **br-bp-parser-quirk-class-name-2026-06-16** (P2, added 2026-06-16) - Drop from queue. Already marked wontfix: bare class_name conversion contradicts the locked Godot 4.6 boot-safety decision (REVERTED.md s7) and broke the gameplay-scene compile when tried; terminal status, will never be drained.
+- **br-bp-main-world-gui-scene-2026-06-16** (P3, added 2026-06-16) - Drop from queue. Tracked s3/s10; large editor-authoring refactor parked off-dashboard.
+- **br-bp-decompose-god-objects-2026-06-16** (P3, added 2026-06-16) - Drop from queue. Tracked s1; the god-file ratchet already blocks growth, decomposition is a long refactor in the doc.
+- **br-bp-git-lfs-2026-06-16** (P3, added 2026-06-16) - Drop from queue. Tracked s12; needs an attended git-history-rewrite LFS migration, parked off-dashboard until then.
 
 ### Chains
 
-- **yac-mnew-tool-ref-repoint** (P3, added 2026-06-01) - do this session. Ground down to a confirm-and-retire of the dead manual scraper workflow (CONTEXT.md ~236, superseded by the ADR 0021 cron pipeline); needs Nick's "manual scraper session is retired" confirmation, then one focused FUSE-safe edit.
-- **yac-mnew-roadmap-escalation-clarify** (P3, added 2026-06-01) - do this session. Reword staged: keep Supabase migrations escalate-to-Nick, change ROADMAP.md:134 to "AI may draft migration SQL, Nick reviews + approves before ship" so audits stop re-flagging the apparent contradiction; approving the wording closes it.
-- **yac-brand-art-swap** (P2, added 2026-06-08) - defer to 1.0 launch. Replacing the placeholder OG/share card and mask-icon SVG with real brand art is genuine design work, not an agent edit; filenames are pinned so no code change blocks it. Park against the 1.0 PWA/share polish.
-- **yac-css-deadcode-removal** (P2, added 2026-06-08) - do this session. Vetting is done (60 of 61 candidates safe, plus the 12 `styles-v*.css` files confirmed orphaned since the 0.51.3 consolidation); the live work is the orphan-file delete batch plus a runtime visual smoke and a PATCH release. Bounded.
-- **yac-share-protocol-boot-route** (P2, added 2026-06-08) - do this session. Bare `?course=<slug>` boot launch is implemented to the tree and verified (esbuild/tsc clean); committed-ready. Ship as MINOR 0.52.0 via `release.ps1`, folding the changelog entry (with `yac-0513-changelog`) at release time.
-- **yac-store-launch** (P1, added 2026-06-10) - defer to 1.0 launch. The PWA icon gap is closed committed-ready; the remainder is a wrapper decision (Capacitor vs TWA, per docs/APP-STORE-PATH.md), store accounts, signing, and real screenshots, all gated on Nick plus external accounts.
-- **yac-subscriptions-enable-ai** (P1, added 2026-06-10) - defer to 1.0 launch. Billing code shipped and verified in 0.32.0; the remainder is entirely Nick-side per docs/stripe-setup.md (Stripe product, apply migration 0016, wrangler secrets, webhook, then flip CHAINS_VISIBLE).
-- **yac-stale-stash-2026-06-11** (P2, added 2026-06-11) - do this session. Read-only review is complete and all three stashed files are confirmed superseded (wrangler at HEAD verbatim, non_us_slugs a subset of current, ingest_queue a drained snapshot); the only remaining action is one shell command, `git stash drop`.
-- **yac-0513-changelog-2026-06-12** (P2, added 2026-06-12) - do this session. The 0.51.3 PATCH entry is authored to CONTEXT.md committed-ready (faf1223 PWA-icons + drift-fix, 9c78081 partial rename); ships in lockstep with `yac-share-protocol-boot-route` at the next YaC release.
+- **yac-css-deadcode-removal** (P2, added 2026-06-08) - Do this session. Premise is stale (the styles-v*.css split was consolidated to styles.css in 0.51.3, comment-repoint half shipped in v0.52.0); remaining real work is the 12 orphaned styles-v*.css file deletions plus a quick runtime visual smoke and a PATCH release. Bounded, ground-truthed across three prior slices, safe to authorize.
+- **yac-store-launch** (P1, added 2026-06-10) - Defer to 1.0 launch. The PWA icon gap is closed committed-ready; the remainder is a wrapper decision (Capacitor vs TWA, per docs/APP-STORE-PATH.md), store accounts, signing, and real screenshots, all gated on Nick plus external accounts.
+- **yac-subscriptions-enable-ai** (P1, added 2026-06-10) - Defer to 1.0 launch. Billing code shipped and verified in 0.32.0; the remainder is entirely Nick-side per docs/stripe-setup.md (Stripe product, apply migration 0016, wrangler secrets, webhook, then flip CHAINS_VISIBLE).
 
 ### Scheduler
 
-- **wts-2026-05-29-scheduler-stale-working-tree** (P2, added 2026-05-29) - do this session. Worst offender by age at 24 days. The original 75-file tree resolved into one committed-ready cohort (YaS rebrand plus two real test files, tails verified, three commits ahead of origin unpushed); only the Windows-side ship remains (clear `.git/index.lock`, bump version + CHANGELOG, run `release.ps1`).
-- **scheduler-m71-resequence-0602** (P2, added 2026-06-02) - defer to M7.1 (v0.5.0). The X-Org-Slug doc-drift half is already committed-ready; the remainder (org-switcher widget + invite-admin UI + cross-org scope-leak suite) is a milestone scope call gated on Nick green-lighting M7.1 as the next version.
-- **scheduler-real-use-testing** (P1, added 2026-06-10) - do this session. Route-level generate-to-publish E2E plus cross-org leak tests are written and tsc-clean; remainder is Nick-side (clear the lock, `pnpm --filter api test`, commit via `release.ps1`, then a human real-use pass).
-- **scheduler-cron-preference-window-0613** (P2, added 2026-06-13) - do this session. Resolved committed-ready via doc-softening (DESIGN.md sec18 daily Cron Trigger marked planned-not-built, a FUSE truncation repaired in the same pass); ships with the other committed-ready Scheduler doc edits via `release.ps1`.
-- **scheduler-design-changelog-drift-fix-2026-06-14** (P2, added 2026-06-14) - do this session. Closes the open Scheduler bar-raise MEDIUM committed-ready (DESIGN.md brand aligned to "Yes& Scheduler", CHANGELOG dates corrected, a tail truncation repaired); folds into the same `release.ps1` ship as the other committed-ready Scheduler edits.
+No qualifying items.
 
 ### Apothecary
 
-- **yaa-final-polish-close** (P3, added 2026-06-10) - defer to the open YaA design calls. Four slices left the tree committed-ready (CHANGELOG + release.ps1 truncations repaired, storage-error surfacing, em-dash sweep); the gate itself stays blocked on `apothecary-preset-custom-items` plus the filter-repo and print-fidelity decisions before a final `release.ps1`.
-- **apothecary-preset-custom-items** (P2, added 2026-06-11) - do this session. Bounded technical decision: layout presets snapshot layout + sectionTitles only (editor.js:888), so recalling a preset can reference deleted custom-XXXX keys. Pick one of snapshot-and-restore customItems or filter-dangling-keys-on-load, then update PROJECT_SPEC s5/s8. Also unblocks `yaa-final-polish-close`.
-- **yaa-commit-release-automsg-2026-06-12** (P2, added 2026-06-12) - do this session. Pending shell commit only: the release.ps1 auto-message change plus the drift-fixed README, storage-warning, and em-dash sweep are committed-ready in the tree (HEAD v0.18.4). Run `cd X:\YesAndApothecary; .\scripts\release.ps1`.
+No qualifying items. The one YaA item in the queue (`yaa-stale-working-tree-2026-06-24`) was added today and is inside the 7-day window.
 
 ### Budget
 
-- **yab-barraise-closeout-2026-06-06** (P1, added 2026-06-06) - do this session. Fifth-consecutive stalled-tree verdict; all agent-side file work is verified done (BOM strip, em-dash scrub, `.gitattributes`, `.gitignore`), leaving only Windows-side steps (clear `.git/index.lock`, delete the two stale `scripts/*.bak`, two scoped `release.ps1` commits).
-- **yab-drain-audit-queue-2026-06-10** (P2, added 2026-06-10) - do this session. Quick root-cause check on the YaB canonical-audit-to-queue enqueue writer that regressed at the 06-08 sprint; the 06-19 audit did land `yab-loop-write-probe-untrack` in the queue, so the auto path looks recovered. Confirm the writer is healthy and close, or repair if it still drops findings.
-- **yab-orphans-14-2026-06-10** (P3, added 2026-06-10) - defer to the next YaB maintenance pass. Fourteen orphaned web modules each need a per-module wire-or-drop judgment; real but unbounded for an unattended drain and low priority, so batch it into a focused cleanup session.
-- **wts-2026-06-12-yab-stale-working-tree** (P2, added 2026-06-12) - do this session. Triaged as one coherent cohort (Yes& Budget rebrand + doc hygiene + release.ps1 -Message-optional), two FUSE truncations repaired, tails verified; committed-ready. Ship via `cd X:\YesAndBudget; .\scripts\release.ps1`, deleting the two stale `scripts\*.bak` first to also clear the bak residue.
-- **yab-landing-page-rename-flip-2026-06-14** (P3, added 2026-06-14) - do this session. The 14 PascalCase "YesAndBudget" hits in docs/landing-page.html were grounded and the 11 display/prose ones flipped to "Yes& Budget" committed-ready, leaving the 3 X:\YesAndBudget path tokens as machine identifiers; ship doc-only via `release.ps1 -Bump none`, folding with the other committed-ready YaB doc edits.
-- **yab-d013-rename-adr-2026-06-14** (P3, added 2026-06-14) - do this session. Promote the applied-but-unwritten rename rule ("brand string = Yes& Budget, machine identifiers = yesandbudget/@yab") as D-013 via adr-promoter so audits stop re-discovering the split; needs Nick's lock signal, then one append to DECISIONS.md.
+No qualifying items.
 
 ### Everything
 
-- **wts-2026-06-14-yae-apothecary-mirror-stale-tree** (P2, added 2026-06-14) - do this session. Diagnosis inverted the premise: there are no real uncommitted edits to ship, the working-tree apothecary/ copies are stale/FUSE-corrupted and behind HEAD. Correct fix is Windows-side (repair the YaE git index, then `git checkout -- apothecary/` to discard the stale copies); committing the tree would regress live, so do not.
-- **handler-audit-skill-table-update-2026-06-14** (P3, cross-project, added 2026-06-14) - do this session. The handler-audit skill source in `_skill-review` was expanded to six handlers with correct paths committed-ready; the live skill cache is read-only, so the change needs a personal-skills repackage and reinstall via Cowork Settings > Capabilities to go live.
-- **yae-status-json-fuse-nullpad-2026-06-14** (P2, added 2026-06-14) - do this session. The check-status-json.ps1 guard half is rewritten committed-ready (strip trailing NUL + atomic heal, unit-tested on 7 cases); ship via `release.ps1`, then close the cross-repo writer-half (each project's dashboard-JSON + bar-raise writers should write atomically so the pad stops upstream) as a follow-up.
+- **handler-audit-skill-table-update-2026-06-14** (P3, added 2026-06-14) - Defer to the next personal-skills repackage. The fix is already applied to the staged source (_skill-review/personal-skills-src/.../handler-audit/SKILL.md, six-handler table); going live needs the personal-skills plugin repackaged and reinstalled via Cowork Settings > Capabilities, which only Nick can do and which the read-only skill cache blocks in-session.
+
+### Agents
+
+No qualifying items.
 
 ### Auto-applied this pass
 
-None. No qualifying item met the unambiguous-Drop bar this run: every aging non-auto-safe item is either a committed-ready ship awaiting an attended `release.ps1`, a decision-gated completion gate or scope call, or a bounded cleanup, all of which need Nick's hand on the wheel and stay in the queue. The one previous Drop (`handler-dns-registrar-pasttense-2026-06-13`) was already removed on the 2026-06-21 pass.
+None. The seven Rising best-practices items carry a Drop verdict, but their evidence is "duplicated in the adherence doc / wontfix," not the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is actively FUSE-truncation-prone, so an unattended write to it is the wrong risk to take. They are left in place for Nick to bulk-remove in one attended pass (the adherence doc remains the system of record either way). Recommended Nick-side cleanup this session: bulk-drop the seven `br-bp-*-2026-06-16` items and confirm the `yac-css-deadcode-removal` and `htbh-gdd-2d-retirement-residual-drift` "do this session" calls.

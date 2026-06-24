@@ -179,6 +179,7 @@
   .card .panel.findings .counts .count {
     color: var(--fg-1);
   }
+  .card .panel.findings .counts .count.critical { color: var(--bad); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
   .card .panel.findings .counts .count.high { color: var(--bad); }
   .card .panel.findings .counts .count.medium { color: var(--warn); }
   .card .panel.findings .counts .count.low { color: var(--fg-1); }
@@ -441,6 +442,9 @@
     if (data.audit && (data.audit.findings || data.audit.latestReportAt)) {
       var counts = el("div", { className: "counts" });
       var f = data.audit.findings || {};
+      if (f.critical) {
+        counts.appendChild(el("span", { className: "count critical", text: f.critical + " critical" }));
+      }
       counts.appendChild(el("span", { className: "count high", text: (f.high || 0) + " high" }));
       counts.appendChild(el("span", { className: "count medium", text: (f.medium || 0) + " med" }));
       counts.appendChild(el("span", { className: "count low", text: (f.low || 0) + " low" }));
