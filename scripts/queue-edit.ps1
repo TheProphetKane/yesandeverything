@@ -62,8 +62,32 @@ function Read-Queue {
   if (-not (Test-Path $QueuePath)) { return [pscustomobject]@{ version = 1; updated = ''; items = @() } }
   return ([System.IO.File]::ReadAllText($QueuePath) | ConvertFrom-Json)
 }
+$DrainLogPath = 'X:\YesAndEverything\.work-queue-drain-log.json'
+
+# Keep the drain log OUT of the main queue file. A _drain_log growing inside
+# .work-queue.json enlarges the read-modify-write surface, and a FUSE truncation
+# co-located with the items array stranded it (BR lost 4 drift ids 2026-06-22).
+# Every write through this helper rotates any _drain_log to a capped sidecar so
+# the main file stays lean and the items array is never co-located with the log.
+function Rotate-DrainLog($q) {
+  if (-not ($q.PSObject.Properties['_drain_log'])) { return }
+  $entries = @($q._drain_log)
+  $q.PSObject.Properties.Remove('_drain_log')
+  if ($entries.Count -eq 0) { return }
+  $existing = @()
+  if (Test-Path $DrainLogPath) {
+    try { $existing = @([System.IO.File]::ReadAllText($DrainLogPath) | ConvertFrom-Json) } catch { $existing = @() }
+  }
+  $merged = @($existing) + $entries
+  if ($merged.Count -gt 200) { $merged = $merged[($merged.Count - 200)..($merged.Count - 1)] }  # cap
+  $tmp = "$DrainLogPath.tmp"
+  [System.IO.File]::WriteAllText($tmp, ($merged | ConvertTo-Json -Depth 20), [System.Text.UTF8Encoding]::new($false))
+  $null = ([System.IO.File]::ReadAllText($tmp) | ConvertFrom-Json)
+  Move-Item -Force $tmp $DrainLogPath
+}
 function Write-QueueAtomic($q) {
   $q.updated = [DateTime]::UtcNow.ToString('o')
+  Rotate-DrainLog $q
   $json = ($q | ConvertTo-Json -Depth 30)
   $tmp = "$QueuePath.tmp"
   [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
