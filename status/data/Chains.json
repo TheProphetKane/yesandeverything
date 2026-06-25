@@ -32,21 +32,21 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-24.md",
-        "latestReportAt": "2026-06-24T11:18:22Z",
-        "verdict": "healthy",
-        "topFinding": "Twenty-ninth review, tenth straight healthy, and the cycle the board's longest-standing action finally closed. The observability MEDIUM that topped the action list for roughly nine reviews is resolved: the in-flight v0.52.1 ships tools/audit_dashboard.py + scripts/sync-audit-to-dashboard.ps1 + scripts/register-sync-audit.ps1 (a daily 02:30 sync-audit-yac-dashboard task) plus a write-dashboard-status.ps1 integration, a deterministic, no-LLM, FUSE-safe refresh shared by both the daily and the release writers. It is not theoretical: the dashboard Chains.json audit block now reads docs/CANONICAL_AUDIT-2026-06-24.md with critical=1, which the old release-welded refresh could not have shown (last commit v0.52.0, 06-22). The new standing risk is the other half of that same hazard: FUSE working-tree truncation recurred a second straight day, this time across three files at once (CONTEXT.md, BACKLOG.md, and the CLAUDE.md handler), each carrying real 0.52.1 edits and a chopped tail. The daily audit caught it and recovery is complete (all three tails now match HEAD), but two days running on a multi-file edit batch is a pattern, prevention on the edit path is still absent, and release.ps1 has no truncation tripwire, so a corrupted-canon commit is one mistimed release away. That is the finding to act on before 1.0.",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-25.md",
+        "latestReportAt": "2026-06-25T11:12:56Z",
+        "verdict": "needs-attention",
+        "topFinding": "Thirtieth review, first off the ten-cycle healthy streak. The FUSE working-tree truncation hazard fired a third straight day and worsened on two axes: blast radius tripled from three files to ten tracked files (docs/CANONICAL_AUDIT-2026-06-25.md), and the sole defense broke when a phantom 0-byte .git/index.lock could not be cleared from the FUSE sandbox, so the git-checkout recovery could not run unattended and needed Windows-side intervention. Recovery did complete (tree now clean except one legitimate scripts/release.ps1 edit; 0.52.1 canon committed whole at HEAD with all version anchors aligned), so no data was lost and nothing shipped corrupted. But three consecutive days, a tripled blast radius, and a recovery path that stalled on an environmental blocker is no longer a MEDIUM. The prevention the last ~ten reviews asked for, a release-path truncation tripwire plus routing canonical-doc edits through tools/safe_write.py, is still unshipped, and release.ps1 on a dirty tree would still commit corrupted canon. Fix before 1.0.",
         "actionsOpen": 2,
-        "actionsClosed": 1,
+        "actionsClosed": 0,
         "actions": [
             {
-                "severity": "MED",
-                "title": "Add a working-tree truncation tripwire to tools/preship.sh and the release.ps1 PS-native path that hard-blocks a release on any canonical-doc tail mismatch vs HEAD, so prevention does not depend on the daily audit firing before release.ps1. Route canonical-doc edits through tools/safe_write.py. FUSE truncation has now recurred two straight days, including the CLAUDE.md handler.",
+                "severity": "HIGH",
+                "title": "Add a working-tree truncation tripwire to tools/preship.sh and the release.ps1 PS-native path that hard-blocks a release on any canonical-doc tail mismatch vs HEAD, and route canonical-doc edits through tools/safe_write.py. Third straight day of truncation, blast radius tripled to ten files, recovery blocked by a phantom .git/index.lock. P0 before 1.0.",
                 "lens": "reliability"
             },
             {
                 "severity": "MED",
-                "title": "Post-1.0, split the worker/src/index.js 5,510-line monolith into modules (now tracked as BACKLOG Â§2.3.6). No pre-1.0 action.",
+                "title": "Post-1.0, split the worker/src/index.js 5,510-line monolith into modules (tracked as BACKLOG.md 2.3.6). No pre-1.0 action.",
                 "lens": "architecture"
             }
         ]
