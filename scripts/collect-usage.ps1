@@ -730,6 +730,14 @@ try {
 # to ~10/hr, which froze the dashboard on 2026-06-23). Writes use the owner's
 # authenticated wrangler CLI, so there is no ingest secret in the repo. The git
 # commit below still runs as a durable history/backup of the same JSON.
+#
+# Relax EAP to Continue BEFORE the wrangler calls (not just before git below):
+# wrangler writes normal progress to stderr, and under EAP=Stop the `2>&1`
+# redirect promotes that into a terminating NativeCommandError that the catch
+# reports as "errored" even when the push exits 0. The $LASTEXITCODE check is
+# the real success signal. Same stderr-wrap class fixed in the HBH release
+# scripts (push-to-github / publish-gdd / write-dashboard-status).
+$ErrorActionPreference = "Continue"
 $KV_NS = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"
 foreach ($pair in @(@{ k = "usage"; f = $OutPath }, @{ k = "queue"; f = (Join-Path $DataDir "queue.json") })) {
   # NOTE: use simple local vars in the wrangler call. A bareword like "--path=$pair.f"
@@ -747,10 +755,8 @@ foreach ($pair in @(@{ k = "usage"; f = $OutPath }, @{ k = "queue"; f = (Join-Pa
 
 # ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
-# git writes normal progress to stderr; under ErrorActionPreference=Stop the
-# 2>&1 redirect promotes that into a terminating NativeCommandError even on a
-# successful push. Relax EAP for the native git calls below.
-$ErrorActionPreference = "Continue"
+# EAP is already Continue from the KV-push block above (same git/native-stderr
+# stderr-wrap reason); the git calls below rely on $LASTEXITCODE checks.
 # Never block on a credential prompt. A scheduled run with no cached creds would
 # otherwise hang on `git push` forever; combined with the task's IgnoreNew, that
 # one zombie blocks every later run and freezes the dashboard (root cause of the

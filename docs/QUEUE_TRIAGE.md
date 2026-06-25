@@ -7,11 +7,11 @@ git. The nightly queue-triage task overwrites the "Current state" section below
 on each run, so this file always reflects the latest pass rather than spawning a
 new dated file.
 
-Last pass: 2026-06-24.
+Last pass: 2026-06-25.
 
 ## Current state
 
-Fourteen non-auto-safe items are aging past 7 days, up from nine last pass: the four 2026-06-18 BR audit items are still inside the 7-day window this run, but the eight 2026-06-16 BR best-practices items and the 2026-06-14 handler-skill item have now crossed it. Worst offender by age is `yac-css-deadcode-removal` (2026-06-08, 16 days). Rising carries by far the largest backlog at eight items, though seven are deferred or wontfix best-practices entries already tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md and recommended for a bulk drop from the queue; Chains has three, Hordes two, Everything one. No item met the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is FUSE-truncation-prone (its `_drain_log` was lost and four items dropped out of the array on 06-22), so nothing was auto-removed this pass.
+Fourteen non-auto-safe items are aging past 7 days, unchanged in count from last pass: the four 2026-06-18 BR audit items all shipped (status done) and fell off, while the eight 2026-06-16 BR best-practices items stayed put, so the aging set is the same fourteen. Worst offender by age is `yac-css-deadcode-removal` (2026-06-08, 17 days). Rising carries by far the largest backlog at eight items, though seven are deferred or wontfix best-practices entries already tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md and recommended for a bulk drop from the queue; Chains has three, Hordes two, Everything one. No item met the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is FUSE-truncation-prone, so nothing was auto-removed this pass.
 
 ### Hordes
 
@@ -37,15 +37,15 @@ Fourteen non-auto-safe items are aging past 7 days, up from nine last pass: the 
 
 ### Scheduler
 
-No qualifying items.
+No qualifying items. The one Scheduler item (`scheduler-claude-version-ref-v0.5.2`) was added today and is auto-safe, so the queue-drain task owns it.
 
 ### Apothecary
 
-No qualifying items. The one YaA item in the queue (`yaa-stale-working-tree-2026-06-24`) was added today and is inside the 7-day window.
+No qualifying items. The one YaA item (`yaa-stale-working-tree-2026-06-24`) is inside the 7-day window and already resolved as a FUSE stale-read false positive.
 
 ### Budget
 
-No qualifying items.
+No qualifying items. The one YaB item (`yab-design-notnull-annotations-2026-06-24`) is recent, auto-safe, and already completed.
 
 ### Everything
 

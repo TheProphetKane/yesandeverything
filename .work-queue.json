@@ -1,6 +1,22 @@
 {
     "items":  [
                   {
+                      "id":  "scheduler-claude-version-ref-v0.5.2",
+                      "added":  "2026-06-25",
+                      "project":  "scheduler",
+                      "kind":  "drift-fix",
+                      "auto_safe":  true,
+                      "priority":  "P3",
+                      "status":  "completed",
+                      "prompt":  "Scheduler CLAUDE.md Build-order section: replace the stale version reference \u0027The repo is past that at v0.4.1.\u0027 with \u0027The repo is past that at v0.5.2.\u0027 Single-string swap surfaced by HANDLER_AUDIT-2026-06-25.md; CHANGELOG.md top entry and DESIGN.md document-version pill both read v0.5.2. Text-only, auto-safe.",
+                      "source":  "handler-audit-nightly 2026-06-25",
+                      "attempts":  0,
+                      "result_path":  null,
+                      "lastWorkedAt":  "2026-06-25T13:06:05Z",
+                      "lastAttemptAt":  "2026-06-25T13:06:05Z",
+                      "notes":  "2026-06-25T13:06Z queue-drain-4h: COMPLETED as already-resolved. Scheduler CLAUDE.md line 17 already reads \u0027The repo is past that at v0.5.2.\u0027 - the stale \u0027v0.4.1\u0027 string this item targets does not exist in the live file. Verified by grep against X:\\YesAndScheduler\\CLAUDE.md (single match, v0.5.2). The fix landed before this drain (or the item was queued against a stale snapshot). No edit, no version bump, no churn. attempts NOT incremented: no fix attempted, target already correct. | Sibling MEDIUM finding (the M7.1 open-scope-question paragraph is now stale; M7.1 shipped v0.5.0) needs a convention-paragraph rewrite and was NOT auto-queued; flagged in the audit report for Nick to handle."
+                  },
+                  {
                       "id":  "yac-css-deadcode-removal",
                       "added":  "2026-06-08",
                       "lastNoticedAt":  "2026-06-08T17:34:12",
@@ -8,7 +24,7 @@
                       "kind":  "cleanup",
                       "auto_safe":  false,
                       "priority":  "P2",
-                      "status":  "pending",
+                      "status":  "completed",
                       "prompt":  "Execute the CSS dead-code removal deferred since 0.44.8 using docs/CSS_DEADCODE-2026-06-08.md (61 zero-reference candidates in styles-v8/v9). Per candidate, grep src/ + index.html for dynamic construction (quoted fragments, template-string class composition, BEM prefixes) BEFORE deleting the rule. Needs runtime visual verification; not auto-safe.",
                       "source":  "0.51.0 PWA/share wave (Nick session)",
                       "attempts":  0,
@@ -16,7 +32,7 @@
                       "lastWorkedAt":  "2026-06-17T21:07:31Z",
                       "lastAttemptAt":  "2026-06-17T21:07:31Z",
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\yac-css-deadcode-removal-2026-06-17.md",
-                      "notes":  "2026-06-17T21:07Z queue-drain-4h slice 3: landed the safe half of the slice-2 re-scope. Repointed the 4 stale \u0027Pairs with styles-vN.css\u0027 comments in src/mobile-hooks*.ts to styles.css (mobile-hooks.ts:3 v7, mobile-hooks-3.ts:4 v9, mobile-hooks-4.ts:3 v11, mobile-hooks-5.ts:3 v12), after re-confirming index.html:1286 loads only styles.css?v=0.51.3 (the styles-v*.css split is dead since the 0.51.3 faf1223 consolidation). Comment-only edits, no runtime surface touched, committed-ready - rides any next YaC release (no version bump warranted for comment text). STILL PENDING: the 12 orphaned styles-v*.css file deletions (disk/git op, pauses) and the optional re-run of the dead-code scan against the consolidated 281KB styles.css. attempts NOT incremented: slice succeeded. | 2026-06-16T01:06Z queue-drain-4h slice 1: dynamic-construction vetting DONE (the gating analysis the item requires before any deletion). Re-checked all 61 candidates against X:\\YesAndChains\\src for runtime class composition on top of the 06-08 exact-string scan. Every dynamic ${cls} site resolves to fixed non-candidate classes (round.ts rh-cell/rh-head/rh-par/rh-score + scoreColorClass; caddy.ts caddy-rec-why-toggle; render-views.ts dot/wiz-tab). Composable prefix families (course-detail-, recap-, skeleton-, share-) use LIVE names distinct from the candidates. VERDICT: 60 of 61 confirmed safe to delete; carve out .leaflet-control-zoom (Leaflet library-owned override, never a textual ref in app source). Left pending: remaining work is the mechanical rule deletion in styles-v8/v9.css + a runtime visual smoke (not unit-testable) + PATCH release - not auto-safe, focused pass. attempts NOT incremented: slice succeeded. See result_path. | 2026-06-17T17:07Z queue-drain-4h slice 2: slice-1 premise STALE. The 0.51.3 consolidation (faf1223, 2026-06-11) flattened the split stylesheets into a single styles.css. Verified: index.html:1286 loads only styles.css?v=0.51.3, sw.js:35 precaches only /styles.css, and no build script (package.json/sync.ps1/tools/preship.sh/scripts) references or concatenates styles-v*.css - so styles-v2..v13.css (12 files, ~290KB) are now unreferenced orphans, not build inputs. Deleting rules from styles-v8/v9 prunes files the app no longer ships, so the 06-08 candidate list (docs/CSS_DEADCODE-2026-06-08.md) no longer maps to live files. RE-SCOPED: (a) remove the 12 orphaned styles-v*.css as a batch + reword the 4 stale src/mobile-hooks*.ts \u0027Pairs with styles-vN.css\u0027 comments to point at styles.css; (b) if per-rule pruning is still wanted, re-run the dead-code scan against the consolidated styles.css (281KB). Left pending: orphan-file removal is a disk/git op that pauses + needs a runtime visual smoke + PATCH release, not auto-safe for an unattended drain. attempts NOT incremented: slice succeeded. See yac-css-deadcode-removal-2026-06-17.md. | 2026-06-22 attended ship: slice-3 comment repoints SHIPPED in v0.52.0 (commit 1260bbf) - the 4 src/mobile-hooks*.ts Pairs-with-styles comments now point at styles.css. STILL PENDING (deferred, needs runtime visual smoke): the 12 orphaned styles-v*.css file deletions + optional dead-code re-scan of consolidated styles.css. Status kept."
+                      "notes":  "2026-06-25 attended: SHIPPED in v0.52.1 (commit 6708731). 60 of 61 candidates removed from styles-v8/v9.css and mirrored into the consolidated styles.css; .leaflet-control-zoom kept as a live Leaflet runtime-DOM override (verified false positive). Per-candidate dynamic-construction vetting done; runtime visual smoke passed (app boots clean, zero console errors). styles.css?v= cache-buster corrected to 0.52.1. The 12 orphaned styles-v*.css files remain on disk as the edit surface per the styles.css header note; not deleted (separate disk-op, out of scope). Item complete."
                   },
                   {
                       "id":  "yac-store-launch",
@@ -82,12 +98,12 @@
                       "kind":  "drift-fix",
                       "prompt":  "Refresh the stale DNS/registrar note in BOTH X:\\YesAndChains\\CLAUDE.md and X:\\YesAndEverything\\CLAUDE.md. Both still read as an in-flight Squarespace-\u003eCloudflare registrar transfer \u0027initiated 2026-05-06, verify completion\u0027 - the 5-7 day window closed ~2026-05-13, 30+ days ago. Reword both to a settled statement (e.g. \u0027DNS and registrar on Cloudflare since 2026-05-06\u0027). Cross-handler consistent today, so keep the two wordings aligned. Ships via each repo\u0027s scripts/release.ps1.",
                       "priority":  "P3",
-                      "status":  "committed-ready",
+                      "status":  "completed",
                       "auto_safe":  true,
                       "attempts":  0,
                       "result_path":  null,
                       "source":  "docs/HANDLER_AUDIT-2026-06-14.md MEDIUM-1",
-                      "notes":  "Text-only refresh of a time-bound note; safe. Touches two handler files. | 2026-06-14T08:34:47Z overnight drain: APPLIED. Stale in-flight DNS/registrar note rewritten to a settled statement in both handlers, kept aligned. YaC CLAUDE.md L86 + YaE CLAUDE.md L82 now read \u0027DNS and registrar on Cloudflare since 2026-05-06 ... transfer from Squarespace completed in May 2026. Both DNS and registrar now sit on Cloudflare.\u0027 No em dashes, solo-dev voice. Stale \u0027verify completion at the Cloudflare dashboard\u0027 phrasing gone from both; tails verified intact (FUSE guard). Edits are text-only and committed-ready; ship via each repo\u0027s scripts/release.ps1 (shell pauses per gate). Pairs with handler-dns-registrar-pasttense-2026-06-13 (YaE-side, same root cause) which can close on the same release."
+                      "notes":  "2026-06-25 attended: VERIFIED DONE in both handlers and committed. YaC CLAUDE.md L95 and YaE CLAUDE.md L82 both carry the settled \u0027DNS and registrar on Cloudflare since 2026-05-06 ... transfer from Squarespace completed in May 2026\u0027 wording; no in-flight \u0027verify completion\u0027 phrasing remains. YaC committed in v0.52.1 (6708731); YaE DNS line already committed (not in working-tree diff). Closing."
                   },
                   {
                       "id":  "handler-audit-skill-table-update-2026-06-14",
@@ -96,12 +112,12 @@
                       "kind":  "drift-fix",
                       "prompt":  "The handler-audit skill (skills/handler-audit/SKILL.md) hard-codes only four handlers and two pre-rename paths: X:\\HereThereBeHordes (now X:\\HereBeHordes) and X:\\Scheduler (now X:\\YesAndScheduler, per memory scheduler_repo_path). The portfolio now has six handlers (Apothecary + Budget added). Update the four-handler table to six with correct paths, and drop the stale Phase 4 note \u0027YaE may not have a docs/ folder yet\u0027 (it exists with 30+ files). NOTE: skill files are a read-only cache this session; this edit must be made via Settings \u003e Capabilities or the staged source in X:\\YesAndEverything\\_skill-review.",
                       "priority":  "P3",
-                      "status":  "committed-ready",
+                      "status":  "blocked-on-user",
                       "auto_safe":  false,
                       "attempts":  0,
                       "result_path":  "X:\\YesAndEverything\\.work-queue-results\\handler-audit-skill-table-update-2026-06-14.md",
                       "source":  "docs/HANDLER_AUDIT-2026-06-14.md MEDIUM-2",
-                      "notes":  "2026-06-14 queue-drain-4h: APPLIED to staged source _skill-review/personal-skills-src/skills/handler-audit/SKILL.md. Premise partially stale: the two pre-rename paths were already correct in the staged source (X:\\HereBeHordes, X:\\YesAndScheduler present; .skill package dated Jun 11). Remaining work done: expanded the four-handler table to six (added Apothecary + Budget with correct paths + corrected drifted display names), added Apothecary/Budget rows to the Phase 2 canonical-version table so the six-handler scope is actionable, extended the Phase 6 project enum, swept every \u0027four handlers/four phases/four named paths\u0027 reference to six, and dropped the stale \u0027YaE may have no docs/ folder\u0027 note in both the Phase 4 and Output-destination sections. Grep confirms zero remaining \u0027four\u0027/pre-rename-path hits; six-row table; no em dash introduced; file integrity verified via Read tool (234 lines, correct tail). NOT auto-applied to the live skill: installed skill cache is read-only this session, so the personal-skills plugin must be repackaged (personal-skills.plugin / handler-audit.skill) and reinstalled via Cowork Settings \u003e Capabilities for the change to go live. committed-ready. Phase 3 cross-handler table + Special-cases not yet extended to the 2 new projects (judgment-heavy, not required by the item; four-centric versions stay correct) - flagged in result file. attempts NOT incremented: slice succeeded, no failure.",
+                      "notes":  "2026-06-25: agent-side work DONE (staged source _skill-review/personal-skills-src/skills/handler-audit/SKILL.md expanded to six handlers, stale notes dropped). BLOCKED on a manual step only Nick can do: the installed skill cache is read-only to agents, so the personal-skills plugin must be repackaged and reinstalled via Cowork Settings \u003e Capabilities for the change to go live. No further agent action possible until then.",
                       "lastWorkedAt":  "2026-06-14T13:10:00Z"
                   },
                   {
@@ -269,16 +285,17 @@
                   {
                       "id":  "yac-canonical-truncation-recovery-2026-06-24",
                       "added":  "2026-06-24",
-                      "lastNoticedAt":  "2026-06-24T06:45:00Z",
+                      "lastNoticedAt":  "2026-06-24T21:06:00Z",
+                      "lastAttemptAt":  "2026-06-24T21:06:00Z",
                       "project":  "chains",
                       "kind":  "drift-fix",
                       "auto_safe":  false,
                       "priority":  "P0",
-                      "status":  "pending",
+                      "status":  "wontfix",
                       "attempts":  0,
                       "source":  "audit-chains-nightly / docs/CANONICAL_AUDIT-2026-06-24.md#1",
                       "prompt":  "P0 BLOCK release.ps1. Three YaC working-tree docs carry FUSE write-truncation while also holding legit uncommitted 0.52.1 edits, so a blind `git restore` would destroy the 0.52.1 work and a release would commit corrupted canon. Recover each by splicing HEAD\u0027s lost tail back onto the working-tree head, using the atomic-write-with-readback pattern (tools/safe_write.py), never a raw Edit on the large files. (1) CONTEXT.md (404KB): keep the new 0.52.1 pill + 0.52.1 changelog entry + the line-261 worker-deploy rewrite; re-append HEAD\u0027s 0.12.2 (full) + 0.12.1 + 0.12.0 + 0.11.0 changelog tail (truncated at \u0027...see the tour on ev\u0027). (2) BACKLOG.md: keep the new row 2.3.6; re-append HEAD\u0027s section 34.5 (full) through 34.10, the \u0027Deferred to post-1.0\u0027 block, and the \u0027Logged 2026-05-18\u0027 line (truncated at \u0027...not field-merged). \u0027). (3) CLAUDE.md handler: keep the new audit_dashboard.py tools row + \u0027Dashboard audit sync\u0027 paragraph; re-append HEAD\u0027s Release-pipeline remainder, the sync.ps1 note, \u0027Lock signals\u0027, and \u0027When in doubt\u0027 sections (truncated at \u0027...via webhook (`scripts/discor\u0027). Tail-check all three end cleanly: CONTEXT.md at the 0.11.0 entry, BACKLOG.md at \u0027Logged 2026-05-18...\u0027, CLAUDE.md at \u0027...Anything outside is BACKLOG, parked.\u0027. Then re-run the BACKLOG hygiene sweep against the restored file.",
-                      "notes":  "Enqueued 2026-06-24 by audit-chains-nightly from docs/CANONICAL_AUDIT-2026-06-24.md#1. Recurrence and spread of the 06-23 P0: the same htbh-fuse-edit-tool-truncation hazard, now hitting THREE docs at once in the pending 0.52.1 tree (06-23 it was CONTEXT/ROADMAP/BACKLOG; ROADMAP since recovered, CLAUDE.md newly truncated). Shell op + large-file atomic write = pauses for Nick; P0 gate blocks. No auto-safe text fix existed this run; this is the only finding. Yesterday\u0027s stale styles.css cache-buster is resolved."
+                      "notes":  "2026-06-25 attended: VERIFIED FALSE POSITIVE, no recovery needed. The committed 0.52.1 docs (HEAD 6708731) are whole: CONTEXT.md has the 0.12.2/0.12.1/0.12.0/0.11.0 changelog tail, BACKLOG.md has 34.6-34.10 + the Logged 2026-05-18 line, CLAUDE.md has Lock signals + When in doubt. git diff HEAD~1..HEAD shows additions only (CONTEXT +3/-2, BACKLOG +1/-0, CLAUDE +10/-1), zero tail deletions. The 06-23/06-24 audit truncation CRITICALs were FUSE stale-read false positives (same gremlin that false-failed safe_write 3x this session). Root cause flagged: audit truncation-detection needs re-read/git-compare hardening (spawned task task_d3516276). No corruption shipped."
                   },
                   {
                       "id":  "yaa-stale-working-tree-2026-06-24",
@@ -316,8 +333,80 @@
                       "lastWorkedAt":  "2026-06-24T13:06:58Z",
                       "lastAttemptAt":  "2026-06-24T13:06:58Z",
                       "notes":  "Enqueued 2026-06-24 by the attended canonical audit second pass. Incompleteness not contradiction: DESIGN never claims these columns are nullable, it just omits the constraint that db.ts enforces. The transactions table and the two ON DELETE CASCADE tables are already correct. | 2026-06-24T13:07Z queue-drain-4h: COMPLETED as already-resolved. Verified docs/DESIGN.md S4 against apps/api/src/db.ts:73-140 this run. All four base tables already carry full NOT NULL annotations matching the CREATE TABLE constraints: accounts (DESIGN 33-42 vs db.ts 73-81), categories (DESIGN 65-72 vs db.ts 83-91, name reads \u0027TEXT NOT NULL UNIQUE\u0027 at DESIGN:67 not the stale \u0027TEXT UNIQUE\u0027 the item cited), imports (DESIGN 87-97 vs db.ts 93-104), rules (DESIGN 74-83 vs db.ts 132-140). Nullable columns correctly left unmarked (parent_id, finished_at, and the migration-added plaid_* / amount_min / amount_max columns). DESIGN line 31 already documents the completion: \u0027the accounts, categories, imports, and rules base tables were completed to match in the same documentation batch.\u0027 The audit second pass enqueued against a pre-completion DESIGN snapshot; the fix landed before this drain. No edit made, no version bump, no churn. If a future audit re-flags this, it is a false positive against the current file."
+                  },
+                  {
+                      "id":  "sched-handler-version-ref-v051-2026-06-23",
+                      "added":  "2026-06-23",
+                      "project":  "scheduler",
+                      "kind":  "drift-fix",
+                      "priority":  "P2",
+                      "auto_safe":  true,
+                      "status":  "completed",
+                      "attempts":  0,
+                      "source":  "docs/HANDLER_AUDIT-2026-06-24.md",
+                      "notes":  "2026-06-25 attended ingest: already resolved before this drain. Scheduler CLAUDE.md build-order line had no stale v0.4.1; it read v0.5.2 and is now v0.5.3 (lockstep with package.json + DESIGN pill) as of the v0.5.3 release (commit 9dfa773). No edit needed for this specific token."
+                  },
+                  {
+                      "id":  "sched-handler-m71-shipped-rewrite-2026-06-23",
+                      "added":  "2026-06-23",
+                      "project":  "scheduler",
+                      "kind":  "drift-fix",
+                      "priority":  "P1",
+                      "auto_safe":  false,
+                      "status":  "completed",
+                      "attempts":  0,
+                      "source":  "docs/HANDLER_AUDIT-2026-06-24.md",
+                      "notes":  "2026-06-25 attended: SHIPPED in Scheduler v0.5.3 (commit 9dfa773). Rewrote the CLAUDE.md open-scope-question paragraph: M7.1 (SPA org-switcher, invite-admin page, cross-org scope-leak suite) shipped v0.5.0; handler now states that and points at DESIGN sec21/sec22, no milestone open. Removes the rebuild-trap."
+                  },
+                  {
+                      "id":  "sched-handler-m8-buildrecord-2026-06-23",
+                      "added":  "2026-06-23",
+                      "project":  "scheduler",
+                      "kind":  "drift-fix",
+                      "priority":  "P2",
+                      "auto_safe":  false,
+                      "status":  "completed",
+                      "attempts":  0,
+                      "source":  "docs/HANDLER_AUDIT-2026-06-24.md",
+                      "notes":  "2026-06-25 attended: SHIPPED in Scheduler v0.5.3 (commit 9dfa773), folded with the M7.1 rewrite. Backfilled the CLAUDE.md milestone build-record with M8 (admin-configurable shift options + holidays, v0.3.0) and the v0.4.x 100-item polish pass so it matches DESIGN sec21."
+                  },
+                  {
+                      "id":  "yae-claude-seven-projects-2026-06-25",
+                      "added":  "2026-06-25",
+                      "project":  "yae",
+                      "kind":  "drift-fix",
+                      "priority":  "P2",
+                      "auto_safe":  false,
+                      "status":  "completed",
+                      "attempts":  0,
+                      "source":  "docs/CANONICAL_AUDIT-YAE-2026-06-25.md",
+                      "notes":  "2026-06-25 attended: DONE (ships with next YaE release). CLAUDE.md opening prose named five projects; index.html renders seven cards. Updated to name all seven (added Brackish Rising + Agents), verified against index.html .project-name headings."
+                  },
+                  {
+                      "id":  "yae-claude-dashboard-api-doc-2026-06-25",
+                      "added":  "2026-06-25",
+                      "project":  "yae",
+                      "kind":  "drift-fix",
+                      "priority":  "P2",
+                      "auto_safe":  false,
+                      "status":  "completed",
+                      "attempts":  0,
+                      "source":  "docs/CANONICAL_AUDIT-YAE-2026-06-25.md",
+                      "notes":  "2026-06-25 attended: DONE (ships with next YaE release). Added a dashboard-api/ row to the CLAUDE.md Files-at-a-glance table (git-tracked Cloudflare Worker landed 2026-06-24) and reconciled the static-site framing. Flagged the exposure: dashboard-api/ sits in the Pages-served tree so worker.js/wrangler.toml are publicly fetchable; recommended adding /dashboard-api/ to robots.txt disallow. The robots.txt edit + accept-vs-gate exposure DECISION is left for Nick (noted in the row)."
+                  },
+                  {
+                      "id":  "yae-queue-atomic-write-readback-2026-06-25",
+                      "added":  "2026-06-25",
+                      "project":  "yae",
+                      "kind":  "structural",
+                      "priority":  "P2",
+                      "auto_safe":  false,
+                      "status":  "completed",
+                      "attempts":  0,
+                      "source":  "docs/CANONICAL_AUDIT-YAE-2026-06-25.md",
+                      "notes":  "2026-06-25 attended: DONE (ships with next YaE release). Hardened scripts/queue-edit.ps1 Write-QueueAtomic with a read-back-verify + 5-attempt retry after the rename (was tmp-parse + rename only). Throws under the lock rather than releasing over a truncated/stale queue. Matches the GDD.html-style atomic-write pattern the audit asked for."
                   }
               ],
-    "last_drain":  "2026-06-24T13:06:58Z",
-    "updated":  "2026-06-24T15:28:56.0838962Z"
+    "last_drain":  "2026-06-25T13:06:05Z",
+    "updated":  "2026-06-25T14:33:06.9260769Z"
 }

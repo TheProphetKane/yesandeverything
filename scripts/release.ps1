@@ -55,3 +55,9 @@ try {
 finally {
     Pop-Location
 }
+
+# --- Refresh the live usage dashboard for this release (best-effort) ---
+# Pushes fresh per-project token usage to the dashboard's Cloudflare KV so the live
+# page (usage.yesandeverything.com) updates within seconds. -NoPush = KV + local only:
+# no extra git commit and no GitHub Pages build. Never fails the release.
+try { & "X:\YesAndEverything\scripts\collect-usage.ps1" -NoPush } catch { Write-Host "usage dashboard refresh skipped: $_" -ForegroundColor DarkGray }

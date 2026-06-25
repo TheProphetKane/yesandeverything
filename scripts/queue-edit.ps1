@@ -89,10 +89,25 @@ function Write-QueueAtomic($q) {
   $q.updated = [DateTime]::UtcNow.ToString('o')
   Rotate-DrainLog $q
   $json = ($q | ConvertTo-Json -Depth 30)
+  # Atomic write + read-back verify, retried. The tmp is parse-validated before
+  # the rename, but this FUSE mount can still land a truncated final file or
+  # serve a stale read right after the move (it false-failed safe_write 3x in
+  # one session). So after the rename, re-read $QueuePath and confirm it is
+  # byte-identical AND parses; retry the whole write if not. Better to throw
+  # under the lock than release it over a corrupt queue.
+  $enc = [System.Text.UTF8Encoding]::new($false)
   $tmp = "$QueuePath.tmp"
-  [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
-  $null = ([System.IO.File]::ReadAllText($tmp) | ConvertFrom-Json)   # parse before it may replace the live file
-  Move-Item -Force $tmp $QueuePath
+  for ($attempt = 0; $attempt -lt 5; $attempt++) {
+    [System.IO.File]::WriteAllText($tmp, $json, $enc)
+    $null = ([System.IO.File]::ReadAllText($tmp) | ConvertFrom-Json)  # parse before it may replace the live file
+    Move-Item -Force $tmp $QueuePath
+    $got = [System.IO.File]::ReadAllText($QueuePath)
+    $ok = $false
+    if ($got -eq $json) { try { $null = ($got | ConvertFrom-Json); $ok = $true } catch { $ok = $false } }
+    if ($ok) { return }
+    Start-Sleep -Milliseconds 300  # let a stale read settle, then rewrite
+  }
+  throw "queue-edit: .work-queue.json read-back verify failed after 5 attempts (FUSE truncation/stale-read); aborting to avoid shipping a corrupt queue"
 }
 # Set a property, adding it if the JSON object doesn't already have it (PS 5.1
 # throws on assigning a non-existent property of a [pscustomobject]).

@@ -7,8 +7,8 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 
 ## What this repo is (and isn't)
 
-- **Is:** a static-site monorepo deployed by **GitHub Pages from `main`/root**. No build step, no framework, no SSR. Pure HTML/CSS/JS, dark-mode by default, mono-font-first aesthetic.
-- **Is not:** the actual code of the projects it links to. Each project (HBH, Chains, Scheduler, Apothecary, Budget) lives in its own repo. This repo only carries landing pages + mirrors.
+- **Is:** a static-site monorepo deployed by **GitHub Pages from `main`/root**. The pages have no build step, no framework, no SSR: pure HTML/CSS/JS, dark-mode by default, mono-font-first aesthetic. One exception now ships from here too: a small Cloudflare Worker under `dashboard-api/` (deployed separately via wrangler, not by Pages). So it's a static site PLUS one tiny API worker.
+- **Is not:** the actual code of the projects it links to. Each project (Here Be Hordes, Brackish Rising, Chains, Scheduler, Apothecary, Budget, Agents) lives in its own repo. This repo carries landing pages + mirrors, plus one small API worker (`dashboard-api/`, see Files at a glance).
 
 ## Files at a glance
 
@@ -18,6 +18,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `404.html` | Fallback for unknown paths. |
 | `CNAME` | Custom-domain pointer for GitHub Pages: `yesandeverything.com`. |
 | `robots.txt` | Allows crawlers on root, disallows the private paths: `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/sitemap/`. |
+| `dashboard-api/` | Small Cloudflare Worker (`worker.js` + `wrangler.toml`, git-tracked, landed 2026-06-24) backing the usage dashboard. The one server-side piece in an otherwise static repo; deployed separately by wrangler, not by GitHub Pages. **Exposure:** this folder sits inside the Pages-served tree, so `yesandeverything.com/dashboard-api/worker.js` and `/dashboard-api/wrangler.toml` are publicly fetchable. `wrangler.toml` should hold no secrets (those live in the Cloudflare dashboard), but `robots.txt` already disallows several private paths and does not yet list `/dashboard-api/`. Recommend adding `/dashboard-api/` to that disallow list (Nick's call; don't edit `robots.txt` here). |
 | `.nojekyll` (implicit) | Tells GitHub Pages to skip Jekyll processing. |
 | `hordes/index.html` | Password-gated HBH GDD mirror. Password: `SneakPeak`. Contains base64-inlined GDD via `var ENCODED = "..."`. **Generated, not hand-edited.** |
 | `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a 16-line meta-refresh stub that redirects to `/hordes/` so any old bookmark still lands on the gate. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
