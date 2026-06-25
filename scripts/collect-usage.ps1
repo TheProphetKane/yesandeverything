@@ -753,6 +753,30 @@ foreach ($pair in @(@{ k = "usage"; f = $OutPath }, @{ k = "queue"; f = (Join-Pa
   } catch { Write-Host "KV: push of $kvKey errored ($_)" -ForegroundColor Yellow }
 }
 
+# Bundle the per-project status JSON (status/data/<Project>.json: version, milestone,
+# completion, queued, bar-raise verdict, audit pointer) into one "statuses" blob and push
+# it to KV too, so the dashboard's completion/version data is live as well -- not gated by
+# GitHub Pages builds the way the static status files are. Each project's release writes its
+# own status/data/<Project>.json BEFORE calling this collector, so this captures fresh values.
+try {
+  $statusDir = Join-Path $RepoRoot "status\data"
+  if (Test-Path $statusDir) {
+    $bundle = [ordered]@{}
+    foreach ($sf in (Get-ChildItem -Path $statusDir -Filter *.json -File)) {
+      if ($sf.Name -eq "constellation.json") { continue }   # rollup, not a project card
+      $sid = [System.IO.Path]::GetFileNameWithoutExtension($sf.Name)
+      try { $bundle[$sid] = (Get-Content -Raw $sf.FullName | ConvertFrom-Json) }
+      catch { Write-Host "KV statuses: skipped $($sf.Name) (parse error)" -ForegroundColor Yellow }
+    }
+    $statusTmp = Join-Path ([System.IO.Path]::GetTempPath()) "yae-statuses.kv.json"
+    [System.IO.File]::WriteAllText($statusTmp, ($bundle | ConvertTo-Json -Depth 12), (New-Object System.Text.UTF8Encoding($false)))
+    & wrangler kv key put --namespace-id=$KV_NS statuses --path=$statusTmp --remote 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Write-Host "KV: pushed statuses ($($bundle.Count) projects) to the live dashboard." -ForegroundColor Green }
+    else { Write-Host "KV: push of statuses failed (exit $LASTEXITCODE); status side lags until the next push." -ForegroundColor Yellow }
+    Remove-Item -Path $statusTmp -ErrorAction SilentlyContinue
+  }
+} catch { Write-Host "KV: statuses bundle errored ($_)" -ForegroundColor Yellow }
+
 # ----- Commit + push ---------------------------------------------------------
 if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
 # EAP is already Continue from the KV-push block above (same git/native-stderr

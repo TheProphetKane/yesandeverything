@@ -15,7 +15,7 @@ const CORS = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
-const KEYS = { "/usage.json": "usage", "/queue.json": "queue" };
+const KEYS = { "/usage.json": "usage", "/queue.json": "queue", "/statuses.json": "statuses" };
 
 export default {
   async fetch(request, env) {

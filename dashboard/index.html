@@ -1162,6 +1162,21 @@
       return j != null ? j : fetchJson("data/" + name + ".json");
     });
   }
+  // Per-project status (version, completion, milestone, queued, bar-raise) comes from the
+  // Worker as one "statuses" bundle keyed by project id. Fall back to the static per-project
+  // status files served by the site if the Worker is unreachable.
+  function fetchStatuses() {
+    return fetchJson(DATA_API + "/statuses.json").then(function (bundle) {
+      if (bundle && typeof bundle === "object" && Object.keys(bundle).length) return bundle;
+      return Promise.all(PROJECTS.map(function (p) {
+        return fetchJson("../status/data/" + p.id + ".json").then(function (s) { return [p.id, s]; });
+      })).then(function (pairs) {
+        var o = {};
+        pairs.forEach(function (kv) { if (kv[1]) o[kv[0]] = kv[1]; });
+        return o;
+      });
+    });
+  }
   function smoothPath(pts) {
     if (!pts.length) return "";
     if (pts.length < 3) return "M" + pts.map(function (p) { return p[0] + "," + p[1]; }).join(" L");
@@ -2916,9 +2931,7 @@
     btn.disabled = true;
     btn.textContent = "syncing...";
     $("error-banner").style.display = "none";
-    var jobs = [fetchData("usage"), fetchJson("data/backfill.json"), fetchData("queue")].concat(
-      PROJECTS.map(function (p) { return fetchJson("../status/data/" + p.id + ".json"); })
-    );
+    var jobs = [fetchData("usage"), fetchJson("data/backfill.json"), fetchData("queue"), fetchStatuses()];
     return Promise.all(jobs).then(function (results) {
       var usage = results[0];
       var backfill = results[1];
@@ -2944,8 +2957,7 @@
           delete usage.projects[legacy];
         });
       }
-      var statuses = {};
-      PROJECTS.forEach(function (p, i) { statuses[p.id] = results[i + 3]; });
+      var statuses = results[3] || {};
       LAST = { usage: usage, statuses: statuses, backfill: backfill, queue: queueLive };
       renderAll();
       $("last-refreshed").textContent = "refreshed " + new Date().toLocaleTimeString();
