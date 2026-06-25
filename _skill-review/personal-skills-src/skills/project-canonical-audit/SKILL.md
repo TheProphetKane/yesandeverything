@@ -98,6 +98,36 @@ For each claim from Phase 3, check the code:
 
 Don't over-read — pull the first 30 lines or grep for the symbol. The goal is presence-verification, not code review.
 
+### Phase 4.5 — FUSE truncation gate (run before flagging ANY working-tree truncation)
+
+The `X:\` FUSE mount intermittently serves a **stale, short read right after a write** — the same gremlin that makes `tools/safe_write.py`'s single-shot read-back throw spurious `AssertionError`s. The deterministic fix already in the tree is `X:\YesAndChains\tools\audit_dashboard.py`, whose `_write_verified` **retries then re-confirms by re-reading** rather than trusting one read. A working-tree tail that merely *looks* chopped mid-word is therefore **not** evidence of truncation.
+
+This has already bitten this skill. On 2026-06-23 and 2026-06-24 the YaC audit raised a CRITICAL/P0 claiming `CONTEXT.md`, `BACKLOG.md`, and `CLAUDE.md` were FUSE-truncated in the working tree; both were later proven **FALSE POSITIVES** — the committed files were whole, every "lost" changelog entry / backlog section / handler section present, and `git diff` showed additions only with no tail deletions. The cost is not academic: the dashboard audit-sync (`tools/audit_dashboard.py` → `status/data/<project>.json`) faithfully pushes whatever the latest report says, so one phantom CRITICAL lights a red critical chip on the YaE status dashboard and erodes trust in the entire audit.
+
+**Rule: never emit a truncation finding above LOW from a single raw tail read.** Prefer git over the working-tree read, require a content-level signal, and confirm it survives a re-read. All four checks below must hold, or downgrade/drop the finding.
+
+1. **Git diff is the primary signal — not the raw tail read.** Run `git diff --numstat HEAD -- <file>`.
+   - **No diff** → the working tree equals HEAD; a "chopped tail" you read is a stale cache, not truncation. **Drop it.**
+   - **Modified** → read the actual hunks (`git diff HEAD -- <file>`). Genuine FUSE truncation shows **trailing-line deletions** (`-` lines at the very end of the file, not replaced). **Additions-only (all `+`, no tail `-`) is not truncation**, no matter how the raw tail looks — that was the exact 06-24 false-positive shape. Net byte count is meaningless (06-24's `CONTEXT.md` grew; its `CLAUDE.md` was byte-identical to HEAD) — **never use size as the signal**, as the skill already knows.
+
+2. **Content-level marker, not a byte/size heuristic.** Identify the file's known trailing marker (`.html` → `</html>`; `CONTEXT.md` → its oldest changelog entry; `BACKLOG.md` → the trailing `Logged …` line; a handler `CLAUDE.md` → its final "When in doubt" item). Truncation means that **specific** marker is gone **and git confirms it deleted** — not merely that the last bytes you happened to read end mid-word.
+
+3. **Re-read to defeat the stale cache.** Re-read the file tail **2–3 times with a short (~0.5s) gap**, or re-run `git show HEAD:<file> | tail` against the working-tree tail. Treat the truncation as real **only if it is stable across every re-read**. A tail that "heals" on a later read was a stale cache — drop it silently (do not even log it as LOW). This mirrors `audit_dashboard.py`'s retry-then-reconfirm loop.
+
+4. **Cross-check HEAD.** `git show HEAD:<file> | tail -c 200`. If HEAD's tail is whole and the only apparent loss is an uncommitted working-tree read that fails checks 1–3, the canon is safe — at most note a possible transient mount read under "Couldn't verify," never as CRITICAL.
+
+**Decision table:**
+
+| `git diff HEAD -- <file>` shows | tail stable across re-reads? | marker actually deleted in git? | verdict |
+|---|---|---|---|
+| no diff (clean) | — | — | **stale read — drop** |
+| additions only, no tail `-` | — | — | **stale read — drop** (the 06-24 shape) |
+| trailing `-` deletions | no (heals on re-read) | — | **stale read — drop** |
+| trailing `-` deletions | yes | no | downgrade — investigate, not CRITICAL |
+| trailing `-` deletions | yes | yes | **real truncation — CRITICAL/P0** |
+
+Only the last row earns a P0. When a finding is dropped as a stale read, **do not mention it in "Drift found" at all** — a "phantom we dismissed" line placed near a severity token still trips the dashboard's severity parser (`audit_dashboard.py` counts `[CRITICAL|HIGH|MEDIUM|LOW]` tags inside `## Drift found`). If git genuinely can't run here (detached / no repo), say so under "Couldn't verify" and **cap the finding at LOW** pending a git-backed recheck — never ship a CRITICAL on an unverifiable tail read.
+
 ### Phase 5 — Check repo-level metadata
 
 Each adds independent value:
@@ -209,6 +239,7 @@ After enqueueing, list every item added (id + project + auto_safe) at the bottom
 - Canonical layer: PROJECT_SPEC + CONTEXT + ROADMAP + BACKLOG + DECISIONS_NEEDED, each owning a distinct slice
 - Audit each file against its declared role: PROJECT_SPEC shouldn't contain status, ROADMAP shouldn't contain vision, etc.
 - Check for "phantom references" — one doc referencing a file that doesn't exist
+- **Truncation findings on these large `.md` canon files (`CONTEXT.md`, `BACKLOG.md`, `CLAUDE.md`) are the highest-risk false positives** — they are big, edited often, and live on the FUSE mount. Run the **Phase 4.5 FUSE truncation gate** before flagging any of them; a raw mid-word tail is not enough.
 
 ## What not to do
 
