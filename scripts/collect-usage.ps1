@@ -703,19 +703,25 @@ $QUEUE_ALIAS = @{
 try {
   if (Test-Path $QueuePath) {
     $q = Get-Content -Raw $QueuePath | ConvertFrom-Json
-    $qCounts = @{}; $qWaiting = @{}
+    $qCounts = @{}; $qWaiting = @{}; $qDeferred = @{}
     foreach ($it in $q.items) {
       $qp = ("" + $it.project).ToLowerInvariant()
       $key = $QUEUE_ALIAS[$qp]
       if (-not $key) { $key = "Everything" }
       $st = "" + $it.status
-      if ($st -eq "pending") { $qCounts[$key] = 1 + [int]$qCounts[$key] }
+      # An item is DEFERRED (parked, not actionable now) if flagged deferred:true or its
+      # status is a deferred state. "queued" must stay IMMEDIATELY ACTIONABLE, so a
+      # deferred-but-pending item is counted under deferred, never queued.
+      $isDeferred = ($it.deferred -eq $true) -or ($st -eq "deferred")
+      if ($isDeferred) { $qDeferred[$key] = 1 + [int]$qDeferred[$key] }
+      elseif ($st -eq "pending") { $qCounts[$key] = 1 + [int]$qCounts[$key] }
       elseif ($st -eq "blocked" -or $st -eq "blocked-on-user") { $qWaiting[$key] = 1 + [int]$qWaiting[$key] }
     }
     Write-ValidatedJson (Join-Path $DataDir "queue.json") ([ordered]@{
       generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
       queued = $qCounts
       waiting = $qWaiting
+      deferred = $qDeferred
     })
     Write-Host "Wrote queue.json (live queued counts per project)." -ForegroundColor Green
   }

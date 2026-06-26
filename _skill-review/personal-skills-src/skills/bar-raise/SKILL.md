@@ -87,11 +87,14 @@ Two artifacts per per-project run:
     "latestReportAt": "2026-05-26T06:00:00Z",
     "verdict": "working | in-progress | needs-attention | stalled",
     "topFinding": "one-paragraph summary",
-    "actionsOpen": <int>,
-    "actionsClosed": <int>
+    "actionsOpen": <int: immediately-actionable HIGH+MED only>,
+    "actionsClosed": <int>,
+    "actions": [ /* the actionsOpen rows */ ],
+    "deferred": [ /* real-but-not-actionable-yet findings; never counted as open actions */ ]
   }
 }
 ```
+Deferred-by-design findings (post-1.0, backlog-parked, blocked on a decision, externally gated) go in `deferred[]`, never `actions[]`/`actionsOpen` — the dashboard's open-action count must be immediately actionable.
 
 Additive run-state fields (`health`, `lensScores`, `openFindings`, `tensionsOpen`) ride inside the `barRaise` block alongside the locked six; the dashboard ignores fields it does not know.
 

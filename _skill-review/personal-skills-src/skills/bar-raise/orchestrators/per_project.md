@@ -88,10 +88,14 @@ Read `X:\YesAndEverything\status\data\$project.json`. Mutate only the `barRaise`
   "latestReportAt": "<ISO-8601 UTC now>",
   "verdict": "<verdict>",
   "topFinding": "<one paragraph from Wave 5>",
-  "actionsOpen": <count of high+medium actions>,
-  "actionsClosed": <count of previous-actions now closed>
+  "actionsOpen": <count of IMMEDIATELY-ACTIONABLE high+medium findings only>,
+  "actionsClosed": <count of previous-actions now closed>,
+  "actions": [ /* the actionsOpen rows; immediately-actionable only */ ],
+  "deferred": [ /* real-but-not-actionable-yet findings: {severity,title,lens,reason}; never counted as open actions */ ]
 }
 ```
+
+Deferred = post-1.0 / "no pre-1.0 action" / backlog-parked / blocked on a user decision / gated on an external account or event. Such findings go in `deferred[]`, NOT `actions[]`, and are excluded from `actionsOpen`. The dashboard shows `actions` as open actions and `deferred` under a separate "deferred" chip. See `waves/05_meta_synthesis.md` "Actionable vs deferred".
 
 Other fields (version, lastReleaseAt, milestone, audit, etc.) are written by the release script and the canonical-audit skill, not by this skill. Do not overwrite them.
 
