@@ -689,7 +689,7 @@ Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; a
 $QueuePath = Join-Path $RepoRoot ".work-queue.json"
 $QUEUE_ALIAS = @{
   htbh = "Hordes"; hbh = "Hordes"; herebehordes = "Hordes"; hordes = "Hordes"
-  br = "Rising"; brackishrising = "Rising"; rising = "Rising"
+  br = "Rising"; brackishrising = "Rising"; brackish = "Rising"; rising = "Rising"
   yac = "Chains"; chains = "Chains"; yesandchains = "Chains"
   scheduler = "Scheduler"; yas = "Scheduler"; yesandscheduler = "Scheduler"
   yaa = "Apothecary"; apothecary = "Apothecary"; yaapothecary = "Apothecary"; yesandapothecary = "Apothecary"
@@ -703,7 +703,7 @@ $QUEUE_ALIAS = @{
 try {
   if (Test-Path $QueuePath) {
     $q = Get-Content -Raw $QueuePath | ConvertFrom-Json
-    $qCounts = @{}; $qWaiting = @{}; $qDeferred = @{}
+    $qCounts = @{}; $qWaiting = @{}; $qDeferred = @{}; $qItems = @()
     foreach ($it in $q.items) {
       $qp = ("" + $it.project).ToLowerInvariant()
       $key = $QUEUE_ALIAS[$qp]
@@ -716,12 +716,26 @@ try {
       if ($isDeferred) { $qDeferred[$key] = 1 + [int]$qDeferred[$key] }
       elseif ($st -eq "pending") { $qCounts[$key] = 1 + [int]$qCounts[$key] }
       elseif ($st -eq "blocked" -or $st -eq "blocked-on-user") { $qWaiting[$key] = 1 + [int]$qWaiting[$key] }
+      # Embed the ACTIVE items (drop completed/done/wontfix) so the dashboard lists them
+      # from the SAME live KV source as the counts -- not from the Pages-deployed (lagged)
+      # .work-queue.json, which drifts from the counts and shows phantom/missing rows.
+      if ($st -notin @("completed", "done", "wontfix")) {
+        $title = "" + $it.title; if (-not $title) { $title = "" + $it.prompt }
+        if (-not $title) { $title = "" + $it.body }; if (-not $title) { $title = "" + $it.id }
+        $title = ($title -replace '\s+', ' ').Trim(); if ($title.Length -gt 200) { $title = $title.Substring(0, 200) }
+        $why = "" + $it.deferReason; if (-not $why) { $why = "" + $it.blockedReason }; if (-not $why) { $why = "" + $it.deferredReason }
+        $qItems += [ordered]@{
+          id = "" + $it.id; project = "" + $it.project; priority = "" + $it.priority
+          status = $st; deferred = [bool]$isDeferred; title = $title; reason = ($why -replace '\s+', ' ').Trim()
+        }
+      }
     }
     Write-ValidatedJson (Join-Path $DataDir "queue.json") ([ordered]@{
       generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
       queued = $qCounts
       waiting = $qWaiting
       deferred = $qDeferred
+      items = $qItems
     })
     Write-Host "Wrote queue.json (live queued counts per project)." -ForegroundColor Green
   }

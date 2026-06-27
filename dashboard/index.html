@@ -2015,69 +2015,50 @@
     return null;
   }
   // best-effort: the real queued items live in .work-queue.json; list them if it's served
+  // Queued items come from the live KV queue feed (LAST.queue.items), the SAME source as
+  // the queued counts, so the list and the count can never disagree. (The old code fetched
+  // the Pages-deployed .work-queue.json, which lags the counts and showed phantom rows.)
+  function queueItemsFor(scope, predicate) {
+    var q = LAST && LAST.queue;
+    var src = (q && Array.isArray(q.items)) ? q.items : [];
+    return src.filter(function (it) { return predicate(it) && (scope === "ALL" || projByLoose(it.project).id === scope); });
+  }
+  function renderQueueGroups(bodyEl, items, countWord) {
+    function prio(it) { var m = String(it.priority || "").match(/(\d+)/); return m ? +m[1] : 9; }
+    var groups = {};
+    items.forEach(function (it) { var p = projByLoose(it.project); if (!groups[p.id]) groups[p.id] = { p: p, items: [] }; groups[p.id].items.push(it); });
+    Object.keys(groups).sort(function (a, b) { var ta = groups[a].p.tag.toLowerCase(), tb = groups[b].p.tag.toLowerCase(); return ta < tb ? -1 : ta > tb ? 1 : 0; }).forEach(function (key) {
+      var g = groups[key];
+      var row = el("div", { className: "list-row" }, [listRowHead(g.p, g.items.length + " " + countWord)]);
+      g.items.sort(function (a, b) { return prio(a) - prio(b) || String(a.id || "").localeCompare(String(b.id || "")); }).forEach(function (it) {
+        var item = el("div", { className: "list-item" });
+        item.style.borderLeft = "2px solid " + g.p.hue; item.style.borderRadius = "0"; item.style.paddingLeft = "8px";
+        var pr = String(it.priority || "").toUpperCase();
+        var sv = el("span", { className: "li-sev", text: pr || "·" });
+        sv.style.color = pr === "P1" ? "#ff5b6e" : pr === "P2" ? "#cc8400" : "#5fd6ff";
+        item.appendChild(sv);
+        item.appendChild(el("span", { className: "li-title", text: String(it.title || it.prompt || it.id || "").slice(0, 200) }));
+        if (it.reason) item.appendChild(el("span", { className: "li-lens", text: String(it.reason).slice(0, 60) }));
+        if (it.id) item.appendChild(el("div", { className: "li-id", text: it.id }));
+        row.appendChild(item);
+      });
+      bodyEl.appendChild(row);
+    });
+  }
   function loadQueueItems(bodyEl, scope) {
-    fetch("../.work-queue.json?t=" + Date.now()).then(function (r) { return r.ok ? r.json() : null; }).then(function (q) {
-      if (!q || !q.items) return;
-      var items = q.items.filter(function (it) { return it.status === "pending" && !it.deferred && (scope === "ALL" || projByLoose(it.project).id === scope); });
-      if (!items.length) return;
-      bodyEl.innerHTML = "";
-      bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " pending item" + (items.length === 1 ? "" : "s") }));
-      // group by project, like Open actions: one colored project header per group
-      var groups = {};
-      items.forEach(function (it) {
-        var p = projByLoose(it.project);
-        if (!groups[p.id]) groups[p.id] = { p: p, items: [] };
-        groups[p.id].items.push(it);
-      });
-      function prio(it) { var m = String(it.priority || "").match(/(\d+)/); return m ? +m[1] : 9; }
-      Object.keys(groups).sort(function (a, b) {
-        var ta = groups[a].p.tag.toLowerCase(), tb = groups[b].p.tag.toLowerCase();
-        return ta < tb ? -1 : ta > tb ? 1 : 0;
-      }).forEach(function (key) {
-        var g = groups[key];
-        var row = el("div", { className: "list-row" }, [listRowHead(g.p, g.items.length + " queued")]);
-        g.items.sort(function (a, b) { return prio(a) - prio(b) || String(a.id || "").localeCompare(String(b.id || "")); }).forEach(function (it) {
-          var item = el("div", { className: "list-item" });
-          item.style.borderLeft = "2px solid " + g.p.hue; item.style.borderRadius = "0"; item.style.paddingLeft = "8px";
-          var pr = String(it.priority || "").toUpperCase();
-          var sv = el("span", { className: "li-sev", text: pr || "·" });
-          sv.style.color = pr === "P1" ? "#ff5b6e" : pr === "P2" ? "#cc8400" : "#5fd6ff";
-          item.appendChild(sv);
-          item.appendChild(el("span", { className: "li-title", text: String(it.prompt || it.id || "").slice(0, 200) }));
-          if (it.id) item.appendChild(el("div", { className: "li-id", text: it.id }));
-          row.appendChild(item);
-        });
-        bodyEl.appendChild(row);
-      });
-    }).catch(function () {});
+    var items = queueItemsFor(scope, function (it) { return it.status === "pending" && !it.deferred; });
+    if (!items.length) { bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing queued" + (scope !== "ALL" ? " for " + metaFor(scope).tag : "") })); return; }
+    bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " queued item" + (items.length === 1 ? "" : "s") }));
+    renderQueueGroups(bodyEl, items, "queued");
   }
   // Deferred work-queue items (parked, not actionable now): flagged deferred:true or status "deferred".
   // Appends below any bar-raise deferred rows on the Deferred tab; never shown as queued.
   function loadDeferredQueueItems(bodyEl, scope) {
-    fetch("../.work-queue.json?t=" + Date.now()).then(function (r) { return r.ok ? r.json() : null; }).then(function (q) {
-      if (!q || !q.items) return;
-      var items = q.items.filter(function (it) { return (it.deferred === true || it.status === "deferred") && (scope === "ALL" || projByLoose(it.project).id === scope); });
-      if (!items.length) return;
-      var ph = bodyEl.querySelector(".list-empty"); if (ph) ph.parentNode.removeChild(ph);   // drop the "nothing here" placeholder once we have deferred items to show
-      bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " deferred work-queue item" + (items.length === 1 ? "" : "s") }));
-      var groups = {};
-      items.forEach(function (it) { var p = projByLoose(it.project); if (!groups[p.id]) groups[p.id] = { p: p, items: [] }; groups[p.id].items.push(it); });
-      Object.keys(groups).sort(function (a, b) { var ta = groups[a].p.tag.toLowerCase(), tb = groups[b].p.tag.toLowerCase(); return ta < tb ? -1 : ta > tb ? 1 : 0; }).forEach(function (key) {
-        var g = groups[key];
-        var row = el("div", { className: "list-row" }, [listRowHead(g.p, g.items.length + " deferred")]);
-        g.items.forEach(function (it) {
-          var item = el("div", { className: "list-item" });
-          item.style.borderLeft = "2px solid " + g.p.hue; item.style.borderRadius = "0"; item.style.paddingLeft = "8px";
-          item.appendChild(el("span", { className: "li-sev", text: String(it.priority || "·").toUpperCase() }));
-          item.appendChild(el("span", { className: "li-title", text: String(it.prompt || it.title || it.id || "").slice(0, 200) }));
-          var why = it.deferReason || it.blockedReason || it.deferredReason;
-          if (why) item.appendChild(el("span", { className: "li-lens", text: String(why).slice(0, 60) }));
-          if (it.id) item.appendChild(el("div", { className: "li-id", text: it.id }));
-          row.appendChild(item);
-        });
-        bodyEl.appendChild(row);
-      });
-    }).catch(function () {});
+    var items = queueItemsFor(scope, function (it) { return it.deferred === true || it.status === "deferred"; });
+    if (!items.length) return;
+    var ph = bodyEl.querySelector(".list-empty"); if (ph) ph.parentNode.removeChild(ph);   // drop the "nothing here" placeholder once we have deferred items to show
+    bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " deferred work-queue item" + (items.length === 1 ? "" : "s") }));
+    renderQueueGroups(bodyEl, items, "deferred");
   }
   function openLists(metric, forProject) {
     var scope = forProject || FILTER;
@@ -2085,20 +2066,19 @@
     var wrap = el("div", { className: "lists" });
     var tabBar = el("div", { className: "list-tabs" });
     var bodyEl = el("div", { className: "list-body" });
-    var METRICS = [["actions", "Open actions"], ["milestones", "Milestones"], ["queue", "Queued"], ["deferred", "Deferred"], ["items", "Items left"]];
+    var METRICS = [["milestones", "Milestones"], ["actions", "Open actions"], ["queue", "Queued"], ["deferred", "Deferred"], ["items", "Items left"]];
     function render(m) {
-      var i;
-      for (i = 0; i < tabBar.children.length; i++) tabBar.children[i].classList.toggle("on", tabBar.children[i].getAttribute("data-k") === m);
+      for (var i = 0; i < tabBar.children.length; i++) tabBar.children[i].classList.toggle("on", tabBar.children[i].getAttribute("data-k") === m);
       bodyEl.innerHTML = "";
-      var any = false;
+      // Queued is purely live work-queue items (from KV), never the status-derived rows.
+      if (m === "queue") { loadQueueItems(bodyEl, scope); return; }
       PROJECTS.slice().sort(function (a, b) { return a.tag.toLowerCase() < b.tag.toLowerCase() ? -1 : a.tag.toLowerCase() > b.tag.toLowerCase() ? 1 : 0; }).forEach(function (p) {
         if (scope !== "ALL" && p.id !== scope) return;
         var s = statuses[p.id]; if (!s) return;
-        var r = buildListRow(m, p, s); if (r) { bodyEl.appendChild(r); any = true; }
+        var r = buildListRow(m, p, s); if (r) bodyEl.appendChild(r);
       });
-      if (!any) bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing here" + (scope !== "ALL" ? " for " + metaFor(scope).tag : "") }));
-      if (m === "queue") loadQueueItems(bodyEl, scope);
       if (m === "deferred") loadDeferredQueueItems(bodyEl, scope);
+      if (!bodyEl.firstChild) bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing here" + (scope !== "ALL" ? " for " + metaFor(scope).tag : "") }));
     }
     METRICS.forEach(function (mt) {
       var t = el("button", { className: "list-tab", text: mt[1] }); t.setAttribute("data-k", mt[0]);
