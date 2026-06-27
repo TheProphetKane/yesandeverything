@@ -2553,19 +2553,12 @@
       Object.keys(counts).forEach(function (v) {
         chipsA.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
       });
-      // same order as the per-project chips: milestones · queued · open actions
-      var gatesSum = 0, haveGates = false;
-      PROJECTS.forEach(function (p) {
-        var gv2 = gatesOf(LAST.statuses[p.id]);
-        if (gv2 != null) { gatesSum += gv2; haveGates = true; }
-      });
-      if (haveGates) {
-        var cg = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete · click for the portfolio lists" });
-        cg.appendChild(el("span", { className: "k", text: "milestones" }));
-        cg.appendChild(txt(String(gatesSum)));
-        cg.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", "ALL"); });
-        chipsA.appendChild(cg);
-      }
+      // chip order matches the lists tabs: open actions · queued · items left
+      var ca = el("span", { className: "chip chip-link", title: TIPS.reviewActions + " · click for the portfolio lists" });
+      ca.appendChild(el("span", { className: "k", text: "open actions" }));
+      ca.appendChild(txt(String(acts)));
+      ca.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", "ALL"); });
+      chipsA.appendChild(ca);
       var qLive = queuedFor("ALL");
       if (qLive != null) {
         var cq = el("span", { className: "chip chip-link", title: "work-queue items set for the next sweeps (live) · click for the portfolio lists" });
@@ -2574,11 +2567,18 @@
         cq.addEventListener("click", function (e) { e.stopPropagation(); openLists("queue", "ALL"); });
         chipsA.appendChild(cq);
       }
-      var ca = el("span", { className: "chip chip-link", title: TIPS.reviewActions + " · click for the portfolio lists" });
-      ca.appendChild(el("span", { className: "k", text: "open actions" }));
-      ca.appendChild(txt(String(acts)));
-      ca.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", "ALL"); });
-      chipsA.appendChild(ca);
+      var gatesSum = 0, haveGates = false;
+      PROJECTS.forEach(function (p) {
+        var gv2 = gatesOf(LAST.statuses[p.id]);
+        if (gv2 != null) { gatesSum += gv2; haveGates = true; }
+      });
+      if (haveGates) {
+        var cg = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete · click for the portfolio lists" });
+        cg.appendChild(el("span", { className: "k", text: "items left" }));
+        cg.appendChild(txt(String(gatesSum)));
+        cg.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", "ALL"); });
+        chipsA.appendChild(cg);
+      }
       inner.appendChild(chipsA);
       return inner;
     }
@@ -2618,8 +2618,8 @@
       if (ro.children.length) inner.appendChild(ro);
     }
 
-    // chip order (Nick, 2026-06-12): status · current milestone · milestones ·
-    // queued · open actions, then the transient pushed/dirty flags
+    // chip order matches the lists tabs: status · current milestone · open actions ·
+    // queued · items left, then the transient pushed/dirty flags
     var chips = el("div", { className: "chips" });
     if (status) {
       if (br.verdict) {
@@ -2637,12 +2637,12 @@
       }
       var qP = queuedFor(id);
       var gP = gatesOf(status);
-      if (gP != null && gP > 0) {
-        var c7 = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json) · click for this project's lists" });
-        c7.appendChild(el("span", { className: "k", text: "milestones" }));
-        c7.appendChild(txt(String(gP)));
-        c7.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", id); });
-        chips.appendChild(c7);
+      if (br.actionsOpen != null) {
+        var c1 = el("span", { className: "chip chip-link", title: TIPS.actions + " · click for this project's lists" });
+        c1.appendChild(el("span", { className: "k", text: "open actions" }));
+        c1.appendChild(txt(String(br.actionsOpen)));
+        c1.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", id); });
+        chips.appendChild(c1);
       }
       if (qP != null) {
         var allClear = qP === 0 && (gP || 0) === 0;
@@ -2655,12 +2655,12 @@
         c6.addEventListener("click", function (e) { e.stopPropagation(); openLists("queue", id); });
         chips.appendChild(c6);
       }
-      if (br.actionsOpen != null) {
-        var c1 = el("span", { className: "chip chip-link", title: TIPS.actions + " · click for this project's lists" });
-        c1.appendChild(el("span", { className: "k", text: "open actions" }));
-        c1.appendChild(txt(String(br.actionsOpen)));
-        c1.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", id); });
-        chips.appendChild(c1);
+      if (gP != null && gP > 0) {
+        var c7 = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json) · click for this project's lists" });
+        c7.appendChild(el("span", { className: "k", text: "items left" }));
+        c7.appendChild(txt(String(gP)));
+        c7.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", id); });
+        chips.appendChild(c7);
       }
       if (status.lastReleaseAt && (Date.now() - new Date(status.lastReleaseAt).getTime()) < 86400000) {
         chips.appendChild(el("span", { className: "chip fresh", text: "pushed today", title: "a commit landed in the last 24h" }));
