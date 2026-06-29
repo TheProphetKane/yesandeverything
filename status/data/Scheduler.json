@@ -1,75 +1,224 @@
 {
-    "project":  "Scheduler",
-    "displayName":  "Yes\u0026 Scheduler",
-    "version":  "0.6.0",
-    "lastReleaseAt":  "2026-06-28T18:21:22-05:00",
-    "lastReleaseMessage":  "dashboard: writer emits standardized items-left and backlog item lists",
-    "milestone":  {
-                      "id":  "M8",
-                      "label":  "Shift options + holidays",
-                      "status":  "shipped"
-                  },
-    "completion":  {
-                       "pct":  60,
-                       "anchored":  "2026-06-28"
-                   },
-    "itemsLeft":  {
-                      "open":  2,
-                      "queue":  0,
-                      "backlog":  0,
-                      "gates":  2,
-                      "items":  [
-                                    "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
-                                    "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandscheduler",
-    "workTreeClean":  false,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-06-28.md",
-                  "latestReportAt":  "2026-06-28T07:07:14Z",
-                  "findings":  {
-                                   "high":  0,
-                                   "medium":  0,
-                                   "low":  0
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-06-25.md",
-                     "latestReportAt":  "2026-06-25T11:20:23Z",
-                     "verdict":  "healthy",
-                     "topFinding":  "Resolved. The 06-25 cluster is fully shipped. The three drift fixes (CLAUDE.md version pill, DESIGN.md section 17 and section 20 prose, release.ps1 convergence) landed in v0.5.3, and v0.5.4 documented the corrupt .git/index recovery in CLAUDE.md, the gap that was the one new finding and distinct from the existing index.lock note. Working tree clean, branch in sync with origin. No open actions.",
-                     "actionsOpen":  0,
-                     "actionsClosed":  2,
-                     "actions":  [
-
-                                 ]
-                 },
-    "metrics":  [
-                    {
-                        "k":  "api routes",
-                        "v":  "0"
-                    },
-                    {
-                        "k":  "migrations",
-                        "v":  "9"
-                    },
-                    {
-                        "k":  "tests",
-                        "v":  "21"
-                    }
-                ],
-    "workQueueDepth":  0,
-    "stale":  false,
-    "tags":  [
-                 "cloud-edge",
-                 "orchestration",
-                 "release-pipeline"
-             ]
+  "project": "Scheduler",
+  "displayName": "Yes& Scheduler",
+  "version": "0.6.0",
+  "lastReleaseAt": "2026-06-28T18:21:22-05:00",
+  "lastReleaseMessage": "dashboard: writer emits standardized items-left and backlog item lists",
+  "milestone": {
+    "id": "M8",
+    "label": "Shift options + holidays",
+    "status": "shipped"
+  },
+  "completion": {
+    "pct": 60,
+    "anchored": "2026-06-28"
+  },
+  "itemsLeft": {
+    "open": 2,
+    "queue": 0,
+    "backlog": 0,
+    "gates": 2,
+    "items": [
+      "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
+      "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
+    ]
+  },
+  "backlog": {
+    "count": 0,
+    "items": []
+  },
+  "repoUrl": "https://github.com/TheProphetKane/yesandscheduler",
+  "workTreeClean": false,
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-06-28.md",
+    "latestReportAt": "2026-06-28T07:07:14Z",
+    "findings": {
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-06-28.md",
+    "latestReportAt": "2026-06-29T01:35:00Z",
+    "verdict": "in-progress",
+    "topFinding": "v0.6.0 shipped the per-seat billing entitlement layer cleanly: migration 0009 is additive, lib/billing.ts and routes/billing.ts honor tenant isolation (cross-org returns 404 via assertSameOrg), every write is audited, and no payment provider or paywall is wired, exactly as DESIGN intended. The cost this cycle is in three reference surfaces that lagged the ship: DESIGN sections 15 and 16 still describe the v0.5.x data model and route map with no org_billing table or /api/billing routes, the morning canonical audit ran before the evening ship so it reported no drift against a surface that has since changed, and the dashboard still reports api routes: 0 from a writer regex that never matched this codebase. None is a runtime bug; all four open actions are documentation and tooling. The larger question is strategic: v0.6.0 re-activated a correctly-parked, zero-user project with monetization plumbing ahead of the cheaper real-use-testing gate the same release now unblocks.",
+    "actionsOpen": 4,
+    "actionsClosed": 1,
+    "actions": [
+      {
+        "severity": "MED",
+        "title": "Make the canonical audit release-aware: trigger a post-commit audit pass at the end of release.ps1 (dedupe by finding-id) so an evening ship is re-checked the same day.",
+        "lens": "audit-loop-integrity",
+        "priority": 20,
+        "id": "audit-loop-integrity-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add the org_billing table and users.billing_exempt column to DESIGN section 15 and the three /api/billing routes to section 16 so the canonical reference matches v0.6.0.",
+        "lens": "version-pill-drift",
+        "priority": 15,
+        "id": "version-pill-drift-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Fix the route-count regex in scripts/write-dashboard-status.ps1 to match handlers on *Route sub-instances so the dashboard stops reporting api routes: 0.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a Real-use testing subsection to README.md naming scripts/seed-demo.ps1, the -Remote flag, and the sign-in-then-switch-to-demo step.",
+        "lens": "solo-tool-ux",
+        "priority": 12,
+        "id": "solo-tool-ux-01"
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "MED",
+        "title": "Gate any further billing-layer build (tier pricing, dunning, customer portal) behind committing to the Stripe milestone so entitlement work stops accreting cost ahead of revenue.",
+        "lens": "cost-economics",
+        "reason": "blocked on Nick decision: commit to Stripe milestone"
+      },
+      {
+        "severity": "MED",
+        "title": "Make real-use testing via seed-demo.ps1 the explicit next gate and hold further billing-layer work until the core schedule loop is validated against the DESIGN section 1.2 success criteria.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Nick decision: drive to first real user vs re-park"
+      },
+      {
+        "severity": "LOW",
+        "title": "Record an explicit DESIGN section 23 decision on whether YaS is being driven to first real user or re-parked after the entitlement layer.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Nick decision: posture call"
+      }
+    ],
+    "health": 88,
+    "lensScores": {
+      "architecture": 93,
+      "reliability": 90,
+      "security": 92,
+      "performance": 88,
+      "data-integrity": 88,
+      "maintainability": 86,
+      "solo-tool-ux": 82,
+      "cost-economics": 88,
+      "dependency": 92,
+      "observability": 68,
+      "strategic-kill-this": 78,
+      "compliance-data-steward": 90,
+      "worker-cpu-budget": 93,
+      "kv-data-shape": 90,
+      "auth-token-hygiene": 94,
+      "skill-suite-health": 92,
+      "work-queue-hygiene": 95,
+      "audit-loop-integrity": 68,
+      "fuse-truncation-defense": 94,
+      "incident-runbook-currency": 93,
+      "scheduled-task-firing-state": 80,
+      "skill-trigger-collisions": 91,
+      "skill-chain-handoff-integrity": 90,
+      "per-project-ps1-stack": 88,
+      "discord-notify-wiring": 95,
+      "version-pill-drift": 72,
+      "gate-page-publish": 95
+    },
+    "openFindings": [
+      {
+        "id": "audit-loop-integrity-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "version-pill-drift-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "cost-economics-03",
+        "severity": "MED",
+        "priority": 9,
+        "runsOpen": 1,
+        "firstSeen": "2026-06-28"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "cost-economics",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
+          "performance"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "audit-loop-integrity",
+          "work-queue-hygiene"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "api routes",
+      "v": "0"
+    },
+    {
+      "k": "migrations",
+      "v": "9"
+    },
+    {
+      "k": "tests",
+      "v": "21"
+    }
+  ],
+  "workQueueDepth": 0,
+  "stale": false,
+  "tags": [
+    "cloud-edge",
+    "orchestration",
+    "release-pipeline"
+  ]
 }
