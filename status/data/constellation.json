@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-29T02:25:00Z",
+  "generatedAt": "2026-06-29T13:40:00Z",
   "portfolioVerdict": "in-progress",
   "projects": [
     "BR",
@@ -9,36 +9,51 @@
     "YaA",
     "YaB"
   ],
-  "summary": "The defining failure of the last three constellations cleared. The host-side commit stall that froze five of seven repos for six to nine days is gone: all six core repos committed today (2026-06-28), the committed-ready queue drained from 21 stranded items to 5 pending, and every 06-22 HIGH closed on disk. The distribution recovered from 1 healthy / 3 needs-attention / 1 at-risk / 1 stalled to 3 working / 3 in-progress / 0 broken. The portfolio's longest chronic finding, YaB's .finances remote-history exposure (eleven reviews), is fully retired. The 18 open actions across the boards are granular backlog detail (HBH 13, YaS 4, BR 1), not breakage. One process issue: the scheduled per-project tasks fired concurrently and committed their own 06-28 JSONs, the concurrent-unattended-session hazard.",
+  "summary": "Second straight steady-state week. Portfolio health holds at 88 with zero broken projects and no open BLOCK, confirming the recovery from the 06-08/06-15/06-22 commit-stall era is durable, not a one-week bounce. Engineering moved on both games: BR shipped three substantive releases (v0.59.7-.9: fog-hitch fix, thirteen hot-path optimizations, A-star and spatial-index extraction) and HBH closed its O(n) targeting-scan scale findings via a v0.99.17 spatial hash (performance 74 to 82, scale-architecture 62 to 75). The cross-cutting story is the dashboard-writer tooling: the same script family flagged for timing-staleness last week produced a concrete display HIGH (BR's audit block null since 06-11 from a write-dashboard-status.ps1 glob bug), with a sibling in YaS (route-count regex reports 0). Two process items carry forward unresolved: the concurrent per-project-vs-constellation collision (06-28 action 2) and un-pushed local-ahead commits, which spread from BR to YaS, YaA, and YaB. The 20 open actions are granular hygiene (HBH 12, BR 5, YaS 3), not breakage.",
   "topActions": [
     {
       "project": "cross-cutting",
-      "severity": "medium",
-      "label": "Re-sequence the daily canonical-audit and dashboard-writer to run after the day's commits, not the morning slot; late-shipping repos (BR, YaS, YaA, YaB) carry stale workTreeClean/HEAD/metrics on the dashboard"
+      "severity": "high",
+      "label": "Fix the shared dashboard-writer glob/regex family: BR's audit block reads null since 06-11 (write-dashboard-status.ps1:53 globs AUDIT-*.md, never matches CANONICAL_AUDIT-*.md) and YaS's route-count regex reports api routes 0 against 20 real routes; same script lineage, same bug class"
     },
     {
       "project": "cross-cutting",
       "severity": "medium",
-      "label": "Serialize or stagger the scheduled per-project bar-raise tasks against the weekly constellation; this run hit the concurrent-unattended-session hazard with both passes racing on the per-project JSONs"
-    },
-    {
-      "project": "cross-cutting",
-      "severity": "medium",
-      "label": "Push the un-pushed local-ahead commits on BR (2) and YaS (2) to origin so HEAD and origin/main reconcile"
+      "label": "Push the un-pushed local-ahead commits on YaS (2), YaA (2), and YaB (2) so HEAD and origin reconcile; all dashboard-writer plumbing"
     },
     {
       "project": "HBH",
-      "severity": "medium",
-      "label": "When gameplay drives the 3D crowd, migrate runners onto the crowd3d MultiMesh render path and re-baseline; the render-bound fps-cliff MED is at runsOpen 4, one run from chronic"
+      "severity": "high",
+      "label": "Refresh HBH project metadata to the post-v0.98.5 native-3D stack: rewrite the hazard catalog and fix .project-context.json critical-files and scheduled-task entries that still describe the retired 2D build"
     },
     {
-      "project": "cross-cutting",
-      "severity": "low",
-      "label": "Adopt YaC's Read-tool-confirms-whole discipline portfolio-wide so bash shell-read artifacts stop being misclassified as FUSE truncation"
+      "project": "HBH",
+      "severity": "high",
+      "label": "Fix the dead recovery-script pointers in publish-gdd.ps1 and CLAUDE.md so the incident runbook works at incident time"
+    },
+    {
+      "project": "HBH",
+      "severity": "high",
+      "label": "Sweep the GDD changelog body of per-Nick / the-user framing and AI tool names, and extend the voice audit to scan the full body"
+    },
+    {
+      "project": "orchestration",
+      "severity": "medium",
+      "label": "Serialize or stagger the scheduled per-project bar-raise tasks against the weekly constellation; the concurrent-unattended-session hazard recurred this run (carried from 06-28 action 2, unresolved)"
+    },
+    {
+      "project": "BR",
+      "severity": "medium",
+      "label": "Capture one peak-wave frame profile on a v0.59.9 build to set the M4 60-FPS baseline; three perf commits and an algorithmic change shipped with no profile"
+    },
+    {
+      "project": "YaS",
+      "severity": "medium",
+      "label": "Make the canonical audit release-aware: post-commit audit pass at the end of release.ps1 so an evening ship is re-checked same day"
     }
   ],
   "atRiskProjects": [],
   "stalledProjects": [],
-  "totalOpenActions": 18,
-  "totalClosedSinceLastConstellation": 22
+  "totalOpenActions": 20,
+  "totalClosedSinceLastConstellation": 4
 }
