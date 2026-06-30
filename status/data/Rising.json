@@ -32,16 +32,16 @@
         "findings": null
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-29.md",
-        "latestReportAt": "2026-06-29T07:05:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-06-30.md",
+        "latestReportAt": "2026-06-30T15:50:28Z",
         "verdict": "in-progress",
-        "topFinding": "Three substantive engineering commits landed since the last bar-raise, which is what the prior strategic finding asked for: v0.59.7 (fog-hitch fix plus smoothness), v0.59.8 (thirteen correctness-preserving hot-path optimizations), and v0.59.9 (A* extracted into pathfinder.gd with a binary min-heap, O(P log P) vs O(P^2), and spatial buckets extracted into spatial_index.gd with get_units_near, O(N*k) vs O(N^2) collision). The swaps were independently verified behavior-preserving, and the god-file ratchet improved (iso_grid 2469 to 2280, baseline ratcheted in lockstep). The run also root-caused the most concrete bug in weeks: the dashboard audit block has been null for the entire 06-11 to 06-29 window because write-dashboard-status.ps1:53 globs AUDIT-*.md, which never matches CANONICAL_AUDIT-*.md. That carried LOW is now a root-caused HIGH with a one-line fix. Two gaps ride alongside the perf work: no frame profile was captured against the M4 60-FPS target across three perf commits plus an algorithmic change, and the two new algorithm modules have zero headless test coverage. Verdict stays in-progress: the game builds, ships, and saves cleanly, and the HIGH is a dashboard-display bug, not runtime breakage.",
-        "actionsOpen": 5,
+        "topFinding": "One docs-only commit (4c05aac) landed since the 06-29 bar-raise, refreshing docs/ARCHITECTURE.md for the v0.59.9 pathfinder/spatial-index extraction. That closes the prior maintainability-01 action's main body: the doc now stamps v0.59.9, carries the extraction delta bullet, and rewrites the Pathfinding line to describe find_path as a facade delegating to pathfinder.gd; the 06-30 canonical audit independently confirms it as drift resolved, plus the ASSETS.md stamp bump. The residual is that the re-stamp left two stale ASSET_SCALE_MASTER references live (ARCHITECTURE.md:5,19) for a constant purged in v0.59.1, so a fresh LOW replaces part of the closed MEDIUM. The four other open findings are unmoved (no code commit touched them): the audit-glob HIGH at write-dashboard-status.ps1:53, the unmeasured M4 frame profile, the dead class_name WorldGenerator, and the missing pathfinder/spatial tests. Verdict stays in-progress: the game builds, ships, and saves cleanly, and the lone HIGH is a dashboard-display bug, not runtime breakage.",
+        "actionsOpen": 4,
         "actionsClosed": 1,
         "actions": [
             {
                 "severity": "HIGH",
-                "title": "Fix the audit glob at write-dashboard-status.ps1:53 (AUDIT-*.md to CANONICAL_AUDIT-*.md) and re-run the BR release so the dashboard audit block stops being null.",
+                "title": "Fix the audit glob at scripts/write-dashboard-status.ps1:53 (AUDIT-*.md to CANONICAL_AUDIT-*.md) and re-run the BR release so the dashboard audit block stops being null.",
                 "lens": "observability",
                 "priority": 20,
                 "id": "observability-01"
@@ -66,13 +66,6 @@
                 "lens": "performance",
                 "priority": 15,
                 "id": "performance-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Re-stamp docs/ARCHITECTURE.md toward v0.59.9, add the v0.59.7/.9 extraction deltas, and remove the deleted ASSET_SCALE_MASTER reference.",
-                "lens": "maintainability",
-                "priority": 15,
-                "id": "maintainability-01"
             }
         ],
         "deferred": [
@@ -80,7 +73,7 @@
                 "severity": "LOW",
                 "title": "Migrate tracked Spine art and the GDExtension payload off normal git history to git-LFS (.git is 460 MB).",
                 "lens": "cost-economics",
-                "reason": "backlog-parked (br-bp-git-lfs-2026-06-16); risky on FUSE mount, revisit at a natural break"
+                "reason": "backlog-parked (br-bp-git-lfs-2026-06-16); risky on FUSE mount; tension promotable to a decision at runsSeen 3"
             },
             {
                 "severity": "LOW",
@@ -96,7 +89,7 @@
             "security": 92,
             "performance": 82,
             "data-integrity": 94,
-            "maintainability": 72,
+            "maintainability": 78,
             "solo-tool-ux": 88,
             "cost-economics": 75,
             "dependency": 85,
@@ -113,35 +106,28 @@
                 "id": "observability-01",
                 "severity": "high",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "performance-01",
                 "severity": "medium",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "architecture-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "performance-02",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-06-29"
-            },
-            {
-                "id": "maintainability-01",
-                "severity": "medium",
-                "priority": 15,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-06-29"
             }
         ],
@@ -151,14 +137,14 @@
                     "performance",
                     "release-pipeline"
                 ],
-                "runsSeen": 1
+                "runsSeen": 2
             },
             {
                 "lenses": [
                     "cost-economics",
                     "reliability"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
             }
         ]
     },
