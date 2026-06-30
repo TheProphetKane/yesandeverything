@@ -43,7 +43,12 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 9   # v9: adds Counselor (X:\YesAndCounselor; no git, matched by
+$ATTRIB_VERSION = 10  # v10: adds Ring (X:\YesAndRing, FORMERLY X:\YesAndCats - it owns
+                      # data\breed-art and is the TICA show tracker) + Cattery
+                      # (X:\YesAndCattery, a SEPARATE breeder-marketplace project);
+                      # forces a full re-scan re-truing the historical Ring/Cattery
+                      # work, which ran from cwd X:\ root.
+                      # v9: adds Counselor (X:\YesAndCounselor; no git, matched by
                       # content strings) + Skylight (X:\YesAndSkylight); forces a
                       # full re-scan that re-trues history.
                       # v8: scheduled-task runs attribute wholly to their task's
@@ -131,6 +136,13 @@ $PROJECT_PATTERNS = @(
   @{ pat = "yesandskylight";      id = "Skylight" },
   @{ pat = "YesAndAgents";        id = "Agents" },
   @{ pat = "yesandagents";        id = "Agents" },
+  @{ pat = "YesAndRing";          id = "Ring" },
+  @{ pat = "yesandring";          id = "Ring" },
+  @{ pat = "ring.yesandeverything"; id = "Ring" },
+  @{ pat = "YesAndCattery";       id = "Cattery" },
+  @{ pat = "yesandcattery";       id = "Cattery" },
+  @{ pat = "YesAndCats";          id = "Ring" },       # old name of Ring (X:\YesAndCats -> X:\YesAndRing); owns data\breed-art
+  @{ pat = "yesandcats";          id = "Ring" },
   @{ pat = "YesAndEverything";    id = "Everything" },
   @{ pat = "yesandeverything";    id = "Everything" },
   # generic scheduled-task dir -> Everything (after project task names above)
@@ -611,6 +623,7 @@ $REPO_PATHS = @{
   Scheduler = "X:\YesAndScheduler"; Apothecary = "X:\YesAndApothecary"; Budget = "X:\YesAndBudget"
   Everything = "X:\YesAndEverything"; Agents = "X:\YesAndAgents"
   Counselor = "X:\YesAndCounselor"; Skylight = "X:\YesAndSkylight"
+  Ring = "X:\YesAndRing"; Cattery = "X:\YesAndCattery"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
@@ -698,6 +711,8 @@ $QUEUE_ALIAS = @{
   yaag = "Agents"; agents = "Agents"; yesandagents = "Agents"
   counselor = "Counselor"; yesandcounselor = "Counselor"
   skylight = "Skylight"; yesandskylight = "Skylight"
+  ring = "Ring"; yesandring = "Ring"; cats = "Ring"; yesandcats = "Ring"
+  cattery = "Cattery"; yesandcattery = "Cattery"
   all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
 }
 try {
