@@ -1,185 +1,189 @@
 {
-    "project": "Rising",
-    "displayName": "Brackish Rising",
-    "version": "0.59.9",
-    "lastReleaseAt": "2026-06-28T23:51:38-05:00",
-    "lastReleaseMessage": "Extract pathfinding + spatial index; two scaling wins",
-    "milestone": {
-        "id": "M1",
-        "label": "Survival loop",
-        "status": "in-progress"
-    },
-    "completion": {
-        "pct": 50,
-        "anchored": "2026-06-23"
-    },
-    "itemsLeft": {
-        "open": 1,
-        "queue": 1,
-        "backlog": 0,
-        "gates": 0,
-        "items": []
-    },
-    "backlog": {
-        "count": 0,
-        "items": []
-    },
-    "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
-    "workTreeClean": true,
-    "audit": {
-        "latestReportPath": null,
-        "latestReportAt": null,
-        "findings": null
-    },
-    "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-30.md",
-        "latestReportAt": "2026-06-30T15:50:28Z",
-        "verdict": "in-progress",
-        "topFinding": "One docs-only commit (4c05aac) landed since the 06-29 bar-raise, refreshing docs/ARCHITECTURE.md for the v0.59.9 pathfinder/spatial-index extraction. That closes the prior maintainability-01 action's main body: the doc now stamps v0.59.9, carries the extraction delta bullet, and rewrites the Pathfinding line to describe find_path as a facade delegating to pathfinder.gd; the 06-30 canonical audit independently confirms it as drift resolved, plus the ASSETS.md stamp bump. The residual is that the re-stamp left two stale ASSET_SCALE_MASTER references live (ARCHITECTURE.md:5,19) for a constant purged in v0.59.1, so a fresh LOW replaces part of the closed MEDIUM. The four other open findings are unmoved (no code commit touched them): the audit-glob HIGH at write-dashboard-status.ps1:53, the unmeasured M4 frame profile, the dead class_name WorldGenerator, and the missing pathfinder/spatial tests. Verdict stays in-progress: the game builds, ships, and saves cleanly, and the lone HIGH is a dashboard-display bug, not runtime breakage.",
-        "actionsOpen": 4,
-        "actionsClosed": 1,
-        "actions": [
-            {
-                "severity": "HIGH",
-                "title": "Fix the audit glob at scripts/write-dashboard-status.ps1:53 (AUDIT-*.md to CANONICAL_AUDIT-*.md) and re-run the BR release so the dashboard audit block stops being null.",
-                "lens": "observability",
-                "priority": 20,
-                "id": "observability-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Capture one peak-wave frame profile on a v0.59.9 build and record FPS plus top costs in docs/OPTIMIZATION_LOG.md to set the M4 60-FPS baseline.",
-                "lens": "performance",
-                "priority": 20,
-                "id": "performance-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Drop the dead class_name WorldGenerator from source/world/world_generator.gd:7; the caller already preloads it as WorldGen.",
-                "lens": "architecture",
-                "priority": 15,
-                "id": "architecture-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add headless tests for pathfinder (open/walled/unreachable optimality) and spatial_index get_units_near (box-edge boundary).",
-                "lens": "performance",
-                "priority": 15,
-                "id": "performance-02"
-            }
-        ],
-        "deferred": [
-            {
-                "severity": "LOW",
-                "title": "Migrate tracked Spine art and the GDExtension payload off normal git history to git-LFS (.git is 460 MB).",
-                "lens": "cost-economics",
-                "reason": "backlog-parked (br-bp-git-lfs-2026-06-16); risky on FUSE mount; tension promotable to a decision at runsSeen 3"
-            },
-            {
-                "severity": "LOW",
-                "title": "Take Navy's on-screen-size rifleman Spine re-export when it lands.",
-                "lens": "art-direction",
-                "reason": "external/off-dashboard; waits on artist"
-            }
-        ],
-        "health": 84,
-        "lensScores": {
-            "architecture": 86,
-            "reliability": 86,
-            "security": 92,
-            "performance": 82,
-            "data-integrity": 94,
-            "maintainability": 78,
-            "solo-tool-ux": 88,
-            "cost-economics": 75,
-            "dependency": 85,
-            "observability": 58,
-            "strategic-kill-this": 85,
-            "compliance-data-steward": 84,
-            "game-design": 85,
-            "orchestration": 86,
-            "release-pipeline": 90,
-            "public-voice": 92
-        },
-        "openFindings": [
-            {
-                "id": "observability-01",
-                "severity": "high",
-                "priority": 20,
-                "runsOpen": 2,
-                "firstSeen": "2026-06-29"
-            },
-            {
-                "id": "performance-01",
-                "severity": "medium",
-                "priority": 20,
-                "runsOpen": 2,
-                "firstSeen": "2026-06-29"
-            },
-            {
-                "id": "architecture-01",
-                "severity": "medium",
-                "priority": 15,
-                "runsOpen": 2,
-                "firstSeen": "2026-06-29"
-            },
-            {
-                "id": "performance-02",
-                "severity": "medium",
-                "priority": 15,
-                "runsOpen": 2,
-                "firstSeen": "2026-06-29"
-            }
-        ],
-        "tensionsOpen": [
-            {
-                "lenses": [
-                    "performance",
-                    "release-pipeline"
+    "project":  "Rising",
+    "displayName":  "Brackish Rising",
+    "version":  "0.59.19",
+    "lastReleaseAt":  "2026-06-30T18:57:59-05:00",
+    "lastReleaseMessage":  "Diagnose the grass diamond seam as an asset edge-alpha limitation (4x assets fade to transparent at the diamond edge; left untouched per direction) and restore the 106x53 tile grid in normal play via a default-on show_grid flag so the small-tile structure reads under the native 4x grass.",
+    "milestone":  {
+                      "id":  "M1",
+                      "label":  "Survival loop",
+                      "status":  "in-progress"
+                  },
+    "completion":  {
+                       "pct":  50,
+                       "anchored":  "2026-06-23"
+                   },
+    "itemsLeft":  {
+                      "open":  1,
+                      "queue":  1,
+                      "backlog":  0,
+                      "gates":  0,
+                      "items":  [
+
+                                ]
+                  },
+    "backlog":  {
+                    "count":  0,
+                    "items":  [
+
+                              ]
+                },
+    "repoUrl":  "https://github.com/TheProphetKane/brackish-rising",
+    "workTreeClean":  true,
+    "audit":  {
+                  "latestReportPath":  null,
+                  "latestReportAt":  null,
+                  "findings":  null
+              },
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-06-30.md",
+                     "latestReportAt":  "2026-06-30T15:50:28Z",
+                     "verdict":  "in-progress",
+                     "topFinding":  "One docs-only commit (4c05aac) landed since the 06-29 bar-raise, refreshing docs/ARCHITECTURE.md for the v0.59.9 pathfinder/spatial-index extraction. That closes the prior maintainability-01 action\u0027s main body: the doc now stamps v0.59.9, carries the extraction delta bullet, and rewrites the Pathfinding line to describe find_path as a facade delegating to pathfinder.gd; the 06-30 canonical audit independently confirms it as drift resolved, plus the ASSETS.md stamp bump. The residual is that the re-stamp left two stale ASSET_SCALE_MASTER references live (ARCHITECTURE.md:5,19) for a constant purged in v0.59.1, so a fresh LOW replaces part of the closed MEDIUM. The four other open findings are unmoved (no code commit touched them): the audit-glob HIGH at write-dashboard-status.ps1:53, the unmeasured M4 frame profile, the dead class_name WorldGenerator, and the missing pathfinder/spatial tests. Verdict stays in-progress: the game builds, ships, and saves cleanly, and the lone HIGH is a dashboard-display bug, not runtime breakage.",
+                     "actionsOpen":  4,
+                     "actionsClosed":  1,
+                     "actions":  [
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Fix the audit glob at scripts/write-dashboard-status.ps1:53 (AUDIT-*.md to CANONICAL_AUDIT-*.md) and re-run the BR release so the dashboard audit block stops being null.",
+                                         "lens":  "observability",
+                                         "priority":  20,
+                                         "id":  "observability-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Capture one peak-wave frame profile on a v0.59.9 build and record FPS plus top costs in docs/OPTIMIZATION_LOG.md to set the M4 60-FPS baseline.",
+                                         "lens":  "performance",
+                                         "priority":  20,
+                                         "id":  "performance-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Drop the dead class_name WorldGenerator from source/world/world_generator.gd:7; the caller already preloads it as WorldGen.",
+                                         "lens":  "architecture",
+                                         "priority":  15,
+                                         "id":  "architecture-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add headless tests for pathfinder (open/walled/unreachable optimality) and spatial_index get_units_near (box-edge boundary).",
+                                         "lens":  "performance",
+                                         "priority":  15,
+                                         "id":  "performance-02"
+                                     }
+                                 ],
+                     "deferred":  [
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Migrate tracked Spine art and the GDExtension payload off normal git history to git-LFS (.git is 460 MB).",
+                                          "lens":  "cost-economics",
+                                          "reason":  "backlog-parked (br-bp-git-lfs-2026-06-16); risky on FUSE mount; tension promotable to a decision at runsSeen 3"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Take Navy\u0027s on-screen-size rifleman Spine re-export when it lands.",
+                                          "lens":  "art-direction",
+                                          "reason":  "external/off-dashboard; waits on artist"
+                                      }
+                                  ],
+                     "health":  84,
+                     "lensScores":  {
+                                        "architecture":  86,
+                                        "reliability":  86,
+                                        "security":  92,
+                                        "performance":  82,
+                                        "data-integrity":  94,
+                                        "maintainability":  78,
+                                        "solo-tool-ux":  88,
+                                        "cost-economics":  75,
+                                        "dependency":  85,
+                                        "observability":  58,
+                                        "strategic-kill-this":  85,
+                                        "compliance-data-steward":  84,
+                                        "game-design":  85,
+                                        "orchestration":  86,
+                                        "release-pipeline":  90,
+                                        "public-voice":  92
+                                    },
+                     "openFindings":  [
+                                          {
+                                              "id":  "observability-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  2,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "performance-01",
+                                              "severity":  "medium",
+                                              "priority":  20,
+                                              "runsOpen":  2,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "architecture-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  2,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "performance-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  2,
+                                              "firstSeen":  "2026-06-29"
+                                          }
+                                      ],
+                     "tensionsOpen":  [
+                                          {
+                                              "lenses":  [
+                                                             "performance",
+                                                             "release-pipeline"
+                                                         ],
+                                              "runsSeen":  2
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "cost-economics",
+                                                             "reliability"
+                                                         ],
+                                              "runsSeen":  3
+                                          }
+                                      ]
+                 },
+    "metrics":  [
+                    {
+                        "k":  "units",
+                        "v":  "7"
+                    },
+                    {
+                        "k":  "buildings",
+                        "v":  "26"
+                    },
+                    {
+                        "k":  "enemies",
+                        "v":  "15"
+                    },
+                    {
+                        "k":  "tests",
+                        "v":  "1"
+                    },
+                    {
+                        "k":  "scenes",
+                        "v":  "49"
+                    },
+                    {
+                        "k":  "gdd kb",
+                        "v":  "691"
+                    }
                 ],
-                "runsSeen": 2
-            },
-            {
-                "lenses": [
-                    "cost-economics",
-                    "reliability"
-                ],
-                "runsSeen": 3
-            }
-        ]
-    },
-    "metrics": [
-        {
-            "k": "units",
-            "v": "7"
-        },
-        {
-            "k": "buildings",
-            "v": "26"
-        },
-        {
-            "k": "enemies",
-            "v": "15"
-        },
-        {
-            "k": "tests",
-            "v": "1"
-        },
-        {
-            "k": "scenes",
-            "v": "48"
-        },
-        {
-            "k": "gdd kb",
-            "v": "683"
-        }
-    ],
-    "workQueueDepth": 1,
-    "stale": false,
-    "tags": [
-        "game-design",
-        "orchestration",
-        "release-pipeline",
-        "public-voice"
-    ]
+    "workQueueDepth":  1,
+    "stale":  false,
+    "tags":  [
+                 "game-design",
+                 "orchestration",
+                 "release-pipeline",
+                 "public-voice"
+             ]
 }
