@@ -36,44 +36,242 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-29.md",
-        "latestReportAt": "2026-06-29T11:34:20Z",
-        "verdict": "working",
-        "topFinding": "Carry-forward pass (day 1 since the 2026-06-28 full review): zero commits since, working tree clean, no open BLOCK, work queue depth 0, so the lens scores and health are carried unchanged. M6 is closed and the project is anchored at 100 percent complete. The last full pass confirmed v0.14.0 (savings goals + CSV bank-format auto-detect) shipped without breaching a locked decision: the new /api/goals POST/PATCH boundaries run every money input through guardCents (D-003 holds), and detectFormat ships with a dedicated test. The .finances remote-history exposure stays retired (pre-rewrite SHAs return 422, .finances 404s). No HIGH findings, no open BLOCK, steady-state maintenance. Verdict working at health 92.",
-        "actionsOpen": 0,
+        "latestReportPath": "docs/BAR_RAISE-2026-07-01.md",
+        "latestReportAt": "2026-07-01T06:40:00Z",
+        "verdict": "needs-attention",
+        "topFinding": "First deep full fan-out since 2026-06-28 (the runs between were carry-forwards); looking harder surfaced real latent issues the earlier zero-finding passes missed, not regressions (only three housekeeping commits landed since). One live runtime bug flips the verdict: all four INSERT INTO meta (key, value) statements in server.ts omit the NOT NULL updated_at column, so first-launch consent (POST /api/consent) and every app-lock write throw SQLITE_CONSTRAINT_NOTNULL 500, breaking two shipped v0.12.0 features. Second, a real Discord webhook bearer URL committed in 5b3d7cc was only untracked, never rotated or history-scrubbed, so it stays reachable in history on origin/main (private repo, so blast radius is collaborators only). All seven hard rules hold (D-006, D-003, D-001, D-004/D-007 verified live and clean), so there is no BLOCK and the core money paths are solid with 148 green API tests.",
+        "actionsOpen": 12,
         "actionsClosed": 0,
-        "actions": [],
+        "actions": [
+            {
+                "severity": "MED",
+                "title": "Make yab.cmd detect data/.sqlcipher and switch to the keyed start:encrypted launch.",
+                "lens": "solo-tool-ux",
+                "priority": 16,
+                "id": "solo-tool-ux-01"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Add updated_at to all four meta INSERTs in server.ts and add a consent + app-lock route test.",
+                "lens": "reliability",
+                "priority": 15,
+                "id": "reliability-01"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Rotate the exposed Discord announcements webhook and treat the committed URL as burned.",
+                "lens": "security",
+                "priority": 15,
+                "id": "security-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Wrap Plaid commitTakeover/restoreArchive with the createBackup + BackupFailedError snapshot gate.",
+                "lens": "reliability",
+                "priority": 15,
+                "id": "reliability-02"
+            },
+            {
+                "severity": "MED",
+                "title": "Add explicit ON DELETE policies to the core FK references plus a deletion regression test.",
+                "lens": "data-integrity",
+                "priority": 15,
+                "id": "data-integrity-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Emit logEvent on Plaid sync failure and/or add a sync-status card in Settings.",
+                "lens": "observability",
+                "priority": 15,
+                "id": "observability-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Add a Plaid webhook relay paragraph to privacy.md and bump its date.",
+                "lens": "compliance-data-steward",
+                "priority": 15,
+                "id": "compliance-data-steward-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Add insights.test.ts pinning the insights money-math against stubbed rows.",
+                "lens": "maintainability",
+                "priority": 15,
+                "id": "maintainability-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Merge the Dependabot PR to move hono to >=4.12.25.",
+                "lens": "dependency",
+                "priority": 15,
+                "id": "dependency-02"
+            },
+            {
+                "severity": "MED",
+                "title": "Add a global Hono onError handler that logs unhandled exceptions via logEvent.",
+                "lens": "observability",
+                "priority": 12,
+                "id": "observability-02"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Bump vitest >=3.2.6, vite >=6.4.3, and let the patch group pull form-data >=4.0.6.",
+                "lens": "dependency",
+                "priority": 10,
+                "id": "dependency-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Add smoke/render tests for Transactions and Dashboard, or document manual-only policy.",
+                "lens": "maintainability",
+                "priority": 10,
+                "id": "maintainability-02"
+            }
+        ],
         "deferred": [
             {
-                "severity": "LOW",
-                "title": "Migrate the SQLCipher key off the archived keytar dependency.",
+                "severity": "MED",
+                "title": "Extract the server.ts CRUD and app-lock subsystem into per-domain modules.",
+                "lens": "architecture",
+                "reason": "post-milestone structural refactor; no current bug exposure"
+            },
+            {
+                "severity": "MED",
+                "title": "Pre-stage a keytar migration target (e.g. @napi-rs/keyring).",
                 "lens": "dependency",
-                "reason": "DECIDED keep 2026-06-25; gated on the build-failure trigger (act only if keytar fails to load/build on a supported Node LTS). Key is escrowed and injectable via YAB_DB_KEY without keytar."
+                "reason": "DECIDED keep 2026-06-25; gated on the build-failure trigger"
             },
             {
                 "severity": "LOW",
                 "title": "Flip the Plaid connector from Sandbox to paid Production.",
                 "lens": "strategic",
-                "reason": "Gated on external paid Plaid Production approval (D-012); kept a deliberate, documented budget decision."
+                "reason": "gated on external paid Plaid Production approval (D-012)"
             }
         ],
-        "health": 92,
+        "health": 85,
         "lensScores": {
-            "architecture": 88,
-            "reliability": 90,
-            "security": 86,
-            "performance": 90,
-            "data-integrity": 90,
-            "maintainability": 86,
-            "solo-tool-ux": 85,
-            "cost-economics": 88,
-            "dependency": 78,
-            "observability": 88,
-            "strategic": 82,
-            "compliance-data-steward": 90
+            "architecture": 87,
+            "reliability": 82,
+            "security": 82,
+            "performance": 88,
+            "data-integrity": 88,
+            "maintainability": 88,
+            "solo-tool-ux": 87,
+            "cost-economics": 95,
+            "dependency": 74,
+            "observability": 84,
+            "strategic": 90,
+            "compliance-data-steward": 84
         },
-        "openFindings": [],
-        "tensionsOpen": []
+        "openFindings": [
+            {
+                "id": "solo-tool-ux-01",
+                "severity": "MED",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "reliability-01",
+                "severity": "HIGH",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "security-01",
+                "severity": "HIGH",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "reliability-02",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "data-integrity-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "observability-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "compliance-data-steward-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "maintainability-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "dependency-02",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "observability-02",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "dependency-01",
+                "severity": "HIGH",
+                "priority": 10,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "maintainability-02",
+                "severity": "MED",
+                "priority": 10,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "architecture-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "dependency-03",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            }
+        ],
+        "tensionsOpen": [
+            {
+                "lenses": [
+                    "security",
+                    "solo-tool-ux"
+                ],
+                "runsSeen": 1
+            }
+        ]
     },
     "metrics": [
         {
