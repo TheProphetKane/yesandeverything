@@ -106,3 +106,14 @@ The Edit tool truncates files mid-write on this mount with non-trivial frequency
 ### Cross-project consistency
 
 CLAUDE_SETTINGS.md is the load-bearing how-to-work-with-Nick doc. PERSONAL_CLAUDE_ARCHITECTURE.md is the handler-and-canonical pattern spec. Both live at the YaE root because YaE is the cross-project hub. Per-project CLAUDE.md files (HBH, YaC, Scheduler, YaE, Apothecary, Budget) inherit from these two and add project-local hazards. When updating cross-project rules, update them HERE first, then propagate to the per-project CLAUDE.md files.
+
+
+## Turn-ending behavior
+
+End every turn in a completed ("done") state, not an input-requested state. The session's yellow "needs input" indicator fires whenever a turn ends by soliciting the user; the blue "done" indicator fires when a turn ends on a finished task. Default to finishing and stopping.
+
+- Do not close messages with optional offers or courtesy questions ("Want me to...?", "Should I...?", "Let me know if..."). They force the needs-input state when nothing is actually required.
+- When a next step is obvious and low-risk, just do it instead of asking.
+- When there are genuinely optional follow-ups, state them as available options in a plain declarative sentence -- never phrase them as a question directed at the user.
+- Only end a turn awaiting input when the user's answer genuinely determines what you do next -- a real fork you cannot resolve yourself. Then ask one direct question and stop.
+- Never end with a question solely to be polite or to prompt continuation.

@@ -305,3 +305,8 @@ Confirm-GitIntact -RepoRoot $repoRoot   # fails loud on post-write .git corrupti
 ```
 
 `Assert-GitSafe` replaces the old blind `Remove-Item .git\index.lock` pattern. Propagate it to every project's `push-to-github.ps1`, `release.ps1`, and `write-dashboard-status.ps1`, and to the loop/audit skills' git steps. Per the cross-project-consistency rule, the standard is updated HERE first, then propagated. Wired into YaE `scripts/push-to-github.ps1` first as the reference adoption.
+
+
+## Discord webhook naming (portfolio standard)
+
+Every project's Discord webhook display names follow `X:\YesAndEverything\DISCORD_WEBHOOK_NAMING.md`: `<identifier> <Role> Bot`, where `<identifier>` is the project's ONE-WORD dashboard identifier (the `project` field in `status/data/<Project>.json`, e.g. Budget/Rising/Hordes/Chains/Apothecary/Scheduler/Ring -- not the repo folder, not the short code) and `<Role>` is Release/Headline/Audit/Backlog/Resources keyed by channel/secrets file. Set it at webhook-creation time; never leave Discord's defaults. New projects inherit this via the New Project Template at `X:\_NewProjectTemplate` (see its `SETUP.md`).
