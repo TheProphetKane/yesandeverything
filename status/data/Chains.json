@@ -56,31 +56,134 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-06-30.md",
-        "latestReportAt": "2026-06-30T15:49:36Z",
-        "verdict": "working",
-        "topFinding": "Carry-forward pass, day 2. Zero new commits since the 06-29 run (HEAD still 0.52.6, commit 9c8fd57); the only working-tree change is the same already-queued LOW (ROADMAP.md 'What's live' anchor -> 0.52.6). No product, worker, security, data, or performance surface moved, so all lens scores and health (88) carry forward. The one run-state change is aging not breakage: the reliability<->solo-tool-ux safe_write tension is now open 3 consecutive runs and crosses into 'promote via adr-promoter' (log once in DECISIONS_NEEDED.md, stop re-reporting daily). Zero HIGH/MEDIUM open; live at 92% completion, clean committed HEAD; verdict stays working.",
-        "actionsOpen": 0,
+        "latestReportPath": "docs/BAR_RAISE-2026-07-01.md",
+        "latestReportAt": "2026-07-01T06:30:00Z",
+        "verdict": "needs-attention",
+        "topFinding": "Paywall flipped to real Stripe payments on 2026-06-30 (0.54.0) ahead of money-path hardening. Six lenses converged: the in-app cancel button is a dead no-op (gated on CHAINS_VISIBLE not PRO_PAYWALL_ENABLED, src/subscription.ts:279), the webhook writes 'active' without a payment_status check and ACKs 200 on a missing user id (paid-but-unentitled; billing.js:637-690), the Sonnet-vision research endpoints have no global spend ceiling, and there is no refund policy or finalized ToS behind the 'cancel anytime' promise. App is 92% done and functioning, no hard-rule breach, but a live paid product with a dead cancel path is real breakage: verdict needs-attention until the top fixes land.",
+        "actionsOpen": 11,
         "actionsClosed": 0,
-        "actions": [],
-        "deferred": [],
-        "health": 88,
+        "actions": [
+            {
+                "severity": "HIGH",
+                "id": "compliance-01",
+                "priority": 20,
+                "lens": "finance-product",
+                "title": "Fix the dead in-app cancel button: re-gate openBillingPortal() on PRO_PAYWALL_ENABLED not CHAINS_VISIBLE (src/subscription.ts:279)."
+            },
+            {
+                "severity": "HIGH",
+                "id": "cost-01",
+                "priority": 20,
+                "lens": "cost-economics",
+                "title": "Add a global daily spend ceiling to handleExtractPhotosReal + handleParseCourseText (Sonnet-vision) using the DAILY_AI_SPEND_CAP_USD guard from research.js:252."
+            },
+            {
+                "severity": "HIGH",
+                "id": "webhook-01",
+                "priority": 16,
+                "lens": "reliability",
+                "title": "Harden the Stripe webhook money path: check payment_status=paid before writing active, dedupe on event.id, store stripe_subscription_id, and stop ACKing 200 when user/customer id is missing (billing.js:637-690)."
+            },
+            {
+                "severity": "HIGH",
+                "id": "dataint-01",
+                "priority": 16,
+                "lens": "data-integrity",
+                "title": "Add a Stripe->Supabase reconciliation pass (list active subs, correct drifted subscription_status) so a dropped webhook cannot strand entitlement."
+            },
+            {
+                "severity": "HIGH",
+                "id": "compliance-02",
+                "priority": 16,
+                "lens": "compliance-data-steward",
+                "title": "Write a refund/cancellation policy line in legal/terms.md to back the 'Cancel anytime - no surprise bills' modal claim (src/subscription.ts:208)."
+            },
+            {
+                "severity": "HIGH",
+                "id": "compliance-03",
+                "priority": 16,
+                "lens": "compliance-data-steward",
+                "title": "Add a payment/subscription section to legal/terms.md and effective-date the ToS + drop the DRAFT-do-not-publish banner now the product charges (src/legal-view.ts:295)."
+            },
+            {
+                "severity": "MED",
+                "id": "dataint-02",
+                "priority": 15,
+                "lens": "data-integrity",
+                "title": "Convert the KV cost-cap counters to an atomic primitive (Durable Object or D1 UPDATE...RETURNING) so a concurrent burst cannot undercount past the spend cap (billing.js:104-215)."
+            },
+            {
+                "severity": "MED",
+                "id": "finance-02",
+                "priority": 12,
+                "lens": "finance-product",
+                "title": "Decide dunning grace: keep past_due entitled through subscription_renews_at, or accept instant de-entitlement as a locked decision (migrations/0018:58, lib.js:1681)."
+            },
+            {
+                "severity": "MED",
+                "id": "reliability-02",
+                "priority": 12,
+                "lens": "reliability",
+                "title": "Fix the _checkSubscriptionEntitled stale comment (says fail-open, code fails closed) and add a short-TTL positive-entitlement cache to survive a transient Supabase outage (lib.js:1685)."
+            },
+            {
+                "severity": "MED",
+                "id": "reliability-03",
+                "priority": 10,
+                "lens": "reliability",
+                "title": "Add per-fetch timeouts (AbortSignal.timeout) on the Anthropic/Stripe/Supabase/PDGA upstream calls so a slow upstream fails fast (worker/src/*)."
+            },
+            {
+                "severity": "MED",
+                "id": "security-02",
+                "priority": 8,
+                "lens": "security",
+                "title": "Replace the non-constant-time ADMIN_TOKEN and webhook-sig !== compares with one shared constant-time safeEqual helper (16+ sites; billing.js:249, lib.js:1874)."
+            }
+        ],
+        "deferred": [
+            {
+                "severity": "HIGH",
+                "title": "Counsel sign-off on the 19-state privacy subsections (drafted, mechanism live).",
+                "lens": "compliance-data-steward",
+                "reason": "needs external counsel"
+            },
+            {
+                "severity": "MED",
+                "title": "Standardize the caddy/chat entitlement gate on _requireEntitledUser (or set SUBSCRIPTION_GATE_ENFORCE=true) to close the latent fail-open.",
+                "lens": "cost-economics",
+                "reason": "latent until CHAINS_VISIBLE flips; couple with that flip"
+            },
+            {
+                "severity": "MED",
+                "title": "Serialize concurrent same-slug course contributions (Durable Object per course-slug) to close the last-write-wins loss window.",
+                "lens": "data-integrity",
+                "reason": "post-1.0 rearchitect; low-probability, KV has no backup"
+            },
+            {
+                "severity": "MED",
+                "title": "Add an in-app billing=ok success/receipt confirmation after checkout (success_url handler is missing).",
+                "lens": "compliance-data-steward",
+                "reason": "post-1.0 polish"
+            }
+        ],
+        "health": 86,
         "lensScores": {
             "architecture": 86,
-            "reliability": 82,
-            "security": 88,
+            "reliability": 78,
+            "security": 78,
             "performance": 90,
-            "data-integrity": 92,
+            "data-integrity": 74,
             "maintainability": 88,
             "solo-tool-ux": 90,
-            "cost-economics": 84,
+            "cost-economics": 72,
             "dependency": 86,
             "observability": 92,
             "strategic-kill-this": 95,
-            "compliance-data-steward": 86,
+            "compliance-data-steward": 64,
             "worker-cpu-budget": 92,
             "kv-data-shape": 92,
-            "auth-token-hygiene": 84,
+            "auth-token-hygiene": 82,
             "install-and-offline": 92,
             "sync": 82,
             "dataset-size": 84,
@@ -88,7 +191,7 @@
             "work-queue-hygiene": 90,
             "audit-loop-integrity": 95,
             "fuse-truncation-defense": 82,
-            "incident-runbook-currency": 80,
+            "incident-runbook-currency": 78,
             "scheduled-task-firing-state": 90,
             "skill-trigger-collisions": 90,
             "skill-chain-handoff-integrity": 92,
@@ -97,16 +200,102 @@
             "version-pill-drift": 92,
             "solo-dev-voice-portfolio": 90,
             "ai-tell-concealment-currency": 84,
-            "brand-consistency": 92
+            "brand-consistency": 92,
+            "finance-product": 68
         },
-        "openFindings": [],
+        "openFindings": [
+            {
+                "id": "compliance-01",
+                "severity": "HIGH",
+                "priority": 20,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "cost-01",
+                "severity": "HIGH",
+                "priority": 20,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "webhook-01",
+                "severity": "HIGH",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "dataint-01",
+                "severity": "HIGH",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "compliance-02",
+                "severity": "HIGH",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "compliance-03",
+                "severity": "HIGH",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "dataint-02",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "finance-02",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "reliability-02",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "reliability-03",
+                "severity": "MED",
+                "priority": 10,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "security-02",
+                "severity": "MED",
+                "priority": 8,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-01"
+            }
+        ],
         "tensionsOpen": [
             {
                 "lenses": [
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 3
+                "runsSeen": 4
+            },
+            {
+                "lenses": [
+                    "security",
+                    "solo-tool-ux"
+                ],
+                "runsSeen": 1
             }
         ]
     },
