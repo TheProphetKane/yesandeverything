@@ -1,297 +1,71 @@
 {
-    "project": "Budget",
-    "displayName": "Yes& Budget",
-    "version": "0.14.1",
-    "lastReleaseAt": "2026-06-28T18:21:23-05:00",
-    "lastReleaseMessage": "dashboard: writer emits standardized items-left and backlog item lists",
-    "milestone": {
-        "id": "M6",
-        "label": "Budgets + goals",
-        "status": "done"
-    },
-    "completion": {
-        "pct": 100,
-        "anchored": "2026-06-25"
-    },
-    "itemsLeft": {
-        "open": 0,
-        "queue": 0,
-        "backlog": 0,
-        "gates": 0,
-        "items": []
-    },
-    "backlog": {
-        "count": 0,
-        "items": []
-    },
-    "repoUrl": "https://github.com/TheProphetKane/yesandbudget",
-    "workTreeClean": false,
-    "audit": {
-        "latestReportPath": "docs/CANONICAL_AUDIT-2026-06-28.md",
-        "latestReportAt": "2026-06-28T07:49:14Z",
-        "findings": {
-            "high": 0,
-            "medium": 0,
-            "low": 0
-        }
-    },
-    "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-01.md",
-        "latestReportAt": "2026-07-01T06:40:00Z",
-        "verdict": "needs-attention",
-        "topFinding": "First deep full fan-out since 2026-06-28 (the runs between were carry-forwards); looking harder surfaced real latent issues the earlier zero-finding passes missed, not regressions (only three housekeeping commits landed since). One live runtime bug flips the verdict: all four INSERT INTO meta (key, value) statements in server.ts omit the NOT NULL updated_at column, so first-launch consent (POST /api/consent) and every app-lock write throw SQLITE_CONSTRAINT_NOTNULL 500, breaking two shipped v0.12.0 features. Second, a real Discord webhook bearer URL committed in 5b3d7cc was only untracked, never rotated or history-scrubbed, so it stays reachable in history on origin/main (private repo, so blast radius is collaborators only). All seven hard rules hold (D-006, D-003, D-001, D-004/D-007 verified live and clean), so there is no BLOCK and the core money paths are solid with 148 green API tests.",
-        "actionsOpen": 12,
-        "actionsClosed": 0,
-        "actions": [
-            {
-                "severity": "MED",
-                "title": "Make yab.cmd detect data/.sqlcipher and switch to the keyed start:encrypted launch.",
-                "lens": "solo-tool-ux",
-                "priority": 16,
-                "id": "solo-tool-ux-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Add updated_at to all four meta INSERTs in server.ts and add a consent + app-lock route test.",
-                "lens": "reliability",
-                "priority": 15,
-                "id": "reliability-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Rotate the exposed Discord announcements webhook and treat the committed URL as burned.",
-                "lens": "security",
-                "priority": 15,
-                "id": "security-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Wrap Plaid commitTakeover/restoreArchive with the createBackup + BackupFailedError snapshot gate.",
-                "lens": "reliability",
-                "priority": 15,
-                "id": "reliability-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Add explicit ON DELETE policies to the core FK references plus a deletion regression test.",
-                "lens": "data-integrity",
-                "priority": 15,
-                "id": "data-integrity-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Emit logEvent on Plaid sync failure and/or add a sync-status card in Settings.",
-                "lens": "observability",
-                "priority": 15,
-                "id": "observability-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a Plaid webhook relay paragraph to privacy.md and bump its date.",
-                "lens": "compliance-data-steward",
-                "priority": 15,
-                "id": "compliance-data-steward-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add insights.test.ts pinning the insights money-math against stubbed rows.",
-                "lens": "maintainability",
-                "priority": 15,
-                "id": "maintainability-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Merge the Dependabot PR to move hono to >=4.12.25.",
-                "lens": "dependency",
-                "priority": 15,
-                "id": "dependency-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a global Hono onError handler that logs unhandled exceptions via logEvent.",
-                "lens": "observability",
-                "priority": 12,
-                "id": "observability-02"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Bump vitest >=3.2.6, vite >=6.4.3, and let the patch group pull form-data >=4.0.6.",
-                "lens": "dependency",
-                "priority": 10,
-                "id": "dependency-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add smoke/render tests for Transactions and Dashboard, or document manual-only policy.",
-                "lens": "maintainability",
-                "priority": 10,
-                "id": "maintainability-02"
-            }
-        ],
-        "deferred": [
-            {
-                "severity": "MED",
-                "title": "Extract the server.ts CRUD and app-lock subsystem into per-domain modules.",
-                "lens": "architecture",
-                "reason": "post-milestone structural refactor; no current bug exposure"
-            },
-            {
-                "severity": "MED",
-                "title": "Pre-stage a keytar migration target (e.g. @napi-rs/keyring).",
-                "lens": "dependency",
-                "reason": "DECIDED keep 2026-06-25; gated on the build-failure trigger"
-            },
-            {
-                "severity": "LOW",
-                "title": "Flip the Plaid connector from Sandbox to paid Production.",
-                "lens": "strategic",
-                "reason": "gated on external paid Plaid Production approval (D-012)"
-            }
-        ],
-        "health": 85,
-        "lensScores": {
-            "architecture": 87,
-            "reliability": 82,
-            "security": 82,
-            "performance": 88,
-            "data-integrity": 88,
-            "maintainability": 88,
-            "solo-tool-ux": 87,
-            "cost-economics": 95,
-            "dependency": 74,
-            "observability": 84,
-            "strategic": 90,
-            "compliance-data-steward": 84
-        },
-        "openFindings": [
-            {
-                "id": "solo-tool-ux-01",
-                "severity": "MED",
-                "priority": 16,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "reliability-01",
-                "severity": "HIGH",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "security-01",
-                "severity": "HIGH",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "reliability-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "data-integrity-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "observability-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "compliance-data-steward-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "maintainability-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "dependency-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "observability-02",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "dependency-01",
-                "severity": "HIGH",
-                "priority": 10,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "maintainability-02",
-                "severity": "MED",
-                "priority": 10,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "architecture-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "dependency-03",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-07-01"
-            }
-        ],
-        "tensionsOpen": [
-            {
-                "lenses": [
-                    "security",
-                    "solo-tool-ux"
+    "project":  "Budget",
+    "displayName":  "Yes\u0026 Budget",
+    "version":  "0.14.2",
+    "lastReleaseAt":  "2026-07-01T11:18:37-05:00",
+    "lastReleaseMessage":  "Bar-raise 2026-07-01 remediation. Fix HIGH runtime bug: all four server.ts INSERT INTO meta upserts (consent + app-lock) omitted the NOT NULL updated_at column and 500\u0027d; now supply it, with a meta-upsert regression test (verified live: consent + app-lock writes return 200). Add a global Hono onError-\u003elogEvent boundary, Plaid sync-failure logging, a pre-mutation createBackup/503 snapshot gate on Plaid takeover/restore, encrypted-launch (data/.sqlcipher) detection in yab.cmd, and an insights yearOverYear money-math test. Reword the stale Windows-Task-Scheduler claim (CLAUDE.md + .project-context) to the native CC scheduled-task routines (resolves the queued drift-fix). Clean the working tree (gitignore audit_err.txt).",
+    "milestone":  {
+                      "id":  "M6",
+                      "label":  "Budgets + goals",
+                      "status":  "done"
+                  },
+    "completion":  {
+                       "pct":  100,
+                       "anchored":  "2026-06-25"
+                   },
+    "itemsLeft":  {
+                      "open":  0,
+                      "queue":  0,
+                      "backlog":  0,
+                      "gates":  0,
+                      "items":  [
+
+                                ]
+                  },
+    "backlog":  {
+                    "count":  0,
+                    "items":  [
+
+                              ]
+                },
+    "repoUrl":  "https://github.com/TheProphetKane/yesandbudget",
+    "workTreeClean":  true,
+    "audit":  {
+                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-01.md",
+                  "latestReportAt":  "2026-07-01T10:33:58Z",
+                  "findings":  {
+                                   "high":  0,
+                                   "medium":  0,
+                                   "low":  0
+                               }
+              },
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-07-01.md",
+                     "latestReportAt":  "2026-07-01T06:40:00Z",
+                     "verdict":  "needs-attention",
+                     "topFinding":  "Remediated 2026-07-01 (v0.14.2): the HIGH meta NOT NULL updated_at runtime bug (all four server.ts INSERT INTO meta omitted updated_at, 500ing consent + app-lock) is fixed with a regression test; also landed a global onError-\u003elogEvent boundary, Plaid sync-failure logging, a pre-mutation snapshot gate on Plaid takeover/restore, encrypted-launch detection in yab.cmd, and an insights money-math test. Eight of twelve actions closed (six fixed, two decided by design), plus the queued Task-Scheduler drift-fix reworded to the native CC routines and the working tree cleaned. Four remain, all externally gated: rotate the exposed Discord webhook (Nick; committed in 5b3d7cc, private-repo history), merge the vitest/vite/form-data and hono Dependabot PRs (host install), and add the Plaid-relay paragraph to the YaE budget privacy page. All seven hard rules hold; 153 API tests green.",
+                     "actionsOpen":  4,
+                     "actionsClosed":  8
+                 },
+    "metrics":  [
+                    {
+                        "k":  "importers",
+                        "v":  "4"
+                    },
+                    {
+                        "k":  "locked decisions",
+                        "v":  "13"
+                    },
+                    {
+                        "k":  "test files",
+                        "v":  "28"
+                    }
                 ],
-                "runsSeen": 1
-            }
-        ]
-    },
-    "metrics": [
-        {
-            "k": "importers",
-            "v": "4"
-        },
-        {
-            "k": "locked decisions",
-            "v": "13"
-        },
-        {
-            "k": "test files",
-            "v": "26"
-        }
-    ],
-    "workQueueDepth": 0,
-    "stale": false,
-    "tags": [
-        "finance-product",
-        "orchestration",
-        "release-pipeline"
-    ]
+    "workQueueDepth":  0,
+    "stale":  false,
+    "tags":  [
+                 "finance-product",
+                 "orchestration",
+                 "release-pipeline"
+             ]
 }
