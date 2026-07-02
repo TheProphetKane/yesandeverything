@@ -39,126 +39,175 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-06-29.md",
-    "latestReportAt": "2026-06-29T11:28:21Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-02.md",
+    "latestReportAt": "2026-07-02T11:37:14Z",
     "verdict": "in-progress",
-    "topFinding": "Carry-forward pass (day 2): zero commits, no BLOCK, work queue at 0, and all five hard rules still pass, so no 27-lens re-fan-out. The one real delta is positive: version-pill-drift-01 is resolved in the working tree. docs/DESIGN.md now carries the org_billing table and users.billing_exempt column in section 15 (plus the matching index lines) and the three /api/billing routes in section 16, so the canonical reference matches v0.6.0. The fix is uncommitted and the two prior dashboard-writer commits (a904f11, 9d59f44) are still local (HEAD 2 ahead of origin/main); a single release.ps1 run flushes both. Three open actions carry forward (audit-loop-integrity, observability route-count regex, solo-tool-ux README), all aged to runsOpen 2; the three strategic/cost items remain deferred behind Nick posture decisions.",
-    "actionsOpen": 3,
-    "actionsClosed": 1,
+    "topFinding": "First full 27-lens fan-out since 2026-06-28 (the two intervening runs were carry-forward), and the verdict holds at in-progress with health 88 (was 89). No BLOCK: all five hard rules pass. Two carry-forward actions are now closed in source: the README real-use-testing section (f9a2621) and the dashboard route-count regex (b896876), lifting solo-tool-ux 82 to 90 and observability 68 to 78. The dominant theme is a release/sync gap, not a code defect. The correct docs/DESIGN.md billing doc-sync has sat uncommitted five days across six raw commits, the published dashboard JSON is stale from the 06-28 ship (api routes still 0, audit pointer stuck at 06-28 while audits ran nightly through 07-02), and the YaE-side projects/scheduler page still reads v0.4.x. A commit plus a dashboard regen clears the first two; the audit loop needs a small structural fix so it closes without a ship. The full pass also surfaced pre-existing D1 write-path efficiency items (an unbatched, partial-write generate loop, a user-list N+1, an open-shifts correlated subquery) that are hardening, not breakage. The deeper question stays deferred: a healthy 60%-complete app idling on one unresolved Nick posture call, drive to first real user via seed-demo vs re-park.",
+    "actionsOpen": 7,
+    "actionsClosed": 2,
     "actions": [
       {
         "severity": "MED",
-        "title": "Make the canonical audit release-aware: trigger a post-commit audit pass at the end of release.ps1 (dedupe by finding-id) so an evening ship is re-checked the same day.",
+        "title": "Commit the stranded docs/DESIGN.md billing doc-sync now (git add docs/DESIGN.md then commit); stop closing drift findings as resolved-pending-commit before the commit exists.",
+        "lens": "version-pill-drift",
+        "priority": 15,
+        "id": "version-pill-drift-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Refresh X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html to v0.6.0, adding the M7.1 (v0.5.0) and billing (v0.6.0, migration 0009) content.",
+        "lens": "gate-page-publish",
+        "priority": 15,
+        "id": "gate-page-publish-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Close the canonical-audit loop: make it release-aware (post-commit audit sync in release.ps1, deduped by finding-id) or have audit-scheduler-nightly update the status JSON audit pointer and findings directly.",
         "lens": "audit-loop-integrity",
-        "priority": 20,
+        "priority": 15,
         "id": "audit-loop-integrity-01"
       },
       {
         "severity": "MED",
-        "title": "Fix the route-count regex in scripts/write-dashboard-status.ps1 to match handlers on *Route sub-instances so the dashboard stops reporting api routes: 0.",
-        "lens": "observability",
-        "priority": 15,
-        "id": "observability-01"
+        "title": "Rewrite the schedule-generate persist path: precompute an existing-assignment Set for O(1) membership and write all new assignments plus the seed stamp in one db.batch(), fixing both the O(N-squared)/serial-round-trip cost and the partial-write risk.",
+        "lens": "performance",
+        "priority": 12,
+        "id": "performance-01"
       },
       {
         "severity": "MED",
-        "title": "Add a Real-use testing subsection to README.md naming scripts/seed-demo.ps1, the -Remote flag, and the sign-in-then-switch-to-demo step.",
-        "lens": "solo-tool-ux",
+        "title": "Kill the user-list N+1 (1+2N queries) by replacing per-user membership loads with two batched IN-queries grouped in memory.",
+        "lens": "performance",
         "priority": 12,
-        "id": "solo-tool-ux-01"
+        "id": "performance-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Fix the open-shifts list query: compute the confirmed-count once instead of a correlated COUNT(*) subquery run twice per row.",
+        "lens": "kv-data-shape",
+        "priority": 12,
+        "id": "kv-data-shape-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Regenerate the published dashboard JSON (run write-dashboard-status.ps1) so the corrected api-routes metric and refreshed audit pointer go live.",
+        "lens": "observability",
+        "priority": 10,
+        "id": "observability-01"
       }
     ],
     "deferred": [
       {
         "severity": "MED",
-        "title": "Gate any further billing-layer build (tier pricing, dunning, customer portal) behind committing to the Stripe milestone so entitlement work stops accreting cost ahead of revenue.",
+        "title": "Surface the drive-to-first-user-via-seed-demo vs re-park posture decision to Nick; both completion gates dead-end on it.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Nick decision: posture (drive vs park)"
+      },
+      {
+        "severity": "MED",
+        "title": "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
         "lens": "cost-economics",
         "reason": "blocked on Nick decision: commit to Stripe milestone"
       },
       {
-        "severity": "MED",
-        "title": "Make real-use testing via seed-demo.ps1 the explicit next gate and hold further billing-layer work until the core schedule loop is validated against the DESIGN section 1.2 success criteria.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Nick decision: drive to first real user vs re-park"
-      },
-      {
         "severity": "LOW",
-        "title": "Record an explicit DESIGN section 23 decision on whether YaS is being driven to first real user or re-parked after the entitlement layer.",
+        "title": "Record an explicit DESIGN section 23 decision on whether YaS is driven to first real user or re-parked.",
         "lens": "strategic-kill-this",
         "reason": "blocked on Nick decision: posture call"
       }
     ],
-    "health": 89,
+    "health": 88,
     "lensScores": {
-      "architecture": 93,
+      "architecture": 92,
       "reliability": 90,
-      "security": 92,
-      "performance": 88,
-      "data-integrity": 88,
-      "maintainability": 86,
-      "solo-tool-ux": 82,
-      "cost-economics": 88,
-      "dependency": 92,
-      "observability": 68,
-      "strategic-kill-this": 78,
-      "compliance-data-steward": 90,
+      "security": 93,
+      "performance": 86,
+      "data-integrity": 89,
+      "maintainability": 88,
+      "solo-tool-ux": 90,
+      "cost-economics": 90,
+      "dependency": 93,
+      "observability": 78,
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 92,
       "worker-cpu-budget": 93,
       "kv-data-shape": 90,
       "auth-token-hygiene": 94,
       "skill-suite-health": 92,
-      "work-queue-hygiene": 95,
-      "audit-loop-integrity": 68,
-      "fuse-truncation-defense": 94,
-      "incident-runbook-currency": 93,
-      "scheduled-task-firing-state": 80,
+      "work-queue-hygiene": 96,
+      "audit-loop-integrity": 66,
+      "fuse-truncation-defense": 93,
+      "incident-runbook-currency": 94,
+      "scheduled-task-firing-state": 90,
       "skill-trigger-collisions": 91,
       "skill-chain-handoff-integrity": 90,
-      "per-project-ps1-stack": 88,
+      "per-project-ps1-stack": 90,
       "discord-notify-wiring": 95,
-      "version-pill-drift": 90,
-      "gate-page-publish": 95
+      "version-pill-drift": 78,
+      "gate-page-publish": 72
     },
     "openFindings": [
       {
-        "id": "audit-loop-integrity-01",
-        "severity": "MED",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-06-28"
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "MED",
-        "priority": 16,
-        "runsOpen": 2,
-        "firstSeen": "2026-06-28"
-      },
-      {
-        "id": "maintainability-01",
+        "id": "version-pill-drift-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
+      },
+      {
+        "id": "gate-page-publish-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
+      },
+      {
+        "id": "audit-loop-integrity-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-06-28"
+      },
+      {
+        "id": "reliability-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
+      },
+      {
+        "id": "performance-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
+      },
+      {
+        "id": "kv-data-shape-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
       },
       {
         "id": "observability-01",
         "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-06-28"
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-02"
       },
       {
-        "id": "solo-tool-ux-01",
+        "id": "strategic-kill-this-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-06-28"
-      },
-      {
-        "id": "cost-economics-03",
-        "severity": "MED",
-        "priority": 9,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-06-28"
       }
     ],
@@ -168,21 +217,21 @@
           "cost-economics",
           "strategic-kill-this"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "reliability",
           "performance"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "audit-loop-integrity",
           "work-queue-hygiene"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       }
     ]
   },
