@@ -53,10 +53,10 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-01.md",
-        "latestReportAt": "2026-07-01T06:30:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-02.md",
+        "latestReportAt": "2026-07-02T11:22:35Z",
         "verdict": "needs-attention",
-        "topFinding": "Paywall flipped to real Stripe payments on 2026-06-30 (0.54.0) ahead of money-path hardening. Six lenses converged: the in-app cancel button is a dead no-op (gated on CHAINS_VISIBLE not PRO_PAYWALL_ENABLED, src/subscription.ts:279), the webhook writes 'active' without a payment_status check and ACKs 200 on a missing user id (paid-but-unentitled; billing.js:637-690), the Sonnet-vision research endpoints have no global spend ceiling, and there is no refund policy or finalized ToS behind the 'cancel anytime' promise. App is 92% done and functioning, no hard-rule breach, but a live paid product with a dead cancel path is real breakage: verdict needs-attention until the top fixes land.",
+        "topFinding": "Nothing on the money path moved since the 2026-07-01 pass. The five commits since are docs-only (CLAUDE.md, ROADMAP.md, BACKLOG.md, .project-context.json, dns-setup.md, write-dashboard-status.ps1); no src/ or worker/ change. All eleven open findings carry forward and age to run 2, led by the still-dead in-app cancel button: openBillingPortal() (src/subscription.ts:279) still early-returns on CHAINS_VISIBLE (false) while the live Pro paywall's Manage/cancel button (src/subscription.ts:331) routes through it, so a paying user cannot cancel in-app. The 2026-07-01 CLAUDE.md edit documents this gating without fixing the contradiction. Today's canonical audit is clean (0 critical/high/medium, 1 low), so the docs churn was net-positive maintainability. A live paid product with a dead cancel path is real breakage: verdict stays needs-attention until the money-path HIGHs land.",
         "actionsOpen": 11,
         "actionsClosed": 0,
         "actions": [
@@ -65,70 +65,70 @@
                 "id": "compliance-01",
                 "priority": 20,
                 "lens": "finance-product",
-                "title": "Fix the dead in-app cancel button: re-gate openBillingPortal() on PRO_PAYWALL_ENABLED not CHAINS_VISIBLE (src/subscription.ts:279)."
+                "title": "Re-gate openBillingPortal() on PRO_PAYWALL_ENABLED not CHAINS_VISIBLE so the live cancel button works (src/subscription.ts:279)."
             },
             {
                 "severity": "HIGH",
                 "id": "cost-01",
                 "priority": 20,
                 "lens": "cost-economics",
-                "title": "Add a global daily spend ceiling to handleExtractPhotosReal + handleParseCourseText (Sonnet-vision) using the DAILY_AI_SPEND_CAP_USD guard from research.js:252."
+                "title": "Apply the DAILY_AI_SPEND_CAP_USD guard to handleExtractPhotosReal + handleParseCourseText (worker/src/handlers/research.js:37,128)."
             },
             {
                 "severity": "HIGH",
                 "id": "webhook-01",
                 "priority": 16,
                 "lens": "reliability",
-                "title": "Harden the Stripe webhook money path: check payment_status=paid before writing active, dedupe on event.id, store stripe_subscription_id, and stop ACKing 200 when user/customer id is missing (billing.js:637-690)."
+                "title": "Harden the Stripe webhook: gate on payment_status=paid, dedupe on event.id, store stripe_subscription_id, stop ACKing 200 on missing user/customer id (billing.js:653-690)."
             },
             {
                 "severity": "HIGH",
                 "id": "dataint-01",
                 "priority": 16,
                 "lens": "data-integrity",
-                "title": "Add a Stripe->Supabase reconciliation pass (list active subs, correct drifted subscription_status) so a dropped webhook cannot strand entitlement."
+                "title": "Add a Stripe->Supabase reconciliation pass so a dropped webhook cannot strand entitlement."
             },
             {
                 "severity": "HIGH",
                 "id": "compliance-02",
                 "priority": 16,
                 "lens": "compliance-data-steward",
-                "title": "Write a refund/cancellation policy line in legal/terms.md to back the 'Cancel anytime - no surprise bills' modal claim (src/subscription.ts:208)."
+                "title": "Write a refund/cancellation policy line in legal/terms.md to back the 'Cancel anytime' modal claim (src/subscription.ts:208)."
             },
             {
                 "severity": "HIGH",
                 "id": "compliance-03",
                 "priority": 16,
                 "lens": "compliance-data-steward",
-                "title": "Add a payment/subscription section to legal/terms.md and effective-date the ToS + drop the DRAFT-do-not-publish banner now the product charges (src/legal-view.ts:295)."
+                "title": "Add a payment/subscription section to legal/terms.md, effective-date the ToS, drop the DRAFT banner (src/legal-view.ts:295)."
             },
             {
                 "severity": "MED",
                 "id": "dataint-02",
                 "priority": 15,
                 "lens": "data-integrity",
-                "title": "Convert the KV cost-cap counters to an atomic primitive (Durable Object or D1 UPDATE...RETURNING) so a concurrent burst cannot undercount past the spend cap (billing.js:104-215)."
+                "title": "Convert the KV cost-cap counters to an atomic primitive (Durable Object or D1 UPDATE...RETURNING) (billing.js:104-215)."
             },
             {
                 "severity": "MED",
                 "id": "finance-02",
                 "priority": 12,
                 "lens": "finance-product",
-                "title": "Decide dunning grace: keep past_due entitled through subscription_renews_at, or accept instant de-entitlement as a locked decision (migrations/0018:58, lib.js:1681)."
+                "title": "Decide dunning grace and lock it: keep past_due entitled through subscription_renews_at, or accept instant de-entitlement (migrations/0018:58, lib.js:1681)."
             },
             {
                 "severity": "MED",
                 "id": "reliability-02",
                 "priority": 12,
                 "lens": "reliability",
-                "title": "Fix the _checkSubscriptionEntitled stale comment (says fail-open, code fails closed) and add a short-TTL positive-entitlement cache to survive a transient Supabase outage (lib.js:1685)."
+                "title": "Fix the _checkSubscriptionEntitled stale comment (says fail-open, code fails closed) and add a short-TTL positive-entitlement cache (lib.js:1685)."
             },
             {
                 "severity": "MED",
                 "id": "reliability-03",
                 "priority": 10,
                 "lens": "reliability",
-                "title": "Add per-fetch timeouts (AbortSignal.timeout) on the Anthropic/Stripe/Supabase/PDGA upstream calls so a slow upstream fails fast (worker/src/*)."
+                "title": "Add per-fetch timeouts (AbortSignal.timeout) on the Anthropic/Stripe/Supabase/PDGA upstream calls (worker/src/*)."
             },
             {
                 "severity": "MED",
@@ -171,7 +171,7 @@
             "security": 78,
             "performance": 90,
             "data-integrity": 74,
-            "maintainability": 88,
+            "maintainability": 89,
             "solo-tool-ux": 90,
             "cost-economics": 72,
             "dependency": 86,
@@ -205,77 +205,77 @@
                 "id": "compliance-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "cost-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "webhook-01",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-01",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
                 "priority": 12,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "reliability-02",
                 "severity": "MED",
                 "priority": 12,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "reliability-03",
                 "severity": "MED",
                 "priority": 10,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "security-02",
                 "severity": "MED",
                 "priority": 8,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-01"
             }
         ],
@@ -285,14 +285,14 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 4
+                "runsSeen": 5
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 1
+                "runsSeen": 2
             }
         ]
     },
