@@ -1,259 +1,261 @@
 {
-  "project": "Scheduler",
-  "displayName": "Yes& Scheduler",
-  "version": "0.6.0",
-  "lastReleaseAt": "2026-06-28T18:21:22-05:00",
-  "lastReleaseMessage": "dashboard: writer emits standardized items-left and backlog item lists",
-  "milestone": {
-    "id": "M8",
-    "label": "Shift options + holidays",
-    "status": "shipped"
-  },
-  "completion": {
-    "pct": 60,
-    "anchored": "2026-06-28"
-  },
-  "itemsLeft": {
-    "open": 2,
-    "queue": 0,
-    "backlog": 0,
-    "gates": 2,
-    "items": [
-      "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
-      "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
-    ]
-  },
-  "backlog": {
-    "count": 0,
-    "items": []
-  },
-  "repoUrl": "https://github.com/TheProphetKane/yesandscheduler",
-  "workTreeClean": false,
-  "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-06-28.md",
-    "latestReportAt": "2026-06-28T07:07:14Z",
-    "findings": {
-      "high": 0,
-      "medium": 0,
-      "low": 0
-    }
-  },
-  "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-02.md",
-    "latestReportAt": "2026-07-02T11:37:14Z",
-    "verdict": "in-progress",
-    "topFinding": "First full 27-lens fan-out since 2026-06-28 (the two intervening runs were carry-forward), and the verdict holds at in-progress with health 88 (was 89). No BLOCK: all five hard rules pass. Two carry-forward actions are now closed in source: the README real-use-testing section (f9a2621) and the dashboard route-count regex (b896876), lifting solo-tool-ux 82 to 90 and observability 68 to 78. The dominant theme is a release/sync gap, not a code defect. The correct docs/DESIGN.md billing doc-sync has sat uncommitted five days across six raw commits, the published dashboard JSON is stale from the 06-28 ship (api routes still 0, audit pointer stuck at 06-28 while audits ran nightly through 07-02), and the YaE-side projects/scheduler page still reads v0.4.x. A commit plus a dashboard regen clears the first two; the audit loop needs a small structural fix so it closes without a ship. The full pass also surfaced pre-existing D1 write-path efficiency items (an unbatched, partial-write generate loop, a user-list N+1, an open-shifts correlated subquery) that are hardening, not breakage. The deeper question stays deferred: a healthy 60%-complete app idling on one unresolved Nick posture call, drive to first real user via seed-demo vs re-park.",
-    "actionsOpen": 7,
-    "actionsClosed": 2,
-    "actions": [
-      {
-        "severity": "MED",
-        "title": "Commit the stranded docs/DESIGN.md billing doc-sync now (git add docs/DESIGN.md then commit); stop closing drift findings as resolved-pending-commit before the commit exists.",
-        "lens": "version-pill-drift",
-        "priority": 15,
-        "id": "version-pill-drift-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Refresh X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html to v0.6.0, adding the M7.1 (v0.5.0) and billing (v0.6.0, migration 0009) content.",
-        "lens": "gate-page-publish",
-        "priority": 15,
-        "id": "gate-page-publish-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Close the canonical-audit loop: make it release-aware (post-commit audit sync in release.ps1, deduped by finding-id) or have audit-scheduler-nightly update the status JSON audit pointer and findings directly.",
-        "lens": "audit-loop-integrity",
-        "priority": 15,
-        "id": "audit-loop-integrity-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Rewrite the schedule-generate persist path: precompute an existing-assignment Set for O(1) membership and write all new assignments plus the seed stamp in one db.batch(), fixing both the O(N-squared)/serial-round-trip cost and the partial-write risk.",
-        "lens": "performance",
-        "priority": 12,
-        "id": "performance-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Kill the user-list N+1 (1+2N queries) by replacing per-user membership loads with two batched IN-queries grouped in memory.",
-        "lens": "performance",
-        "priority": 12,
-        "id": "performance-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Fix the open-shifts list query: compute the confirmed-count once instead of a correlated COUNT(*) subquery run twice per row.",
-        "lens": "kv-data-shape",
-        "priority": 12,
-        "id": "kv-data-shape-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Regenerate the published dashboard JSON (run write-dashboard-status.ps1) so the corrected api-routes metric and refreshed audit pointer go live.",
-        "lens": "observability",
-        "priority": 10,
-        "id": "observability-01"
-      }
-    ],
-    "deferred": [
-      {
-        "severity": "MED",
-        "title": "Surface the drive-to-first-user-via-seed-demo vs re-park posture decision to Nick; both completion gates dead-end on it.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Nick decision: posture (drive vs park)"
-      },
-      {
-        "severity": "MED",
-        "title": "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
-        "lens": "cost-economics",
-        "reason": "blocked on Nick decision: commit to Stripe milestone"
-      },
-      {
-        "severity": "LOW",
-        "title": "Record an explicit DESIGN section 23 decision on whether YaS is driven to first real user or re-parked.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Nick decision: posture call"
-      }
-    ],
-    "health": 88,
-    "lensScores": {
-      "architecture": 92,
-      "reliability": 90,
-      "security": 93,
-      "performance": 86,
-      "data-integrity": 89,
-      "maintainability": 88,
-      "solo-tool-ux": 90,
-      "cost-economics": 90,
-      "dependency": 93,
-      "observability": 78,
-      "strategic-kill-this": 80,
-      "compliance-data-steward": 92,
-      "worker-cpu-budget": 93,
-      "kv-data-shape": 90,
-      "auth-token-hygiene": 94,
-      "skill-suite-health": 92,
-      "work-queue-hygiene": 96,
-      "audit-loop-integrity": 66,
-      "fuse-truncation-defense": 93,
-      "incident-runbook-currency": 94,
-      "scheduled-task-firing-state": 90,
-      "skill-trigger-collisions": 91,
-      "skill-chain-handoff-integrity": 90,
-      "per-project-ps1-stack": 90,
-      "discord-notify-wiring": 95,
-      "version-pill-drift": 78,
-      "gate-page-publish": 72
-    },
-    "openFindings": [
-      {
-        "id": "version-pill-drift-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "gate-page-publish-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "audit-loop-integrity-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-06-28"
-      },
-      {
-        "id": "reliability-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "performance-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "performance-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "kv-data-shape-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "observability-01",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-02"
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 3,
-        "firstSeen": "2026-06-28"
-      }
-    ],
-    "tensionsOpen": [
-      {
-        "lenses": [
-          "cost-economics",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 3
-      },
-      {
-        "lenses": [
-          "reliability",
-          "performance"
-        ],
-        "runsSeen": 3
-      },
-      {
-        "lenses": [
-          "audit-loop-integrity",
-          "work-queue-hygiene"
-        ],
-        "runsSeen": 3
-      }
-    ]
-  },
-  "metrics": [
-    {
-      "k": "api routes",
-      "v": "0"
-    },
-    {
-      "k": "migrations",
-      "v": "9"
-    },
-    {
-      "k": "tests",
-      "v": "21"
-    }
-  ],
-  "workQueueDepth": 0,
-  "stale": false,
-  "tags": [
-    "cloud-edge",
-    "orchestration",
-    "release-pipeline"
-  ]
+    "project":  "Scheduler",
+    "displayName":  "Yes\u0026 Scheduler",
+    "version":  "0.7.0",
+    "lastReleaseAt":  "2026-07-03T16:24:52-05:00",
+    "lastReleaseMessage":  "Twenty-improvement quality pass across performance, corre...",
+    "milestone":  {
+                      "id":  "M8",
+                      "label":  "Shift options + holidays",
+                      "status":  "shipped"
+                  },
+    "completion":  {
+                       "pct":  60,
+                       "anchored":  "2026-06-28"
+                   },
+    "itemsLeft":  {
+                      "open":  4,
+                      "queue":  2,
+                      "backlog":  0,
+                      "gates":  2,
+                      "items":  [
+                                    "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
+                                    "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
+                                ]
+                  },
+    "backlog":  {
+                    "count":  0,
+                    "items":  [
+
+                              ]
+                },
+    "repoUrl":  "https://github.com/TheProphetKane/yesandscheduler",
+    "workTreeClean":  true,
+    "audit":  {
+                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-03.md",
+                  "latestReportAt":  "2026-07-03T07:08:08Z",
+                  "findings":  {
+                                   "high":  0,
+                                   "medium":  0,
+                                   "low":  0
+                               }
+              },
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-07-02.md",
+                     "latestReportAt":  "2026-07-02T11:37:14Z",
+                     "verdict":  "in-progress",
+                     "topFinding":  "First full 27-lens fan-out since 2026-06-28 (the two intervening runs were carry-forward), and the verdict holds at in-progress with health 88 (was 89). No BLOCK: all five hard rules pass. Two carry-forward actions are now closed in source: the README real-use-testing section (f9a2621) and the dashboard route-count regex (b896876), lifting solo-tool-ux 82 to 90 and observability 68 to 78. The dominant theme is a release/sync gap, not a code defect. The correct docs/DESIGN.md billing doc-sync has sat uncommitted five days across six raw commits, the published dashboard JSON is stale from the 06-28 ship (api routes still 0, audit pointer stuck at 06-28 while audits ran nightly through 07-02), and the YaE-side projects/scheduler page still reads v0.4.x. A commit plus a dashboard regen clears the first two; the audit loop needs a small structural fix so it closes without a ship. The full pass also surfaced pre-existing D1 write-path efficiency items (an unbatched, partial-write generate loop, a user-list N+1, an open-shifts correlated subquery) that are hardening, not breakage. The deeper question stays deferred: a healthy 60%-complete app idling on one unresolved Nick posture call, drive to first real user via seed-demo vs re-park.",
+                     "actionsOpen":  7,
+                     "actionsClosed":  2,
+                     "actions":  [
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Commit the stranded docs/DESIGN.md billing doc-sync now (git add docs/DESIGN.md then commit); stop closing drift findings as resolved-pending-commit before the commit exists.",
+                                         "lens":  "version-pill-drift",
+                                         "priority":  15,
+                                         "id":  "version-pill-drift-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Refresh X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html to v0.6.0, adding the M7.1 (v0.5.0) and billing (v0.6.0, migration 0009) content.",
+                                         "lens":  "gate-page-publish",
+                                         "priority":  15,
+                                         "id":  "gate-page-publish-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Close the canonical-audit loop: make it release-aware (post-commit audit sync in release.ps1, deduped by finding-id) or have audit-scheduler-nightly update the status JSON audit pointer and findings directly.",
+                                         "lens":  "audit-loop-integrity",
+                                         "priority":  15,
+                                         "id":  "audit-loop-integrity-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Rewrite the schedule-generate persist path: precompute an existing-assignment Set for O(1) membership and write all new assignments plus the seed stamp in one db.batch(), fixing both the O(N-squared)/serial-round-trip cost and the partial-write risk.",
+                                         "lens":  "performance",
+                                         "priority":  12,
+                                         "id":  "performance-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Kill the user-list N+1 (1+2N queries) by replacing per-user membership loads with two batched IN-queries grouped in memory.",
+                                         "lens":  "performance",
+                                         "priority":  12,
+                                         "id":  "performance-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Fix the open-shifts list query: compute the confirmed-count once instead of a correlated COUNT(*) subquery run twice per row.",
+                                         "lens":  "kv-data-shape",
+                                         "priority":  12,
+                                         "id":  "kv-data-shape-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Regenerate the published dashboard JSON (run write-dashboard-status.ps1) so the corrected api-routes metric and refreshed audit pointer go live.",
+                                         "lens":  "observability",
+                                         "priority":  10,
+                                         "id":  "observability-01"
+                                     }
+                                 ],
+                     "deferred":  [
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Surface the drive-to-first-user-via-seed-demo vs re-park posture decision to Nick; both completion gates dead-end on it.",
+                                          "lens":  "strategic-kill-this",
+                                          "reason":  "blocked on Nick decision: posture (drive vs park)"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
+                                          "lens":  "cost-economics",
+                                          "reason":  "blocked on Nick decision: commit to Stripe milestone"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Record an explicit DESIGN section 23 decision on whether YaS is driven to first real user or re-parked.",
+                                          "lens":  "strategic-kill-this",
+                                          "reason":  "blocked on Nick decision: posture call"
+                                      }
+                                  ],
+                     "health":  88,
+                     "lensScores":  {
+                                        "architecture":  92,
+                                        "reliability":  90,
+                                        "security":  93,
+                                        "performance":  86,
+                                        "data-integrity":  89,
+                                        "maintainability":  88,
+                                        "solo-tool-ux":  90,
+                                        "cost-economics":  90,
+                                        "dependency":  93,
+                                        "observability":  78,
+                                        "strategic-kill-this":  80,
+                                        "compliance-data-steward":  92,
+                                        "worker-cpu-budget":  93,
+                                        "kv-data-shape":  90,
+                                        "auth-token-hygiene":  94,
+                                        "skill-suite-health":  92,
+                                        "work-queue-hygiene":  96,
+                                        "audit-loop-integrity":  66,
+                                        "fuse-truncation-defense":  93,
+                                        "incident-runbook-currency":  94,
+                                        "scheduled-task-firing-state":  90,
+                                        "skill-trigger-collisions":  91,
+                                        "skill-chain-handoff-integrity":  90,
+                                        "per-project-ps1-stack":  90,
+                                        "discord-notify-wiring":  95,
+                                        "version-pill-drift":  78,
+                                        "gate-page-publish":  72
+                                    },
+                     "openFindings":  [
+                                          {
+                                              "id":  "version-pill-drift-02",
+                                              "severity":  "MED",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "gate-page-publish-01",
+                                              "severity":  "MED",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "audit-loop-integrity-01",
+                                              "severity":  "MED",
+                                              "priority":  15,
+                                              "runsOpen":  3,
+                                              "firstSeen":  "2026-06-28"
+                                          },
+                                          {
+                                              "id":  "reliability-01",
+                                              "severity":  "MED",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "performance-01",
+                                              "severity":  "MED",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "performance-02",
+                                              "severity":  "MED",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "kv-data-shape-01",
+                                              "severity":  "MED",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "observability-01",
+                                              "severity":  "MED",
+                                              "priority":  10,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-02"
+                                          },
+                                          {
+                                              "id":  "strategic-kill-this-01",
+                                              "severity":  "MED",
+                                              "priority":  12,
+                                              "runsOpen":  3,
+                                              "firstSeen":  "2026-06-28"
+                                          }
+                                      ],
+                     "tensionsOpen":  [
+                                          {
+                                              "lenses":  [
+                                                             "cost-economics",
+                                                             "strategic-kill-this"
+                                                         ],
+                                              "runsSeen":  3
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "reliability",
+                                                             "performance"
+                                                         ],
+                                              "runsSeen":  3
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "audit-loop-integrity",
+                                                             "work-queue-hygiene"
+                                                         ],
+                                              "runsSeen":  3
+                                          }
+                                      ]
+                 },
+    "metrics":  [
+                    {
+                        "k":  "api routes",
+                        "v":  "57"
+                    },
+                    {
+                        "k":  "migrations",
+                        "v":  "10"
+                    },
+                    {
+                        "k":  "test files",
+                        "v":  "22"
+                    }
+                ],
+    "workQueueDepth":  2,
+    "stale":  false,
+    "tags":  [
+                 "cloud-edge",
+                 "orchestration",
+                 "release-pipeline"
+             ]
 }
