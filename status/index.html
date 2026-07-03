@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>status &middot; yesandeverything</title>
 <meta name="description" content="Cross-project status dashboard for the Yes and... portfolio. Reads per-project JSON written by each release script.">
 <meta name="color-scheme" content="dark">
@@ -261,6 +262,7 @@
 </style>
 </head>
 <body>
+<noscript><p style="padding:24px;font-family:monospace;color:#a4aeba">This status dashboard renders from JSON in the browser and needs JavaScript enabled.</p></noscript>
 <div class="wrap">
 
   <header class="page">
@@ -606,6 +608,16 @@
 
   $("refresh-btn").addEventListener("click", refresh);
   refresh();
+  // auto-refresh every 5 minutes; pause while the tab is hidden
+  var refreshTimer = setInterval(refresh, 300000);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+    } else {
+      refresh();
+      refreshTimer = setInterval(refresh, 300000);
+    }
+  });
 })();
 </script>
 </body>

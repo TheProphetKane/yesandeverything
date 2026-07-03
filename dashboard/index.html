@@ -893,6 +893,7 @@
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
+<noscript><p style="padding:24px;font-family:monospace;color:#a4aeba">This dashboard renders entirely in the browser and needs JavaScript enabled.</p></noscript>
 
 <div class="gate" id="gate" hidden>
   <div class="gcard">
@@ -3149,25 +3150,27 @@
   });
   $("refresh-btn").addEventListener("click", refresh);
   $("lists-btn").addEventListener("click", function () { openLists("actions"); });
-  // local HUD clock
-  (function clock() {
-    function tickClock() {
-      var d = new Date();
-      function p2(n) { return (n < 10 ? "0" : "") + n; }
-      $("hud-clock").textContent = p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
-    }
-    tickClock();
-    setInterval(tickClock, 1000);
-  })();
+  // local HUD clock (paused while the tab is hidden, see visibilitychange below)
+  var clockTimer = null;
+  function tickClock() {
+    var d = new Date();
+    function p2(n) { return (n < 10 ? "0" : "") + n; }
+    $("hud-clock").textContent = p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
+  }
+  tickClock();
+  clockTimer = setInterval(tickClock, 1000);
   // pause the pollers while the tab is hidden
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
       if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+      if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
     } else {
       refresh();
       refreshTimer = setInterval(refresh, 60000);
       resetAuto();
+      tickClock();
+      if (!clockTimer) clockTimer = setInterval(tickClock, 1000);
     }
   });
 
