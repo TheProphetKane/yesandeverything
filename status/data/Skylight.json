@@ -1,0 +1,127 @@
+{
+  "name": "YesAndSkylight",
+  "display_name": "Yes& Skylight",
+  "private": true,
+  "note": "Private family tool. Off the public site and status dashboard by DESIGN D9. This data file exists for the bar-raise / constellation tooling only; it is not linked from any public surface.",
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-07-03.md",
+    "latestReportAt": "2026-07-03T11:48:13Z",
+    "verdict": "needs-attention",
+    "topFinding": "The web-form event path files timed events at the wrong instant. `src/ui.ts:113` submits the raw `datetime-local` string (for example `2026-06-20T16:00`, no timezone) as `startsAt`; `toIso()` at `src/router.ts:73` runs it through `new Date(...).toISOString()`, and because a Worker's local timezone is UTC, ECMAScript reads the offset-less string as UTC and stamps `16:00Z`. The Google driver (`src/google.ts:102`) then sends that `Z`-suffixed instant alongside `timeZone: \"America/New_York\"`; Google honours the explicit offset, so a 4pm entry lands at 4pm UTC, which is noon Eastern. Result: a 4 to 5 hour skew on every timed event added from the phone form, the primary front door. The email path is unaffected (the parser is told to emit an ISO string with an offset, so the offset survives). This is a real runtime correctness bug in a shipped path and is why the verdict is needs-attention rather than in-progress; everything else is polish or config drift.",
+    "actionsOpen": 4,
+    "actionsClosed": 0,
+    "actions": [
+      {
+        "severity": "HIGH",
+        "title": "Interpret offset-less datetime-local input in DEFAULT_TIMEZONE (or send Google a naive dateTime + timeZone) so web-form timed events stop landing 4 to 5 hours off.",
+        "lens": "reliability",
+        "priority": 16,
+        "id": "reliability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Default-deny inbound mail when ALLOWED_SENDERS is unset or empty.",
+        "lens": "security",
+        "priority": 12,
+        "id": "security-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a vitest suite covering toIso/addHour/today timezone cases and extractJson.",
+        "lens": "maintainability",
+        "priority": 12,
+        "id": "maintainability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "For all-day Google events set end.date to start + 1 day so they stop 400ing.",
+        "lens": "reliability",
+        "priority": 9,
+        "id": "reliability-02"
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "MED",
+        "title": "Update .project-context.json Google phase-2 framing to reflect the shipped, primary driver.",
+        "lens": "compliance-data-steward",
+        "reason": "already queued by the 2026-07-02 canonical audit"
+      },
+      {
+        "severity": "LOW",
+        "title": "Relocate the GCP service-account key to X:\\.secrets\\Skylight (not an exposure; gitignored + untracked).",
+        "lens": "compliance-data-steward",
+        "reason": "already queued by the 2026-07-02 canonical audit"
+      },
+      {
+        "severity": "LOW",
+        "title": "Gate inbound mail on DMARC / verified-sender alignment (From header is spoofable).",
+        "lens": "security",
+        "reason": "post-1.0, low family-tool impact"
+      },
+      {
+        "severity": "LOW",
+        "title": "Add an offline outbox to the PWA service worker.",
+        "lens": "PWA",
+        "reason": "post-1.0 polish"
+      }
+    ],
+    "health": 83,
+    "lensScores": {
+      "architecture": 88,
+      "reliability": 72,
+      "security": 74,
+      "performance": 92,
+      "data-integrity": 68,
+      "maintainability": 80,
+      "solo-tool-ux": 88,
+      "cost-economics": 95,
+      "dependency": 84,
+      "observability": 82,
+      "strategic-kill-this": 90,
+      "compliance-data-steward": 85,
+      "cloud-edge": 85,
+      "PWA": 87,
+      "release-pipeline": 82
+    },
+    "openFindings": [
+      {
+        "id": "reliability-01",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-03"
+      },
+      {
+        "id": "security-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-03"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-03"
+      },
+      {
+        "id": "reliability-02",
+        "severity": "MED",
+        "priority": 9,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-03"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "security",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  }
+}
