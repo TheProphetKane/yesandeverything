@@ -31,6 +31,9 @@ export function createState(initial) {
     const next = structuredClone(state);
     let cur = next;
     for (let i = 0; i < parts.length - 1; i++) {
+      // Create missing intermediate objects instead of throwing on a path a
+      // migration hasn't backfilled yet (e.g. old saved state).
+      if (cur[parts[i]] === undefined || cur[parts[i]] === null) cur[parts[i]] = {};
       cur = cur[parts[i]];
     }
     cur[parts[parts.length - 1]] = value;

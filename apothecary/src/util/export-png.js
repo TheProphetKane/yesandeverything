@@ -1,12 +1,41 @@
 // export-png.js - render the print-stage to a PNG via html2canvas.
 //
-// html2canvas is loaded as a <script> tag in index.html and attaches to
-// window.html2canvas. We make the print-stage briefly visible offscreen so
-// html2canvas can measure and rasterize it, then restore the inline style.
+// html2canvas is lazy-loaded from cdnjs on the first export click (it's ~194KB
+// that most sessions never need) and attaches to window.html2canvas. The SRI
+// hash pins the exact 1.4.1 build (verified against the cdnjs API). We make
+// the print-stage briefly visible offscreen so html2canvas can measure and
+// rasterize it, then restore the inline style.
+
+const H2C_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+const H2C_SRI = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
+
+let h2cLoading = null;
+function loadHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve();
+  if (h2cLoading) return h2cLoading;
+  h2cLoading = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = H2C_URL;
+    s.integrity = H2C_SRI;
+    s.crossOrigin = 'anonymous';
+    s.onload = () => resolve();
+    s.onerror = () => {
+      // Clear the memo so a later click retries after a transient failure.
+      h2cLoading = null;
+      s.remove();
+      reject(new Error('html2canvas failed to load'));
+    };
+    document.head.appendChild(s);
+  });
+  return h2cLoading;
+}
 
 export async function exportPng(filename = 'apothecary-label.png') {
-  if (typeof window === 'undefined' || !window.html2canvas) {
-    alert('PNG export is loading. Try again in a moment.');
+  if (typeof window === 'undefined') return;
+  try {
+    await loadHtml2Canvas();
+  } catch {
+    alert('PNG export needs to fetch its renderer and the download failed. Check the connection and try again.');
     return;
   }
   const stage = document.getElementById('print-stage');

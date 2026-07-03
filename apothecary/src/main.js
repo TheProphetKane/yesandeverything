@@ -330,16 +330,32 @@ async function main() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => paint(state.get()), 80);
   });
-  window.addEventListener('orientationchange', () => paint(state.get()));
+  window.addEventListener('orientationchange', () => {
+    // Sync the width snapshot so the resize event that accompanies an
+    // orientation flip doesn't schedule a second, redundant repaint.
+    lastViewportW = window.innerWidth;
+    paint(state.get());
+  });
 
-  // v0.16: save indicator flashes when the debounced save fires.
+  // v0.16: save indicator flashes when the debounced save fires. The CSS class
+  // drives the visual; the textContent drives the screen-reader announcement
+  // through the aria-live node. Both run here, on actual saves only - not on
+  // every state change - so pure UI repaints (preview collapse, etc.) don't
+  // spam timers or announcements.
   const saveIndicator = document.querySelector('[data-save-indicator]');
+  const saveIndicatorText = saveIndicator?.querySelector('.app-status-text');
+  function flashSaveIndicator() {
+    if (!saveIndicator) return;
+    saveIndicator.classList.add('is-saving');
+    if (saveIndicatorText) saveIndicatorText.textContent = 'Saving';
+    setTimeout(() => {
+      saveIndicator.classList.remove('is-saving');
+      if (saveIndicatorText) saveIndicatorText.textContent = 'Saved';
+    }, 1100);
+  }
   const debouncedSave = debounce((s) => {
     saveState(s);
-    if (saveIndicator) {
-      saveIndicator.classList.add('is-saving');
-      setTimeout(() => saveIndicator.classList.remove('is-saving'), 1100);
-    }
+    flashSaveIndicator();
   }, 200);
   state.subscribe(debouncedSave);
 
@@ -354,8 +370,9 @@ async function main() {
   // v0.16: global keyboard shortcuts.
   //   ?               -> open the shortcut help dialog
   //   Esc             -> close any open popover or open dialog
-  //   Ctrl/Cmd + P    -> print (also the native shortcut, but we make sure
-  //                      our print-stage layout is fresh first)
+  //   Ctrl/Cmd + P    -> print. Handled natively by the browser (no JS handler
+  //                      here); the print-stage is already fresh because
+  //                      render() rebuilds it on every state change.
   //   Ctrl/Cmd + K    -> focus the herb search input
   //   Ctrl/Cmd + S    -> force an immediate persist + flash save indicator
   //   Alt + 1..4      -> toggle Content / Style / Layout / Output sections
@@ -366,6 +383,11 @@ async function main() {
   });
   document.querySelector('[data-shortcut-close]')?.addEventListener('click', () => {
     helpDialog?.close();
+  });
+  // Light dismiss: a click on the backdrop (the dialog element itself, outside
+  // its content box) closes the dialog, matching Esc and the close button.
+  helpDialog?.addEventListener('click', (e) => {
+    if (e.target === helpDialog) helpDialog.close();
   });
 
   document.addEventListener('keydown', (e) => {
@@ -403,10 +425,7 @@ async function main() {
     }
     if (mod && (e.key === 's' || e.key === 'S')) {
       saveState(state.get());
-      if (saveIndicator) {
-        saveIndicator.classList.add('is-saving');
-        setTimeout(() => saveIndicator.classList.remove('is-saving'), 1100);
-      }
+      flashSaveIndicator();
       e.preventDefault();
       return;
     }
@@ -444,19 +463,6 @@ async function main() {
     document.querySelectorAll('.layout-color-popover').forEach(p => p.remove());
   }, true);
 
-  // v0.16: when a user opens a section via keyboard shortcut or click, focus
-  // the first focusable element inside its body for fast keyboard input.
-  document.addEventListener('click', (e) => {
-    const head = e.target instanceof HTMLElement && e.target.closest('.ed-section-head');
-    if (!head) return;
-    const sec = head.closest('.ed-section');
-    if (!sec?.classList.contains('ed-section--open')) return;
-    const body = sec.querySelector('.ed-section-body');
-    const first = body?.querySelector('input:not([hidden]), textarea, select, button');
-    // Don't yank focus on click; user already used the mouse. This intentionally
-    // doesn't auto-focus on mouse clicks - keyboard handler below does.
-  });
-
   // v0.16: window-visibility persist guard. When the user backgrounds the
   // tab on mobile, force a snapshot save so iOS Safari's aggressive page
   // freezing doesn't drop the latest debounced state.
@@ -466,16 +472,20 @@ async function main() {
     }
   });
 
-  // v0.16: announce save status to screen readers via the existing aria-live
-  // node. The CSS class drives the visual; the textContent drives the SR text.
-  state.subscribe(() => {
-    const t = saveIndicator?.querySelector('.app-status-text');
-    if (t) t.textContent = 'Saving';
-    setTimeout(() => { if (t) t.textContent = 'Saved'; }, 280);
-  });
 }
 
 main().catch(err => {
   console.error('Apothecary label creator failed to start:', err);
-  document.body.innerHTML = '<pre style="color:#C4580A; padding:20px; font-family:monospace;">' + (err.stack || err.message) + '</pre>';
+  // Build the failure screen with textContent, never innerHTML: error text can
+  // echo request URLs and other unescaped input.
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:20px; font-family:monospace; color:#C4580A;';
+  const headline = document.createElement('p');
+  headline.style.cssText = 'margin:0 0 12px; font-weight:700;';
+  headline.textContent = 'The label designer failed to start. Reload the page to retry; details below.';
+  const detail = document.createElement('pre');
+  detail.style.cssText = 'margin:0; white-space:pre-wrap;';
+  detail.textContent = err && (err.stack || err.message) || String(err);
+  wrap.append(headline, detail);
+  document.body.replaceChildren(wrap);
 });

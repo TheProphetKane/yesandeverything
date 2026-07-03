@@ -355,8 +355,10 @@ export const ITEM_LABELS = {
 
 export const ALL_ITEM_KEYS = Object.keys(ITEM_RENDERERS);
 
+// Guard on document existing so the module stays importable under node
+// (test-render.mjs); in that environment fonts are moot, mark ready.
 let fontsReady = false;
-if (document.fonts && document.fonts.ready) {
+if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
   document.fonts.ready.then(() => { fontsReady = true; });
 } else {
   fontsReady = true;
@@ -557,8 +559,8 @@ export function render(state, mounts, ctx) {
       const side = btn.dataset.previewToggle;
       const cur = state.previewCollapse ?? { front: false, back: false };
       const next = { ...cur, [side]: !cur[side] };
-      // ctx.setState is provided by main.js as a hook into the state setter so
-      // render.js doesn't need to know about the createState API directly.
+      // ctx.setPreviewCollapse is provided by main.js as a hook into the state
+      // setter so render.js doesn't need to know the createState API directly.
       if (typeof ctx.setPreviewCollapse === 'function') {
         ctx.setPreviewCollapse(next);
       }
@@ -580,9 +582,13 @@ export function render(state, mounts, ctx) {
   if (fontsReady) {
     fits.forEach(el => autofitText(el));
   } else {
+    // Every render before the fonts land queues its own .then holding that
+    // render's NodeList. A later render replaces the preview's innerHTML, so
+    // skip nodes that are no longer in the document by the time fonts arrive;
+    // the render that owns the live nodes autofits them itself.
     document.fonts.ready.then(() => {
       fontsReady = true;
-      fits.forEach(el => autofitText(el));
+      fits.forEach(el => { if (el.isConnected) autofitText(el); });
     });
   }
 }

@@ -50,10 +50,10 @@ export function mountSavedLabels(root, state) {
           <span class="saved-item-date">${fmt(e.updatedAt)}</span>
         </div>
         <div class="saved-item-actions">
-          <button type="button" data-act="load"      data-id="${e.id}" title="Load">↥</button>
-          <button type="button" data-act="duplicate" data-id="${e.id}" title="Duplicate">⎘</button>
-          <button type="button" data-act="rename"    data-id="${e.id}" title="Rename">✎</button>
-          <button type="button" data-act="delete"    data-id="${e.id}" title="Delete">✕</button>
+          <button type="button" data-act="load"      data-id="${e.id}" title="Load"      aria-label="Load ${esc(e.name)}">↥</button>
+          <button type="button" data-act="duplicate" data-id="${e.id}" title="Duplicate" aria-label="Duplicate ${esc(e.name)}">⎘</button>
+          <button type="button" data-act="rename"    data-id="${e.id}" title="Rename"    aria-label="Rename ${esc(e.name)}">✎</button>
+          <button type="button" data-act="delete"    data-id="${e.id}" title="Delete"    aria-label="Delete ${esc(e.name)}">✕</button>
         </div>
       </li>
     `).join('');
