@@ -43,7 +43,13 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 10  # v10: adds Ring (X:\YesAndRing, FORMERLY X:\YesAndCats - it owns
+$ATTRIB_VERSION = 11  # v11 (2026-07-03): task-name patterns for the new per-project
+# routines (audit-agents/ring/cattery/skylight, bar-raise-ring/cattery/skylight);
+# bar-raise-yaag -> Agents ordered before bar-raise-yaa (substring collision had sent
+# Agents' daily bar-raise to Apothecary); taskProj now persists in per-file state so
+# incremental scans keep a task session's identity (it was detected on first scan
+# only, then lost - long audit sessions drifted to Everything by vote majority).
+# v10: adds Ring (X:\YesAndRing, FORMERLY X:\YesAndCats - it owns
                       # data\breed-art and is the TICA show tracker) + Cattery
                       # (X:\YesAndCattery, a SEPARATE breeder-marketplace project);
                       # forces a full re-scan re-truing the historical Ring/Cattery
@@ -86,6 +92,15 @@ $PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
 $PROJECT_PATTERNS = @(
   # scheduled-task names first: a task session belongs to its project even when
   # its prompt also mentions the YaE queue or other repos
+  @{ pat = "bar-raise-yaag";      id = "Agents" },     # BEFORE bar-raise-yaa: yaa is a substring of yaag
+  @{ pat = "audit-agents";        id = "Agents" },
+  @{ pat = "bar-raise-ring";      id = "Ring" },
+  @{ pat = "audit-ring";          id = "Ring" },
+  @{ pat = "bar-raise-cattery";   id = "Cattery" },
+  @{ pat = "audit-cattery";       id = "Cattery" },
+  @{ pat = "bar-raise-skylight";  id = "Skylight" },
+  @{ pat = "audit-skylight";      id = "Skylight" },
+  @{ pat = "bar-raise-constellation"; id = "Everything" },  # cross-project by design
   @{ pat = "audit-htbh";          id = "Hordes" },
   @{ pat = "bar-raise-hbh";       id = "Hordes" },
   @{ pat = "audit-brackish";      id = "Rising" },
@@ -280,7 +295,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     foreach ($prop in $state.files.PSObject.Properties) {
       $votes = @{}
       if ($prop.Value.votes) { foreach ($v in $prop.Value.votes.PSObject.Properties) { $votes[$v.Name] = [int]$v.Value } }
-      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs }
+      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs; taskProj = $prop.Value.taskProj }
     }
     foreach ($row in $state.agg) {
       $rp = Resolve-ProjectId $row.p
@@ -436,6 +451,9 @@ foreach ($root in $SCAN_ROOTS) {
       # majority vote to Everything and zeroes the audited project.
       $taskProj = $null
       if ($body -match 'scheduled-task name=[''"\\]*([\w-]+)') { $taskProj = Get-ProjectFor $matches[1] }
+      # incremental scans lose the head-of-file task tag; fall back to the identity
+      # remembered from the first scan of this transcript
+      if (-not $taskProj -and $prev -and $prev.taskProj) { $taskProj = $prev.taskProj }
       $fileProj = $null
       if ($taskProj) { $fileProj = $taskProj }
       elseif ($votes.Count -gt 0) { $fileProj = ($votes.GetEnumerator() | Sort-Object -Property Value -Descending | Select-Object -First 1).Key }
@@ -458,7 +476,7 @@ foreach ($root in $SCAN_ROOTS) {
       if ($Audit -and $fileTok -gt 0) {
         $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "Everything" }); tokens = $fileTok }
       }
-      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }) }
+      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }); taskProj = $taskProj }
     } catch {
       Write-Host "WARN: error reading $key ($($_.Exception.Message)); file skipped this run." -ForegroundColor Yellow
     } finally {
