@@ -1,71 +1,206 @@
 {
-    "project":  "Budget",
-    "displayName":  "Yes\u0026 Budget",
-    "version":  "0.14.4",
-    "lastReleaseAt":  "2026-07-03T16:52:16-05:00",
-    "lastReleaseMessage":  "Hardening pass across api and web. Rules API rejects bad regex and inverted amount bounds, rule preview now agrees with apply (LIKE wildcards escaped), archived Plaid rows stay out of categorize and rules passes, budgets PUT enforces integer cents per D-003, analytics query params are clamped, and /api/stats collapsed to one query and now reports the archived count. Web: fully typed api client, dashboard tiles show an error with retry instead of a stuck skeleton when a fetch fails, month-switch race guard on the dashboard, date displays no longer shift a day across the UTC boundary, react-dom realigned to 18 after a bad dependabot pairing, react-router advisory cleared. Release tooling clears git locks only through the git-guard liveness check. 18 new tests.",
-    "milestone":  {
-                      "id":  "M6",
-                      "label":  "Budgets + goals",
-                      "status":  "done"
-                  },
-    "completion":  {
-                       "pct":  100,
-                       "anchored":  "2026-06-25"
-                   },
-    "itemsLeft":  {
-                      "open":  1,
-                      "queue":  1,
-                      "backlog":  0,
-                      "gates":  0,
-                      "items":  [
-
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandbudget",
-    "workTreeClean":  true,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-03.md",
-                  "latestReportAt":  "2026-07-03T07:49:40Z",
-                  "findings":  {
-                                   "high":  0,
-                                   "medium":  0,
-                                   "low":  0
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-07-03.md",
-                     "latestReportAt":  "2026-07-03T11:33:46Z",
-                     "verdict":  "working",
-                     "topFinding":  "Carry-forward pass. The skip-unchanged gate fired on all four conditions: zero commits since the last bar-raise (last commit dba26f3 landed 2026-07-01, before the 2026-07-02 run), the working tree carries only the same one-line DESIGN.md D-007 doc-sync the prior run already flagged, no open BLOCK, and work-queue depth 0. Lens scores and health (89) carry forward unchanged from the 2026-07-02 full pass; the twelve Tier-1 lenses were not re-fanned because nothing measurable changed. Aging still ticks: dependency-01 is now 2 runs open, security-01 3. The one live gap is unchanged drift, not breakage: the doc-sync plus the merged vite 8 / typescript 6 / plugin-react 6 majors sit unreleased, so pills still read 0.14.3 while main does not. Closing dependency-01 (commit the doc-sync, cut v0.14.4) clears it. Next full pass forces by 2026-07-09 regardless.",
-                     "actionsOpen":  1,
-                     "actionsClosed":  0
-                 },
-    "metrics":  [
-                    {
-                        "k":  "importers",
-                        "v":  "4"
-                    },
-                    {
-                        "k":  "locked decisions",
-                        "v":  "13"
-                    },
-                    {
-                        "k":  "test files",
-                        "v":  "29"
-                    }
-                ],
-    "workQueueDepth":  1,
-    "stale":  false,
-    "tags":  [
-                 "finance-product",
-                 "orchestration",
-                 "release-pipeline"
-             ]
+  "project": "Budget",
+  "displayName": "Yes& Budget",
+  "version": "0.14.4",
+  "lastReleaseAt": "2026-07-03T16:52:16-05:00",
+  "lastReleaseMessage": "Hardening pass across api and web. Rules API rejects bad regex and inverted amount bounds, rule preview now agrees with apply (LIKE wildcards escaped), archived Plaid rows stay out of categorize and rules passes, budgets PUT enforces integer cents per D-003, analytics query params are clamped, and /api/stats collapsed to one query and now reports the archived count. Web: fully typed api client, dashboard tiles show an error with retry instead of a stuck skeleton when a fetch fails, month-switch race guard on the dashboard, date displays no longer shift a day across the UTC boundary, react-dom realigned to 18 after a bad dependabot pairing, react-router advisory cleared. Release tooling clears git locks only through the git-guard liveness check. 18 new tests.",
+  "milestone": {
+    "id": "M6",
+    "label": "Budgets + goals",
+    "status": "done"
+  },
+  "completion": {
+    "pct": 100,
+    "anchored": "2026-06-25"
+  },
+  "itemsLeft": {
+    "open": 1,
+    "queue": 1,
+    "backlog": 0,
+    "gates": 0,
+    "items": []
+  },
+  "backlog": {
+    "count": 0,
+    "items": []
+  },
+  "repoUrl": "https://github.com/TheProphetKane/yesandbudget",
+  "workTreeClean": true,
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-03.md",
+    "latestReportAt": "2026-07-03T07:49:40Z",
+    "findings": {
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-07-04.md",
+    "latestReportAt": "2026-07-04T11:43:42Z",
+    "verdict": "working",
+    "topFinding": "Full pass on the v0.14.4 hardening release; health holds at 89 (working). All four hard rules verified live (D-006 loopback bind at server.ts:1256, D-003 integer cents, D-001 no importer outbound, D-004/D-007 backup-then-fail-503), pnpm audit clean at high+, and every version pill reads 0.14.4. The one substantive new gap: POST /api/transactions/bulk-delete (server.ts:534) permanently deletes rows with no pre-delete snapshot, the only user-facing destructive path that skips the createBackup step every other mutating route takes (two lenses flagged it MED). A second MED: scripts/push-to-github.ps1:28-31 still blind-deletes .git/index.lock before its Assert-GitSafe guard, the FUSE-corruption race v0.14.4 removed from release.ps1/preship.ps1 but missed here, and release.ps1 delegates its push to it. Also actionable: narrow the wildcard yesandeverything.com CORS grant to the GET probe route, and reconcile the Budget audit/resources Discord webhook wiring against the naming standard. Prior dependency-01 (cut v0.14.4) is closed; the security destructive-endpoint token-guard stays a deferred security-vs-solo-ux tradeoff, now 4 runs open.",
+    "actionsOpen": 4,
+    "actionsClosed": 1,
+    "actions": [
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "data-integrity-01",
+        "lens": "data-integrity",
+        "title": "Add createBackup(\"pre-bulk-delete\") + 503-on-fail to POST /api/transactions/bulk-delete (server.ts:534), the only destructive path skipping the snapshot every other mutating route takes."
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "release-pipeline-ps1-stack-01",
+        "lens": "release-pipeline-ps1-stack",
+        "title": "Delete the blind Remove-Item .git\\index.lock block in scripts/push-to-github.ps1:28-31 and rely on the already-present Assert-GitSafe guard."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "security-01",
+        "lens": "security",
+        "title": "Narrow the yesandeverything.com CORS grant (server.ts:90-99) off the wildcard /* to the GET probe route only."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "release-pipeline-discord-notify-01",
+        "lens": "release-pipeline-discord-notify",
+        "title": "Reconcile the Budget audit/resources Discord webhook wiring against the naming standard (fifth webhook file missing; post-audit-digests.ps1 posts to #budget-resources via the audit webhook)."
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "MED",
+        "title": "Add a per-boot-token or Sec-Fetch-Site same-origin guard on the destructive loopback endpoints (Plaid takeover/restore, backup/import deletes).",
+        "lens": "security",
+        "reason": "standing security-vs-solo-ux tradeoff awaiting Nick's friction-level call; tension 4 runs open"
+      },
+      {
+        "severity": "LOW",
+        "title": "Gate the future opt-in LLM categorization fallback behind a flag + a test asserting no amounts/dates/account-ids leave the machine.",
+        "lens": "compliance-data-steward",
+        "reason": "feature unbuilt; enforce when it lands"
+      },
+      {
+        "severity": "LOW",
+        "title": "Extract the server.ts CRUD handlers out of the 1703-line monolith.",
+        "lens": "architecture",
+        "reason": "post-1.0 deferred refactor"
+      },
+      {
+        "severity": "LOW",
+        "title": "Migrate the SQLCipher key off keytar.",
+        "lens": "security",
+        "reason": "gated on a keytar build/load failure trigger (DECIDED 2026-06-25: keep)"
+      },
+      {
+        "severity": "LOW",
+        "title": "Flip the Plaid connector from Sandbox to Production.",
+        "lens": "reliability",
+        "reason": "gated on external paid approval (D-012)"
+      }
+    ],
+    "health": 89,
+    "lensScores": {
+      "architecture": 88,
+      "reliability": 92,
+      "security": 78,
+      "performance": 93,
+      "data-integrity": 84,
+      "maintainability": 91,
+      "solo-tool-ux": 92,
+      "cost-economics": 97,
+      "dependency": 88,
+      "observability": 94,
+      "strategic-kill-this": 93,
+      "compliance-data-steward": 93,
+      "finance-product-threat-model": 82,
+      "finance-product-dedupe": 93,
+      "finance-product-backup-cadence": 82,
+      "finance-product-categorization-tail": 90,
+      "orchestration-skill-suite-health": 94,
+      "orchestration-work-queue-hygiene": 82,
+      "orchestration-audit-loop-integrity": 93,
+      "orchestration-fuse-truncation-defense": 96,
+      "orchestration-incident-runbook-currency": 92,
+      "orchestration-scheduled-task-firing-state": 93,
+      "orchestration-skill-trigger-collisions": 91,
+      "orchestration-skill-chain-handoff-integrity": 88,
+      "release-pipeline-ps1-stack": 74,
+      "release-pipeline-discord-notify": 78,
+      "release-pipeline-version-pill-drift": 96,
+      "release-pipeline-gate-page-publish": 95
+    },
+    "openFindings": [
+      {
+        "id": "data-integrity-01",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-04"
+      },
+      {
+        "id": "release-pipeline-ps1-stack-01",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-04"
+      },
+      {
+        "id": "security-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 4,
+        "firstSeen": "2026-07-01"
+      },
+      {
+        "id": "release-pipeline-discord-notify-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-04"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "security",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 4
+      },
+      {
+        "lenses": [
+          "data-integrity",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "importers",
+      "v": "4"
+    },
+    {
+      "k": "locked decisions",
+      "v": "13"
+    },
+    {
+      "k": "test files",
+      "v": "29"
+    }
+  ],
+  "workQueueDepth": 1,
+  "stale": false,
+  "tags": [
+    "finance-product",
+    "orchestration",
+    "release-pipeline"
+  ]
 }
