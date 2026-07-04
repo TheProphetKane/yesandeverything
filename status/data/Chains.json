@@ -53,89 +53,110 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-03.md",
-        "latestReportAt": "2026-07-03T11:23:42Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-04.md",
+        "latestReportAt": "2026-07-04T07:10:00Z",
         "verdict": "needs-attention",
-        "topFinding": "Still nothing on the money path since 2026-07-01. The one commit since the 2026-07-02 pass (f944ace) is the completed code-audit-filename queue item and touches no code; the only dirty file is a one-line docs edit to PROJECT_SPEC.md. Every money-path source last moved on or before 2026-06-30, so all eleven open findings carry forward and age to run 3, led by the still-dead in-app cancel button: openBillingPortal() (src/subscription.ts:279) still early-returns on CHAINS_VISIBLE (false) while the live Pro paywall's Manage/cancel button (src/subscription.ts:331) routes through it, so a paying user cannot cancel in-app (re-verified live this run). Today's canonical audit is clean (0 critical/high/medium, 1 low). A live paid product with a dead cancel path is real breakage: verdict stays needs-attention until the money-path HIGHs land.",
-        "actionsOpen": 11,
-        "actionsClosed": 0,
+        "topFinding": "The money path moved this run: v0.55.2/v0.56.0 closed real gaps (constant-time compares everywhere, security 78 to 92; near-comprehensive per-fetch timeouts; a Pro-entitlement gate on the AI-spend endpoints that killed the anonymous-drain vector, cost-01 downgraded HIGH to MED). But the live paid product still ships its one self-serve action broken: openBillingPortal() (src/subscription.ts:280) early-returns on the dormant CHAINS_VISIBLE flag while the live 'Manage / cancel subscription' button (:332) routes through it, so a paying subscriber cannot cancel in-app. The full sweep also caught a new HIGH: the worker verifies no Supabase JWT and trusts a client-supplied body.userId for every entitlement decision, so a known UUID spoofs Pro access. The legal cluster stays weakest (compliance 62, finance-product 62): DRAFT terms with no payment/refund clause behind the 'Cancel anytime' copy, and legal/terms.md is now truncated in HEAD and diverged from the served terms. Health holds flat at 86; verdict stays needs-attention until the money-path HIGHs land.",
+        "actionsOpen": 14,
+        "actionsClosed": 2,
         "actions": [
             {
                 "severity": "HIGH",
                 "id": "compliance-01",
+                "priority": 25,
+                "lens": "compliance-data-steward",
+                "title": "Re-gate openBillingPortal() on PRO_PAYWALL_ENABLED not CHAINS_VISIBLE so the live cancel button works (src/subscription.ts:280)."
+            },
+            {
+                "severity": "HIGH",
+                "id": "auth-01",
                 "priority": 20,
                 "lens": "finance-product",
-                "title": "Re-gate openBillingPortal() on PRO_PAYWALL_ENABLED not CHAINS_VISIBLE so the live cancel button works (src/subscription.ts:279)."
-            },
-            {
-                "severity": "HIGH",
-                "id": "cost-01",
-                "priority": 20,
-                "lens": "cost-economics",
-                "title": "Apply the DAILY_AI_SPEND_CAP_USD guard to handleExtractPhotosReal + handleParseCourseText (worker/src/handlers/research.js:37,128)."
-            },
-            {
-                "severity": "HIGH",
-                "id": "webhook-01",
-                "priority": 16,
-                "lens": "reliability",
-                "title": "Harden the Stripe webhook: gate on payment_status=paid, dedupe on event.id, store stripe_subscription_id, stop ACKing 200 on missing user/customer id (billing.js:653-690)."
+                "title": "Verify the Supabase access-token JWT on the billing and AI-spend routes and derive userId from the verified claim instead of trusting body.userId (lib.js:1717, billing.js:53)."
             },
             {
                 "severity": "HIGH",
                 "id": "dataint-01",
-                "priority": 16,
+                "priority": 20,
                 "lens": "data-integrity",
-                "title": "Add a Stripe->Supabase reconciliation pass so a dropped webhook cannot strand entitlement."
+                "title": "Add a Stripe->Supabase reconciliation cron and handle charge.refunded/dispute so a dropped webhook or refund cannot strand or over-grant entitlement (billing.js:640-693)."
+            },
+            {
+                "severity": "HIGH",
+                "id": "webhook-01",
+                "priority": 20,
+                "lens": "reliability",
+                "title": "Harden the Stripe webhook: gate checkout.session on payment_status=paid, dedupe on event.id, store stripe_subscription_id, stop 200-ACKing a missing profile (billing.js:656-690)."
             },
             {
                 "severity": "HIGH",
                 "id": "compliance-02",
-                "priority": 16,
+                "priority": 20,
                 "lens": "compliance-data-steward",
-                "title": "Write a refund/cancellation policy line in legal/terms.md to back the 'Cancel anytime' modal claim (src/subscription.ts:208)."
+                "title": "Add a Subscription & Billing + refund/cancellation section to the terms that backs the 'Cancel anytime' modal copy (legal/terms.md, src/subscription.ts:209)."
             },
             {
                 "severity": "HIGH",
                 "id": "compliance-03",
-                "priority": 16,
+                "priority": 20,
                 "lens": "compliance-data-steward",
-                "title": "Add a payment/subscription section to legal/terms.md, effective-date the ToS, drop the DRAFT banner (src/legal-view.ts:295)."
+                "title": "Finalize an effective date, drop the DRAFT banner, and add a payment/subscription clause to the served terms (src/legal-view.ts:295)."
+            },
+            {
+                "severity": "HIGH",
+                "id": "compliance-04",
+                "priority": 15,
+                "lens": "compliance-data-steward",
+                "title": "Restore the truncated legal/terms.md and reconcile it with the fuller shipped TERMS_MD so counsel reviews what users see (legal/terms.md, src/legal-view.ts:21)."
             },
             {
                 "severity": "MED",
                 "id": "dataint-02",
                 "priority": 15,
                 "lens": "data-integrity",
-                "title": "Convert the KV cost-cap counters to an atomic primitive (Durable Object or D1 UPDATE...RETURNING) (billing.js:104-215)."
+                "title": "Convert the KV cost-cap counters to an atomic primitive so concurrent requests cannot overshoot the caps (billing.js:104-218)."
             },
             {
                 "severity": "MED",
                 "id": "finance-02",
-                "priority": 12,
+                "priority": 15,
                 "lens": "finance-product",
-                "title": "Decide dunning grace and lock it: keep past_due entitled through subscription_renews_at, or accept instant de-entitlement (migrations/0018:58, lib.js:1681)."
+                "title": "Lock a dunning decision and add the past_due branch to _checkSubscriptionEntitled + is_entitled() (lib.js:1691, migrations/0018:60)."
             },
             {
                 "severity": "MED",
                 "id": "reliability-02",
+                "priority": 15,
+                "lens": "reliability",
+                "title": "Add a short-TTL positive-entitlement cache and fix the fail-open/closed comment so a transient Supabase blip does not lock out paying users (lib.js:1685)."
+            },
+            {
+                "severity": "MED",
+                "id": "cost-01",
+                "priority": 15,
+                "lens": "cost-economics",
+                "title": "Apply the global DAILY_AI_SPEND_CAP_USD guard-and-accrual to handleExtractPhotosReal + handleParseCourseText and cap photos[] length (research.js:38,131)."
+            },
+            {
+                "severity": "MED",
+                "id": "install-offline-01",
+                "priority": 15,
+                "lens": "install-and-offline",
+                "title": "Persist starred-course canonical detail to localStorage so an offline round shows real hole/pin data, not a par-3 skeleton (src/persistence.ts:162, sw.js)."
+            },
+            {
+                "severity": "MED",
+                "id": "finance-03",
                 "priority": 12,
-                "lens": "reliability",
-                "title": "Fix the _checkSubscriptionEntitled stale comment (says fail-open, code fails closed) and add a short-TTL positive-entitlement cache (lib.js:1685)."
+                "lens": "finance-product",
+                "title": "Block checkout when a subscription is already active and send a Stripe idempotency key so a double-tap cannot create a second live subscription (billing.js:566-604)."
             },
             {
                 "severity": "MED",
-                "id": "reliability-03",
-                "priority": 10,
-                "lens": "reliability",
-                "title": "Add per-fetch timeouts (AbortSignal.timeout) on the Anthropic/Stripe/Supabase/PDGA upstream calls (worker/src/*)."
-            },
-            {
-                "severity": "MED",
-                "id": "security-02",
-                "priority": 8,
-                "lens": "security",
-                "title": "Replace the non-constant-time ADMIN_TOKEN and webhook-sig !== compares with one shared constant-time safeEqual helper (16+ sites; billing.js:249, lib.js:1874)."
+                "id": "sync-01",
+                "priority": 12,
+                "lens": "sync",
+                "title": "Give bags/discs/collection the same id-keyed union-merge-with-tombstones that rounds use so a stale device cannot delete rows it never loaded (src/cloud.ts:855)."
             }
         ],
         "deferred": [
@@ -147,43 +168,56 @@
             },
             {
                 "severity": "MED",
+                "title": "Serialize concurrent same-slug canonical course mutations (Durable Object per slug) and add a KV export to close the last-write-wins loss window on unbacked canonical data.",
+                "lens": "data-integrity",
+                "reason": "post-1.0 rearchitect; KV has no backup"
+            },
+            {
+                "severity": "MED",
                 "title": "Standardize the caddy/chat entitlement gate on _requireEntitledUser (or set SUBSCRIPTION_GATE_ENFORCE=true) to close the latent fail-open.",
                 "lens": "cost-economics",
                 "reason": "latent until CHAINS_VISIBLE flips; couple with that flip"
             },
             {
                 "severity": "MED",
-                "title": "Serialize concurrent same-slug course contributions (Durable Object per course-slug) to close the last-write-wins loss window.",
-                "lens": "data-integrity",
-                "reason": "post-1.0 rearchitect; low-probability, KV has no backup"
+                "title": "Type the highest-traffic window.* cross-module hops via a typed app facade so tsc catches signature drift (393 sites).",
+                "lens": "architecture",
+                "reason": "post-1.0 hardening refactor"
             },
             {
                 "severity": "MED",
-                "title": "Add an in-app billing=ok success/receipt confirmation after checkout (success_url handler is missing).",
+                "title": "Dedupe the double PDGA subrequest walk in handlePdgaCourseResearch (~420 fetches) by reusing each event's payload across both passes (research.js:855-943).",
+                "lens": "worker-cpu-budget",
+                "reason": "post-1.0 optimization; under the paid subrequest ceiling"
+            },
+            {
+                "severity": "MED",
+                "title": "Add an in-app billing=ok success/receipt confirmation after checkout.",
                 "lens": "compliance-data-steward",
                 "reason": "post-1.0 polish"
             }
         ],
         "health": 86,
         "lensScores": {
-            "architecture": 86,
-            "reliability": 78,
-            "security": 78,
-            "performance": 90,
-            "data-integrity": 74,
-            "maintainability": 89,
-            "solo-tool-ux": 90,
-            "cost-economics": 72,
-            "dependency": 86,
+            "architecture": 85,
+            "reliability": 84,
+            "security": 92,
+            "performance": 91,
+            "data-integrity": 71,
+            "maintainability": 88,
+            "solo-tool-ux": 88,
+            "cost-economics": 84,
+            "dependency": 90,
             "observability": 92,
             "strategic-kill-this": 95,
-            "compliance-data-steward": 64,
-            "worker-cpu-budget": 92,
-            "kv-data-shape": 92,
-            "auth-token-hygiene": 82,
-            "install-and-offline": 92,
-            "sync": 82,
-            "dataset-size": 84,
+            "compliance-data-steward": 62,
+            "worker-cpu-budget": 88,
+            "kv-data-shape": 86,
+            "auth-token-hygiene": 90,
+            "install-and-offline": 90,
+            "sync": 80,
+            "dataset-size": 90,
+            "finance-product": 62,
             "skill-suite-health": 90,
             "work-queue-hygiene": 90,
             "audit-loop-integrity": 95,
@@ -197,86 +231,106 @@
             "version-pill-drift": 92,
             "solo-dev-voice-portfolio": 90,
             "ai-tell-concealment-currency": 84,
-            "brand-consistency": 92,
-            "finance-product": 68
+            "brand-consistency": 92
         },
         "openFindings": [
             {
                 "id": "compliance-01",
                 "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 3,
+                "priority": 25,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
             },
             {
-                "id": "cost-01",
+                "id": "auth-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 3,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "dataint-01",
+                "severity": "HIGH",
+                "priority": 20,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "webhook-01",
                 "severity": "HIGH",
-                "priority": 16,
-                "runsOpen": 3,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "dataint-01",
-                "severity": "HIGH",
-                "priority": 16,
-                "runsOpen": 3,
+                "priority": 20,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
-                "priority": 16,
-                "runsOpen": 3,
+                "priority": 20,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
-                "priority": 16,
-                "runsOpen": 3,
+                "priority": 20,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "compliance-04",
+                "severity": "HIGH",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-04"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 3,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
-                "priority": 12,
-                "runsOpen": 3,
+                "priority": 15,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "reliability-02",
                 "severity": "MED",
+                "priority": 15,
+                "runsOpen": 4,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "cost-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 4,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "install-offline-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "finance-03",
+                "severity": "MED",
                 "priority": 12,
-                "runsOpen": 3,
-                "firstSeen": "2026-07-01"
+                "runsOpen": 1,
+                "firstSeen": "2026-07-04"
             },
             {
-                "id": "reliability-03",
+                "id": "sync-01",
                 "severity": "MED",
-                "priority": 10,
-                "runsOpen": 3,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "security-02",
-                "severity": "MED",
-                "priority": 8,
-                "runsOpen": 3,
-                "firstSeen": "2026-07-01"
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-04"
             }
         ],
         "tensionsOpen": [
@@ -285,14 +339,21 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 6
+                "runsSeen": 7
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 3
+                "runsSeen": 4
+            },
+            {
+                "lenses": [
+                    "data-integrity",
+                    "cost-economics"
+                ],
+                "runsSeen": 1
             }
         ]
     },
