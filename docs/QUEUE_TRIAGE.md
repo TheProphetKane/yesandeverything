@@ -7,11 +7,11 @@ git. The nightly queue-triage task overwrites the "Current state" section below
 on each run, so this file always reflects the latest pass rather than spawning a
 new dated file.
 
-Last pass: 2026-07-03.
+Last pass: 2026-07-04.
 
 ## Current state
 
-Eleven non-auto-safe items are aging past 7 days, membership unchanged from the 2026-06-29 / 06-30 / 07-01 / 07-02 passes: nothing new crossed the 7-day line since (everything added 2026-06-26 or later is terminal, auto-safe, or still inside the window). The worst offenders by age are the four 2026-06-10 completion gates, now 23 days old across three projects: `yac-store-launch` and `yac-subscriptions-enable-ai` (Chains), `hbh-asset-production-pass` (Hordes), and `br-asset-production-pass` (Rising). Rising carries the largest backlog at seven items, six of them deferred best-practices entries already tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md; Chains has two, Hordes one, Everything one. Standing note: `yac-subscriptions-enable-ai` is half-stale, the subscription-billing work it gated on shipped LIVE with real payments in 0.54.0 (Decision 33, confirmed this week via the closed canonical-audit-2026-07-01 chains items) and is now decoupled from CHAINS_VISIBLE. No item met the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is FUSE-truncation-prone, so nothing was auto-removed this pass.
+Eleven non-auto-safe items are aging past 7 days, membership unchanged from the 2026-06-29 through 07-03 passes: nothing new crossed the 7-day line today, and everything added 2026-06-28 or later is still inside the window (the five 2026-07-04 additions - yae-status-skylight-orphan-json, yae-claude-robots-row-stale, canonical-audit-2026-07-04-yac-roadmap-whats-live, canonical-audit-2026-07-04-scheduler-backlog-path, yaa-locked-decision-svg-scope - are one day old). The worst offenders by age are the four 2026-06-10 completion gates, now 24 days old across three projects: `yac-store-launch` and `yac-subscriptions-enable-ai` (Chains), `hbh-asset-production-pass` (Hordes), and `br-asset-production-pass` (Rising). Rising carries the largest backlog at seven items, six of them deferred best-practices entries already tracked in docs/GODOT_BEST_PRACTICES_ADHERENCE.md; Chains has two, Hordes one, Everything one. Standing note: `yac-subscriptions-enable-ai` is half-stale, the subscription-billing work it gated on shipped LIVE with real payments in 0.54.0 (Decision 33) and is now decoupled from CHAINS_VISIBLE. No item met the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is FUSE-truncation-prone, so nothing was auto-removed this pass.
 
 ### Hordes
 
@@ -34,15 +34,15 @@ Eleven non-auto-safe items are aging past 7 days, membership unchanged from the 
 
 ### Scheduler
 
-No qualifying items; all Scheduler entries are auto-safe, terminal, or inside the 7-day window. Standing recommendation carried from the 06-28 through 07-02 passes (Promote to release-step): the recurring handler version-ref drift has now lagged a release across v0.4.1 -> v0.5.2 -> v0.5.3 -> v0.5.4 (all closed already-resolved), with v0.6.0 since shipped. Fold a handler version-pill bump into X:\YesAndScheduler\scripts\release.ps1 so the version-ref self-corrects on ship rather than recurring as per-release queue churn. Still open as a Nick-side one-liner. (New this run but inside the window: canonical-audit-2026-07-03-scheduler-backlog-path-phantom and handler-audit-2026-07-03-scheduler-component-paths; both qualify on later passes if unresolved.)
+No qualifying items; all Scheduler entries are auto-safe, terminal, or inside the 7-day window. Standing recommendation carried from the 06-28 through 07-03 passes (Promote to release-step): the recurring handler version-ref drift has lagged a release across v0.4.1 -> v0.5.2 -> v0.5.3 -> v0.5.4 (all closed already-resolved), with v0.6.0 since shipped. Fold a handler version-pill bump into X:\YesAndScheduler\scripts\release.ps1 so the version-ref self-corrects on ship rather than recurring as per-release queue churn. Still open as a Nick-side one-liner. (In-window this run: canonical-audit-2026-07-04-scheduler-backlog-path is a recurrence of the 07-03 backlog-path phantom - .project-context.json backlog_path points at a nonexistent BACKLOG.md; a two-run repeat, so if it lands a third time consider Promoting the "phantom metadata path" check into the audit itself. handler-audit-2026-07-03-scheduler-component-paths already closed completed.)
 
 ### Apothecary
 
-No qualifying items. (`yaa-audit-cadence-naming-2026-06-30`, blocked-on-user, is still inside the 7-day window; it qualifies on the 2026-07-07 pass if unresolved.)
+No qualifying items. (`yaa-audit-cadence-naming-2026-06-30`, blocked-on-user, qualifies on the 2026-07-08 pass if unresolved; new this pass `yaa-locked-decision-svg-scope-2026-07-04`, blocked-on-user, a Locked-Decision phrasing scope-fix, qualifies 2026-07-12.)
 
 ### Budget
 
-No qualifying items. (`canonical-audit-2026-07-03-yab-design-takeover-uncommitted`, added 2026-07-03, is inside the window; it is an applied-but-uncommitted doc carryover, closes via a scoped release.ps1 commit.)
+No qualifying items. (`canonical-audit-2026-07-03-yab-design-takeover-uncommitted`, added 2026-07-03, is inside the window; it is an applied-but-uncommitted doc carryover that closes via a scoped release.ps1 commit; qualifies 2026-07-11.)
 
 ### Everything
 
@@ -50,20 +50,20 @@ No qualifying items. (`canonical-audit-2026-07-03-yab-design-takeover-uncommitte
 
 ### Agents
 
-No qualifying items. (`working-tree-scan-2026-07-03-agents-design-orphan`, added 2026-07-03, is inside the window; orphaned DESIGN.md edit awaiting a scoped release.ps1 commit.)
+No qualifying items. (`working-tree-scan-2026-07-03-agents-design-orphan` closed **completed** this cycle - the orphaned docs/DESIGN.md edit was committed and pushed in the v1.0.1 release, working tree clean. No open Agents items remain.)
 
 ### Ring
 
-No qualifying items. (Two pending Ring items - canonical-audit-2026-07-02-ring-projectspec-monetization-subsection and canonical-audit-2026-07-03-ring-phase2-auth-live-reframe - are inside the window; they qualify on the 2026-07-09 / 07-10 passes if unresolved.)
+No qualifying items. (Two pending Ring items - canonical-audit-2026-07-02-ring-projectspec-monetization-subsection and canonical-audit-2026-07-03-ring-phase2-auth-live-reframe - are inside the window; they qualify on the 2026-07-10 / 07-11 passes if unresolved.)
 
 ### Cattery
 
-No qualifying items. (Three pending Cattery items added 2026-07-02 / 07-03 - missing-migrations P1, datamodel-phase2 P3, phase2-status-rewrite P1 - are inside the window. The P1 missing-migrations item, schema reproducibility plus unversioned RLS on two user-data tables, is the one to watch; it qualifies on the 2026-07-09 pass.)
+No qualifying items. (Three pending Cattery items - missing-migrations P1 (07-02), datamodel-phase2 P3 (07-02), phase2-status-rewrite P1 (07-03) - are inside the window. The P1 missing-migrations item, schema reproducibility plus unversioned RLS on two user-data tables, is the one to watch; it qualifies on the 2026-07-10 pass, and the P1 handler phase2-status-rewrite qualifies 07-11.)
 
 ### Skylight
 
-No qualifying items. (Six pending Skylight items added 2026-07-02 are inside the window and all blocked behind a parallel session's dirty working tree; the oldest, skylight-stale-claude-turnending-2026-07-02, qualifies on the 2026-07-09 pass if that session has not landed its tree by then.)
+No qualifying items. (Six pending Skylight items added 2026-07-02 are inside the window and all blocked behind a parallel session's dirty working tree; the oldest, skylight-stale-claude-turnending-2026-07-02, qualifies on the 2026-07-10 pass if that session has not landed its tree by then.)
 
 ### Auto-applied this pass
 
-None. The six `br-bp-*-2026-06-16` items carry a Drop verdict, but their evidence is "duplicated in the adherence doc," not the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is actively FUSE-truncation-prone, so an unattended write to remove them is the wrong risk to take. They are left in place for Nick to bulk-remove in one attended pass (the adherence doc remains the system of record either way). Recommended Nick-side cleanup, unchanged from the prior pass: bulk-drop the six `br-bp-*-2026-06-16` items plus the terminal wontfix `br-bp-parser-quirk-class-name-2026-06-16`, and clear the queue of the many `completed`/`done` items still parked in it (they are no longer triaged here but remain as clutter). The queue now holds 92 items, the majority terminal.
+None. The six `br-bp-*-2026-06-16` items carry a Drop verdict, but their evidence is "duplicated in the adherence doc," not the narrow unambiguous-Drop bar (referenced file genuinely gone), and `.work-queue.json` is actively FUSE-truncation-prone, so an unattended write to remove them is the wrong risk to take. They are left in place for Nick to bulk-remove in one attended pass (the adherence doc remains the system of record either way). Recommended Nick-side cleanup, unchanged from the prior pass: bulk-drop the six `br-bp-*-2026-06-16` items plus the terminal wontfix `br-bp-parser-quirk-class-name-2026-06-16`, and clear the queue of the many `completed`/`done` items still parked in it (they are no longer triaged here but remain as clutter). The queue holds ~96 items, the majority terminal.
