@@ -1,71 +1,200 @@
 {
-    "project":  "Budget",
-    "displayName":  "Yes\u0026 Budget",
-    "version":  "0.14.5",
-    "lastReleaseAt":  "2026-07-04T12:27:22-05:00",
-    "lastReleaseMessage":  "Doc and config follow-up to the v0.14.4 hardening pass. DESIGN.md api sections now describe the shipped behavior: rules validation and real change counts, preview LIKE escaping, transactions_live read paths, clamped analytics params, guardCents on budgets, single-query stats with archived count. Dependabot now ignores react-family major bumps so react and react-dom can only move as a pair, closing the mismatch that PR 7 introduced.",
-    "milestone":  {
-                      "id":  "M6",
-                      "label":  "Budgets + goals",
-                      "status":  "done"
-                  },
-    "completion":  {
-                       "pct":  100,
-                       "anchored":  "2026-06-25"
-                   },
-    "itemsLeft":  {
-                      "open":  4,
-                      "queue":  4,
-                      "backlog":  0,
-                      "gates":  0,
-                      "items":  [
-
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandbudget",
-    "workTreeClean":  true,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-04.md",
-                  "latestReportAt":  "2026-07-04T10:33:21Z",
-                  "findings":  {
-                                   "high":  0,
-                                   "medium":  0,
-                                   "low":  0
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-07-04.md",
-                     "latestReportAt":  "2026-07-04T11:43:42Z",
-                     "verdict":  "working",
-                     "topFinding":  "Full pass on the v0.14.4 hardening release; health holds at 89 (working). All four hard rules verified live (D-006 loopback bind at server.ts:1256, D-003 integer cents, D-001 no importer outbound, D-004/D-007 backup-then-fail-503), pnpm audit clean at high+, and every version pill reads 0.14.4. The one substantive new gap: POST /api/transactions/bulk-delete (server.ts:534) permanently deletes rows with no pre-delete snapshot, the only user-facing destructive path that skips the createBackup step every other mutating route takes (two lenses flagged it MED). A second MED: scripts/push-to-github.ps1:28-31 still blind-deletes .git/index.lock before its Assert-GitSafe guard, the FUSE-corruption race v0.14.4 removed from release.ps1/preship.ps1 but missed here, and release.ps1 delegates its push to it. Also actionable: narrow the wildcard yesandeverything.com CORS grant to the GET probe route, and reconcile the Budget audit/resources Discord webhook wiring against the naming standard. Prior dependency-01 (cut v0.14.4) is closed; the security destructive-endpoint token-guard stays a deferred security-vs-solo-ux tradeoff, now 4 runs open.",
-                     "actionsOpen":  4,
-                     "actionsClosed":  1
-                 },
-    "metrics":  [
-                    {
-                        "k":  "importers",
-                        "v":  "4"
-                    },
-                    {
-                        "k":  "locked decisions",
-                        "v":  "13"
-                    },
-                    {
-                        "k":  "test files",
-                        "v":  "29"
-                    }
+    "project": "Budget",
+    "displayName": "Yes& Budget",
+    "version": "0.14.5",
+    "lastReleaseAt": "2026-07-04T12:27:22-05:00",
+    "lastReleaseMessage": "Doc and config follow-up to the v0.14.4 hardening pass. DESIGN.md api sections now describe the shipped behavior: rules validation and real change counts, preview LIKE escaping, transactions_live read paths, clamped analytics params, guardCents on budgets, single-query stats with archived count. Dependabot now ignores react-family major bumps so react and react-dom can only move as a pair, closing the mismatch that PR 7 introduced.",
+    "milestone": {
+        "id": "M6",
+        "label": "Budgets + goals",
+        "status": "done"
+    },
+    "completion": {
+        "pct": 100,
+        "anchored": "2026-06-25"
+    },
+    "itemsLeft": {
+        "open": 4,
+        "queue": 4,
+        "backlog": 0,
+        "gates": 0,
+        "items": []
+    },
+    "backlog": {
+        "count": 0,
+        "items": []
+    },
+    "repoUrl": "https://github.com/TheProphetKane/yesandbudget",
+    "workTreeClean": true,
+    "audit": {
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-04.md",
+        "latestReportAt": "2026-07-04T10:33:21Z",
+        "findings": {
+            "high": 0,
+            "medium": 0,
+            "low": 0
+        }
+    },
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-07-05.md",
+        "latestReportAt": "2026-07-05T11:36:01Z",
+        "verdict": "working",
+        "topFinding": "Carry-forward pass. Only one commit landed since the 2026-07-04 full pass: v0.14.5 (e334403), a doc-and-config follow-up that synced the DESIGN.md api sections to shipped behavior and made Dependabot pair react and react-dom so a future major bump cannot desync them the way PR 7 did. No runtime code changed, so a fresh 28-lens fan-out would re-derive the same finding set; this run re-verified the four open MED actions and the four hard rules directly against HEAD instead. All four hard rules still hold (D-006 loopback bind at server.ts:1256 with server-bind.test.ts, D-001 no outbound from importers/, D-003 guardCents at boundaries, D-004/D-007 BackupFailedError + backup_failed), every version pill reads 0.14.5, and no lens returned a BLOCK. Health holds at 89 (working). The four MED actions carry forward unchanged: bulk-delete still deletes rows with no pre-delete snapshot (server.ts:534), push-to-github.ps1 still blind-deletes .git/index.lock before its Assert-GitSafe (lines 28-31), the yesandeverything.com CORS grant is still on the wildcard /* (server.ts:91-96), and the fifth Discord webhook file (.discord_resources_webhook.txt) still does not exist. The security<->solo-tool-ux tension is now at runsSeen 5; it is an undecided decision, not a daily tradeoff, and should be promoted via adr-promoter into docs/DECISIONS.md.",
+        "actionsOpen": 4,
+        "actionsClosed": 0,
+        "health": 89,
+        "lensScores": {
+            "architecture": 88,
+            "reliability": 92,
+            "security": 78,
+            "performance": 93,
+            "data-integrity": 84,
+            "maintainability": 92,
+            "solo-tool-ux": 92,
+            "cost-economics": 97,
+            "dependency": 90,
+            "observability": 94,
+            "strategic-kill-this": 93,
+            "compliance-data-steward": 93,
+            "finance-product-threat-model": 82,
+            "finance-product-dedupe": 93,
+            "finance-product-backup-cadence": 82,
+            "finance-product-categorization-tail": 90,
+            "orchestration-skill-suite-health": 94,
+            "orchestration-work-queue-hygiene": 82,
+            "orchestration-audit-loop-integrity": 93,
+            "orchestration-fuse-truncation-defense": 96,
+            "orchestration-incident-runbook-currency": 92,
+            "orchestration-scheduled-task-firing-state": 93,
+            "orchestration-skill-trigger-collisions": 91,
+            "orchestration-skill-chain-handoff-integrity": 88,
+            "release-pipeline-ps1-stack": 74,
+            "release-pipeline-discord-notify": 78,
+            "release-pipeline-version-pill-drift": 96,
+            "release-pipeline-gate-page-publish": 95
+        },
+        "openFindings": [
+            {
+                "id": "data-integrity-01",
+                "severity": "MED",
+                "priority": 20,
+                "runsOpen": 2,
+                "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "release-pipeline-ps1-stack-01",
+                "severity": "MED",
+                "priority": 20,
+                "runsOpen": 2,
+                "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "security-01",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 2,
+                "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "release-pipeline-discord-notify-01",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 2,
+                "firstSeen": "2026-07-04"
+            }
+        ],
+        "tensionsOpen": [
+            {
+                "lenses": [
+                    "security",
+                    "solo-tool-ux"
                 ],
-    "workQueueDepth":  4,
-    "stale":  false,
-    "tags":  [
-                 "finance-product",
-                 "orchestration",
-                 "release-pipeline"
-             ]
+                "runsSeen": 5
+            },
+            {
+                "lenses": [
+                    "data-integrity",
+                    "solo-tool-ux"
+                ],
+                "runsSeen": 2
+            }
+        ],
+        "actions": [
+            {
+                "severity": "MED",
+                "priority": 20,
+                "id": "data-integrity-01",
+                "title": "Add createBackup(\"pre-bulk-delete\") + 503-on-fail to POST /api/transactions/bulk-delete (server.ts:534).",
+                "lens": "data-integrity"
+            },
+            {
+                "severity": "MED",
+                "priority": 20,
+                "id": "release-pipeline-ps1-stack-01",
+                "title": "Delete the blind Remove-Item .git\\index.lock block in push-to-github.ps1:28-31 and rely on Assert-GitSafe.",
+                "lens": "release-pipeline-ps1-stack"
+            },
+            {
+                "severity": "MED",
+                "priority": 12,
+                "id": "security-01",
+                "title": "Narrow the yesandeverything.com CORS grant (server.ts:91-96) off the wildcard /* to the GET probe route only.",
+                "lens": "security"
+            },
+            {
+                "severity": "MED",
+                "priority": 12,
+                "id": "release-pipeline-discord-notify-01",
+                "title": "Reconcile the Budget audit/resources Discord webhook wiring against the naming standard (fifth webhook file missing).",
+                "lens": "release-pipeline-discord-notify"
+            }
+        ],
+        "deferred": [
+            {
+                "severity": "MED",
+                "title": "Add a per-boot-token or same-origin guard on the destructive loopback endpoints.",
+                "lens": "security",
+                "reason": "blocked on Nick friction-level decision; security<->solo-ux tension runsSeen 5, promote via adr-promoter"
+            },
+            {
+                "severity": "LOW",
+                "title": "Pre-stage a keytar migration target for the SQLCipher key.",
+                "lens": "compliance-data-steward",
+                "reason": "DECIDED keep 2026-06-25; gated on a keytar build-failure trigger"
+            },
+            {
+                "severity": "LOW",
+                "title": "Flip Plaid Sandbox to Production.",
+                "lens": "finance-product-threat-model",
+                "reason": "gated on paid Plaid Production approval (D-012)"
+            },
+            {
+                "severity": "LOW",
+                "title": "Extract server.ts CRUD/app-lock into per-domain modules.",
+                "lens": "architecture",
+                "reason": "post-milestone refactor; no bug exposure"
+            }
+        ]
+    },
+    "metrics": [
+        {
+            "k": "importers",
+            "v": "4"
+        },
+        {
+            "k": "locked decisions",
+            "v": "13"
+        },
+        {
+            "k": "test files",
+            "v": "29"
+        }
+    ],
+    "workQueueDepth": 4,
+    "stale": false,
+    "tags": [
+        "finance-product",
+        "orchestration",
+        "release-pipeline"
+    ]
 }
