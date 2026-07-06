@@ -78,7 +78,7 @@ For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHord
 - **`CNAME` must contain `yesandeverything.com` exactly.** GitHub regenerates it from the Pages settings; if you `git push` an empty CNAME, the custom domain breaks.
 - **Robots.txt disallows `/hordes/`** because the GDD is private. Don't add public links to it from `index.html`.
 - **The HBH GDD mirror is base64-inlined**, not fetched. The whole GDD ships in the page. That's intentional (zero-dependency, works offline).
-- **GDD payload integrity is not checked before injection.** `publish-gdd.ps1` will happily base64-inline a truncated GDD into `hordes/index.html`. v0.61.8 shipped a GDD that lost 70 lines off the tail (FUSE write-truncation on the HBH side), which broke the live tab switcher silently. Add a `Test-GddIntegrity` guard that asserts the source GDD ends with `</html>` before injection. Recovery for the actual truncation lives in `X:\HereBeHordes\outputs\v0_61_10_gdd_tail_recover.py`. Memory entry: gdd_truncation_guard.
+- **GDD payload integrity is not checked before injection.** `publish-gdd.ps1` will happily base64-inline a truncated GDD into `hordes/index.html`. v0.61.8 shipped a GDD that lost 70 lines off the tail (FUSE write-truncation on the HBH side), which broke the live tab switcher silently. Add a `Test-GddIntegrity` guard that asserts the source GDD ends with `</html>` before injection. Memory entry: gdd_truncation_guard.
 - **DNS and registrar on Cloudflare** for `yesandeverything.com` since 2026-05-06. The registrar transfer from Squarespace completed in May 2026; both DNS and registrar now sit on Cloudflare.
 
 ## When in doubt
@@ -101,7 +101,7 @@ YaE has at least three fork points for the same content. The hand-authored landi
 
 ### FUSE Edit-tool truncation
 
-The Edit tool truncates files mid-write on this mount with non-trivial frequency. v0.74.30 GDD shipped without `</html>`. For `index.html`, `hordes/index.html`, `apothecary/*`, prefer Python atomic-write-with-readback (reference scripts in `X:\HereBeHordes\outputs\v0_74_30_apply.py`). Tail-check every touched file before declaring done. Memory `htbh-fuse-edit-tool-truncation`.
+The Edit tool truncates files mid-write on this mount with non-trivial frequency. v0.74.30 GDD shipped without `</html>`. For `index.html`, `hordes/index.html`, `apothecary/*`, prefer Python atomic-write-with-readback (canonical implementation: `X:\YesAndChains\tools\safe_write.py`). Tail-check every touched file before declaring done. Memory `htbh-fuse-edit-tool-truncation`.
 
 ### Cross-project consistency
 
