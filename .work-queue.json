@@ -1,6 +1,70 @@
 {
   "items": [
     {
+      "id": "handler-audit-2026-07-05-agents-release-cmd-stale",
+      "added": "2026-07-05",
+      "project": "agents",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "handler-audit-nightly 2026-07-05 / docs/HANDLER_AUDIT-2026-07-05.md Agents-HIGH",
+      "prompt": "X:\\YesAndAgents\\CLAUDE.md line ~39 names `.\\scripts\\push-to-github.ps1` as the primary release command. Canonical since 2026-07-01 (commit 16a2f09) is `.\\scripts\release.ps1 -Message \"...\"` (commit + push + dashboard JSON write; NO deploy, NO Discord per portfolio rule). push-to-github.ps1 still exists but is now an internal subroutine called by release.ps1. Update line 39 to lead with release.ps1 and note push-to-github.ps1 is internal-only. Handler-file edit (never auto-applied by the drain); needs an attended pass. Ships via X:\\YesAndAgents\\scripts\release.ps1. Solo-dev voice, no em dashes.",
+      "notes": "Caught by handler-audit 2026-07-05 (HIGH). New this run; not in the 07-03 sweep. Actively misleads: steers a session to the old push-only path and skips the dashboard write step."
+    },
+    {
+      "id": "handler-audit-2026-07-05-hbh-dead-audit-dual-path-ref",
+      "added": "2026-07-05",
+      "project": "hbh",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P3",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "handler-audit-nightly 2026-07-05 / docs/HANDLER_AUDIT-2026-07-05.md HBH-MEDIUM",
+      "prompt": "Two small stale refs in X:\\HereBeHordes\\CLAUDE.md. (1) It cites `scripts/audit-dual-path.ps1`, which no longer exists on disk; drop the reference or note it was removed in cleanup. (2) The Discord webhook path notation is one level shallow: the real file is `X:\\.secrets\\HereBeHordes\\scripts\\.discord_webhook.txt`; correct the depth. Also `status/data/Hordes.json` is mentioned as a local output but that JSON is written YaE-side, not in-repo; clarify. Verify each path before editing. Handler-file edit; HBH edits trip the GDD-update+release hard rule and any .ps1 touch trips the shell-gate, so this belongs to an attended HBH session. Ships via X:\\HereBeHordes\\scripts\release.ps1. Note: distinct from handler-audit-2026-06-30-hbh-h1-dead-recovery-scripts (that covers the outputs/ recovery scripts, not audit-dual-path.ps1).",
+      "notes": "Caught by handler-audit 2026-07-05 (MEDIUM). New dead-script ref not covered by the 06-30 recovery-scripts item. Webhook-path-depth half overlaps handler-audit-2026-07-03-portfolio-discord-webhook-reconcile."
+    },
+    {
+      "id": "handler-audit-2026-07-05-yae-dns-cloudflare-claim-confirm",
+      "added": "2026-07-05",
+      "project": "everything",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P3",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "handler-audit-nightly 2026-07-05 / docs/HANDLER_AUDIT-2026-07-05.md YaE-MEDIUM",
+      "prompt": "X:\\YesAndEverything\\CLAUDE.md line ~82 asserts registrar + DNS on Cloudflare for yesandeverything.com 'since 2026-05-06' with the Squarespace transfer 'completed in May 2026', but no git commit records the migration and DEPLOY.md section 5 still describes Squarespace DNS setup. wrangler.toml (2026-06-24) does reference a Cloudflare zone, so the claim is probably true but the exact date is unrecorded and DEPLOY.md contradicts it. Confirm registrar+DNS state via the Cloudflare dashboard/API, then either backfill the migration date or soften the CLAUDE.md claim to what is verifiable, and update DEPLOY.md section 5 to match. Handler + runbook edit; ships via X:\\YesAndEverything\\scripts\release.ps1. Solo-dev voice, no em dashes.",
+      "notes": "Caught by handler-audit 2026-07-05 (MEDIUM). Time-bound claim with no git record + a contradicting DEPLOY.md. Needs a confirmation step, not a blind text swap."
+    },
+    {
+      "id": "handler-audit-2026-07-05-label-drift-chains-scheduler",
+      "added": "2026-07-05",
+      "project": "cross",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P3",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "handler-audit-nightly 2026-07-05 / docs/HANDLER_AUDIT-2026-07-05.md LOW",
+      "prompt": "Cosmetic version/label drift in two handlers, each shipped via its own repo's release.ps1 (fold into the next attended pass on that repo). (1) X:\\YesAndChains\\CLAUDE.md: 'as of 0.55.1' -> current 0.56.0 (tools table still accurate, no tools changed); 'CONTEXT.md ~401KB' -> ~428KB; and X:\\YesAndChains\\ROADMAP.md header 'refreshed 2026-06-02' -> 2026-07-04 (route ROADMAP + CONTEXT edits through tools/safe_write.py, tail-check). (2) X:\\YesAndScheduler\\CLAUDE.md line ~17 version dates lag git history: v0.7.0 shipped 2026-07-03 (not undated) and v0.6.0 2026-06-28 (handler says 2026-06-22). Pure label corrections; no product-state change. Handler edits are attended-only. Solo-dev voice, no em dashes.",
+      "notes": "Caught by handler-audit 2026-07-05 (LOW, batched). Two independent repos in one item because each is a trivial label touch; split at pickup if convenient. Not auto-applied: handler files + Chains canonical docs are never blind-edited by the drain."
+    },
+    {
       "id": "yae-status-skylight-orphan-json-2026-07-04",
       "added": "2026-07-04",
       "project": "everything",
@@ -24,11 +88,13 @@
       "auto_safe": true,
       "priority": "P1",
       "status": "pending",
-      "attempts": 0,
-      "result_path": null,
+      "attempts": 1,
+      "result_path": "X:\\YesAndEverything\\.work-queue-results\\handler-audit-2026-06-30-hbh-h1-dead-recovery-scripts.md",
       "source": "handler-audit-nightly 2026-06-30 / docs/HANDLER_AUDIT-2026-06-30.md HBH-H1",
       "prompt": "Dead recovery-script references span THREE files; outputs/ was pruned to a single survivor outputs/_gdd_tail_recover_0911.py. Repoint or rewrite each: (1) X:\\HereBeHordes\\CLAUDE.md line ~46 (cites outputs/v0_61_8_recover.py + v0_61_10_gdd_tail_recover.py) and line ~109 (cites outputs/v0_74_30_apply.py / _31 / _32). (2) X:\\HereBeHordes\\scripts\\publish-gdd.ps1 lines ~76/83/91 (cite v0_61_10_gdd_tail_recover.py). (3) X:\\YesAndEverything\\CLAUDE.md 'Things that will bite you' (cites X:\\HereBeHordes\\outputs\\v0_61_10_gdd_tail_recover.py) and 'FUSE Edit-tool truncation' (cites X:\\HereBeHordes\\outputs\\v0_74_30_apply.py). Either repoint each to outputs/_gdd_tail_recover_0911.py or replace the citation with an inline description of the atomic-write-with-readback recovery pattern. Verify the live target exists before editing. HBH edits trigger the GDD update + release hard rule; the publish-gdd.ps1 edit trips the .ps1 shell-gate. Belongs to an attended HBH session (foldable with sibling HBH items below); YaE side ships via its own scripts/release.ps1. Verify each path first; close already-resolved tokens individually.",
-      "notes": "Caught by handler-audit 2026-06-30 (HIGH). The single most dangerous item: the wrong recovery instruction fires in exactly the GDD-truncation incident it is meant for. Touches a .ps1 (gated) and HBH GDD/release (forbidden to unattended drain)."
+      "notes": "Caught by handler-audit 2026-06-30 (HIGH). The single most dangerous item: the wrong recovery instruction fires in exactly the GDD-truncation incident it is meant for. Touches a .ps1 (gated) and HBH GDD/release (forbidden to unattended drain). | 2026-07-05 queue-drain-4h read-only verify: targets 1+2 ALREADY RESOLVED (HBH CLAUDE.md L46/48 now cite scripts/check_gdd_integrity.py; publish-gdd.ps1 L83/91 cite scripts\\check_gdd_integrity.py; outputs/ pruned to survivor _gdd_tail_recover_0911.py, all cited dead files absent). ONLY remaining work is YaE CLAUDE.md two dead refs (L81 outputs\u000b0_61_10_gdd_tail_recover.py, L104 outputs\u000b0_74_30_apply.py) - repoint L81 to X:\\HereBeHordes\\scripts\\check_gdd_integrity.py and L104 to the survivor or an inline pattern description. Attended YaE session (handler file + release.ps1); not applied this run. Fix staged in result_path.",
+      "lastWorkedAt": "2026-07-05T13:11:06Z",
+      "lastAttemptAt": "2026-07-05T13:11:06Z"
     },
     {
       "id": "yaa-audit-cadence-naming-2026-06-30",
@@ -329,12 +395,13 @@
       "auto_safe": false,
       "priority": "P1",
       "status": "pending",
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
+      "attempts": 1,
+      "result_path": "X:\\YesAndEverything\\.work-queue-results\\canonical-audit-2026-07-02-cattery-missing-migrations.md",
+      "lastWorkedAt": "2026-07-05T01:13:19Z",
+      "lastAttemptAt": "2026-07-05T01:13:19Z",
       "source": "audit-cattery-nightly 2026-07-02 / X:\\YesAndCattery\\docs\\CANONICAL_AUDIT-2026-07-02.md Drift #1 (HIGH) + Suggested-fix #1",
       "prompt": "X:\\YesAndCattery local supabase/migrations/ has diverged from the live Supabase project emrerjdyujylgutfmool. Three migrations are APPLIED IN PROD but have NO FILE in the repo: `reviews_and_ratings` (version 20260630190120, the spec's cited \"0009\"), `waitlists` (20260630233349, the \"0010\"), and `admin_set_flags_self_lockout_guard` (20260630183939, a 0007-era guard). Conversely `0006_photos_storage_bucket` exists as a repo file but is NOT in the prod migration history (the photos bucket exists live, created out-of-band via the dashboard). Impact: (a) a fresh `supabase db push` from the repo builds a DB with no `reviews` and no `waitlist_entries` tables, then 0012_notification_resolver.sql line 34 joins public.waitlist_entries and FAILS - the schema is not reproducible from source; (b) the RLS policies protecting reviews (77 live rows, review authorship) and waitlist_entries (26 live rows, buyer PII) live only in prod and cannot be reviewed or reproduced from version control. Live RLS is confirmed ON for both tables and get_advisors reports no missing-policy on them, so there is NO active breach - but two user-data tables have an unversioned security boundary and the repo can't rebuild prod. FIX: use the Supabase MCP (execute_sql against pg_catalog / information_schema, or `supabase db diff`) to pull the exact live DDL for the three missing migrations INCLUDING their RLS policies, and commit them as correctly-numbered migration files that reproduce prod. Reconcile 0006_photos_storage_bucket (either record it in the migration history or fold the storage.objects bucket+policy into a tracked migration). Verify a clean rebuild does not fail at 0012. Then update PROJECT_SPEC.md line ~114 'Files at a glance' migration bullet (currently cites nonexistent 0009/0010 and omits 0011-0016) to match the reconciled set. NOT auto-safe: requires live-DDL extraction + judgment on numbering; edits the canonical doc. Ships via X:\\YesAndCattery\\scripts\release.ps1; schema files go through `supabase db push`, not the release script.",
-      "notes": "Enqueued 2026-07-02 by audit-cattery-nightly drift-auto-fix chain. Top item of the 2026-07-02 Cattery canonical audit (HIGH). Verified against live project emrerjdyujylgutfmool via list_migrations + list_tables + get_advisors (all read-only). This is schema reproducibility + unversioned RLS on user-data tables, not an active data breach (live RLS is ON). No safe fix was auto-applied this run because the only text-level candidate (the spec migration list) is entangled with this structural recovery and would mask the divergence if edited alone."
+      "notes": "Enqueued 2026-07-02 by audit-cattery-nightly drift-auto-fix chain. Top item of the 2026-07-02 Cattery canonical audit (HIGH). Verified against live project emrerjdyujylgutfmool via list_migrations + list_tables + get_advisors (all read-only). This is schema reproducibility + unversioned RLS on user-data tables, not an active data breach (live RLS is ON). No safe fix was auto-applied this run because the only text-level candidate (the spec migration list) is entangled with this structural recovery and would mask the divergence if edited alone. | 2026-07-04 queue-drain-4h: read-only DDL extraction staged to result_path. Pulled the exact applied bodies for admin_set_flags self-lockout guard (v20260630183939), reviews_and_ratings (v20260630190120), and waitlists (v20260630233349) from live schema_migrations on emrerjdyujylgutfmool; captured the 0006 photos-bucket reconciliation fact (bucket live + public with 4 storage.objects policies). Divergence re-confirmed. Left pending on purpose: numbering-scheme judgment, committing the migration files, recording 0006, the clean-rebuild check, and the PROJECT_SPEC edit all need an attended session (auto_safe:false; the drain runs no db push and no release)."
     },
     {
       "id": "canonical-audit-2026-07-02-cattery-datamodel-phase2",
@@ -626,8 +693,25 @@
         "solo-tool-ux"
       ],
       "prompt": "YaB MED (bar-raise 2026-07-04): the CORS allow-list (apps/api/src/server.ts:90-99) grants https://yesandeverything.com on /* (every route) though the YaE landing page only probes GET /api/stats to detect the local API. Scope the yesandeverything.com origin to the GET / or /api/stats probe route only, keeping localhost:5173 as the sole origin on data + mutation endpoints. Low-friction hardening (no UX cost; YaE only calls the probe). The separate per-boot-token / Sec-Fetch-Site guard on destructive endpoints stays deferred pending Nick's friction-level call. Ship via scripts/release.ps1."
+    },
+    {
+      "id": "hbh-gdd-saveload-structural-refs-2026-07-05",
+      "added": "2026-07-05",
+      "project": "hordes",
+      "kind": "canonical-audit-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "audit-hordes-nightly 2026-07-05 / docs/CANONICAL_AUDIT-2026-07-05.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": "docs/GDD.html lines 2084, 4651-4652, 4726, 4841",
+      "prompt": "HBH GDD drift (re-enqueued 2026-07-05; the prior tracking item hbh-legacy-saveload-autoload-remove-2026-06-28 was drained from the queue on 2026-07-05T01:13:19Z without the fix landing, HEAD still v0.99.31). Four live references in docs/GDD.html still present the save_load autoload as live, but it was removed and its 544-line source deleted in v0.99.19; 3D persistence now runs only through world_3d.gd _save_run / _load_run. Fix all four: (1) lines 4651-4652 (Architecture autoload-reference table) delete the whole save_load <tr> that points at source/autoloads/save_load.gd with method line-refs into the deleted file; (2) line 4841 (Architecture file-tree table) delete the whole save_load.gd <tr>; (3) line 2084 (Design save/load feature line) rewrite the <em> clause to state the save_load autoload was removed in v0.99.19 and the 3D world saves/restores via world_3d.gd _save_run / _load_run only, with the multi-slot picker UI not yet ported to 3D, dropping the 'is live' phrasing; (4) line 4726 (Architecture cell) reword to drop the 'save_load autosave' reference while keeping the already-correct 3D win/loss and wave-cadence context in the same cell. Line numbers drift as the GDD grows, re-verify before editing. docs/GDD.html is FUSE-truncation-sensitive: use the Python atomic-write-with-readback pattern and confirm the file still ends with </html> after the batch. Solo-dev voice (no em dashes, no AI vocabulary, no 'per Nick'). Attended HBH session only: this edit trips the GDD-update-plus-release hard rule, so ship via X:\\HereBeHordes\\scripts\release.ps1 with a version-pill bump plus a changelog entry.",
+      "notes": "Re-enqueue of the vanished save_load structural drift. All four are STRUCTURAL (two <tr> deletions + two prose rewrites); not auto-applyable (GDD edit + release is out of nightly scope). Confirmed unfixed in the v0.99.31 GDD."
     }
   ],
-  "last_drain": "2026-07-04T17:09:10Z",
-  "updated": "2026-07-04"
+  "last_drain": "2026-07-05T13:11:06Z",
+  "updated": "2026-07-05"
 }
