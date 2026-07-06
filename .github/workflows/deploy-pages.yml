@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+# Replaces the built-in "Deploy from a branch" (legacy) Pages build. The legacy
+# builder has no cancel-in-progress control, so when several commits land within
+# a minute or two (a release publishes the GDD, then the dashboard status JSON,
+# then a usage refresh, etc.) its auto-deploys collide at the Pages deploy API and
+# fail with "Deployment failed, try again later" — one failure email each. This
+# workflow serializes deploys through a single `pages` concurrency group and
+# cancels superseded in-flight runs, so a burst of pushes yields one successful
+# deploy and zero failures. Static site: no build step, the repo root IS the site
+# (matches the old .nojekyll "serve files as-is" behavior).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Drop VCS metadata from the deploy artifact
+        run: rm -rf .git
+      - uses: actions/configure-pages@v5
+      - name: Upload the site (repo root) as the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
