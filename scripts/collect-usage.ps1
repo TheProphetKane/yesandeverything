@@ -43,7 +43,10 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 11  # v11 (2026-07-03): task-name patterns for the new per-project
+$ATTRIB_VERSION = 12  # v12 (2026-07-06): adds bar-raise-yae -> Everything (new daily
+# hub-site bar-raise) and audit-counselor -> Counselor (new nightly care-audit);
+# audit-yab task retired (pattern kept as a historical alias).
+# v11 (2026-07-03): task-name patterns for the new per-project
 # routines (audit-agents/ring/cattery/skylight, bar-raise-ring/cattery/skylight);
 # bar-raise-yaag -> Agents ordered before bar-raise-yaa (substring collision had sent
 # Agents' daily bar-raise to Apothecary); taskProj now persists in per-file state so
@@ -101,6 +104,8 @@ $PROJECT_PATTERNS = @(
   @{ pat = "bar-raise-skylight";  id = "Skylight" },
   @{ pat = "audit-skylight";      id = "Skylight" },
   @{ pat = "bar-raise-constellation"; id = "Everything" },  # cross-project by design
+  @{ pat = "bar-raise-yae";       id = "Everything" },  # hub-site bar-raise; reads other repos for the reuse lens by design
+  @{ pat = "audit-counselor";     id = "Counselor" },   # nightly care-audit; greps YaE surfaces for leak-sweep by design
   @{ pat = "audit-htbh";          id = "Hordes" },
   @{ pat = "bar-raise-hbh";       id = "Hordes" },
   @{ pat = "audit-brackish";      id = "Rising" },
