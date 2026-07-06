@@ -638,6 +638,15 @@ if ($Audit) {
   exit 0
 }
 
+# ----- Public delisting (2026-07-06, Kane's call) ----------------------------
+# Agents must not appear on ANY public surface - the YaE repo is public, so that
+# includes usage.json, queue.json, and the usage-log ledger, all of which derive
+# from $projects below. Internal ATTRIBUTION is unchanged (patterns above still
+# route Agents' tokens to "Agents" so they don't pollute other projects); the
+# project is dropped here, at the publish boundary. Do not re-add.
+$PUBLIC_EXCLUDE = @("Agents")
+foreach ($x in $PUBLIC_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
+
 # ----- Build usage.json ------------------------------------------------------
 $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -777,6 +786,7 @@ try {
       $qp = ("" + $it.project).ToLowerInvariant()
       $key = $QUEUE_ALIAS[$qp]
       if (-not $key) { $key = "Everything" }
+      if ($PUBLIC_EXCLUDE -contains $key) { continue }   # delisted projects never reach queue.json
       $st = "" + $it.status
       # An item is DEFERRED (parked, not actionable now) if flagged deferred:true or its
       # status is a deferred state. "queued" must stay IMMEDIATELY ACTIONABLE, so a

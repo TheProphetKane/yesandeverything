@@ -32,6 +32,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Stamp live project data into pages
+        # Every project release pushes its status/data/<Project>.json here, which
+        # triggers this deploy; this step folds those numbers (version, milestone)
+        # into the homepage cards and each project's Details/Design pages.
+        run: node scripts/update-project-pages.mjs
       - name: Drop VCS metadata from the deploy artifact
         run: rm -rf .git
       - uses: actions/configure-pages@v5

@@ -84,7 +84,7 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
 <div class="gate" id="gate">
   <div class="gate-card">
     <h1>Restricted Document</h1>
-    <div class="sub">Chains &middot; design</div>
+    <div class="sub">Gnosis &middot; design</div>
     <p>This is a private design document. Enter the access phrase to continue.</p>
     <form id="gateForm" autocomplete="off">
       <label for="pw">Access phrase</label>
@@ -97,100 +97,73 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
 </div>
 
 <div class="doc hidden" id="doc">
-  <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>chains<span class="sep">/</span>design</div>
-  <h1><span class="arrow">&rsaquo;</span> Yes&amp; Chains - Design</h1>
-  <div class="metarow"><span class="pill pink">Live</span><span class="pill"><!--live:version-->v0.56.0<!--/live--></span><span class="pill blue">PWA</span></div>
-  <p class="canon">Canonical source of truth: PROJECT_SPEC.md (vision) + CONTEXT.md (glossary + changelog) + docs/adr/ in the YaC repo. This page mirrors the shape of that layer.</p>
-  <div class="tabs" role="tablist"><button class="tab" role="tab" data-panel="overview" aria-selected="false">Overview</button><button class="tab" role="tab" data-panel="goals" aria-selected="false">Goals</button><button class="tab" role="tab" data-panel="decisions" aria-selected="false">Decisions</button><button class="tab" role="tab" data-panel="systems" aria-selected="false">Systems</button><button class="tab" role="tab" data-panel="data" aria-selected="false">Data</button><button class="tab" role="tab" data-panel="roadmap" aria-selected="false">Roadmap</button></div>
-    <div class="panel" id="overview" role="tabpanel">
+  <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>gnosis<span class="sep">/</span>design</div>
+  <h1><span class="arrow">&rsaquo;</span> Yes&amp; Gnosis - Design</h1>
+  <div class="metarow"><span class="pill pink">Live &middot; gated</span><span class="pill"><!--live:version-->v0.3.7<!--/live--></span><span class="pill blue">Worldbuilding</span></div>
+  <p class="canon">Canonical source of truth: PROJECT_SPEC.md in the Gnosis repo. This page mirrors the shape of that layer; campaign content itself stays behind the gate.</p>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-panel="overview" aria-selected="false">Overview</button><button class="tab" role="tab" data-panel="decisions" aria-selected="false">Decisions</button><button class="tab" role="tab" data-panel="systems" aria-selected="false">Systems</button><button class="tab" role="tab" data-panel="data" aria-selected="false">Data</button><button class="tab" role="tab" data-panel="roadmap" aria-selected="false">Roadmap</button></div>
+  <div class="panel" id="overview" role="tabpanel">
     <h2>Overview</h2>
-    <p class="ptag">A pocket disc-golf caddy: build bags, find courses, play a round, log every shot, review your game.</p>
+    <p class="ptag">Turn a binder of campaign documents into a linked, searchable, trackable world.</p>
     <div class="sec"><h3>Product</h3>
       <ul>
-      <li>A progressive web app a player opens at the tee and uses through the round.</li>
-      <li>Anonymous users get a full local experience; signing in adds cloud sync across devices.</li>
-      <li>Core loop: <strong>build a bag &rarr; pick a course &rarr; walk the round hole-by-hole &rarr; log shots &rarr; review stats</strong>.</li>
+      <li>A markdown vault (one entity per file, YAML frontmatter, wikilinks) rendered as a static wiki.</li>
+      <li>Core loop: <strong>write or ingest an entity &rarr; link it &rarr; browse the web of backlinks at the table</strong>.</li>
+      <li>Inspired by Obsidian, World Anvil, Kanka, and Notion - without giving the world to any of them.</li>
       </ul></div>
     <div class="sec"><h3>Audience</h3>
       <ul>
-      <li>Casual to serious disc-golfers who want fast in-round logging without fighting an app.</li>
-      </ul></div>
-  </div>
-  <div class="panel" id="goals" role="tabpanel">
-    <h2>Goals</h2>
-    <p class="ptag">What the product must be true to.</p>
-    <div class="sec"><h3>Design goals</h3>
-      <ul>
-      <li><strong>Offline-first.</strong> A round must never break on a dead-zone course; writes queue and sync later.</li>
-      <li><strong>Fast in-round.</strong> Logging a throw is one or two taps; tap-in shortcut inside 11ft.</li>
-      <li><strong>Accurate stats.</strong> Per-hole averages, score distribution, best-at-course.</li>
-      <li><strong>Own your data.</strong> JSON export; imports from TechDisc CSV and UDisc.</li>
-      <li><strong>Small by hand.</strong> No framework; the bundle is controlled deliberately.</li>
+      <li>One DM (me), and eventually a player-safe slice of the same world.</li>
       </ul></div>
   </div>
   <div class="panel" id="decisions" role="tabpanel">
     <h2>Decisions</h2>
-    <p class="ptag">Locked architectural and product decisions (answered log).</p>
-    <div class="sec"><h3>Locked decisions</h3>
+    <p class="ptag">Locked calls that shape the app.</p>
+    <div class="sec"><h3>Locked</h3>
       <ul>
-      <li class="dec">§ <strong>localStorage is the offline source of truth;</strong> cloud sync layers on top. Every write goes to both.</li>
-      <li class="dec">§ <strong>Auth is Supabase magic-link</strong> via Resend SMTP from auth@yesandeverything.com. No passwords.</li>
-      <li class="dec">§ <strong>Course data is canonical with per-user overlays and contributions</strong> (ADR 0019). Signed-in users can contribute pin positions, per-hole metadata, and map geometry; anonymous users are read-only.</li>
-      <li class="dec">§ <strong>Scrape state wins on isActive</strong> (Decision 27): the merge handler promotes scrape-touched pins and demotes others per hole.</li>
-      <li class="dec">§ <strong>The AI caddy is hidden</strong> (Decision 28): CHAINS_VISIBLE=false; recommender/billing surfaces early-return. Worker endpoints stay live for a one-line flip.</li>
-      <li class="dec">§ <strong>Release is scripted</strong> (scripts/release.ps1): preship gauntlet, version-aware commit, worker auto-deploy, Discord notify. No per-version runbooks.</li>
+      <li class="dec"><strong>The vault is the database.</strong> The site is a view; markdown files are the product and outlive any renderer.</li>
+      <li class="dec"><strong>Spoiler safety is structural.</strong> A <strong>secret</strong> flag on every entity; flagged content never reaches a player-visible surface, and the whole site is DM-gated at launch.</li>
+      <li class="dec"><strong>Name generation is built in-house</strong>: seeded and deterministic, so a generated shopkeeper can be regenerated from their seed. No scraping of third-party generators.</li>
+      <li class="dec"><strong>Source binders are read-only.</strong> Ingested entities carry a pointer back to their originating document.</li>
+      <li class="dec"><strong>Published rulebooks are never ingested or served</strong>; references are by title and page only.</li>
       </ul></div>
   </div>
   <div class="panel" id="systems" role="tabpanel">
     <h2>Systems</h2>
-    <p class="ptag">How it is built.</p>
-    <div class="sec"><h3>Frontend</h3>
+    <p class="ptag">A renderer, a gate, and a generator.</p>
+    <div class="sec"><h3>Pipeline</h3>
       <ul>
-      <li>Single-page PWA: index.html + a hand-tuned app.js bundle; source in src/ (TypeScript).</li>
-      <li>Vanilla DOM, no framework. Service-worker offline shell; install prompt.</li>
-      <li>Outbox pattern: in-round writes persist locally and flush to Supabase on reconnect.</li>
+      <li>A zero-framework Node build renders the vault to static pages: wikilink resolution, backlinks, type indexes, search index, and a broken-link report (the to-do list).</li>
+      <li>A Cloudflare Worker serves the build behind a cookie-auth DM gate with worker-first routing.</li>
+      <li>An interactive map page places location entities by frontmatter coordinates; pins link to their pages.</li>
       </ul></div>
-    <div class="sec"><h3>Backend</h3>
+    <div class="sec"><h3>Generators</h3>
       <ul>
-      <li>Cloudflare Worker (Wrangler-deployed) + Supabase (Postgres + Auth).</li>
-      <li>Central canonical course KV library; per-user star + overlay edits merged server-side.</li>
-      <li>Recommendation engine reads plastic flight data; gated behind CHAINS_VISIBLE.</li>
-      </ul></div>
-    <div class="sec"><h3>Hosting</h3>
-      <ul>
-      <li>GitHub Pages from main for the SPA; Cloudflare DNS for yesandchains.com / .app.</li>
+      <li>People (five cultures), settlements, taverns, shops with keepers, factions - seedable, dependency-free, available as CLI and on-site page.</li>
       </ul></div>
   </div>
   <div class="panel" id="data" role="tabpanel">
     <h2>Data</h2>
-    <p class="ptag">Shipped reference data and shapes.</p>
-    <div class="sec"><h3>Datasets</h3>
+    <p class="ptag">Frontmatter is the schema.</p>
+    <div class="sec"><h3>Entity shape</h3>
       <ul>
-      <li><strong>course_data.json</strong> (~12MB, ~6,300 US courses) shipped with the bundle.</li>
-      <li><strong>disc_database.json</strong> (~647KB) and <strong>plastic_db.json</strong> (~200KB).</li>
-      <li>Per-user layer: starred courses, per-hole overlay edits, contributed pins/geometry.</li>
+      <li>Required: name, type. Optional: region, tags, status, secret, source pointer, map coordinates, timestamps.</li>
+      <li>Nine entity types: character, location, faction, deity, item, shop, session, adventure, lore.</li>
+      <li>Links are wiki-style by entity name; the renderer computes the reverse web.</li>
       </ul></div>
   </div>
   <div class="panel" id="roadmap" role="tabpanel">
     <h2>Roadmap</h2>
-    <p class="ptag">Current state and what is next.</p>
-    <div class="sec"><h3>Now</h3>
-      <ul>
-      <li>Pre-1.0, in 1.0 launch prep. Active queue: docs/launch-checklist-1.0.md.</li>
-      <li>Numbered-file accretion (styles, mobile-hooks) to consolidate before 1.0.</li>
-      </ul></div>
+    <p class="ptag">The world keeps growing.</p>
     <div class="sec"><h3>Next</h3>
       <ul>
-      <li>Cut 1.0 when the launch checklist clears; flip the AI caddy on when ready.</li>
+      <li>Generate-and-save-to-vault flow from the on-site generator page.</li>
+      <li>Further binder ingestion waves (worldbuilding rules, plans, adventures).</li>
+      <li>A player-safe view: same vault, secret-filtered, separate gate.</li>
       </ul></div>
   </div>
-
-  <footer>
-    <span>&copy; <span id="y">2026</span> Kane &middot; design document &middot; access-restricted</span>
-    <span><a href="/projects/chains/">&larr; details</a> &middot; <a href="/#projects">all projects</a></span>
-  </footer>
 </div>
-
+<footer><span>&copy; 2026 Kane &middot; no trackers</span><span><a href="/#projects">&larr; all projects</a></span></footer>
 <script>
 (function(){
   var KEY='yae.design.chains';
