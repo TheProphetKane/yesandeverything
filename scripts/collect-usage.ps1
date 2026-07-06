@@ -43,7 +43,11 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 12  # v12 (2026-07-06): adds bar-raise-yae -> Everything (new daily
+$ATTRIB_VERSION = 13  # v13 (2026-07-06): bar-raise routines RENAMED from acronyms to
+# words (bar-raise-br->rising, -hbh->hordes, -yac->chains, -yaa->apothecary,
+# -yab->budget, -yaag->agents, -yae->everything); new word task-name patterns added,
+# old acronym patterns kept below as historical aliases for pre-rename transcripts.
+# v12 (2026-07-06): adds bar-raise-yae -> Everything (new daily
 # hub-site bar-raise) and audit-counselor -> Counselor (new nightly care-audit);
 # audit-yab task retired (pattern kept as a historical alias).
 # v11 (2026-07-03): task-name patterns for the new per-project
@@ -104,8 +108,18 @@ $PROJECT_PATTERNS = @(
   @{ pat = "bar-raise-skylight";  id = "Skylight" },
   @{ pat = "audit-skylight";      id = "Skylight" },
   @{ pat = "bar-raise-constellation"; id = "Everything" },  # cross-project by design
-  @{ pat = "bar-raise-yae";       id = "Everything" },  # hub-site bar-raise; reads other repos for the reuse lens by design
   @{ pat = "audit-counselor";     id = "Counselor" },   # nightly care-audit; greps YaE surfaces for leak-sweep by design
+  # word-based bar-raise task names (renamed 2026-07-06 from acronyms; the old
+  # acronym patterns remain below as historical aliases for pre-rename transcripts)
+  @{ pat = "bar-raise-everything";  id = "Everything" },  # hub-site; reads other repos for the reuse lens by design
+  @{ pat = "bar-raise-rising";      id = "Rising" },
+  @{ pat = "bar-raise-hordes";      id = "Hordes" },
+  @{ pat = "bar-raise-chains";      id = "Chains" },
+  @{ pat = "bar-raise-apothecary";  id = "Apothecary" },
+  @{ pat = "bar-raise-budget";      id = "Budget" },
+  @{ pat = "bar-raise-agents";      id = "Agents" },
+  # old acronym aliases (disabled tasks; kept so historical transcripts still attribute)
+  @{ pat = "bar-raise-yae";       id = "Everything" },
   @{ pat = "audit-htbh";          id = "Hordes" },
   @{ pat = "bar-raise-hbh";       id = "Hordes" },
   @{ pat = "audit-brackish";      id = "Rising" },
