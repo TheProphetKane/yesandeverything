@@ -39,6 +39,15 @@ It is **NOT** the repo folder name (e.g. "YesAndBudget") and **NOT** the short c
     Budget Audit Bot
     Budget Backlog Bot
 
+## Sanctioned exceptions
+
+- **Gnosis** (dashboard identifier `Gnosis`, the Elder Domain vault app, renamed from
+  Yes& RPG 2026-07-06): its webhooks keep the display names **`RPG <Role> Bot`**
+  (Release on #all-chat; Characters / Items / Monsters / Maps / One-Shot Ideas on the
+  topic channels). Reason: the Discord category is "Yes and... RPG" and that is the
+  community-facing name; the app name is internal. The daily content posts override
+  the post username to "A Librarian of Gnosis" instead. Do not rename these webhooks.
+
 ## Notes
 
 - The webhook **display name** (governed by this convention) is distinct from the

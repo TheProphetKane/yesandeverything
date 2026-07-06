@@ -43,7 +43,9 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 14  # v14 (2026-07-06): adds RPG (X:\YesAndRPG, Elder Domain world
+$ATTRIB_VERSION = 15  # v15 (2026-07-06): RPG renamed to Gnosis (folder X:\YesAndGnosis,
+# repo yesandgnosis, gnosis.yesandeverything.com); all RPG-era patterns now attribute to
+# id "Gnosis"; adds gnosis patterns. v14 (2026-07-06): added RPG (X:\YesAndRPG, Elder Domain world
 # vault + campaign wiki at rpg.yesandeverything.com) - repo patterns, task names
 # (audit-rpg, bar-raise-rpg), REPO_PATHS + QUEUE_ALIAS entries.
 # v13 (2026-07-06): bar-raise routines RENAMED from acronyms to
@@ -112,8 +114,10 @@ $PROJECT_PATTERNS = @(
   @{ pat = "audit-skylight";      id = "Skylight" },
   @{ pat = "bar-raise-constellation"; id = "Everything" },  # cross-project by design
   @{ pat = "audit-counselor";     id = "Counselor" },   # nightly care-audit; greps YaE surfaces for leak-sweep by design
-  @{ pat = "bar-raise-rpg";       id = "RPG" },
-  @{ pat = "audit-rpg";           id = "RPG" },
+  @{ pat = "bar-raise-gnosis";    id = "Gnosis" },
+  @{ pat = "audit-gnosis";        id = "Gnosis" },
+  @{ pat = "bar-raise-rpg";       id = "Gnosis" },
+  @{ pat = "audit-rpg";           id = "Gnosis" },
   # word-based bar-raise task names (renamed 2026-07-06 from acronyms; the old
   # acronym patterns remain below as historical aliases for pre-rename transcripts)
   @{ pat = "bar-raise-everything";  id = "Everything" },  # hub-site; reads other repos for the reuse lens by design
@@ -171,9 +175,12 @@ $PROJECT_PATTERNS = @(
   @{ pat = "YesAndCounselor";     id = "Counselor" },
   @{ pat = "yesandcounselor";     id = "Counselor" },
   @{ pat = "spouse.yesandeverything"; id = "Counselor" },
-  @{ pat = "YesAndRPG";           id = "RPG" },
-  @{ pat = "yesandrpg";           id = "RPG" },
-  @{ pat = "rpg.yesandeverything"; id = "RPG" },
+  @{ pat = "YesAndGnosis";        id = "Gnosis" },
+  @{ pat = "yesandgnosis";        id = "Gnosis" },
+  @{ pat = "gnosis.yesandeverything"; id = "Gnosis" },
+  @{ pat = "YesAndRPG";           id = "Gnosis" },
+  @{ pat = "yesandrpg";           id = "Gnosis" },
+  @{ pat = "rpg.yesandeverything"; id = "Gnosis" },
   @{ pat = "YesAndSkylight";      id = "Skylight" },
   @{ pat = "yesandskylight";      id = "Skylight" },
   @{ pat = "YesAndAgents";        id = "Agents" },
@@ -669,7 +676,7 @@ $REPO_PATHS = @{
   Everything = "X:\YesAndEverything"; Agents = "X:\YesAndAgents"
   Counselor = "X:\YesAndCounselor"; Skylight = "X:\YesAndSkylight"
   Ring = "X:\YesAndRing"; Cattery = "X:\YesAndCattery"
-  RPG = "X:\YesAndRPG"
+  Gnosis = "X:\YesAndGnosis"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
@@ -759,7 +766,7 @@ $QUEUE_ALIAS = @{
   skylight = "Skylight"; yesandskylight = "Skylight"
   ring = "Ring"; yesandring = "Ring"; cats = "Ring"; yesandcats = "Ring"
   cattery = "Cattery"; yesandcattery = "Cattery"
-  rpg = "RPG"; yarpg = "RPG"; yesandrpg = "RPG"
+  gnosis = "Gnosis"; yag = "Gnosis"; yesandgnosis = "Gnosis"; rpg = "Gnosis"; yarpg = "Gnosis"; yesandrpg = "Gnosis"
   all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
 }
 try {
