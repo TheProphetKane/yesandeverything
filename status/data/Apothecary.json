@@ -36,47 +36,140 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-05.md",
-        "latestReportAt": "2026-07-05T11:23:17Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-07.md",
+        "latestReportAt": "2026-07-07T11:38:04Z",
         "verdict": "working",
-        "topFinding": "Carry-forward pass. No change since the 2026-07-04 full pass: HEAD is still 7797427 (v1.0.3), the tree is clean, no npm artifacts, work queue empty, no BLOCK open. All four skip-unchanged conditions held, so scores carry forward rather than re-spawning fifteen subagents against an unchanged, feature-complete project. Health holds at 95. Both open items are deferred LOWs (the chronic cadence-config mismatch and the v1.0.3 changelog run-on); nothing is actionable this run. Next full pass fires on the next commit or by the 7-day clock (by 2026-07-11).",
-        "actionsOpen": 0,
+        "topFinding": "Full pass (tree was dirty from today's drift-fix, so the skip gate did not fire). Code unchanged since v1.0.3; the one substantive new item is compliance: the 75 botanical illustrations in data/illustrations/ ship with no SOURCES.md (symbols and textures both have one) and were scraped by scripts/scrape-spicejungle.ps1 from a commercial CDN, while PROJECT_SPEC.md sec 4.5 claims a public-domain-preferred sourcing policy. That is a provenance-audit gap plus a possible licensing mismatch on a public page. Health 94 (prev 95). No BLOCK; all four hard rules intact and three version pills agree at v1.0.3. Second action: the v1.0.3 CHANGELOG run-on (a release.ps1 auto-format artifact that repeats the message as both header and bullet).",
+        "actionsOpen": 2,
         "actionsClosed": 0,
-        "actions": [],
+        "actions": [
+            {
+                "severity": "MEDIUM",
+                "title": "Add data/illustrations/SOURCES.md documenting the 75 PNGs' real origin/license and reconcile PROJECT_SPEC.md sec 4.5; verify redistribution rights for the SpiceJungle-scraped art",
+                "lens": "compliance-data-steward",
+                "impact": 3,
+                "confidence": 5,
+                "id": "compliance-data-steward-01"
+            },
+            {
+                "severity": "MEDIUM",
+                "title": "Split the run-on v1.0.3 CHANGELOG entry into per-item bullets and fix the release.ps1 line-139 template that repeats $Message as both header and bullet",
+                "lens": "public-voice/maintainability/release-pipeline",
+                "impact": 2,
+                "confidence": 5,
+                "id": "changelog-v103-runon"
+            }
+        ],
         "deferred": [
             {
                 "severity": "LOW",
-                "title": "Reconcile declared weekly-constellation-only cadence with the daily-firing bar-raise and audit tasks",
-                "lens": "observability",
-                "reason": "chronic; blocked on Nick cadence decision, promote via adr-promoter (enqueued as cadence-naming-2026-06-30)"
+                "title": "Reconcile declared weekly-constellation-only cadence with the daily bar-raise + nightly audit routines that actually fire",
+                "lens": "observability/strategic-kill-this",
+                "reason": "chronic 5+ runs; blocked on Nick cadence decision, promote via adr-promoter (cadence-naming-2026-06-30)"
             },
             {
                 "severity": "LOW",
-                "title": "Split the run-on v1.0.3 CHANGELOG entry (duplicated header + single 20-clause bullet) into scannable bullets",
+                "title": "Scope the sec 8 Locked-Decisions 'no SVG anywhere' wording to 'no SVG in the label art' to match the sec 4.4 fix",
                 "lens": "maintainability",
-                "reason": "release-script auto-format output; fix opportunistically on next CHANGELOG-touching release"
+                "reason": "already enqueued by drift-auto-fix as canonical-audit-2026-07-07-apothecary-no-svg-locked-wording; human wording fix inside a locked block"
+            },
+            {
+                "severity": "LOW",
+                "title": "CSS-escape or whitelist accent/glow colors before interpolating into SVG stroke= and inline styles in src/render.js",
+                "lens": "security",
+                "reason": "single-user local-only surface, no live exposure; defensive hardening"
+            },
+            {
+                "severity": "LOW",
+                "title": "Replace prompt()/confirm()/alert() in saved-labels-ui.js and export-png.js with dark-theme in-app modals",
+                "lens": "solo-tool-ux",
+                "reason": "polish, not friction; post-1.0"
+            },
+            {
+                "severity": "LOW",
+                "title": "Add unit tests for lookupHerb, the layout migration, and the custom-items preset-recall filter",
+                "lens": "maintainability",
+                "reason": "coverage gap on tightly-coupled logic; no current bug exposure"
+            },
+            {
+                "severity": "LOW",
+                "title": "Replace the custom-XXXX placeholder in the src/ui/editor.js preset-recall comment with a concrete id example",
+                "lens": "maintainability",
+                "reason": "trivial comment clarity; fix opportunistically"
             }
         ],
-        "health": 95,
+        "health": 94,
         "lensScores": {
             "architecture": 95,
             "reliability": 96,
-            "security": 97,
+            "security": 93,
             "performance": 93,
-            "data-integrity": 96,
-            "maintainability": 92,
+            "data-integrity": 95,
+            "maintainability": 90,
             "solo-tool-ux": 96,
             "cost-economics": 98,
             "dependency": 96,
             "observability": 92,
             "strategic-kill-this": 95,
-            "compliance-data-steward": 95,
+            "compliance-data-steward": 85,
             "generative-art": 95,
             "release-pipeline": 95,
-            "public-voice": 95
+            "public-voice": 94
         },
-        "openFindings": [],
-        "tensionsOpen": []
+        "openFindings": [
+            {
+                "id": "compliance-data-steward-01",
+                "severity": "medium",
+                "runsOpen": 1
+            },
+            {
+                "id": "changelog-v103-runon",
+                "severity": "medium",
+                "runsOpen": 3
+            },
+            {
+                "id": "cadence-drift",
+                "severity": "low",
+                "runsOpen": 6
+            },
+            {
+                "id": "no-svg-sec8-wording",
+                "severity": "low",
+                "runsOpen": 1
+            },
+            {
+                "id": "security-css-injection",
+                "severity": "low",
+                "runsOpen": 1
+            },
+            {
+                "id": "ux-native-dialogs",
+                "severity": "low",
+                "runsOpen": 1
+            },
+            {
+                "id": "thin-unit-tests",
+                "severity": "low",
+                "runsOpen": 1
+            },
+            {
+                "id": "editor-xxxx-comment",
+                "severity": "low",
+                "runsOpen": 1
+            }
+        ],
+        "tensionsOpen": [
+            {
+                "id": "cadence-vs-coverage",
+                "between": [
+                    "strategic-kill-this",
+                    "observability",
+                    "cost-economics"
+                ],
+                "note": "Daily fan-out on a feature-complete project vs the declared weekly-only cadence; recurring, route to adr-promoter for a locked cadence decision.",
+                "runsOpen": 6
+            }
+        ]
     },
     "metrics": [
         {
