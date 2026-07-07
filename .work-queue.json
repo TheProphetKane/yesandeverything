@@ -87,14 +87,14 @@
       "kind": "drift-fix",
       "auto_safe": true,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 1,
+      "status": "completed",
+      "attempts": 2,
       "result_path": "X:\\YesAndEverything\\.work-queue-results\\handler-audit-2026-06-30-hbh-h1-dead-recovery-scripts.md",
       "source": "handler-audit-nightly 2026-06-30 / docs/HANDLER_AUDIT-2026-06-30.md HBH-H1",
       "prompt": "Dead recovery-script references span THREE files; outputs/ was pruned to a single survivor outputs/_gdd_tail_recover_0911.py. Repoint or rewrite each: (1) X:\\HereBeHordes\\CLAUDE.md line ~46 (cites outputs/v0_61_8_recover.py + v0_61_10_gdd_tail_recover.py) and line ~109 (cites outputs/v0_74_30_apply.py / _31 / _32). (2) X:\\HereBeHordes\\scripts\\publish-gdd.ps1 lines ~76/83/91 (cite v0_61_10_gdd_tail_recover.py). (3) X:\\YesAndEverything\\CLAUDE.md 'Things that will bite you' (cites X:\\HereBeHordes\\outputs\\v0_61_10_gdd_tail_recover.py) and 'FUSE Edit-tool truncation' (cites X:\\HereBeHordes\\outputs\\v0_74_30_apply.py). Either repoint each to outputs/_gdd_tail_recover_0911.py or replace the citation with an inline description of the atomic-write-with-readback recovery pattern. Verify the live target exists before editing. HBH edits trigger the GDD update + release hard rule; the publish-gdd.ps1 edit trips the .ps1 shell-gate. Belongs to an attended HBH session (foldable with sibling HBH items below); YaE side ships via its own scripts/release.ps1. Verify each path first; close already-resolved tokens individually.",
-      "notes": "Caught by handler-audit 2026-06-30 (HIGH). The single most dangerous item: the wrong recovery instruction fires in exactly the GDD-truncation incident it is meant for. Touches a .ps1 (gated) and HBH GDD/release (forbidden to unattended drain). | 2026-07-05 queue-drain-4h read-only verify: targets 1+2 ALREADY RESOLVED (HBH CLAUDE.md L46/48 now cite scripts/check_gdd_integrity.py; publish-gdd.ps1 L83/91 cite scripts\\check_gdd_integrity.py; outputs/ pruned to survivor _gdd_tail_recover_0911.py, all cited dead files absent). ONLY remaining work is YaE CLAUDE.md two dead refs (L81 outputs\u000b0_61_10_gdd_tail_recover.py, L104 outputs\u000b0_74_30_apply.py) - repoint L81 to X:\\HereBeHordes\\scripts\\check_gdd_integrity.py and L104 to the survivor or an inline pattern description. Attended YaE session (handler file + release.ps1); not applied this run. Fix staged in result_path.",
-      "lastWorkedAt": "2026-07-05T13:11:06Z",
-      "lastAttemptAt": "2026-07-05T13:11:06Z"
+      "notes": "Caught by handler-audit 2026-06-30 (HIGH). The single most dangerous item: the wrong recovery instruction fires in exactly the GDD-truncation incident it is meant for. Touches a .ps1 (gated) and HBH GDD/release (forbidden to unattended drain). | 2026-07-05 queue-drain-4h read-only verify: targets 1+2 ALREADY RESOLVED (HBH CLAUDE.md L46/48 now cite scripts/check_gdd_integrity.py; publish-gdd.ps1 L83/91 cite scripts\\check_gdd_integrity.py; outputs/ pruned to survivor _gdd_tail_recover_0911.py, all cited dead files absent). ONLY remaining work is YaE CLAUDE.md two dead refs (L81 outputs\u000b0_61_10_gdd_tail_recover.py, L104 outputs\u000b0_74_30_apply.py) - repoint L81 to X:\\HereBeHordes\\scripts\\check_gdd_integrity.py and L104 to the survivor or an inline pattern description. Attended YaE session (handler file + release.ps1); not applied this run. Fix staged in result_path. | 2026-07-06 queue-drain-4h: VERIFIED FULLY RESOLVED and closed. All three scoped files clean: YaE CLAUDE.md has zero outputs/ recovery-script refs (both former L81/L104 dead refs gone), HBH CLAUDE.md has no dead refs, and publish-gdd.ps1 L76/83/91 all cite scripts/check_gdd_integrity.py. The YaE-side fix staged 2026-07-05 was applied by an attended session since. Nothing left; no release run by this task.",
+      "lastWorkedAt": "2026-07-06T21:09:18Z",
+      "lastAttemptAt": "2026-07-06T21:09:18Z"
     },
     {
       "id": "yaa-audit-cadence-naming-2026-06-30",
@@ -589,7 +589,11 @@
       "status": "pending",
       "prompt": "Yes& Chains [HIGH, bar-raise finding auth-01]: the Cloudflare Worker verifies no Supabase JWT and trusts a client-supplied body.userId for every entitlement decision, so anyone who knows an entitled account's UUID can spoof Pro access to the paid AI-spend endpoints. Evidence: worker/src/lib.js:1717-1734 (_requireEntitledUser) and :1678-1701 (_checkSubscriptionEntitled) read body.userId with only a shape check; worker/src/handlers/billing.js:53,446,566,617 and contribute.js:290-297,365-372,403-410 do the same. Fix: require the Supabase access-token in an Authorization header on the billing, AI-spend, and contribution routes, verify it (Supabase /auth/v1/user or JWT signature), and derive userId from the verified claim instead of the request body. Live paid product, so treat as pre-1.0. Ships via X:\\YesAndChains\\scripts\\release.ps1; app.js is build output, edit src/ + worker/src/. Solo-dev voice, no em dashes.",
       "source": "bar-raise-yac 2026-07-04 / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-04.md",
-      "notes": "Enqueued by bar-raise-yac 2026-07-04. New HIGH this run; not in prior openFindings."
+      "attempts": 1,
+      "result_path": "X:\\YesAndEverything\\.work-queue-results\\chains-br-auth-01-2026-07-04.md",
+      "lastWorkedAt": "2026-07-06T21:20:00Z",
+      "lastAttemptAt": "2026-07-06T21:20:00Z",
+      "notes": "Enqueued by bar-raise-yac 2026-07-04. New HIGH this run; not in prior openFindings. | 2026-07-06 queue-drain-4h: drained as top P1. Re-verified LIVE at HEAD (_requireEntitledUser lib.js:1717 + _checkSubscriptionEntitled:1678 trust body.userId with only a shape check; billing.js:53/566 and contribute.js:296/371/409 same). Superseded the earlier read-only result with an APPLY-READY patch: new _verifyAccessToken(req,env) helper (GoTrue /auth/v1/user + SUPABASE_SERVICE_ROLE_KEY as apikey), re-anchored _requireEntitledUser to the verified id, per-call-site edits for billing.js + contribute.js, client token-send step, verification plan. NOT applied: auto_safe:false live paid worker; needs release.ps1 + worker deploy + end-to-end auth test, out of drain scope. Kept pending for an attended Chains session; fold with chains-br-finance-03 (shares handleBillingCheckout)."
     },
     {
       "id": "chains-br-compliance-04-2026-07-04",
@@ -710,8 +714,78 @@
       "evidence": "docs/GDD.html lines 2084, 4651-4652, 4726, 4841",
       "prompt": "HBH GDD drift (re-enqueued 2026-07-05; the prior tracking item hbh-legacy-saveload-autoload-remove-2026-06-28 was drained from the queue on 2026-07-05T01:13:19Z without the fix landing, HEAD still v0.99.31). Four live references in docs/GDD.html still present the save_load autoload as live, but it was removed and its 544-line source deleted in v0.99.19; 3D persistence now runs only through world_3d.gd _save_run / _load_run. Fix all four: (1) lines 4651-4652 (Architecture autoload-reference table) delete the whole save_load <tr> that points at source/autoloads/save_load.gd with method line-refs into the deleted file; (2) line 4841 (Architecture file-tree table) delete the whole save_load.gd <tr>; (3) line 2084 (Design save/load feature line) rewrite the <em> clause to state the save_load autoload was removed in v0.99.19 and the 3D world saves/restores via world_3d.gd _save_run / _load_run only, with the multi-slot picker UI not yet ported to 3D, dropping the 'is live' phrasing; (4) line 4726 (Architecture cell) reword to drop the 'save_load autosave' reference while keeping the already-correct 3D win/loss and wave-cadence context in the same cell. Line numbers drift as the GDD grows, re-verify before editing. docs/GDD.html is FUSE-truncation-sensitive: use the Python atomic-write-with-readback pattern and confirm the file still ends with </html> after the batch. Solo-dev voice (no em dashes, no AI vocabulary, no 'per Nick'). Attended HBH session only: this edit trips the GDD-update-plus-release hard rule, so ship via X:\\HereBeHordes\\scripts\release.ps1 with a version-pill bump plus a changelog entry.",
       "notes": "Re-enqueue of the vanished save_load structural drift. All four are STRUCTURAL (two <tr> deletions + two prose rewrites); not auto-applyable (GDD edit + release is out of nightly scope). Confirmed unfixed in the v0.99.31 GDD."
+    },
+    {
+      "id": "agents-canonical-audit-2026-07-07-claude-md-dashboard-claim",
+      "added": "2026-07-07",
+      "project": "agents",
+      "kind": "canonical-audit-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "audit-agents-nightly 2026-07-07 / docs/CANONICAL_AUDIT-2026-07-07.md",
+      "severity": "low",
+      "impact": 2,
+      "confidence": 5,
+      "evidence": "CLAUDE.md:42",
+      "prompt": "Yes& Agents doc drift (CLAUDE.md, handler — must be hand-edited, not auto-fixed). CLAUDE.md:42 claims scripts/write-dashboard-status.ps1 'runs inside the push and feeds X:\\YesAndEverything\\status\\data\\Agents.json so the dashboard tracks this project like the rest of the portfolio.' False since the 2026-07-06 public delisting: the script exits early (no-op) and Agents.json is not written; Agents is excluded from all public surfaces. Rewrite the Release-flow note to say the script is retained but no-ops under the delisting, so the handler stops asserting public-dashboard tracking. Solo-dev voice."
+    },
+    {
+      "id": "agents-canonical-audit-2026-07-07-delisting-locked-decision",
+      "added": "2026-07-07",
+      "project": "agents",
+      "kind": "canonical-audit-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "audit-agents-nightly 2026-07-07 / docs/CANONICAL_AUDIT-2026-07-07.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": "docs/DESIGN.md §1.2:28, §2",
+      "prompt": "Yes& Agents DESIGN.md structural reconcile (needs a human wording call). §1.2 success criteria states 'The project reports to the portfolio dashboard like every sibling,' contradicted by the standing 2026-07-06 public-delisting (Agents dropped from all public surfaces; write-dashboard-status.ps1 no-ops). The delisting currently lives only as a comment in write-dashboard-status.ps1. Reconcile §1.2 to reflect the exception AND add a Locked Decision (candidate D-011) to §2 recording the delisting so DESIGN.md, not a script comment, is the source of truth. Add a changelog PATCH entry. Solo-dev voice, no em dashes."
+    },
+    {
+      "id": "canonical-audit-2026-07-07-apothecary-review-cadence-drift",
+      "added": "2026-07-07",
+      "project": "apothecary",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "audit-apothecary-nightly 2026-07-07 / docs/CANONICAL_AUDIT-2026-07-07.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": "PROJECT_SPEC.md sec8:315; .project-context.json:19,80",
+      "prompt": "YesAndApothecary review-cadence reconcile (needs a human fork). The PROJECT_SPEC.md section 8 Locked Decision 'Post-1.0 review cadence: weekly, constellation-only (v1.0)' states Apothecary 'drops out of the daily per-project bar-raise and is reviewed only in the weekly constellation pass plus the existing audit-apothecary-weekly task.' Reality under the scheduled-tasks folder (C:/Users/Kane/.claude/scheduled-tasks/): bar-raise-apothecary exists and self-describes as 'Daily bar-raise review of YesAndApothecary', and audit-apothecary-nightly runs nightly (no audit-apothecary-weekly task exists). .project-context.json mirrors the stale doc (review_cadence 'weekly-constellation-only' plus an audit-apothecary-weekly reference). Doc and context agree with each other but both drift from the actual daily+nightly cadence. Resolve the fork: either (a) rewrite the section 8 decision + .project-context.json to describe the real 'daily bar-raise + nightly audit' cadence and fix the audit-apothecary-weekly -> audit-apothecary-nightly name reference, OR (b) re-scope the bar-raise-apothecary (daily) and audit-apothecary-nightly routines back to the intended weekly-constellation-only cadence. Do NOT half-apply (swapping only the task name leaves 'weekly, constellation-only' standing while cadence is daily/nightly). Touches a Locked Decision; add a changelog PATCH entry; solo-dev voice, no em dashes."
+    },
+    {
+      "id": "canonical-audit-2026-07-07-apothecary-no-svg-locked-wording",
+      "added": "2026-07-07",
+      "project": "apothecary",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P3",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "audit-apothecary-nightly 2026-07-07 / docs/CANONICAL_AUDIT-2026-07-07.md",
+      "severity": "low",
+      "impact": 1,
+      "confidence": 5,
+      "evidence": "PROJECT_SPEC.md sec8:303",
+      "prompt": "YesAndApothecary section 8 locked-decision wording qualification (could not auto-apply: sits inside the Locked Decisions section, which drift-auto-fix never edits). The v0.8.2 decision reads 'PNG-only art, zero SVG in the label (v0.8.2). ... No SVG anywhere in the rendered label.' render.js emits four inline <svg> blocks for non-art chrome (top/bottom dividers lines 27/33, parchmentSvg line 48, borderSvg line 135), so the absolute clause is literally false; the decision's real scope is art (symbols + illustrations ship PNG-only), which holds. Qualify the final sentence to 'No SVG in the rendered label art (symbols and illustrations); structural chrome - parchment background, border overlay, dividers - is inline SVG by design.' The paraphrase in section 4.4 line 76 was already corrected to 'zero SVG in the label art' in the 2026-07-07 drift-fix pass; this item closes the matching section 8 wording. Substance of the locked decision (PNG-only art) is unchanged. Add a changelog PATCH entry; solo-dev voice, no em dashes."
     }
   ],
-  "last_drain": "2026-07-05T13:11:06Z",
-  "updated": "2026-07-05"
+  "last_drain": "2026-07-06T21:20:00Z",
+  "updated": "2026-07-07"
 }
