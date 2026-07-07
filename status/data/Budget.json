@@ -36,41 +36,41 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-05.md",
-        "latestReportAt": "2026-07-05T11:36:01Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-07.md",
+        "latestReportAt": "2026-07-07T11:40:00Z",
         "verdict": "working",
-        "topFinding": "Carry-forward pass. Only one commit landed since the 2026-07-04 full pass: v0.14.5 (e334403), a doc-and-config follow-up that synced the DESIGN.md api sections to shipped behavior and made Dependabot pair react and react-dom so a future major bump cannot desync them the way PR 7 did. No runtime code changed, so a fresh 28-lens fan-out would re-derive the same finding set; this run re-verified the four open MED actions and the four hard rules directly against HEAD instead. All four hard rules still hold (D-006 loopback bind at server.ts:1256 with server-bind.test.ts, D-001 no outbound from importers/, D-003 guardCents at boundaries, D-004/D-007 BackupFailedError + backup_failed), every version pill reads 0.14.5, and no lens returned a BLOCK. Health holds at 89 (working). The four MED actions carry forward unchanged: bulk-delete still deletes rows with no pre-delete snapshot (server.ts:534), push-to-github.ps1 still blind-deletes .git/index.lock before its Assert-GitSafe (lines 28-31), the yesandeverything.com CORS grant is still on the wildcard /* (server.ts:91-96), and the fifth Discord webhook file (.discord_resources_webhook.txt) still does not exist. The security<->solo-tool-ux tension is now at runsSeen 5; it is an undecided decision, not a daily tradeoff, and should be promoted via adr-promoter into docs/DECISIONS.md.",
-        "actionsOpen": 4,
+        "topFinding": "Full 28-lens fan-out. Runtime code is unchanged since the 2026-07-04 full pass (the only two commits since, 2be93d7 and 40600a3, are a scheduled-task routine rename and a Dependabot tailwindcss-major ignore), so nothing here is a regression: every finding is a real gap that lives at HEAD, and the health dip from 89 to 84 comes from a broader, deeper fan-out surfacing more robustness, test, and doc debt than the carried set, not from anything breaking. No lens returned a BLOCK and all four hard rules hold (D-006 loopback bind at server.ts:1255-1256 with server-bind.test.ts, D-003 guardCents at money boundaries, D-001 no outbound HTTP from importers/, D-004/D-007 BackupFailedError). The verdict stays working: the tool is M6-done at 100 percent, live, and functioning. The strongest signal is a three-lens convergence on bulk-delete (server.ts:534) permanently deleting rows with no pre-delete snapshot, the one destructive path that bypasses the D-004/D-007 snapshot contract every other destructive route honors. A second three-lens convergence confirms push-to-github.ps1:28-32 still blind-deletes .git/index.lock before Assert-GitSafe, and a genuinely new finding is that git-guard.ps1:62 points post-corruption recovery at unstick-git.ps1, a script that does not exist. The four carried MED actions persist (bulk-delete snapshot, CORS wildcard, push blind lock-delete, Discord fifth webhook) and are still undrained because all are auto_safe:false and need an attended release; the cleanest close is one batched Budget release session.",
+        "actionsOpen": 9,
         "actionsClosed": 0,
-        "health": 89,
+        "health": 84,
         "lensScores": {
-            "architecture": 88,
-            "reliability": 92,
+            "architecture": 84,
+            "reliability": 82,
             "security": 78,
-            "performance": 93,
-            "data-integrity": 84,
-            "maintainability": 92,
-            "solo-tool-ux": 92,
+            "performance": 86,
+            "data-integrity": 74,
+            "maintainability": 82,
+            "solo-tool-ux": 91,
             "cost-economics": 97,
-            "dependency": 90,
-            "observability": 94,
-            "strategic-kill-this": 93,
+            "dependency": 88,
+            "observability": 93,
+            "strategic-kill-this": 88,
             "compliance-data-steward": 93,
-            "finance-product-threat-model": 82,
-            "finance-product-dedupe": 93,
-            "finance-product-backup-cadence": 82,
+            "finance-product-threat-model": 74,
+            "finance-product-dedupe": 82,
+            "finance-product-backup-cadence": 74,
             "finance-product-categorization-tail": 90,
-            "orchestration-skill-suite-health": 94,
+            "orchestration-skill-suite-health": 88,
             "orchestration-work-queue-hygiene": 82,
-            "orchestration-audit-loop-integrity": 93,
-            "orchestration-fuse-truncation-defense": 96,
-            "orchestration-incident-runbook-currency": 92,
-            "orchestration-scheduled-task-firing-state": 93,
-            "orchestration-skill-trigger-collisions": 91,
+            "orchestration-audit-loop-integrity": 88,
+            "orchestration-fuse-truncation-defense": 74,
+            "orchestration-incident-runbook-currency": 74,
+            "orchestration-scheduled-task-firing-state": 94,
+            "orchestration-skill-trigger-collisions": 82,
             "orchestration-skill-chain-handoff-integrity": 88,
             "release-pipeline-ps1-stack": 74,
             "release-pipeline-discord-notify": 78,
-            "release-pipeline-version-pill-drift": 96,
+            "release-pipeline-version-pill-drift": 100,
             "release-pipeline-gate-page-publish": 95
         },
         "openFindings": [
@@ -78,29 +78,64 @@
                 "id": "data-integrity-01",
                 "severity": "MED",
                 "priority": 20,
-                "runsOpen": 2,
-                "firstSeen": "2026-07-04"
-            },
-            {
-                "id": "release-pipeline-ps1-stack-01",
-                "severity": "MED",
-                "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "security-01",
                 "severity": "MED",
-                "priority": 12,
-                "runsOpen": 2,
+                "priority": 20,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "release-pipeline-ps1-stack-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "release-pipeline-discord-notify-01",
                 "severity": "MED",
-                "priority": 12,
-                "runsOpen": 2,
+                "priority": 10,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-04"
+            },
+            {
+                "id": "maintainability-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-07"
+            },
+            {
+                "id": "dependency-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-07"
+            },
+            {
+                "id": "orchestration-incident-runbook-currency-02",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-07"
+            },
+            {
+                "id": "finance-product-dedupe-01",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-07"
+            },
+            {
+                "id": "performance-01",
+                "severity": "MED",
+                "priority": 8,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-07"
             }
         ],
         "tensionsOpen": [
@@ -109,14 +144,14 @@
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 5
+                "runsSeen": 6
             },
             {
                 "lenses": [
                     "data-integrity",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
             }
         ],
         "actions": [
@@ -130,49 +165,96 @@
             {
                 "severity": "MED",
                 "priority": 20,
-                "id": "release-pipeline-ps1-stack-01",
-                "title": "Delete the blind Remove-Item .git\\index.lock block in push-to-github.ps1:28-31 and rely on Assert-GitSafe.",
-                "lens": "release-pipeline-ps1-stack"
-            },
-            {
-                "severity": "MED",
-                "priority": 12,
                 "id": "security-01",
-                "title": "Narrow the yesandeverything.com CORS grant (server.ts:91-96) off the wildcard /* to the GET probe route only.",
+                "title": "Narrow the yesandeverything.com CORS grant (server.ts:90-98) off the wildcard /* to the GET probe route only.",
                 "lens": "security"
             },
             {
                 "severity": "MED",
+                "priority": 15,
+                "id": "release-pipeline-ps1-stack-01",
+                "title": "Delete the blind Remove-Item .git\\index.lock block in push-to-github.ps1:28-32 and rely on Assert-GitSafe.",
+                "lens": "release-pipeline-ps1-stack"
+            },
+            {
+                "severity": "MED",
+                "priority": 15,
+                "id": "maintainability-01",
+                "title": "Add route/unit tests for goals and budget-target CRUD (createGoal/updateGoal/deleteGoal, setBudgetTarget/clearBudgetTarget).",
+                "lens": "maintainability"
+            },
+            {
+                "severity": "MED",
+                "priority": 15,
+                "id": "dependency-01",
+                "title": "Tighten package.json engines.node to ^20.19.0 || >=22.12.0 to match the vite 8 / vitest 3 floor.",
+                "lens": "dependency"
+            },
+            {
+                "severity": "MED",
+                "priority": 15,
+                "id": "orchestration-incident-runbook-currency-02",
+                "title": "Fix the git-guard.ps1:62 recovery pointer (unstick-git.ps1 does not exist) to release.ps1 -Bump none.",
+                "lens": "orchestration-incident-runbook-currency"
+            },
+            {
+                "severity": "MED",
                 "priority": 12,
+                "id": "finance-product-dedupe-01",
+                "title": "Harden Plaid sync: add a per-request timeout and make applyAdded fail-soft on a 4-tuple UNIQUE collision so the cursor cannot wedge.",
+                "lens": "finance-product-dedupe"
+            },
+            {
+                "severity": "MED",
+                "priority": 10,
                 "id": "release-pipeline-discord-notify-01",
-                "title": "Reconcile the Budget audit/resources Discord webhook wiring against the naming standard (fifth webhook file missing).",
+                "title": "Reconcile the Budget fifth (resources) Discord webhook against the naming standard (file missing, channel routed through the audit webhook).",
                 "lens": "release-pipeline-discord-notify"
+            },
+            {
+                "severity": "MED",
+                "priority": 8,
+                "id": "performance-01",
+                "title": "Bound the subscription detector query to a trailing window so its cost tracks the detection horizon, not lifetime rows.",
+                "lens": "performance"
             }
         ],
         "deferred": [
             {
                 "severity": "MED",
-                "title": "Add a per-boot-token or same-origin guard on the destructive loopback endpoints.",
                 "lens": "security",
-                "reason": "blocked on Nick friction-level decision; security<->solo-ux tension runsSeen 5, promote via adr-promoter"
+                "title": "Add a per-boot-token or same-origin guard on the destructive loopback endpoints.",
+                "reason": "blocked on Nick friction-level decision; security<->solo-ux tension runsSeen 6, promote via adr-promoter"
             },
             {
                 "severity": "LOW",
-                "title": "Pre-stage a keytar migration target for the SQLCipher key.",
+                "lens": "architecture",
+                "title": "Extract server.ts route groups into per-domain Hono sub-routers.",
+                "reason": "post-milestone refactor; no bug exposure"
+            },
+            {
+                "severity": "LOW",
+                "lens": "reliability",
+                "title": "Snapshot or capture-for-undo on merge-merchant before it rewrites normalized_merchant.",
+                "reason": "lens split MED/LOW; categorize-merchant undo pattern partially mitigates; low urgency on a finished tool"
+            },
+            {
+                "severity": "LOW",
+                "lens": "dependency",
+                "title": "Log the tailwindcss v4 pin as a tracked deferred-migration item with a revisit trigger.",
+                "reason": "deferred migration; v4 is a manual breaking upgrade"
+            },
+            {
+                "severity": "LOW",
                 "lens": "compliance-data-steward",
+                "title": "Pre-stage a keytar migration target for the SQLCipher key.",
                 "reason": "DECIDED keep 2026-06-25; gated on a keytar build-failure trigger"
             },
             {
                 "severity": "LOW",
-                "title": "Flip Plaid Sandbox to Production.",
                 "lens": "finance-product-threat-model",
+                "title": "Flip Plaid Sandbox to Production.",
                 "reason": "gated on paid Plaid Production approval (D-012)"
-            },
-            {
-                "severity": "LOW",
-                "title": "Extract server.ts CRUD/app-lock into per-domain modules.",
-                "lens": "architecture",
-                "reason": "post-milestone refactor; no bug exposure"
             }
         ]
     },
