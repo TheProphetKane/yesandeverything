@@ -43,7 +43,10 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 15  # v15 (2026-07-06): RPG renamed to Gnosis (folder X:\YesAndGnosis,
+$ATTRIB_VERSION = 16  # v16 (2026-07-07): adds blueprint-refresh -> Everything (weekly
+# system-blueprint regeneration routine) and ingest-answers -> Gnosis (daily answers
+# ingest routine created 2026-07-06 without a pattern).
+# v15 (2026-07-06): RPG renamed to Gnosis (folder X:\YesAndGnosis,
 # repo yesandgnosis, gnosis.yesandeverything.com); all RPG-era patterns now attribute to
 # id "Gnosis"; adds gnosis patterns. v14 (2026-07-06): added RPG (X:\YesAndRPG, Elder Domain world
 # vault + campaign wiki at rpg.yesandeverything.com) - repo patterns, task names
@@ -116,6 +119,8 @@ $PROJECT_PATTERNS = @(
   @{ pat = "audit-counselor";     id = "Counselor" },   # nightly care-audit; greps YaE surfaces for leak-sweep by design
   @{ pat = "bar-raise-gnosis";    id = "Gnosis" },
   @{ pat = "audit-gnosis";        id = "Gnosis" },
+  @{ pat = "ingest-answers";      id = "Gnosis" },
+  @{ pat = "blueprint-refresh";   id = "Everything" },  # weekly system-blueprint regen; cross-portfolio by design
   @{ pat = "bar-raise-rpg";       id = "Gnosis" },
   @{ pat = "audit-rpg";           id = "Gnosis" },
   # word-based bar-raise task names (renamed 2026-07-06 from acronyms; the old
