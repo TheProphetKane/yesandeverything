@@ -43,7 +43,13 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 16  # v16 (2026-07-07): adds blueprint-refresh -> Everything (weekly
+$ATTRIB_VERSION = 17  # v17 (2026-07-08): fixes Gnosis work leaking to Everything. The
+# worker/site is "gnosis-yesandeverything" (HYPHEN) and the escaped pattern
+# "gnosis.yesandeverything" only matched the DOT form, so every worker-name mention fell
+# through to the bare "yesandeverything" -> Everything. Adds the hyphen form and the world
+# name "Elder Domain" (zero-collision, pervades the vault) so Gnosis work in mixed
+# sessions stops carrying-forward to Everything. Both -> Gnosis, ordered before yesandeverything.
+# v16 (2026-07-07): adds blueprint-refresh -> Everything (weekly
 # system-blueprint regeneration routine) and ingest-answers -> Gnosis (daily answers
 # ingest routine created 2026-07-06 without a pattern).
 # v15 (2026-07-06): RPG renamed to Gnosis (folder X:\YesAndGnosis,
@@ -182,7 +188,9 @@ $PROJECT_PATTERNS = @(
   @{ pat = "spouse.yesandeverything"; id = "Counselor" },
   @{ pat = "YesAndGnosis";        id = "Gnosis" },
   @{ pat = "yesandgnosis";        id = "Gnosis" },
-  @{ pat = "gnosis.yesandeverything"; id = "Gnosis" },
+  @{ pat = "gnosis.yesandeverything"; id = "Gnosis" },   # dot form (custom domain)
+  @{ pat = "gnosis-yesandeverything"; id = "Gnosis" },   # HYPHEN form (worker name) - MUST precede bare yesandeverything below
+  @{ pat = "Elder Domain";        id = "Gnosis" },        # the world name; pervades vault content, collides with nothing
   @{ pat = "YesAndRPG";           id = "Gnosis" },
   @{ pat = "yesandrpg";           id = "Gnosis" },
   @{ pat = "rpg.yesandeverything"; id = "Gnosis" },
@@ -643,13 +651,14 @@ if ($Audit) {
   exit 0
 }
 
-# ----- Public delisting (2026-07-06, Kane's call) ----------------------------
-# Agents must not appear on ANY public surface - the YaE repo is public, so that
-# includes usage.json, queue.json, and the usage-log ledger, all of which derive
-# from $projects below. Internal ATTRIBUTION is unchanged (patterns above still
-# route Agents' tokens to "Agents" so they don't pollute other projects); the
-# project is dropped here, at the publish boundary. Do not re-add.
-$PUBLIC_EXCLUDE = @("Agents")
+# ----- Publish-boundary exclusion --------------------------------------------
+# Projects listed here are dropped from usage.json / queue.json / the ledger.
+# Agents was excluded 2026-07-06 (full delist) but RESTORED 2026-07-08 (Kane):
+# it's tracked on the robots-gated dashboard/status analytics tier again, so its
+# usage attribution flows through. It stays off the public homepage grid, which
+# is enforced in index.html + update-project-pages.mjs (no Agents card/slug), not
+# here. Empty = nothing excluded.
+$PUBLIC_EXCLUDE = @()
 foreach ($x in $PUBLIC_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
 
 # ----- Build usage.json ------------------------------------------------------
