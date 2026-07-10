@@ -53,10 +53,10 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-08.md",
-        "latestReportAt": "2026-07-08T06:30:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-10.md",
+        "latestReportAt": "2026-07-10T06:30:00Z",
         "verdict": "needs-attention",
-        "topFinding": "Targeted full pass: v0.56.1 and v0.57.0 both landed since the 2026-07-07 run, but neither touches the money path (billing.js, lib.js, subscription.ts, legal-view.ts, legal/terms.md all byte-identical), so all fourteen open actions carry forward with aging ticked. Two real wins shipped: tools/kv_backup.py (0.56.1) now snapshots the caddy-api CACHE KV namespace with a nightly freshness gate, closing the canonical-course recoverability gap flagged 2026-07-01, so data-integrity moves 71 to 74; and the src/cloud.ts entitlement boot-race fix (0.57.0) force-refreshes the subscription on session-restore/sign-in/sign-out so a paying user no longer has to reload before Pro unlocks (reliability 84 to 85). Verdict holds at needs-attention because the live-breakage HIGH is unchanged: openBillingPortal() (src/subscription.ts:280) still early-returns on the dormant CHAINS_VISIBLE flag so a paying subscriber cannot self-cancel in-app (compliance-01, now open 7 runs / chronic), and the billing worker still trusts a client-supplied body.userId for entitlement (auth-01, billing.js:53). Nine 2026-07-01-cohort findings remain chronic and stay escalated to the constellation review.",
+        "topFinding": "Carry-forward pass, day 2. Nothing shipped: git HEAD is still b2eebce (v0.57.0, 2026-07-07), which predates the 2026-07-08 run, so this is the first bar-raise with genuinely zero commits behind it. Every one of the fourteen open actions anchors to a file byte-identical to what the last run inspected (git status clean over subscription.ts, billing.js, lib.js, research.js, cloud.ts, persistence.ts, legal-view.ts, legal/terms.md, sw.js; empty git log since 2026-07-06 over the same set), so all fourteen carry forward with aging ticked and all fourteen are now chronic at 5+ runs. Health holds at 86, no score moved, no BLOCK (both hard_rule_checks pass). Verdict stays needs-attention on the unchanged live-breakage HIGH: openBillingPortal() (src/subscription.ts:280) still early-returns on the dormant CHAINS_VISIBLE flag so a paying subscriber cannot self-cancel in-app (compliance-01, open 8 runs), and the billing worker still trusts a client-supplied body.userId (auth-01, billing.js:53). One new LOW (maint-01): the CLAUDE.md tools-table fix is applied in the working tree but uncommitted, while both queue rows tracking it are still pending, so once it commits both become permanently unsatisfiable rows. Seven of the fourteen sit on the money path, which has had no commits since billing went live on 2026-06-28; Pro is taking real payments with a dead cancel button, an unhardened webhook, and terms carrying no billing section.",
         "actionsOpen": 14,
         "actionsClosed": 0,
         "actions": [
@@ -244,98 +244,98 @@
                 "id": "compliance-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "auth-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "dataint-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "webhook-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-04",
                 "severity": "HIGH",
                 "priority": 15,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "reliability-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "cost-01",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 7,
+                "runsOpen": 8,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "install-offline-01",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "finance-03",
                 "severity": "MED",
                 "priority": 12,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "sync-01",
                 "severity": "MED",
                 "priority": 12,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-04"
             }
         ],
@@ -345,21 +345,21 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 10
+                "runsSeen": 11
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 7
+                "runsSeen": 8
             },
             {
                 "lenses": [
                     "data-integrity",
                     "cost-economics"
                 ],
-                "runsSeen": 4
+                "runsSeen": 5
             }
         ]
     },
