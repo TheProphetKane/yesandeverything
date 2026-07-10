@@ -43,7 +43,10 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 17  # v17 (2026-07-08): fixes Gnosis work leaking to Everything. The
+$ATTRIB_VERSION = 18  # v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project —
+# kayak search; never publicly listed, same tier as Counselor/Skylight): kayak-scout task
+# name + folder patterns + REPO_PATHS + QUEUE_ALIAS entries.
+# v17 (2026-07-08): fixes Gnosis work leaking to Everything. The
 # worker/site is "gnosis-yesandeverything" (HYPHEN) and the escaped pattern
 # "gnosis.yesandeverything" only matched the DOT form, so every worker-name mention fell
 # through to the bare "yesandeverything" -> Everything. Adds the hyphen form and the world
@@ -123,6 +126,7 @@ $PROJECT_PATTERNS = @(
   @{ pat = "audit-skylight";      id = "Skylight" },
   @{ pat = "bar-raise-constellation"; id = "Everything" },  # cross-project by design
   @{ pat = "audit-counselor";     id = "Counselor" },   # nightly care-audit; greps YaE surfaces for leak-sweep by design
+  @{ pat = "kayak-scout";         id = "Lexi" },        # twice-daily kayak sweep routine (2026-07-10)
   @{ pat = "bar-raise-gnosis";    id = "Gnosis" },
   @{ pat = "audit-gnosis";        id = "Gnosis" },
   @{ pat = "ingest-answers";      id = "Gnosis" },
@@ -197,6 +201,8 @@ $PROJECT_PATTERNS = @(
   @{ pat = "rpg.yesandeverything"; id = "Gnosis" },
   @{ pat = "YesAndSkylight";      id = "Skylight" },
   @{ pat = "yesandskylight";      id = "Skylight" },
+  @{ pat = "YesAndLexi";          id = "Lexi" },
+  @{ pat = "yesandlexi";          id = "Lexi" },
   @{ pat = "YesAndAgents";        id = "Agents" },
   @{ pat = "yesandagents";        id = "Agents" },
   @{ pat = "YesAndRing";          id = "Ring" },
@@ -700,7 +706,7 @@ $REPO_PATHS = @{
   Everything = "X:\YesAndEverything"; Agents = "X:\YesAndAgents"
   Counselor = "X:\YesAndCounselor"; Skylight = "X:\YesAndSkylight"
   Ring = "X:\YesAndRing"; Cattery = "X:\YesAndCattery"
-  Gnosis = "X:\YesAndGnosis"
+  Gnosis = "X:\YesAndGnosis"; Lexi = "X:\YesAndLexi"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
@@ -791,6 +797,7 @@ $QUEUE_ALIAS = @{
   ring = "Ring"; yesandring = "Ring"; cats = "Ring"; yesandcats = "Ring"
   cattery = "Cattery"; yesandcattery = "Cattery"
   gnosis = "Gnosis"; yag = "Gnosis"; yesandgnosis = "Gnosis"; rpg = "Gnosis"; yarpg = "Gnosis"; yesandrpg = "Gnosis"
+  lexi = "Lexi"; yesandlexi = "Lexi"
   all = "ALL"; cross = "ALL"; "cross-cutting" = "ALL"
 }
 try {
