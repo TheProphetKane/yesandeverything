@@ -4,114 +4,286 @@
   "private": true,
   "note": "Private family tool. Off the public site and status dashboard by DESIGN D9. This data file exists for the bar-raise / constellation tooling only; it is not linked from any public surface.",
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-03.md",
-    "latestReportAt": "2026-07-03T11:48:13Z",
-    "verdict": "needs-attention",
-    "topFinding": "The web-form event path files timed events at the wrong instant. `src/ui.ts:113` submits the raw `datetime-local` string (for example `2026-06-20T16:00`, no timezone) as `startsAt`; `toIso()` at `src/router.ts:73` runs it through `new Date(...).toISOString()`, and because a Worker's local timezone is UTC, ECMAScript reads the offset-less string as UTC and stamps `16:00Z`. The Google driver (`src/google.ts:102`) then sends that `Z`-suffixed instant alongside `timeZone: \"America/New_York\"`; Google honours the explicit offset, so a 4pm entry lands at 4pm UTC, which is noon Eastern. Result: a 4 to 5 hour skew on every timed event added from the phone form, the primary front door. The email path is unaffected (the parser is told to emit an ISO string with an offset, so the offset survives). This is a real runtime correctness bug in a shipped path and is why the verdict is needs-attention rather than in-progress; everything else is polish or config drift.",
-    "actionsOpen": 4,
-    "actionsClosed": 0,
+    "latestReportPath": "docs/BAR_RAISE-2026-07-10.md",
+    "latestReportAt": "2026-07-10T00:00:00Z",
+    "verdict": "in-progress",
+    "topFinding": "The HIGH runtime bug that set last week's verdict is genuinely fixed. src/dates.ts now carries the wall-clock semantics explicitly, normDate() passes a naive datetime-local string through verbatim, and google.ts sends it beside a timeZone field, so a 4pm entry from the phone form lands at 4pm Eastern. The all-day exclusive-end bug is closed the same way via nextDay(). What replaces it is not breakage but exposure: event creation is non-idempotent in all three front doors (src/google.ts:115, src/skylight.ts:159), and the only guard is a client-side disabled button at src/ui.ts:115, so a retried POST, a re-delivered email, or a curl retry silently doubles a calendar entry. Alongside that, the pure date functions that shipped a bug last month still have zero tests. The project works; it is under-instrumented against the next regression rather than currently broken, which is why the verdict moves from needs-attention to in-progress.",
+    "actionsOpen": 15,
+    "actionsClosed": 2,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Interpret offset-less datetime-local input in DEFAULT_TIMEZONE (or send Google a naive dateTime + timeZone) so web-form timed events stop landing 4 to 5 hours off.",
-        "lens": "reliability",
-        "priority": 16,
-        "id": "reliability-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Default-deny inbound mail when ALLOWED_SENDERS is unset or empty.",
-        "lens": "security",
-        "priority": 12,
-        "id": "security-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a vitest suite covering toIso/addHour/today timezone cases and extractJson.",
+        "title": "Add a vitest suite over normDate/epochOf/addHour/nextDay/fmtWhen and extractJson, and wire it into release.ps1 beside the typecheck.",
         "lens": "maintainability",
-        "priority": 12,
+        "priority": 20,
         "id": "maintainability-01"
       },
       {
         "severity": "MED",
-        "title": "For all-day Google events set end.date to start + 1 day so they stop 400ing.",
+        "title": "Add a scheduled smoke probe that exercises one write per Skylight entity type and alerts on a 4xx.",
+        "lens": "dependency",
+        "priority": 20,
+        "id": "dependency-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Derive a deterministic event id from summary plus startsAt, pass it as Google's client-supplied id, and treat 409 as success.",
+        "lens": "data-integrity",
+        "priority": 15,
+        "id": "data-integrity-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Treat an unset or empty ALLOWED_SENDERS as reject-all rather than skipping the allowlist check.",
+        "lens": "security",
+        "priority": 15,
+        "id": "security-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a console.error in the index.ts fetch catch carrying pathname and error message, never the request body.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Extract the client script from ui.ts template literals into a typechecked source file and dedupe esc().",
+        "lens": "maintainability",
+        "priority": 15,
+        "id": "maintainability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Define one canonical event-input type and give both drivers a uniform createEvent signature.",
+        "lens": "architecture",
+        "priority": 12,
+        "id": "architecture-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Retry the Google events POST once on a 401 or 403 after re-minting the cached token.",
         "lens": "reliability",
+        "priority": 12,
+        "id": "reliability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Treat a 2xx write with an unreadable response body as success rather than throwing.",
+        "lens": "data-integrity",
+        "priority": 12,
+        "id": "data-integrity-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap the whole email handler in a try/catch that logs and best-effort writes a KV entry.",
+        "lens": "observability",
+        "priority": 12,
+        "id": "observability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Fold a downstream check into /api/health, or point an external uptime probe at /api/setup.",
+        "lens": "observability",
+        "priority": 10,
+        "id": "observability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Record processed Message-IDs in a short-TTL KV set and skip duplicates.",
+        "lens": "data-integrity",
         "priority": 9,
-        "id": "reliability-02"
+        "id": "data-integrity-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Redirect to sign-in on a 401 from /api/state or /api/quick-add instead of showing raw unauthorized.",
+        "lens": "solo-tool-ux",
+        "priority": 8,
+        "id": "solo-tool-ux-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Bump wrangler to ^4.x, regenerate the lockfile, and smoke-test a deploy.",
+        "lens": "dependency",
+        "priority": 8,
+        "id": "dependency-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Normalise both endpoints to one time frame before the start/end comparison, or reject a mixed pair.",
+        "lens": "data-integrity",
+        "priority": 6,
+        "id": "data-integrity-04"
       }
     ],
     "deferred": [
       {
         "severity": "MED",
-        "title": "Update .project-context.json Google phase-2 framing to reflect the shipped, primary driver.",
-        "lens": "compliance-data-steward",
-        "reason": "already queued by the 2026-07-02 canonical audit"
+        "title": "Re-anchor .project-context.json completion/milestone/stack to reflect the shipped Google-primary driver.",
+        "lens": "strategic-kill-this",
+        "reason": "already queued by the 2026-07-02 canonical audit (S1)"
       },
       {
-        "severity": "LOW",
-        "title": "Relocate the GCP service-account key to X:\\.secrets\\Skylight (not an exposure; gitignored + untracked).",
+        "severity": "MED",
+        "title": "Move the GCP service-account key from the repo root to X:\\.secrets\\Skylight.",
         "lens": "compliance-data-steward",
-        "reason": "already queued by the 2026-07-02 canonical audit"
+        "reason": "already queued (canonical-audit cred-hygiene + working-tree 2026-07-10)"
       },
       {
-        "severity": "LOW",
-        "title": "Gate inbound mail on DMARC / verified-sender alignment (From header is spoofable).",
+        "severity": "MED",
+        "title": "Gate inbound mail on a DMARC pass before honouring the From-based allowlist.",
         "lens": "security",
-        "reason": "post-1.0, low family-tool impact"
+        "reason": "post-1.0; Email Routing filters upstream and the attacker needs both an allowed address and the private inbound address"
+      },
+      {
+        "severity": "LOW",
+        "title": "Confirm SKYLIGHT_FRAME_ID via a live GET /api/setup, then set it or degrade the List/Chore/Task tabs.",
+        "lens": "reliability",
+        "reason": "already queued (canonical-audit-2026-07-10 frame-id); needs a live probe with credentials"
+      },
+      {
+        "severity": "LOW",
+        "title": "Null out changelog_path or create the CHANGELOG.md it promises.",
+        "lens": "release-pipeline",
+        "reason": "already queued by the 2026-07-02 canonical audit (S4)"
       },
       {
         "severity": "LOW",
         "title": "Add an offline outbox to the PWA service worker.",
         "lens": "PWA",
         "reason": "post-1.0 polish"
+      },
+      {
+        "severity": "LOW",
+        "title": "Drop the canonical audit from nightly to weekly-or-on-change.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on a Nick decision about routine cadence"
       }
     ],
-    "health": 83,
+    "health": 84,
     "lensScores": {
-      "architecture": 88,
-      "reliability": 72,
-      "security": 74,
-      "performance": 92,
-      "data-integrity": 68,
-      "maintainability": 80,
-      "solo-tool-ux": 88,
-      "cost-economics": 95,
-      "dependency": 84,
-      "observability": 82,
-      "strategic-kill-this": 90,
-      "compliance-data-steward": 85,
-      "cloud-edge": 85,
-      "PWA": 87,
-      "release-pipeline": 82
+      "architecture": 84,
+      "reliability": 84,
+      "security": 80,
+      "performance": 91,
+      "data-integrity": 75,
+      "maintainability": 78,
+      "solo-tool-ux": 86,
+      "cost-economics": 96,
+      "dependency": 82,
+      "observability": 74,
+      "strategic-kill-this": 85,
+      "compliance-data-steward": 83,
+      "cloud-edge": 87,
+      "PWA": 91,
+      "release-pipeline": 84
     },
     "openFindings": [
       {
-        "id": "reliability-01",
+        "id": "maintainability-01",
         "severity": "HIGH",
-        "priority": 16,
-        "runsOpen": 1,
+        "priority": 20,
+        "runsOpen": 2,
         "firstSeen": "2026-07-03"
       },
       {
         "id": "security-01",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-07-03"
       },
       {
-        "id": "maintainability-01",
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "dependency-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "architecture-01",
         "severity": "MED",
         "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-07-03"
+        "firstSeen": "2026-07-10"
       },
       {
-        "id": "reliability-02",
+        "id": "reliability-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "observability-03",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "data-integrity-03",
         "severity": "MED",
         "priority": 9,
         "runsOpen": 1,
-        "firstSeen": "2026-07-03"
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "dependency-02",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "data-integrity-04",
+        "severity": "MED",
+        "priority": 6,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-10"
       }
     ],
     "tensionsOpen": [
@@ -119,6 +291,27 @@
         "lenses": [
           "security",
           "solo-tool-ux"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "observability",
+          "compliance-data-steward"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "strategic-kill-this",
+          "observability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "security"
         ],
         "runsSeen": 1
       }
