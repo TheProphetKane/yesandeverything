@@ -80,6 +80,8 @@ Use the format defined in `waves/05_meta_synthesis.md`. Solo-dev voice. No em da
 
 ### Step 7: Update the YaE-side JSON
 
+**Delisted-project guard (standing, 2026-07-06): if the project is delisted from public surfaces — currently Agents — SKIP Steps 7 and 8 entirely. Never write, create, or restore its status JSON; `status/data/Agents.json` was deliberately deleted and the YaE repo is public. The markdown report from Step 6 is the complete output for delisted projects.**
+
 Read `X:\YesAndEverything\status\data\$project.json`. Mutate only the `barRaise` block:
 
 ```json
