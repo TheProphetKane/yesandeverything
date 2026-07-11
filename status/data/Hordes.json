@@ -1,519 +1,521 @@
 {
-  "project": "Hordes",
-  "displayName": "Here Be Hordes",
-  "version": "0.99.38",
-  "lastReleaseAt": "2026-07-10T19:57:05-05:00",
-  "lastReleaseMessage": "GDD + code update",
-  "milestone": {
-    "id": "M4",
-    "label": "Pre-Production Lock",
-    "status": "in-progress"
-  },
-  "completion": {
-    "pct": 55,
-    "anchored": "2026-06-10"
-  },
-  "itemsLeft": {
-    "open": 14,
-    "queue": 11,
-    "backlog": 0,
-    "gates": 3,
-    "items": [
-      "Most art assets still outstanding after the native-3D rework",
-      "M4 Pre-Production Lock incomplete",
-      "Mission content beyond the first playable"
-    ]
-  },
-  "backlog": {
-    "count": 0,
-    "items": []
-  },
-  "repoUrl": "https://github.com/TheProphetKane/here-be-hordes",
-  "workTreeClean": true,
-  "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-10.md",
-    "latestReportAt": "2026-07-10T06:09:13Z",
-    "findings": {
-      "high": 0,
-      "medium": 0,
-      "low": 0
-    }
-  },
-  "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-10.md",
-    "latestReportAt": "2026-07-10T11:40:00Z",
-    "verdict": "needs-attention",
-    "topFinding": "Reconciled 2026-07-10: the review's two runtime bugs are fixed in v0.99.34 (3D buildings join the buildings group so the per-colonist Provisions drain fires; saves carry the full run_config and restore it before apply on continue). The README, recruitment posts, GDD backlog honesty, perf items, and pipeline hardening from the same review shipped across v0.99.35-v0.99.39. What remains is the vendored asset-pack removal decision (owner call, license record now in docs/ASSET_PROVENANCE.md) and building the mission data layer (R3D-04, the roadmap's current focus).",
-    "actionsOpen": 2,
-    "actionsClosed": 37,
-    "actions": [
-      {
-        "severity": "HIGH",
-        "priority": 16,
-        "id": "compliance-data-steward-01",
-        "lens": "compliance-data-steward",
-        "title": "Record the license terms for each vendored asset pack, then either confirm redistribution or git rm the 533 raw pack copies and add a LICENSE and CREDITS file.",
-        "status": "blocked-on-user",
-        "note": "Agent half shipped v0.99.39: per-pack license terms in docs/ASSET_PROVENANCE.md, CREDITS.md at repo root. Remaining: owner call on the 533 tracked pack sprites - remove or obtain written redistribution permission."
-      },
-      {
-        "severity": "HIGH",
-        "priority": 16,
-        "id": "strategic-kill-this-02",
-        "lens": "strategic-kill-this",
-        "title": "Re-aim the next few versions at the mission data layer and one end-to-end 3D mission instead of art-gated polish.",
-        "status": "open",
-        "note": "Re-aim recorded v0.99.36 (roadmap current-focus + R3D-04). Remaining: build the mission data layer under source/data and one end-to-end 3D mission. Tracked as the sole pending HBH queue item."
-      }
-    ],
-    "deferred": [
-      {
-        "severity": "MED",
-        "title": "Pick the animated-vs-instanced crowd render path: the v0.99.30 re-baseline shows animated Zombie1 at 26 fps at 1k enemies, so the per-Node animated path cannot reach the S-34 hundreds-to-thousands target.",
-        "lens": "scale-architecture",
-        "reason": "owner look-decision; the use_crowd3d A/B seam is wired (v0.99.31) so the call is measurable. Queue item hbh-multimesh-crowd-migration-2026-06-28 should be reclassified blocked-on-user."
-      },
-      {
-        "severity": "MED",
-        "title": "Renumber off the v0.99.x band, which reads as 1.0-imminent while the game sits at milestone 4 of 8 with all content, art, audio and launch work untouched.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on a Nick decision about the versioning scheme"
-      },
-      {
-        "severity": "MED",
-        "title": "Re-export the commissioned building and unit models to a coherent shared scale so the hardcoded per-model scale constants can all become 1.0.",
-        "lens": "art-direction-consistency",
-        "reason": "art-delivery-gated, same gate as hbh-asset-production-pass (blocked-on-user since 2026-06-10)"
-      },
-      {
-        "severity": "MED",
-        "title": "Replace the ~14 placeholder colored-box buildings with finished models.",
-        "lens": "art-direction-consistency",
-        "reason": "art-delivery-gated, same gate as M4"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a save/load block for the research autoload's tech-tree state and bump SAVE_VERSION for the schema change.",
-        "lens": "save-format-stability",
-        "reason": "the research autoload has no 3D consumer yet; premature until the tech tree is wired into the 3D run"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a SAVE_VERSION migration dispatch and an older-format fixture test.",
-        "lens": "save-format-stability",
-        "reason": "no incompatible SAVE_VERSION bump yet; migration premature pre-M4-lock, and the live save is atomic as of v0.99.28"
-      },
-      {
-        "severity": "LOW",
-        "title": "Purge the ~440 MB of superseded binary revisions from git history and move the ~109 MB of temp/test 3D assets into the gitignored _ARCHIVE path.",
-        "lens": "cost-economics",
-        "reason": "history rewrite is a Nick decision; the asset move must migrate the lookdev scenes with it"
-      },
-      {
-        "severity": "LOW",
-        "title": "Sweep the residual Midjourney/Tripo tool names from the GDD changelog body.",
-        "lens": "ai-tell-concealment-currency",
-        "reason": "judged factual asset-pipeline documentation a solo dev would legitimately keep"
-      },
-      {
-        "severity": "LOW",
-        "title": "Remove the disabled bar-raise-hbh scheduled-task husk.",
-        "lens": "scheduled-task-firing-state",
-        "reason": "removal requires the app closed; X:\\Claude\\restart-cleanup.ps1 covers it"
-      }
-    ],
-    "health": 81,
-    "lensScores": {
-      "architecture": 84,
-      "reliability": 75,
-      "security": 96,
-      "performance": 82,
-      "data-integrity": 88,
-      "maintainability": 82,
-      "solo-tool-ux": 78,
-      "cost-economics": 90,
-      "dependency": 87,
-      "observability": 88,
-      "strategic-kill-this": 74,
-      "compliance-data-steward": 60,
-      "playability": 82,
-      "scope-discipline": 87,
-      "scale-architecture": 75,
-      "asset-pipeline": 82,
-      "voice-and-tone": 88,
-      "sound-design-discipline": 93,
-      "art-direction-consistency": 79,
-      "save-format-stability": 62,
-      "solo-dev-voice-portfolio": 58,
-      "ai-tell-concealment-currency": 66,
-      "brand-consistency-cross-artifact": 60,
-      "skill-suite-health": 85,
-      "work-queue-hygiene": 79,
-      "audit-loop-integrity": 82,
-      "fuse-truncation-defense": 92,
-      "incident-runbook-currency": 82,
-      "scheduled-task-firing-state": 90,
-      "skill-trigger-collisions": 79,
-      "skill-chain-handoff-integrity": 70,
-      "per-project-ps1-stack": 87,
-      "discord-notify-wiring": 88,
-      "version-pill-drift": 96,
-      "gate-page-publish": 88
-    },
-    "openFindings": [
-      {
-        "id": "reliability-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "save-format-stability-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "brand-consistency-cross-artifact-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "brand-consistency-cross-artifact-02",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "gdd-path-extends-doc-drift-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "compliance-data-steward-01",
-        "severity": "high",
-        "priority": 16,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "strategic-kill-this-02",
-        "severity": "high",
-        "priority": 16,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "solo-dev-voice-emdash-01",
-        "severity": "high",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "skill-chain-handoff-integrity-01",
-        "severity": "high",
-        "priority": 15,
-        "runsOpen": 9,
-        "firstSeen": "2026-06-30"
-      },
-      {
-        "id": "audit-loop-integrity-02",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 10,
-        "firstSeen": "2026-06-29"
-      },
-      {
-        "id": "gdd-saveload-doc-drift-01",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 4,
-        "firstSeen": "2026-07-05"
-      },
-      {
-        "id": "performance-01",
-        "severity": "medium",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "scope-discipline-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "scale-architecture-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "asset-pipeline-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "voice-and-tone-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "strategic-kill-this-03",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "work-queue-hygiene-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "work-queue-hygiene-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "incident-runbook-currency-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "ai-tell-concealment-currency-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "skill-chain-handoff-integrity-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "gate-page-publish-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "architecture-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "performance-02",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "playability-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "solo-tool-ux-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "scale-architecture-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "ai-tell-concealment-currency-02",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "per-project-ps1-stack-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "skill-trigger-collisions-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "solo-dev-voice-guard-01",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "observability-01",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "discord-notify-wiring-01",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "brand-consistency-cross-artifact-03",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "reliability-02",
-        "severity": "medium",
-        "priority": 8,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "data-integrity-01",
-        "severity": "medium",
-        "priority": 8,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "playability-02",
-        "severity": "medium",
-        "priority": 8,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-10"
-      }
-    ],
-    "tensionsOpen": [
-      {
-        "lenses": [
-          "compliance-data-steward",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 11
-      },
-      {
-        "lenses": [
-          "performance",
-          "maintainability"
-        ],
-        "runsSeen": 11
-      },
-      {
-        "lenses": [
-          "performance",
-          "architecture"
-        ],
-        "runsSeen": 9
-      },
-      {
-        "lenses": [
-          "scale-architecture",
-          "art-direction-consistency"
-        ],
-        "runsSeen": 9
-      },
-      {
-        "lenses": [
-          "strategic-kill-this",
-          "performance"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "asset-pipeline",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "cost-economics",
-          "maintainability"
-        ],
-        "runsSeen": 1
-      }
-    ],
-    "reconciledAt": "2026-07-10",
-    "reconcileNote": "36 of 38 actions from the 2026-07-10 review shipped same-day across v0.99.34-v0.99.39 plus routine/skill/queue-side fixes; both runtime bugs in the top finding are fixed (buildings group + run_config persistence, v0.99.34). Remaining: the vendored-pack removal decision (owner) and the mission data layer build (queued)."
-  },
-  "metrics": [
-    {
-      "k": "units",
-      "v": "4"
-    },
-    {
-      "k": "buildings",
-      "v": "37"
-    },
-    {
-      "k": "enemies",
-      "v": "8"
-    },
-    {
-      "k": "tests",
-      "v": "7"
-    },
-    {
-      "k": "opt log rows",
-      "v": "60"
-    },
-    {
-      "k": "gdd kb",
-      "v": "1623"
-    }
-  ],
-  "workQueueDepth": 11,
-  "stale": false,
-  "tags": [
-    "game-design",
-    "orchestration",
-    "release-pipeline",
-    "public-voice"
-  ]
+    "project":  "Hordes",
+    "displayName":  "Here Be Hordes",
+    "version":  "0.99.39",
+    "lastReleaseAt":  "2026-07-10T20:12:34-05:00",
+    "lastReleaseMessage":  "GDD + code update",
+    "milestone":  {
+                      "id":  "M4",
+                      "label":  "Pre-Production Lock",
+                      "status":  "in-progress"
+                  },
+    "completion":  {
+                       "pct":  55,
+                       "anchored":  "2026-06-10"
+                   },
+    "itemsLeft":  {
+                      "open":  4,
+                      "queue":  1,
+                      "backlog":  0,
+                      "gates":  3,
+                      "items":  [
+                                    "Most art assets still outstanding after the native-3D rework",
+                                    "M4 Pre-Production Lock incomplete",
+                                    "Mission content beyond the first playable"
+                                ]
+                  },
+    "backlog":  {
+                    "count":  0,
+                    "items":  [
+
+                              ]
+                },
+    "repoUrl":  "https://github.com/TheProphetKane/here-be-hordes",
+    "workTreeClean":  true,
+    "audit":  {
+                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-10.md",
+                  "latestReportAt":  "2026-07-10T06:09:13Z",
+                  "findings":  {
+                                   "high":  0,
+                                   "medium":  0,
+                                   "low":  0
+                               }
+              },
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-07-10.md",
+                     "latestReportAt":  "2026-07-10T11:40:00Z",
+                     "verdict":  "needs-attention",
+                     "topFinding":  "Reconciled 2026-07-10: the review\u0027s two runtime bugs are fixed in v0.99.34 (3D buildings join the buildings group so the per-colonist Provisions drain fires; saves carry the full run_config and restore it before apply on continue). The README, recruitment posts, GDD backlog honesty, perf items, and pipeline hardening from the same review shipped across v0.99.35-v0.99.39. What remains is the vendored asset-pack removal decision (owner call, license record now in docs/ASSET_PROVENANCE.md) and building the mission data layer (R3D-04, the roadmap\u0027s current focus).",
+                     "actionsOpen":  2,
+                     "actionsClosed":  37,
+                     "actions":  [
+                                     {
+                                         "severity":  "HIGH",
+                                         "priority":  16,
+                                         "id":  "compliance-data-steward-01",
+                                         "lens":  "compliance-data-steward",
+                                         "title":  "Record the license terms for each vendored asset pack, then either confirm redistribution or git rm the 533 raw pack copies and add a LICENSE and CREDITS file.",
+                                         "status":  "blocked-on-user",
+                                         "note":  "Agent half shipped v0.99.39: per-pack license terms in docs/ASSET_PROVENANCE.md, CREDITS.md at repo root. Remaining: owner call on the 533 tracked pack sprites - remove or obtain written redistribution permission."
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "priority":  16,
+                                         "id":  "strategic-kill-this-02",
+                                         "lens":  "strategic-kill-this",
+                                         "title":  "Re-aim the next few versions at the mission data layer and one end-to-end 3D mission instead of art-gated polish.",
+                                         "status":  "open",
+                                         "note":  "Re-aim recorded v0.99.36 (roadmap current-focus + R3D-04). Remaining: build the mission data layer under source/data and one end-to-end 3D mission. Tracked as the sole pending HBH queue item."
+                                     }
+                                 ],
+                     "deferred":  [
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Pick the animated-vs-instanced crowd render path: the v0.99.30 re-baseline shows animated Zombie1 at 26 fps at 1k enemies, so the per-Node animated path cannot reach the S-34 hundreds-to-thousands target.",
+                                          "lens":  "scale-architecture",
+                                          "reason":  "owner look-decision; the use_crowd3d A/B seam is wired (v0.99.31) so the call is measurable. Queue item hbh-multimesh-crowd-migration-2026-06-28 should be reclassified blocked-on-user."
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Renumber off the v0.99.x band, which reads as 1.0-imminent while the game sits at milestone 4 of 8 with all content, art, audio and launch work untouched.",
+                                          "lens":  "strategic-kill-this",
+                                          "reason":  "blocked on a Nick decision about the versioning scheme"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Re-export the commissioned building and unit models to a coherent shared scale so the hardcoded per-model scale constants can all become 1.0.",
+                                          "lens":  "art-direction-consistency",
+                                          "reason":  "art-delivery-gated, same gate as hbh-asset-production-pass (blocked-on-user since 2026-06-10)"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Replace the ~14 placeholder colored-box buildings with finished models.",
+                                          "lens":  "art-direction-consistency",
+                                          "reason":  "art-delivery-gated, same gate as M4"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Add a save/load block for the research autoload\u0027s tech-tree state and bump SAVE_VERSION for the schema change.",
+                                          "lens":  "save-format-stability",
+                                          "reason":  "the research autoload has no 3D consumer yet; premature until the tech tree is wired into the 3D run"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Add a SAVE_VERSION migration dispatch and an older-format fixture test.",
+                                          "lens":  "save-format-stability",
+                                          "reason":  "no incompatible SAVE_VERSION bump yet; migration premature pre-M4-lock, and the live save is atomic as of v0.99.28"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Purge the ~440 MB of superseded binary revisions from git history and move the ~109 MB of temp/test 3D assets into the gitignored _ARCHIVE path.",
+                                          "lens":  "cost-economics",
+                                          "reason":  "history rewrite is a Nick decision; the asset move must migrate the lookdev scenes with it"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Sweep the residual Midjourney/Tripo tool names from the GDD changelog body.",
+                                          "lens":  "ai-tell-concealment-currency",
+                                          "reason":  "judged factual asset-pipeline documentation a solo dev would legitimately keep"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Remove the disabled bar-raise-hbh scheduled-task husk.",
+                                          "lens":  "scheduled-task-firing-state",
+                                          "reason":  "removal requires the app closed; X:\\Claude\\restart-cleanup.ps1 covers it"
+                                      }
+                                  ],
+                     "health":  81,
+                     "lensScores":  {
+                                        "architecture":  84,
+                                        "reliability":  75,
+                                        "security":  96,
+                                        "performance":  82,
+                                        "data-integrity":  88,
+                                        "maintainability":  82,
+                                        "solo-tool-ux":  78,
+                                        "cost-economics":  90,
+                                        "dependency":  87,
+                                        "observability":  88,
+                                        "strategic-kill-this":  74,
+                                        "compliance-data-steward":  60,
+                                        "playability":  82,
+                                        "scope-discipline":  87,
+                                        "scale-architecture":  75,
+                                        "asset-pipeline":  82,
+                                        "voice-and-tone":  88,
+                                        "sound-design-discipline":  93,
+                                        "art-direction-consistency":  79,
+                                        "save-format-stability":  62,
+                                        "solo-dev-voice-portfolio":  58,
+                                        "ai-tell-concealment-currency":  66,
+                                        "brand-consistency-cross-artifact":  60,
+                                        "skill-suite-health":  85,
+                                        "work-queue-hygiene":  79,
+                                        "audit-loop-integrity":  82,
+                                        "fuse-truncation-defense":  92,
+                                        "incident-runbook-currency":  82,
+                                        "scheduled-task-firing-state":  90,
+                                        "skill-trigger-collisions":  79,
+                                        "skill-chain-handoff-integrity":  70,
+                                        "per-project-ps1-stack":  87,
+                                        "discord-notify-wiring":  88,
+                                        "version-pill-drift":  96,
+                                        "gate-page-publish":  88
+                                    },
+                     "openFindings":  [
+                                          {
+                                              "id":  "reliability-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "save-format-stability-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "brand-consistency-cross-artifact-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "brand-consistency-cross-artifact-02",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "gdd-path-extends-doc-drift-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "compliance-data-steward-01",
+                                              "severity":  "high",
+                                              "priority":  16,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "strategic-kill-this-02",
+                                              "severity":  "high",
+                                              "priority":  16,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "solo-dev-voice-emdash-01",
+                                              "severity":  "high",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "skill-chain-handoff-integrity-01",
+                                              "severity":  "high",
+                                              "priority":  15,
+                                              "runsOpen":  9,
+                                              "firstSeen":  "2026-06-30"
+                                          },
+                                          {
+                                              "id":  "audit-loop-integrity-02",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  10,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "gdd-saveload-doc-drift-01",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-05"
+                                          },
+                                          {
+                                              "id":  "performance-01",
+                                              "severity":  "medium",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "scope-discipline-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "scale-architecture-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "asset-pipeline-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "voice-and-tone-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "strategic-kill-this-03",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "work-queue-hygiene-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "work-queue-hygiene-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "incident-runbook-currency-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "ai-tell-concealment-currency-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "skill-chain-handoff-integrity-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "gate-page-publish-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "architecture-01",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "performance-02",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "playability-01",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "solo-tool-ux-01",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "scale-architecture-01",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "ai-tell-concealment-currency-02",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "per-project-ps1-stack-01",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "skill-trigger-collisions-01",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "solo-dev-voice-guard-01",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "observability-01",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "discord-notify-wiring-01",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "brand-consistency-cross-artifact-03",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "reliability-02",
+                                              "severity":  "medium",
+                                              "priority":  8,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "data-integrity-01",
+                                              "severity":  "medium",
+                                              "priority":  8,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "playability-02",
+                                              "severity":  "medium",
+                                              "priority":  8,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-07-10"
+                                          }
+                                      ],
+                     "tensionsOpen":  [
+                                          {
+                                              "lenses":  [
+                                                             "compliance-data-steward",
+                                                             "solo-tool-ux"
+                                                         ],
+                                              "runsSeen":  11
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "performance",
+                                                             "maintainability"
+                                                         ],
+                                              "runsSeen":  11
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "performance",
+                                                             "architecture"
+                                                         ],
+                                              "runsSeen":  9
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "scale-architecture",
+                                                             "art-direction-consistency"
+                                                         ],
+                                              "runsSeen":  9
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "strategic-kill-this",
+                                                             "performance"
+                                                         ],
+                                              "runsSeen":  1
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "asset-pipeline",
+                                                             "solo-tool-ux"
+                                                         ],
+                                              "runsSeen":  1
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "cost-economics",
+                                                             "maintainability"
+                                                         ],
+                                              "runsSeen":  1
+                                          }
+                                      ],
+                     "reconciledAt":  "2026-07-10",
+                     "reconcileNote":  "36 of 38 actions from the 2026-07-10 review shipped same-day across v0.99.34-v0.99.39 plus routine/skill/queue-side fixes; both runtime bugs in the top finding are fixed (buildings group + run_config persistence, v0.99.34). Remaining: the vendored-pack removal decision (owner) and the mission data layer build (queued)."
+                 },
+    "metrics":  [
+                    {
+                        "k":  "units",
+                        "v":  "4"
+                    },
+                    {
+                        "k":  "buildings",
+                        "v":  "37"
+                    },
+                    {
+                        "k":  "enemies",
+                        "v":  "8"
+                    },
+                    {
+                        "k":  "tests",
+                        "v":  "7"
+                    },
+                    {
+                        "k":  "opt log rows",
+                        "v":  "60"
+                    },
+                    {
+                        "k":  "gdd kb",
+                        "v":  "1623"
+                    }
+                ],
+    "workQueueDepth":  1,
+    "stale":  false,
+    "tags":  [
+                 "game-design",
+                 "orchestration",
+                 "release-pipeline",
+                 "public-voice"
+             ]
 }
