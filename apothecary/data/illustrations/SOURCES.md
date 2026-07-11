@@ -16,25 +16,25 @@ They are SpiceJungle's curated category line art, pulled by
 `scripts/whitekey-illustrations.py` (white backgrounds to transparency).
 No other processing; the line art itself is unmodified.
 
-## License status (open decision)
+## License status (decided 2026-07-11: risk accepted)
 
 No license or redistribution grant has been located or verified for this
-art. It is presumptively SpiceJungle's proprietary illustration set. The
-app serves these files on the public page at
-yesandeverything.com/apothecary, which is a personal, non-commercial hobby
-deploy, but that does not by itself make redistribution permitted.
+art. It is presumptively SpiceJungle's proprietary illustration set.
 
-Standing options, owner's call:
+Decision (owner, 2026-07-11, locked in PROJECT_SPEC.md section 8): keep the
+set and accept the risk knowingly. The app is a personal, non-commercial
+hobby page at yesandeverything.com/apothecary with no monetization, so this
+is not a commercial concern.
 
-1. Replace the set with genuinely public-domain botanical plates (Kohler's
-   Medizinal-Pflanzen, Sturm's Flora, Wikimedia Commons scans), keyword by
-   keyword. Slowest, cleanest.
-2. Ask SpiceJungle for permission to keep using the set with attribution.
-3. Accept the risk knowingly and revisit if the project ever stops being a
-   personal page.
+Two boundaries survive the decision:
 
-Until one of those is picked, treat this directory as
-not-cleared-for-redistribution and do not copy it into other projects.
+1. It unlocks if the site ever monetizes or stops being a personal page;
+   revisit then (replace with public-domain botanical plates, or ask
+   SpiceJungle for permission).
+2. This directory stays not-cleared-for-redistribution: do not copy the art
+   into any other project. New art added here follows the public-domain /
+   CC-with-attribution policy in PROJECT_SPEC.md section 4.5 and gets a row
+   in this file at add time.
 
 ## Files
 
