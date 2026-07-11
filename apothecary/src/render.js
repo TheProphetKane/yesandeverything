@@ -581,7 +581,7 @@ export function render(state, mounts, ctx) {
   const fits = mounts.preview.querySelectorAll('[data-autofit]');
   if (fontsReady) {
     fits.forEach(el => autofitText(el));
-    mirrorAutofitToPrint(mounts);
+    fitPrintStage(mounts);
   } else {
     // Every render before the fonts land queues its own .then holding that
     // render's NodeList. A later render replaces the preview's innerHTML, so
@@ -590,26 +590,29 @@ export function render(state, mounts, ctx) {
     document.fonts.ready.then(() => {
       fontsReady = true;
       fits.forEach(el => { if (el.isConnected) autofitText(el); });
-      mirrorAutofitToPrint(mounts);
+      fitPrintStage(mounts);
     });
   }
 }
 
-// v1.0.4 print fidelity: the print-stage is display:none on screen, so
-// autofitText cannot measure it there (scrollWidth reads 0 and the loop would
-// leave every name at the maximum). Both trees lay out in the same design
-// space, so the preview's fitted inline size IS the print tree's correct size;
-// copy it across. Pairs nodes by order (herb-name is the only autofit item).
-// With no mirror source (preview card collapsed), the print tree keeps the
-// .lbl-herb base font-size from label.css - the autofit maximum - instead of
-// an unfitted inherited size.
-function mirrorAutofitToPrint(mounts) {
-  if (!mounts.printStage) return;
-  const src = mounts.preview.querySelectorAll('[data-autofit]');
-  const dst = mounts.printStage.querySelectorAll('[data-autofit]');
-  if (!src.length || !dst.length) return;
-  dst.forEach((el, i) => {
-    const from = src[i] ?? src[0];
-    if (from.isConnected && from.style.fontSize) el.style.fontSize = from.style.fontSize;
-  });
+// v1.1.1 print fidelity: fit the print-stage's own autofit nodes directly.
+// The stage is display:none on screen, where scrollWidth reads 0, so it is
+// made measurable offscreen for the fit pass and restored after - the same
+// trick exportPng uses to rasterize it. Fitting in place (rather than
+// mirroring the preview's fitted size, the v1.0.4 approach) keeps the printed
+// name fitted even when its preview section is collapsed and needs no
+// node-pairing between the two trees.
+function fitPrintStage(mounts) {
+  const stage = mounts.printStage;
+  if (!stage) return;
+  const fits = stage.querySelectorAll('[data-autofit]');
+  if (!fits.length) return;
+  const prev = stage.getAttribute('style') || '';
+  stage.style.cssText = `${prev};display:flex !important;position:fixed !important;left:-10000px !important;top:0 !important;z-index:-1;`;
+  try {
+    fits.forEach(el => autofitText(el));
+  } finally {
+    if (prev) stage.setAttribute('style', prev);
+    else stage.removeAttribute('style');
+  }
 }
