@@ -5,8 +5,9 @@
 // here) and rewrites the marked spans in:
 //   - index.html project cards:      <!--live:version:Proj-->...<!--/live-->
 //                                    <!--live:milestone:Proj-->...<!--/live-->
-//   - projects/<slug>/index.html     <!--live:version-->...<!--/live-->
-//   - projects/<slug>/design.html    <!--live:version-->...<!--/live-->
+//   - projects/<slug>/index.html     <!--live:version:Proj-->...<!--/live--> (keyed preferred;
+//   - projects/<slug>/design.html     bare <!--live:version--> still honored)
+//                                    <!--live:milestone:Proj-->...<!--/live--> (optional, prose)
 //
 // Runs in the Pages deploy workflow before the artifact upload, so ANY project
 // release (which pushes its status JSON to this repo) redeploys the site with
@@ -78,11 +79,23 @@ for (const [slug, id] of Object.entries(SLUGS)) {
     const p = join(ROOT, "projects", slug, page);
     if (!existsSync(p)) continue;
     let t = readFileSync(p, "utf8");
-    const r = stamp(t, "version", vfmt(d.version));
-    if (r.hit && r.text !== t) {
-      if (!r.text.trimEnd().endsWith("</html>")) throw new Error(`${slug}/${page} lost its tail; refusing to write`);
-      writeFileSync(p, r.text); changed++; stamped++;
-    } else if (r.hit) { stamped++; }
+    const before = t;
+    // Keyed markers preferred (a copied page template cannot silently take
+    // another project's numbers); bare version marker still honored.
+    // Detail-page milestone prose carries the M-number too ("M4, Pre-Production
+    // Lock"); homepage cards keep the bare label.
+    const mid = (d.milestone && typeof d.milestone === "object" && d.milestone.id) ? `${d.milestone.id}, ` : "";
+    for (const [key, value] of [
+      [`version:${id}`, vfmt(d.version)],
+      ["version", vfmt(d.version)],
+      [`milestone:${id}`, mid + mfmt(d.milestone)],
+    ]) {
+      const r = stamp(t, key, value); t = r.text; if (r.hit) stamped++;
+    }
+    if (t !== before) {
+      if (!t.trimEnd().endsWith("</html>")) throw new Error(`${slug}/${page} lost its tail; refusing to write`);
+      writeFileSync(p, t); changed++;
+    }
   }
 }
 

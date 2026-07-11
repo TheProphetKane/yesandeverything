@@ -139,6 +139,14 @@ Structural items needing your decision:
 
 Don't pre-decide for the user. Don't bury these — they're the substantive half of the audit's value.
 
+**Enqueue with evidence-rewrite, not blind append.** Before adding a structural item to `X:\YesAndEverything\.work-queue.json`, check for an existing pending item covering the same finding (match on `finding_id` first, then on same project + same target file/section). If one exists:
+
+- **Partially resolved since last audit:** rewrite the existing item's `evidence` (and `prompt` if it enumerates sub-items) to only what the current audit still finds open. Drop resolved sub-items instead of leaving the stale enumeration to mislead the eventual runner. Note the trim inline, e.g. `evidence: "<current state> (narrowed from N sub-items on YYYY-MM-DD re-audit)"`.
+- **Fully resolved:** mark the existing item `done` with a short resolution note; do not re-add.
+- **Unchanged:** leave it alone; do not append a duplicate.
+
+Queue-file mechanics: the file is git-tracked but normally dirty with other tasks' uncommitted appends. Never round-trip it through PowerShell `ConvertTo-Json` and never `git checkout` it; make the edit as a minimal textual splice (Python) that matches the file's existing shallow-LF no-BOM formatting.
+
 ### Phase 6 — HBH-only: bump the GDD
 
 If the project touched was HBH (`X:\HereBeHordes`), the GDD update rule applies. After Phase 4:
