@@ -19,7 +19,10 @@ function fmt(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function mountSavedLabels(root, state) {
+// normalize is main.js's normalizeState bound to the data registries; recalled
+// snapshots may predate the current schema (e.g. pre-v0.9, no state.layout)
+// and must migrate exactly like a boot restore.
+export function mountSavedLabels(root, state, normalize = (s) => s) {
   root.innerHTML = `
     <div class="saved-panel">
       <div class="saved-header">
@@ -77,7 +80,9 @@ export function mountSavedLabels(root, state) {
     const act = btn.dataset.act;
     if (act === 'load') {
       const entry = loadLabel(id);
-      if (entry) state.set(entry.state);
+      // Clone before normalizing: normalize mutates, and the stored entry
+      // should keep its original bytes until the user explicitly re-saves.
+      if (entry) state.set(normalize(structuredClone(entry.state)));
     } else if (act === 'duplicate') {
       duplicateLabel(id);
       refresh();

@@ -29,10 +29,11 @@ export const TEMPLATES = {
 
     theme: 'parchment-gold',
 
-    // v0.9: zone composition is authoritative in state.layout (see
-    // src/state.js -> defaultLayout). The arrays below are kept as a fallback
-    // the renderer reads only if state.layout is missing. They mirror
-    // defaultLayout exactly so the two never disagree on a fresh page load.
+    // v0.9: zone composition is authoritative in state.layout. v1.0.4: these
+    // arrays are the SEED - src/state.js defaultLayout() derives state.layout
+    // from them (no more hand-mirrored copy), and the renderer reads them
+    // directly only if state.layout is somehow missing. A new template needs
+    // only this descriptor; no state.js change.
     zones: [
       { id: 'front-left',   width: 25, layoutMode: 'stack', items: ['symbol', 'botanical'] },
       { id: 'front-center', width: 50, layoutMode: 'stack', items: [

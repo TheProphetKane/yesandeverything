@@ -581,6 +581,7 @@ export function render(state, mounts, ctx) {
   const fits = mounts.preview.querySelectorAll('[data-autofit]');
   if (fontsReady) {
     fits.forEach(el => autofitText(el));
+    mirrorAutofitToPrint(mounts);
   } else {
     // Every render before the fonts land queues its own .then holding that
     // render's NodeList. A later render replaces the preview's innerHTML, so
@@ -589,6 +590,26 @@ export function render(state, mounts, ctx) {
     document.fonts.ready.then(() => {
       fontsReady = true;
       fits.forEach(el => { if (el.isConnected) autofitText(el); });
+      mirrorAutofitToPrint(mounts);
     });
   }
+}
+
+// v1.0.4 print fidelity: the print-stage is display:none on screen, so
+// autofitText cannot measure it there (scrollWidth reads 0 and the loop would
+// leave every name at the maximum). Both trees lay out in the same design
+// space, so the preview's fitted inline size IS the print tree's correct size;
+// copy it across. Pairs nodes by order (herb-name is the only autofit item).
+// With no mirror source (preview card collapsed), the print tree keeps the
+// .lbl-herb base font-size from label.css - the autofit maximum - instead of
+// an unfitted inherited size.
+function mirrorAutofitToPrint(mounts) {
+  if (!mounts.printStage) return;
+  const src = mounts.preview.querySelectorAll('[data-autofit]');
+  const dst = mounts.printStage.querySelectorAll('[data-autofit]');
+  if (!src.length || !dst.length) return;
+  dst.forEach((el, i) => {
+    const from = src[i] ?? src[0];
+    if (from.isConnected && from.style.fontSize) el.style.fontSize = from.style.fontSize;
+  });
 }

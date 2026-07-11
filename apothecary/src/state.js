@@ -15,6 +15,8 @@
 // `state.notesSplit` flag are retired. main.js migrates old saved state forward
 // by reading those plus the template's seed zones to build state.layout.
 
+import { TEMPLATES, DEFAULT_TEMPLATE_ID } from '../data/label-templates.js';
+
 export function createState(initial) {
   let state = structuredClone(initial);
   const listeners = new Set();
@@ -74,35 +76,43 @@ export function makeZone({ id, layoutMode = 'stack', width = 100, align = 'cente
   };
 }
 
-// Default factory: matches the v0.8 baseline so first-time users see the
-// canonical front-left/center/right + back-stack layout. Returns a full
-// state.layout object.
-export function defaultLayout() {
-  return {
-    front: [
-      makeZone({ id: 'front-left',   layoutMode: 'stack', width: 25, items: ['symbol', 'botanical'] }),
-      makeZone({ id: 'front-center', layoutMode: 'stack', width: 50, items: [
-        'shop',
-        'divider-top',
-        'herb-name',
-        'latin',
-        'props',
-        'divider-bot',
-        'description',
-      ]}),
-      makeZone({ id: 'front-right',  layoutMode: 'stack', width: 25, items: ['rune-1', 'rune-2', 'rune-3'] }),
-    ],
-    back: [
-      makeZone({ id: 'back-header',  layoutMode: 'stack', width: 100, items: ['back-name', 'back-latin'] }),
-      makeZone({ id: 'back-div-1',   layoutMode: 'stack', width: 100, items: ['back-divider'] }),
-      makeZone({ id: 'back-desc',    layoutMode: 'stack', width: 100, items: ['back-desc-full'] }),
-      makeZone({ id: 'back-div-2',   layoutMode: 'stack', width: 100, items: ['back-divider'] }),
-      makeZone({ id: 'back-historic',layoutMode: 'stack', width: 100, items: ['historic'] }),
-      makeZone({ id: 'back-div-3',   layoutMode: 'stack', width: 100, items: ['back-divider'] }),
-      makeZone({ id: 'back-bottom',  layoutMode: 'row',   width: 100, items: ['notes', 'pairings'] }),
-    ],
-    hidden: ['compounds', 'cautions'],
+// Default factory: derives state.layout from the template descriptor's
+// zones/backZones seeds (v1.0.4). Previously this function hardcoded a copy of
+// the apothecary zones and the descriptor arrays were a dead fallback that had
+// to be kept mirrored by hand; deriving makes the descriptor the single source,
+// so a second template is a registry-only add.
+export function defaultLayout(templateId = DEFAULT_TEMPLATE_ID) {
+  const tmpl = TEMPLATES[templateId] ?? TEMPLATES[DEFAULT_TEMPLATE_ID];
+  const seedZones = (seeds) => (seeds ?? []).map(z => makeZone({
+    id: z.id, layoutMode: z.layoutMode, width: z.width, align: z.align, items: z.items,
+  }));
+  const layout = {
+    front: seedZones(tmpl.zones),
+    back:  seedZones(tmpl.backZones),
+    hidden: [],
   };
+  // The section fields the seed leaves unplaced start hidden so the Layout
+  // Designer's picker can offer them (same trio reconcileNotesHidden governs).
+  const present = new Set();
+  for (const side of ['front', 'back']) {
+    layout[side].forEach(z => z.items.forEach(i => present.add(typeof i === 'string' ? i : i.key)));
+  }
+  for (const c of ['compounds', 'cautions', 'notes']) {
+    if (!present.has(c)) layout.hidden.push(c);
+  }
+  return layout;
+}
+
+// v1.0.4: template switch as a state patch. Re-seeds layout + size from the
+// target descriptor; returns null for an unknown id so callers can fall back.
+// This is the setter a template picker applies via state.set when the second
+// template ships (PROJECT_SPEC section 9, M3); covered by test-migration.mjs
+// TEST 7 until then. Not used during normalizeState on purpose: re-seeding
+// layout there would clobber a pre-v0.9 migration signal.
+export function templatePatch(templateId) {
+  const tmpl = TEMPLATES[templateId];
+  if (!tmpl) return null;
+  return { templateId, sizeId: tmpl.defaultSize, layout: defaultLayout(templateId) };
 }
 
 // --- Section title defaults (v0.11) ----------------------------------------
@@ -128,7 +138,7 @@ export function defaultState() {
     __schemaVersion: 1,
     templateId: 'apothecary-3x1.5',
     sizeId: 'medium',
-    shopName: "Lynn's Apothocary",
+    shopName: "Lynn's Apothecary",
     herbName: 'Chamomile',
     latin: 'Matricaria chamomilla',
     props: 'Healing · Sleep · Peace · Solar Magic',

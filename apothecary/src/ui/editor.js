@@ -50,6 +50,8 @@ export function mountEditor(root, ctx) {
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
     // v0.14: illustration library + auto-match.
     illustrations = [], herbAutoMatch = {}, herbCategoryFallback = {},
+    // v1.0.4: PNG export of the print-stage (lazy-loads html2canvas).
+    exportPng,
   } = ctx;
   const tmpl = templates[state.get().templateId];
 
@@ -260,6 +262,7 @@ export function mountEditor(root, ctx) {
       </div>
 
       <button id="btn-print" class="btn-secondary">Print Label</button>
+      <button id="btn-export-png" class="btn-secondary" type="button">Export PNG</button>
       <button id="btn-reset" class="btn-ghost" type="button">Reset to Defaults</button>
     `)}
   `;
@@ -278,6 +281,7 @@ export function mountEditor(root, ctx) {
   const autofillBtn = $('btn-autofill');
   const statusMsg  = $('status-msg');
   const printBtn   = $('btn-print');
+  const exportBtn  = $('btn-export-png');
   const resetBtn   = $('btn-reset');
 
   // localStorage write failures (quota exceeded, storage disabled) raised by
@@ -409,6 +413,11 @@ export function mountEditor(root, ctx) {
     opt.textContent = sz.label;
     sizeSel.appendChild(opt);
   }
+  // v1.0.4 perf: tiles reference the ~1 KB thumbs in data/textures/thumbs/
+  // (scripts/make-texture-thumbs.py), not the 16.6 MB print-res sources that
+  // used to attach here and fetch before the Style panel was ever opened.
+  // The whole thumb set is ~18 KB, so eager assignment is fine; only the
+  // label render itself reads the full-res files.
   for (const t of (parchmentTextures ?? [])) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -418,7 +427,7 @@ export function mountEditor(root, ctx) {
     btn.setAttribute('aria-label', t.label);
     btn.setAttribute('title', t.label);
     if (t.file) {
-      btn.style.backgroundImage = `url('data/textures/${t.file}')`;
+      btn.style.backgroundImage = `url('data/textures/thumbs/${t.file}')`;
     } else {
       btn.classList.add('parchment-tile--gradient');
     }
@@ -520,9 +529,12 @@ export function mountEditor(root, ctx) {
     });
     sizeSel.value    = s.sizeId;
     colorPicker.value = s.accent;
+    // normalizeState pads runes to exactly 3, but guard anyway: a malformed
+    // snapshot reaching here must not throw and take the whole sync down.
+    const runes = Array.isArray(s.runes) ? s.runes : [];
     for (let i = 0; i < 3; i++) {
-      runeChar[i].value = s.runes[i].c;
-      runeMean[i].value = s.runes[i].m;
+      runeChar[i].value = runes[i]?.c ?? '';
+      runeMean[i].value = runes[i]?.m ?? '';
     }
     backToggle.checked = !!s.backEnabled;
     backFieldsBox.hidden = !s.backEnabled;
@@ -690,6 +702,12 @@ export function mountEditor(root, ctx) {
   });
 
   printBtn.addEventListener('click', printLabel);
+
+  exportBtn.addEventListener('click', () => {
+    if (typeof exportPng !== 'function') return;
+    const name = (state.get().herbName || 'apothecary-label').trim();
+    exportPng(name + '.png');
+  });
 
   resetBtn.addEventListener('click', () => {
     if (!confirm('Reset all fields to defaults? Saved label will be cleared.')) return;
