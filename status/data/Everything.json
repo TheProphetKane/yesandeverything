@@ -11,12 +11,12 @@
   "workTreeClean": true,
   "audit": null,
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-10.md",
-    "latestReportAt": "2026-07-10T12:26:45Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-11.md",
+    "latestReportAt": "2026-07-11T11:54:13Z",
     "verdict": "needs-attention",
-    "topFinding": "BLOCK: hard rule no_public_link_to_hordes_or_brackish_rising is breached by three anchors on public pages; three lenses flagged it independently. The resolution is a reroute, not a rule amendment, because the stamped per-project design pages already exist and are currently orphaned. Beyond the BLOCK, the theme of this run is that YaE publishes more than it means to: several classes of internal operational material are committed to this public repo and are fetchable from the live site, held back only by robots.txt, which restrains crawlers and nobody else. One of them discloses the location of a credential belonging to another project. Details, paths, and the remediation order are deliberately kept out of this public JSON and recorded in the local bar-raise report. Separately, the cross-project work queue doubled in size to roughly 4.35x the FUSE truncation threshold, and zero of eleven prior findings were closed by action across three runs.",
+    "topFinding": "BLOCK: hard rule no_public_link_to_hordes_or_brackish_rising is still breached by three public Design/gate anchors (index.html:1849,1959; 404.html:133); this is the fourth consecutive run carrying it, and the reroute fix to the already-built design.html pages has not shipped. Otherwise this run is a near-exact carry-forward: no YaE-content commit landed since 2026-07-10, so all 20 open actions stand unmoved. The one real delta is a regression: the cross-project work queue grew from roughly 4.35x to 4.76x the FUSE truncation threshold (217KB to 238KB) with appends still not atomic, dropping data-integrity 68 to 64 and health 68 to 67. Zero findings closed by action for a fourth run, which is itself the signal: the report to queue to fix loop is not draining on this project. Paths and the one credential-location disclosure are kept out of this public JSON and recorded in the local report.",
     "actionsOpen": 20,
-    "actionsClosed": 1,
+    "actionsClosed": 0,
     "actions": [
       {
         "severity": "high",
@@ -28,7 +28,13 @@
         "severity": "high",
         "title": "Untrack the committed internal ops files, widen the backup ignore rule, redeploy, then verify each is no longer fetchable",
         "lens": "security",
-        "evidence": "see local report; verified with a live GET"
+        "evidence": "_skill-review/ (143 tracked); .work-queue-results/*.md"
+      },
+      {
+        "severity": "high",
+        "title": "Shrink the cross-project work queue (now 4.76x the FUSE threshold, up from 4.35x) and route appends through atomic write-with-readback",
+        "lens": "data-integrity",
+        "evidence": ".work-queue.json 238154 bytes; scripts/queue-edit.ps1"
       },
       {
         "severity": "high",
@@ -38,13 +44,7 @@
       },
       {
         "severity": "high",
-        "title": "Shrink the cross-project work queue (roughly 4.35x the FUSE threshold) and route appends through atomic write-with-readback",
-        "lens": "data-integrity",
-        "evidence": "scripts/queue-edit.ps1"
-      },
-      {
-        "severity": "high",
-        "title": "Drain or formally close the 11 rotting bar-raise findings; fix writer so firstSeen is recorded not null",
+        "title": "Drain or formally close the rotting bar-raise findings; fix writer so firstSeen is recorded not null",
         "lens": "strategic-kill-this",
         "evidence": "status/data/Everything.json barRaise"
       },
@@ -64,31 +64,61 @@
         "severity": "medium",
         "title": "Fix hero stat strip: 6/6 projects, 4 live, 6 in build vs 9 real cards",
         "lens": "org-writing",
-        "evidence": "index.html:1763-1771"
+        "evidence": "index.html:1762-1772"
       },
       {
         "severity": "medium",
         "title": "Refresh tagline and About prose; add Cattery, Gnosis, Ring to the enumeration",
         "lens": "org-writing",
-        "evidence": "index.html:1758,1792"
+        "evidence": "index.html About card"
       },
       {
         "severity": "medium",
-        "title": "Add Cattery and Gnosis to meta/og/twitter descriptions and JSON-LD hasPart",
-        "lens": "org-writing",
-        "evidence": "index.html:7,11,20,24"
+        "title": "Reconcile the two contradictory canonical rules for mutating the cross-project work queue",
+        "lens": "solo-tool-ux",
+        "evidence": "scripts/queue-edit.ps1 vs the concurrency doc"
       },
       {
         "severity": "medium",
-        "title": "Exclude the committed skill-source tree from the Pages artifact",
-        "lens": "strategic-kill-this",
-        "evidence": "see local report"
+        "title": "Add card-to-sitemap parity guard to release.ps1 (sitemap.xml is hand-maintained, no generator)",
+        "lens": "observability",
+        "evidence": "sitemap.xml; scripts/release.ps1"
+      },
+      {
+        "severity": "medium",
+        "title": "Make update-project-pages.mjs exit non-zero on missing/malformed status JSON instead of stamping stale",
+        "lens": "observability",
+        "evidence": "scripts/update-project-pages.mjs:53"
+      },
+      {
+        "severity": "medium",
+        "title": "Add mojibake reject regex to check-status-json.ps1 (mojibake is valid UTF-8 and valid JSON)",
+        "lens": "data-integrity",
+        "evidence": "scripts/check-status-json.ps1:54-59"
       },
       {
         "severity": "medium",
         "title": "Fix WCAG AA contrast: --fg-3 at 2.65:1 (sub-page footers), --fg-2 at 4.17:1 (crumbs, labels)",
         "lens": "accessibility",
         "evidence": "projects/*/index.html:67; projects/ring/index.html:36,50"
+      },
+      {
+        "severity": "medium",
+        "title": "Exclude the committed skill-source tree from the Pages artifact",
+        "lens": "strategic-kill-this",
+        "evidence": "_skill-review/ (143 tracked files)"
+      },
+      {
+        "severity": "medium",
+        "title": "Version the status/data/*.json cross-repo contract (add schemaVersion and required-key validation)",
+        "lens": "dependency",
+        "evidence": "docs/BAR_RAISE_ROADMAP.md:41-85"
+      },
+      {
+        "severity": "medium",
+        "title": "Rewrite BAR_RAISE_HANDOVER/ROADMAP: they point at scripts/schedule/ shims that no longer exist; roadmap says Active, all phases DONE",
+        "lens": "strategic-kill-this",
+        "evidence": "scripts/schedule/ absent from disk and git"
       },
       {
         "severity": "medium",
@@ -104,39 +134,9 @@
       },
       {
         "severity": "medium",
-        "title": "Make update-project-pages.mjs exit non-zero on missing/malformed status JSON instead of stamping stale",
-        "lens": "observability",
-        "evidence": "scripts/update-project-pages.mjs:48-54,63-66"
-      },
-      {
-        "severity": "medium",
-        "title": "Add card-to-sitemap parity guard to release.ps1 (sitemap.xml is hand-maintained, no generator)",
-        "lens": "observability",
-        "evidence": "sitemap.xml; scripts/release.ps1:21-50"
-      },
-      {
-        "severity": "medium",
-        "title": "Add mojibake reject regex to check-status-json.ps1 (mojibake is valid UTF-8 and valid JSON)",
-        "lens": "data-integrity",
-        "evidence": "scripts/check-status-json.ps1:54-59"
-      },
-      {
-        "severity": "medium",
-        "title": "Reconcile the two contradictory canonical rules for mutating the cross-project work queue",
-        "lens": "solo-tool-ux",
-        "evidence": "scripts/queue-edit.ps1 vs the concurrency doc"
-      },
-      {
-        "severity": "medium",
-        "title": "Version the status/data/*.json cross-repo contract (add schemaVersion and required-key validation)",
-        "lens": "dependency",
-        "evidence": "docs/BAR_RAISE_ROADMAP.md:41-85"
-      },
-      {
-        "severity": "medium",
-        "title": "Rewrite BAR_RAISE_HANDOVER/ROADMAP: they point at scripts/schedule/ shims that no longer exist; roadmap says Active, all phases DONE",
-        "lens": "strategic-kill-this",
-        "evidence": "scripts/schedule/ absent from disk and git"
+        "title": "Add Cattery and Gnosis to meta/og/twitter descriptions and JSON-LD hasPart",
+        "lens": "org-writing",
+        "evidence": "index.html:7,11,20,24"
       }
     ],
     "deferred": [
@@ -201,13 +201,13 @@
         "reason": "accepted tradeoff for first-party actions"
       }
     ],
-    "health": 68,
+    "health": 67,
     "lensScores": {
       "architecture": 70,
       "reliability": 62,
       "security": 44,
       "performance": 80,
-      "dataIntegrity": 68,
+      "dataIntegrity": 64,
       "maintainability": 70,
       "soloToolUx": 68,
       "costEconomics": 60,
@@ -224,139 +224,139 @@
     "openFindings": [
       {
         "id": "yae-hero-stats-stale-count",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "high"
       },
       {
         "id": "yae-intro-prose-six-omits-three",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "high"
       },
       {
         "id": "yae-gate-link-hardrule-tension",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "high"
       },
       {
         "id": "yae-subpage-no-reduced-motion",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-subpage-no-focus-visible",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-meta-og-omits-cattery-gnosis",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-milestone-midword-truncation",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-statusjson-guard-mojibake-blindspot",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-external-links-missing-rel",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-workqueue-99kb-fuse-risk",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-07",
         "severity": "medium"
       },
       {
         "id": "yae-tracked-opsfiles-public-200",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "high"
       },
       {
         "id": "yae-gdd-payload-integrity-guard-absent",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "high"
       },
       {
         "id": "yae-barraise-findings-never-close",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "high"
       },
       {
         "id": "yae-skipgate-cannot-fire",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "high"
       },
       {
         "id": "yae-budget-auditable-claim-404",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "high"
       },
       {
         "id": "yae-skillreview-tree-public",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-fg2-fg3-contrast-aa-fail",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-subpage-og-image-absent",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-stamper-silent-stale",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-sitemap-no-parity-guard",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-queue-two-canonical-authorities",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-statusjson-contract-unversioned",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       },
       {
         "id": "yae-handover-roadmap-stale-scheduling",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10",
         "severity": "medium"
       }
@@ -364,27 +364,27 @@
     "tensionsOpen": [
       {
         "id": "hardrule-wording-vs-gate-design",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "resolution": "reroute to the orphaned design.html pages; keep the rule"
       },
       {
         "id": "motion-richness-vs-a11y-floor",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "resolution": "add the guard, keep the motion; not a real tension"
       },
       {
         "id": "automation-vs-handauthored-copy",
-        "runsOpen": 3,
+        "runsOpen": 4,
         "resolution": "stamper owns countable facts, human owns voice"
       },
       {
         "id": "observability-vs-privacy",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "resolution": "serve telemetry from the Worker, gitignore the static copy"
       },
       {
         "id": "cost-cadence-vs-freshness",
-        "runsOpen": 1,
+        "runsOpen": 2,
         "resolution": "fix the skip-gate first, then reassess cadence with Nick"
       }
     ],
