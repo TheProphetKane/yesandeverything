@@ -53,12 +53,12 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-11.md",
-        "latestReportAt": "2026-07-11T11:17:37Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-12.md",
+        "latestReportAt": "2026-07-12T06:45:00Z",
         "verdict": "needs-attention",
-        "topFinding": "Carry-forward pass, day 3. The only commit since the 2026-07-10 run is f2695c3 (docs(handler), 2026-07-10 19:12 -0500), which touches CLAUDE.md and nothing else (git diff --name-only b2eebce..HEAD returns exactly CLAUDE.md). Every one of the fourteen open actions anchors to a code file byte-identical to what the last full pass inspected (subscription.ts, billing.js, lib.js, research.js, cloud.ts, persistence.ts, legal-view.ts, legal/terms.md, sw.js), so all fourteen carry forward with aging ticked and all fourteen stay chronic. Health holds at 86, no score moved, no BLOCK (both hard_rule_checks pass: all three secret files git-ignored, no app.js hand edit). Verdict stays needs-attention on the unchanged live-breakage HIGH: openBillingPortal() (src/subscription.ts:280) still early-returns on the dormant CHAINS_VISIBLE flag so a paying subscriber cannot self-cancel in-app (compliance-01, open 9 runs), and the billing worker still trusts a client-supplied body.userId (auth-01, billing.js:53, open 6 runs). The one positive is off the score sheet: the previous run's maint-01 LOW closed, since the stranded CLAUDE.md tools-table fix committed cleanly in f2695c3. Seven of the fourteen sit on the money path, which has had no code commits since billing went live 2026-06-28; Pro is taking real payments with a dead cancel button, an unhardened webhook, and terms carrying no billing section.",
-        "actionsOpen": 14,
-        "actionsClosed": 0,
+        "topFinding": "The money path is still the whole story, but one legal-debt piece came off it this run. Since the last run the only source-touching commit is fb10b49 (fix(yac): restore truncated legal/terms.md to the full counsel master, 2026-07-11 22:39 -0500), which restores legal/terms.md from a truncated stub to the full 202-line counsel master (133 insertions), closing compliance-04: the FUSE-truncation defect on a legal file is fixed and counsel now reviews the full document. The verdict stays needs-attention on the unchanged live-breakage HIGHs: openBillingPortal() (src/subscription.ts:280) still early-returns on the dormant CHAINS_VISIBLE flag so a paying subscriber cannot self-cancel in-app (compliance-01, open 10 runs), and the billing worker still trusts a client-supplied body.userId (auth-01, billing.js:53, open 7 runs). Twelve of the thirteen remaining findings anchor to code byte-identical to 0.57.0; six sit on the money path, which has had no code commits since billing went live 2026-06-28. Both hard_rule_checks pass, no BLOCK. Health holds at 86; compliance-data-steward rises 62->65 on the close.",
+        "actionsOpen": 13,
+        "actionsClosed": 1,
         "actions": [
             {
                 "severity": "HIGH",
@@ -101,13 +101,6 @@
                 "priority": 20,
                 "lens": "compliance-data-steward",
                 "title": "Finalize an effective date, drop the DRAFT banner, and add a payment/subscription clause to the served terms (src/legal-view.ts:295)."
-            },
-            {
-                "severity": "HIGH",
-                "id": "compliance-04",
-                "priority": 15,
-                "lens": "compliance-data-steward",
-                "title": "Restore the truncated legal/terms.md and reconcile it with the fuller shipped TERMS_MD so counsel reviews what users see (legal/terms.md, src/legal-view.ts:21)."
             },
             {
                 "severity": "MED",
@@ -216,7 +209,7 @@
             "dependency": 90,
             "observability": 92,
             "strategic-kill-this": 95,
-            "compliance-data-steward": 62,
+            "compliance-data-steward": 65,
             "worker-cpu-budget": 88,
             "kv-data-shape": 86,
             "auth-token-hygiene": 90,
@@ -244,98 +237,91 @@
                 "id": "compliance-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "auth-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 6,
+                "runsOpen": 7,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "dataint-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "webhook-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "compliance-04",
-                "severity": "HIGH",
-                "priority": 15,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-04"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "reliability-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "cost-01",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 9,
+                "runsOpen": 10,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "install-offline-01",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 6,
+                "runsOpen": 7,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "finance-03",
                 "severity": "MED",
                 "priority": 12,
-                "runsOpen": 6,
+                "runsOpen": 7,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "sync-01",
                 "severity": "MED",
                 "priority": 12,
-                "runsOpen": 6,
+                "runsOpen": 7,
                 "firstSeen": "2026-07-04"
             }
         ],
@@ -345,21 +331,21 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 12
+                "runsSeen": 13
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 9
+                "runsSeen": 10
             },
             {
                 "lenses": [
                     "data-integrity",
                     "cost-economics"
                 ],
-                "runsSeen": 6
+                "runsSeen": 7
             }
         ]
     },
