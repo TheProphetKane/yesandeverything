@@ -32,12 +32,12 @@
   "findings": null
  },
  "barRaise": {
-  "latestReportPath": "docs/BAR_RAISE-2026-07-12.md",
-  "latestReportAt": "2026-07-12T06:30:00Z",
+  "latestReportPath": "docs/BAR_RAISE-2026-07-13.md",
+  "latestReportAt": "2026-07-13T11:04:02Z",
   "verdict": "in-progress",
-  "topFinding": "Carry-forward pass: no code has changed since the 2026-07-11 full bar-raise. HEAD is still e0b8e85, the working tree is clean, and docs/GDD.html is byte-identical (727,163 bytes), so the lens fan-out would measure nothing new and the skip-unchanged gate fired. Health holds at 80 and the verdict stays in-progress. The chronic HIGH set is unchanged and now one run staler: pathfinding and collision still have no executing test, the save path still writes in place with no atomic rename or backup, the dashboard audit glob still cannot match CANONICAL_AUDIT-*.md, and completion still reads 50% with an empty remaining[]. A crash-safe save remains the single most valuable item on the list. The work queue is oversized (267 KB, 4 corrupt sentinels) so no auto-enqueue ran; the two open structural findings are already queued and pending.",
-  "actionsOpen": 24,
-  "actionsClosed": 0,
+  "topFinding": "Full pass: one commit since the 2026-07-11 full pass. Commit 9b6497f widens the dashboard audit glob in scripts/write-dashboard-status.ps1:53 from AUDIT-*.md to *AUDIT-*.md, which closes the chronic HIGH observability-01 that had been open twelve runs (the glob could never match CANONICAL_AUDIT-*.md, so audit.latestReportPath published null). The code defect is fixed; the dashboard audit block backfills automatically on the next writer run. observability rises 57 to 72 and health 80 to 81. Everything else is byte-identical to 2026-07-11 (GDD 727,163 bytes, clean tree, v0.59.36 in lockstep), so the other fifteen dimensions carry forward verbatim and their findings aged one run. Both hard rules pass, no BLOCK. With the audit-glob HIGH closed, the crash-safe save (data-integrity-01) and the untested pathfinder/collision core (reliability-01) are now the top open items. The work queue is oversized (289 KB, 4 corrupt sentinels) so no auto-enqueue ran; nothing new needed enqueuing this pass.",
+  "actionsOpen": 23,
+  "actionsClosed": 1,
   "actions": [
    {
     "severity": "HIGH",
@@ -52,13 +52,6 @@
     "lens": "data-integrity",
     "priority": 20,
     "id": "data-integrity-01"
-   },
-   {
-    "severity": "HIGH",
-    "title": "Fix the audit glob at scripts/write-dashboard-status.ps1:53 (AUDIT-*.md to CANONICAL_AUDIT-*.md) and re-run the writer so the dashboard audit block backfills instead of shipping null.",
-    "lens": "observability",
-    "priority": 20,
-    "id": "observability-01"
    },
    {
     "severity": "HIGH",
@@ -240,7 +233,7 @@
     "reason": "pre-M4 Steam distribution prep"
    }
   ],
-  "health": 80,
+  "health": 81,
   "lensScores": {
    "architecture": 85,
    "reliability": 70,
@@ -251,7 +244,7 @@
    "solo-tool-ux": 87,
    "cost-economics": 80,
    "dependency": 87,
-   "observability": 57,
+   "observability": 72,
    "strategic-kill-this": 80,
    "compliance-data-steward": 77,
    "game-design": 87,
@@ -261,171 +254,164 @@
   },
   "openFindings": [
    {
-    "id": "observability-01",
-    "severity": "high",
-    "priority": 20,
-    "runsOpen": 12,
-    "firstSeen": "2026-06-29"
-   },
-   {
     "id": "performance-02",
     "severity": "high",
     "priority": 15,
-    "runsOpen": 12,
+    "runsOpen": 13,
     "firstSeen": "2026-06-29"
    },
    {
     "id": "performance-01",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 12,
+    "runsOpen": 13,
     "firstSeen": "2026-06-29"
    },
    {
     "id": "maintainability-03",
     "severity": "medium",
     "priority": 10,
-    "runsOpen": 12,
+    "runsOpen": 13,
     "firstSeen": "2026-06-29"
    },
    {
     "id": "reliability-01",
     "severity": "high",
     "priority": 20,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "reliability-02",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "data-integrity-01",
     "severity": "high",
     "priority": 20,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "data-integrity-02",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "strategic-kill-this-01",
     "severity": "high",
     "priority": 20,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "compliance-data-steward-01",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "public-voice-01",
     "severity": "medium",
     "priority": 10,
-    "runsOpen": 10,
+    "runsOpen": 11,
     "firstSeen": "2026-07-01"
    },
    {
     "id": "architecture-01",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "maintainability-01",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "maintainability-02",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "solo-tool-ux-01",
     "severity": "medium",
     "priority": 15,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "solo-tool-ux-04",
     "severity": "medium",
     "priority": 12,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "orchestration-03",
     "severity": "medium",
     "priority": 12,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "compliance-data-steward-03",
     "severity": "medium",
     "priority": 10,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "game-design-02",
     "severity": "medium",
     "priority": 12,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "game-design-03",
     "severity": "medium",
     "priority": 8,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "performance-04",
     "severity": "medium",
     "priority": 9,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "data-integrity-03",
     "severity": "medium",
     "priority": 9,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "observability-02",
     "severity": "medium",
     "priority": 8,
-    "runsOpen": 3,
+    "runsOpen": 4,
     "firstSeen": "2026-07-10"
    },
    {
     "id": "game-design-04",
     "severity": "medium",
     "priority": 10,
-    "runsOpen": 2,
+    "runsOpen": 3,
     "firstSeen": "2026-07-11"
    }
   ],
@@ -435,35 +421,35 @@
      "cost-economics",
      "reliability"
     ],
-    "runsSeen": 13
+    "runsSeen": 14
    },
    {
     "lenses": [
      "performance",
      "solo-tool-ux"
     ],
-    "runsSeen": 12
+    "runsSeen": 13
    },
    {
     "lenses": [
      "strategic-kill-this",
      "maintainability"
     ],
-    "runsSeen": 10
+    "runsSeen": 11
    },
    {
     "lenses": [
      "reliability",
      "maintainability"
     ],
-    "runsSeen": 7
+    "runsSeen": 8
    },
    {
     "lenses": [
      "solo-tool-ux",
      "reliability"
     ],
-    "runsSeen": 2
+    "runsSeen": 3
    }
   ]
  },
