@@ -1,490 +1,498 @@
 {
- "project": "Rising",
- "displayName": "Brackish Rising",
- "version": "0.59.36",
- "lastReleaseAt": "2026-07-10T12:24:13-05:00",
- "lastReleaseMessage": "Navy's art drop fully wired (phases 2-5): 14 buildings on scene-authored Body Sprite2D nodes with measured pivot positions, static single-frame support across all three entity renderers with five units and five enemies swapped (plus a latent pooled-UV fix), Birch/Conifer tree variants and deposit art and a new DecorSprite walkover/bush scatter, and the WoodWall/MetalWall daisychain with the SE/NW pair mirrored. Rifleman Spine scaled 0.36 in-scene per the artist's interim note, with the facing-mirror preserving scene scale. Visual probe screenshot-reviewed: every converted asset seated correctly.",
- "milestone": {
-  "id": "M1",
-  "label": "Vertical Slice",
-  "status": "in-progress"
- },
- "completion": {
-  "pct": 50,
-  "anchored": "2026-06-23"
- },
- "itemsLeft": {
-  "open": 4,
-  "queue": 4,
-  "backlog": 0,
-  "gates": 0,
-  "items": []
- },
- "backlog": {
-  "count": 0,
-  "items": []
- },
- "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
- "workTreeClean": true,
- "audit": {
-  "latestReportPath": null,
-  "latestReportAt": null,
-  "findings": null
- },
- "barRaise": {
-  "latestReportPath": "docs/BAR_RAISE-2026-07-13.md",
-  "latestReportAt": "2026-07-13T11:04:02Z",
-  "verdict": "in-progress",
-  "topFinding": "Full pass: one commit since the 2026-07-11 full pass. Commit 9b6497f widens the dashboard audit glob in scripts/write-dashboard-status.ps1:53 from AUDIT-*.md to *AUDIT-*.md, which closes the chronic HIGH observability-01 that had been open twelve runs (the glob could never match CANONICAL_AUDIT-*.md, so audit.latestReportPath published null). The code defect is fixed; the dashboard audit block backfills automatically on the next writer run. observability rises 57 to 72 and health 80 to 81. Everything else is byte-identical to 2026-07-11 (GDD 727,163 bytes, clean tree, v0.59.36 in lockstep), so the other fifteen dimensions carry forward verbatim and their findings aged one run. Both hard rules pass, no BLOCK. With the audit-glob HIGH closed, the crash-safe save (data-integrity-01) and the untested pathfinder/collision core (reliability-01) are now the top open items. The work queue is oversized (289 KB, 4 corrupt sentinels) so no auto-enqueue ran; nothing new needed enqueuing this pass.",
-  "actionsOpen": 23,
-  "actionsClosed": 1,
-  "actions": [
-   {
-    "severity": "HIGH",
-    "title": "Add headless tests driving pathfinder.find_path, can_traverse, and _heap_pop plus the SpatialIndex bucket queries against a stub grid, asserting optimal-path output, heap ordering, and partial-path fallback.",
-    "lens": "reliability",
-    "priority": 20,
-    "id": "reliability-01"
-   },
-   {
-    "severity": "HIGH",
-    "title": "Make the save write crash-safe: temp path, readback-parse, copy the slot to .bak, rename the verified temp over the slot; apply to the autosave-on-quit path too.",
-    "lens": "data-integrity",
-    "priority": 20,
-    "id": "data-integrity-01"
-   },
-   {
-    "severity": "HIGH",
-    "title": "Make M1 completion honest in .project-context.json: populate completion.remaining[] with the real external-blocked residual and set pct to match, or state exactly why it stays 50%.",
-    "lens": "strategic-kill-this",
-    "priority": 20,
-    "id": "strategic-kill-this-01"
-   },
-   {
-    "severity": "HIGH",
-    "title": "Add pathfinder and spatial_index coverage to run_tests.gd: a MAX_EXPANSIONS partial-path assertion and a get_units_near / get_buildings_near exact-membership assertion.",
-    "lens": "performance",
-    "priority": 15,
-    "id": "performance-02"
-   },
-   {
-    "severity": "MED",
-    "title": "Rewrite the GODOT_BEST_PRACTICES_ADHERENCE.md section-1 and section-10 narratives so they stop describing the god-files at pre-decomposition sizes in the present tense.",
-    "lens": "maintainability",
-    "priority": 15,
-    "id": "maintainability-01"
-   },
-   {
-    "severity": "MED",
-    "title": "Refresh docs/ARCHITECTURE.md to v0.59.36: correct the line counts, add the wave-2 modules, resolve the Scout base contradiction.",
-    "lens": "maintainability",
-    "priority": 15,
-    "id": "maintainability-02"
-   },
-   {
-    "severity": "MED",
-    "title": "Apply the 2>&1 stderr guard to the bare git calls in push-to-github.ps1 and publish-gdd.ps1, mirroring write-dashboard-status.ps1:237.",
-    "lens": "solo-tool-ux",
-    "priority": 15,
-    "id": "solo-tool-ux-01"
-   },
-   {
-    "severity": "MED",
-    "title": "Convert the god-file guard in check_best_practices.py:23-30 from a hardcoded six-name list to a size threshold over all source/**/*.gd, then baseline building.gd, wave_director.gd, settings.gd, enemy_pool.gd.",
-    "lens": "architecture",
-    "priority": 15,
-    "id": "architecture-01"
-   },
-   {
-    "severity": "MED",
-    "title": "Add docs/LICENSES.md recording the Spine editor license tier, the spine-godot version and source, the target Godot build, the DLL redistribution terms, and the commissioned-art ownership terms.",
-    "lens": "compliance-data-steward",
-    "priority": 15,
-    "id": "compliance-data-steward-01"
-   },
-   {
-    "severity": "MED",
-    "title": "Add a headless save round-trip test to run_tests.gd (seed, save, clear, load, assert state survives, plus a corrupt-JSON negative case).",
-    "lens": "data-integrity",
-    "priority": 15,
-    "id": "data-integrity-02"
-   },
-   {
-    "severity": "MED",
-    "title": "Capture one peak-wave (day-28 horde) frame profile on the current v0.59.36 build and log FPS plus top costs in docs/OPTIMIZATION_LOG.md.",
-    "lens": "performance",
-    "priority": 15,
-    "id": "performance-01"
-   },
-   {
-    "severity": "MED",
-    "title": "Extend the preship gauntlet with a deterministic runtime-contract test of slide_move, apply_safe_push, and push_edge_ok against a stub grid.",
-    "lens": "reliability",
-    "priority": 15,
-    "id": "reliability-02"
-   },
-   {
-    "severity": "MED",
-    "title": "Add a Shipping section to CLAUDE.md documenting the release.ps1 stderr-abort symptom and the verify-HEAD-then-finish-via-Bash recovery.",
-    "lens": "solo-tool-ux",
-    "priority": 12,
-    "id": "solo-tool-ux-04"
-   },
-   {
-    "severity": "MED",
-    "title": "Create the hazard catalog at the path .project-context.json:58 advertises, or repoint or remove the field, and add a hazards section to CLAUDE.md.",
-    "lens": "orchestration",
-    "priority": 12,
-    "id": "orchestration-03"
-   },
-   {
-    "severity": "MED",
-    "title": "Clamp or reject out-of-bounds restored tiles on grid-size mismatch in save_load.gd:382-398 rather than only push_warning.",
-    "lens": "game-design",
-    "priority": 12,
-    "id": "game-design-02"
-   },
-   {
-    "severity": "MED",
-    "title": "Delete the dead ASSET_SCALE_MASTER read from scripts/check_playability.py and strike it from RENDER_SCALING.md, ARCHITECTURE.md, and SPINE-INTEGRATION.md.",
-    "lens": "maintainability",
-    "priority": 10,
-    "id": "maintainability-03"
-   },
-   {
-    "severity": "MED",
-    "title": "Rescope the no_hbh_cross_contamination check string to source/ so the hard-rule gate can actually pass and actually block.",
-    "lens": "compliance-data-steward",
-    "priority": 10,
-    "id": "compliance-data-steward-03"
-   },
-   {
-    "severity": "MED",
-    "title": "Replace the two em-dash entities on the YaE-side brackish-rising gate page and extend the voice gate to cover the gate markup.",
-    "lens": "public-voice",
-    "priority": 10,
-    "id": "public-voice-01"
-   },
-   {
-    "severity": "MED",
-    "title": "Reconcile the GDD Assets tab data-asset-default values per-row against ART_INTEGRATION_NOTES.md so the tracker stops understating the landed art.",
-    "lens": "game-design",
-    "priority": 10,
-    "id": "game-design-04"
-   },
-   {
-    "severity": "MED",
-    "title": "Route enemy_base.gd:794-815 target-acquisition through get_units_near and get_buildings_near instead of walking the full group arrays per enemy.",
-    "lens": "performance",
-    "priority": 9,
-    "id": "performance-04"
-   },
-   {
-    "severity": "MED",
-    "title": "Validate restored tiles against iso_grid.is_in_bounds before instantiation in save_load.gd:513-558.",
-    "lens": "data-integrity",
-    "priority": 9,
-    "id": "data-integrity-03"
-   },
-   {
-    "severity": "MED",
-    "title": "Parse the newest CANONICAL_AUDIT-*.md for high, medium, and low counts in write-dashboard-status.ps1:169 so audit.findings stops rendering 0/0/0.",
-    "lens": "observability",
-    "priority": 8,
-    "id": "observability-02"
-   },
-   {
-    "severity": "MED",
-    "title": "Correct the unit.gd:37-38 header to the live 256px native-1.0x model and sweep the inherited HBH version stamps from source/.",
-    "lens": "game-design",
-    "priority": 8,
-    "id": "game-design-03"
-   }
-  ],
-  "deferred": [
-   {
-    "severity": "MED",
-    "title": "Declare M1 closed and pull one M2 row (Leviathan boss or hatchery clear-to-expand) into active work.",
-    "lens": "strategic-kill-this",
-    "reason": "blocked on Nick M2 scope-lock decision"
-   },
-   {
-    "severity": "MED",
-    "title": "Store the executed artist-contractor agreement off-machine and version-backed, and record its location; Navy's art has now been delivered and wired.",
-    "lens": "compliance-data-steward",
-    "reason": "blocked on contract signing; agreement still DRAFT/unsigned"
-   },
-   {
-    "severity": "MED",
-    "title": "Capture a pre/post frame-time diff proving the v0.59.32/33 decomposition was cost-neutral.",
-    "lens": "performance",
-    "reason": "pre-decomposition build is two waves back; retroactive A/B not practical, useful half subsumed by performance-01"
-   },
-   {
-    "severity": "LOW",
-    "title": "Decide the git-LFS migration and the 425 MiB pack-history rewrite; an attended git gc could consolidate the two packs meanwhile.",
-    "lens": "cost-economics",
-    "reason": "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE; cost<->reliability tension runsSeen 12, promote via adr-promoter"
-   },
-   {
-    "severity": "LOW",
-    "title": "Add a root LICENSE/copyright statement and note the Godot logo CC-BY attribution.",
-    "lens": "compliance-data-steward",
-    "reason": "pre-M4 Steam distribution prep"
-   }
-  ],
-  "health": 81,
-  "lensScores": {
-   "architecture": 85,
-   "reliability": 70,
-   "security": 94,
-   "performance": 80,
-   "data-integrity": 70,
-   "maintainability": 82,
-   "solo-tool-ux": 87,
-   "cost-economics": 80,
-   "dependency": 87,
-   "observability": 72,
-   "strategic-kill-this": 80,
-   "compliance-data-steward": 77,
-   "game-design": 87,
-   "orchestration": 88,
-   "release-pipeline": 86,
-   "public-voice": 86
-  },
-  "openFindings": [
-   {
-    "id": "performance-02",
-    "severity": "high",
-    "priority": 15,
-    "runsOpen": 13,
-    "firstSeen": "2026-06-29"
-   },
-   {
-    "id": "performance-01",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 13,
-    "firstSeen": "2026-06-29"
-   },
-   {
-    "id": "maintainability-03",
-    "severity": "medium",
-    "priority": 10,
-    "runsOpen": 13,
-    "firstSeen": "2026-06-29"
-   },
-   {
-    "id": "reliability-01",
-    "severity": "high",
-    "priority": 20,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "reliability-02",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "data-integrity-01",
-    "severity": "high",
-    "priority": 20,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "data-integrity-02",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "strategic-kill-this-01",
-    "severity": "high",
-    "priority": 20,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "compliance-data-steward-01",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "public-voice-01",
-    "severity": "medium",
-    "priority": 10,
-    "runsOpen": 11,
-    "firstSeen": "2026-07-01"
-   },
-   {
-    "id": "architecture-01",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "maintainability-01",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "maintainability-02",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "solo-tool-ux-01",
-    "severity": "medium",
-    "priority": 15,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "solo-tool-ux-04",
-    "severity": "medium",
-    "priority": 12,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "orchestration-03",
-    "severity": "medium",
-    "priority": 12,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "compliance-data-steward-03",
-    "severity": "medium",
-    "priority": 10,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "game-design-02",
-    "severity": "medium",
-    "priority": 12,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "game-design-03",
-    "severity": "medium",
-    "priority": 8,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "performance-04",
-    "severity": "medium",
-    "priority": 9,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "data-integrity-03",
-    "severity": "medium",
-    "priority": 9,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "observability-02",
-    "severity": "medium",
-    "priority": 8,
-    "runsOpen": 4,
-    "firstSeen": "2026-07-10"
-   },
-   {
-    "id": "game-design-04",
-    "severity": "medium",
-    "priority": 10,
-    "runsOpen": 3,
-    "firstSeen": "2026-07-11"
-   }
-  ],
-  "tensionsOpen": [
-   {
-    "lenses": [
-     "cost-economics",
-     "reliability"
-    ],
-    "runsSeen": 14
-   },
-   {
-    "lenses": [
-     "performance",
-     "solo-tool-ux"
-    ],
-    "runsSeen": 13
-   },
-   {
-    "lenses": [
-     "strategic-kill-this",
-     "maintainability"
-    ],
-    "runsSeen": 11
-   },
-   {
-    "lenses": [
-     "reliability",
-     "maintainability"
-    ],
-    "runsSeen": 8
-   },
-   {
-    "lenses": [
-     "solo-tool-ux",
-     "reliability"
-    ],
-    "runsSeen": 3
-   }
-  ]
- },
- "metrics": [
-  {
-   "k": "units",
-   "v": "12"
-  },
-  {
-   "k": "buildings",
-   "v": "26"
-  },
-  {
-   "k": "enemies",
-   "v": "17"
-  },
-  {
-   "k": "tests",
-   "v": "1"
-  },
-  {
-   "k": "scenes",
-   "v": "51"
-  },
-  {
-   "k": "gdd kb",
-   "v": "710"
-  }
- ],
- "workQueueDepth": 4,
- "stale": false,
- "tags": [
-  "game-design",
-  "orchestration",
-  "release-pipeline",
-  "public-voice"
- ]
+    "project":  "Rising",
+    "displayName":  "Brackish Rising",
+    "version":  "0.59.37",
+    "lastReleaseAt":  "2026-07-13T12:28:16-05:00",
+    "lastReleaseMessage":  "Pull Navy\u0027s UI asset drop and environmental color pass, and land the basic UI replacement she suggested: a project Theme resource with StyleBoxTexture nine-patch entries (her NinePatchRect guidance, theme-level) - BRButtonA/B as idle and hover button plates with a pressed content-shift, BRSolidPanel framing the three bottom-strip panels, the outer strip flattened to a dark deck so frames do not nest. Her warmer fog, richer Plains, and warm-orange accent recolors are in. The deeper layout pass (header, timeline, tracker, circular buttons) follows the first polished building.",
+    "milestone":  {
+                      "id":  "M1",
+                      "label":  "Vertical Slice",
+                      "status":  "in-progress"
+                  },
+    "completion":  {
+                       "pct":  50,
+                       "anchored":  "2026-06-23"
+                   },
+    "itemsLeft":  {
+                      "open":  2,
+                      "queue":  2,
+                      "backlog":  0,
+                      "gates":  0,
+                      "items":  [
+
+                                ]
+                  },
+    "backlog":  {
+                    "count":  0,
+                    "items":  [
+
+                              ]
+                },
+    "repoUrl":  "https://github.com/TheProphetKane/brackish-rising",
+    "workTreeClean":  true,
+    "audit":  {
+                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-13.md",
+                  "latestReportAt":  "2026-07-13T06:24:26Z",
+                  "findings":  {
+                                   "high":  0,
+                                   "medium":  0,
+                                   "low":  0
+                               }
+              },
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-07-13.md",
+                     "latestReportAt":  "2026-07-13T11:04:02Z",
+                     "verdict":  "in-progress",
+                     "topFinding":  "Full pass: one commit since the 2026-07-11 full pass. Commit 9b6497f widens the dashboard audit glob in scripts/write-dashboard-status.ps1:53 from AUDIT-*.md to *AUDIT-*.md, which closes the chronic HIGH observability-01 that had been open twelve runs (the glob could never match CANONICAL_AUDIT-*.md, so audit.latestReportPath published null). The code defect is fixed; the dashboard audit block backfills automatically on the next writer run. observability rises 57 to 72 and health 80 to 81. Everything else is byte-identical to 2026-07-11 (GDD 727,163 bytes, clean tree, v0.59.36 in lockstep), so the other fifteen dimensions carry forward verbatim and their findings aged one run. Both hard rules pass, no BLOCK. With the audit-glob HIGH closed, the crash-safe save (data-integrity-01) and the untested pathfinder/collision core (reliability-01) are now the top open items. The work queue is oversized (289 KB, 4 corrupt sentinels) so no auto-enqueue ran; nothing new needed enqueuing this pass.",
+                     "actionsOpen":  23,
+                     "actionsClosed":  1,
+                     "actions":  [
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Add headless tests driving pathfinder.find_path, can_traverse, and _heap_pop plus the SpatialIndex bucket queries against a stub grid, asserting optimal-path output, heap ordering, and partial-path fallback.",
+                                         "lens":  "reliability",
+                                         "priority":  20,
+                                         "id":  "reliability-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Make the save write crash-safe: temp path, readback-parse, copy the slot to .bak, rename the verified temp over the slot; apply to the autosave-on-quit path too.",
+                                         "lens":  "data-integrity",
+                                         "priority":  20,
+                                         "id":  "data-integrity-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Make M1 completion honest in .project-context.json: populate completion.remaining[] with the real external-blocked residual and set pct to match, or state exactly why it stays 50%.",
+                                         "lens":  "strategic-kill-this",
+                                         "priority":  20,
+                                         "id":  "strategic-kill-this-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Add pathfinder and spatial_index coverage to run_tests.gd: a MAX_EXPANSIONS partial-path assertion and a get_units_near / get_buildings_near exact-membership assertion.",
+                                         "lens":  "performance",
+                                         "priority":  15,
+                                         "id":  "performance-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Rewrite the GODOT_BEST_PRACTICES_ADHERENCE.md section-1 and section-10 narratives so they stop describing the god-files at pre-decomposition sizes in the present tense.",
+                                         "lens":  "maintainability",
+                                         "priority":  15,
+                                         "id":  "maintainability-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Refresh docs/ARCHITECTURE.md to v0.59.36: correct the line counts, add the wave-2 modules, resolve the Scout base contradiction.",
+                                         "lens":  "maintainability",
+                                         "priority":  15,
+                                         "id":  "maintainability-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Apply the 2\u003e\u00261 stderr guard to the bare git calls in push-to-github.ps1 and publish-gdd.ps1, mirroring write-dashboard-status.ps1:237.",
+                                         "lens":  "solo-tool-ux",
+                                         "priority":  15,
+                                         "id":  "solo-tool-ux-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Convert the god-file guard in check_best_practices.py:23-30 from a hardcoded six-name list to a size threshold over all source/**/*.gd, then baseline building.gd, wave_director.gd, settings.gd, enemy_pool.gd.",
+                                         "lens":  "architecture",
+                                         "priority":  15,
+                                         "id":  "architecture-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add docs/LICENSES.md recording the Spine editor license tier, the spine-godot version and source, the target Godot build, the DLL redistribution terms, and the commissioned-art ownership terms.",
+                                         "lens":  "compliance-data-steward",
+                                         "priority":  15,
+                                         "id":  "compliance-data-steward-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add a headless save round-trip test to run_tests.gd (seed, save, clear, load, assert state survives, plus a corrupt-JSON negative case).",
+                                         "lens":  "data-integrity",
+                                         "priority":  15,
+                                         "id":  "data-integrity-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Capture one peak-wave (day-28 horde) frame profile on the current v0.59.36 build and log FPS plus top costs in docs/OPTIMIZATION_LOG.md.",
+                                         "lens":  "performance",
+                                         "priority":  15,
+                                         "id":  "performance-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Extend the preship gauntlet with a deterministic runtime-contract test of slide_move, apply_safe_push, and push_edge_ok against a stub grid.",
+                                         "lens":  "reliability",
+                                         "priority":  15,
+                                         "id":  "reliability-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add a Shipping section to CLAUDE.md documenting the release.ps1 stderr-abort symptom and the verify-HEAD-then-finish-via-Bash recovery.",
+                                         "lens":  "solo-tool-ux",
+                                         "priority":  12,
+                                         "id":  "solo-tool-ux-04"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Create the hazard catalog at the path .project-context.json:58 advertises, or repoint or remove the field, and add a hazards section to CLAUDE.md.",
+                                         "lens":  "orchestration",
+                                         "priority":  12,
+                                         "id":  "orchestration-03"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Clamp or reject out-of-bounds restored tiles on grid-size mismatch in save_load.gd:382-398 rather than only push_warning.",
+                                         "lens":  "game-design",
+                                         "priority":  12,
+                                         "id":  "game-design-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Delete the dead ASSET_SCALE_MASTER read from scripts/check_playability.py and strike it from RENDER_SCALING.md, ARCHITECTURE.md, and SPINE-INTEGRATION.md.",
+                                         "lens":  "maintainability",
+                                         "priority":  10,
+                                         "id":  "maintainability-03"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Rescope the no_hbh_cross_contamination check string to source/ so the hard-rule gate can actually pass and actually block.",
+                                         "lens":  "compliance-data-steward",
+                                         "priority":  10,
+                                         "id":  "compliance-data-steward-03"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Replace the two em-dash entities on the YaE-side brackish-rising gate page and extend the voice gate to cover the gate markup.",
+                                         "lens":  "public-voice",
+                                         "priority":  10,
+                                         "id":  "public-voice-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Reconcile the GDD Assets tab data-asset-default values per-row against ART_INTEGRATION_NOTES.md so the tracker stops understating the landed art.",
+                                         "lens":  "game-design",
+                                         "priority":  10,
+                                         "id":  "game-design-04"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Route enemy_base.gd:794-815 target-acquisition through get_units_near and get_buildings_near instead of walking the full group arrays per enemy.",
+                                         "lens":  "performance",
+                                         "priority":  9,
+                                         "id":  "performance-04"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Validate restored tiles against iso_grid.is_in_bounds before instantiation in save_load.gd:513-558.",
+                                         "lens":  "data-integrity",
+                                         "priority":  9,
+                                         "id":  "data-integrity-03"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Parse the newest CANONICAL_AUDIT-*.md for high, medium, and low counts in write-dashboard-status.ps1:169 so audit.findings stops rendering 0/0/0.",
+                                         "lens":  "observability",
+                                         "priority":  8,
+                                         "id":  "observability-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Correct the unit.gd:37-38 header to the live 256px native-1.0x model and sweep the inherited HBH version stamps from source/.",
+                                         "lens":  "game-design",
+                                         "priority":  8,
+                                         "id":  "game-design-03"
+                                     }
+                                 ],
+                     "deferred":  [
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Declare M1 closed and pull one M2 row (Leviathan boss or hatchery clear-to-expand) into active work.",
+                                          "lens":  "strategic-kill-this",
+                                          "reason":  "blocked on Nick M2 scope-lock decision"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Store the executed artist-contractor agreement off-machine and version-backed, and record its location; Navy\u0027s art has now been delivered and wired.",
+                                          "lens":  "compliance-data-steward",
+                                          "reason":  "blocked on contract signing; agreement still DRAFT/unsigned"
+                                      },
+                                      {
+                                          "severity":  "MED",
+                                          "title":  "Capture a pre/post frame-time diff proving the v0.59.32/33 decomposition was cost-neutral.",
+                                          "lens":  "performance",
+                                          "reason":  "pre-decomposition build is two waves back; retroactive A/B not practical, useful half subsumed by performance-01"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Decide the git-LFS migration and the 425 MiB pack-history rewrite; an attended git gc could consolidate the two packs meanwhile.",
+                                          "lens":  "cost-economics",
+                                          "reason":  "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE; cost\u003c-\u003ereliability tension runsSeen 12, promote via adr-promoter"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "Add a root LICENSE/copyright statement and note the Godot logo CC-BY attribution.",
+                                          "lens":  "compliance-data-steward",
+                                          "reason":  "pre-M4 Steam distribution prep"
+                                      }
+                                  ],
+                     "health":  81,
+                     "lensScores":  {
+                                        "architecture":  85,
+                                        "reliability":  70,
+                                        "security":  94,
+                                        "performance":  80,
+                                        "data-integrity":  70,
+                                        "maintainability":  82,
+                                        "solo-tool-ux":  87,
+                                        "cost-economics":  80,
+                                        "dependency":  87,
+                                        "observability":  72,
+                                        "strategic-kill-this":  80,
+                                        "compliance-data-steward":  77,
+                                        "game-design":  87,
+                                        "orchestration":  88,
+                                        "release-pipeline":  86,
+                                        "public-voice":  86
+                                    },
+                     "openFindings":  [
+                                          {
+                                              "id":  "performance-02",
+                                              "severity":  "high",
+                                              "priority":  15,
+                                              "runsOpen":  13,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "performance-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  13,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "maintainability-03",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  13,
+                                              "firstSeen":  "2026-06-29"
+                                          },
+                                          {
+                                              "id":  "reliability-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "reliability-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "data-integrity-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "data-integrity-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "strategic-kill-this-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "compliance-data-steward-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "public-voice-01",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  11,
+                                              "firstSeen":  "2026-07-01"
+                                          },
+                                          {
+                                              "id":  "architecture-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "maintainability-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "maintainability-02",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "solo-tool-ux-01",
+                                              "severity":  "medium",
+                                              "priority":  15,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "solo-tool-ux-04",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "orchestration-03",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "compliance-data-steward-03",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "game-design-02",
+                                              "severity":  "medium",
+                                              "priority":  12,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "game-design-03",
+                                              "severity":  "medium",
+                                              "priority":  8,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "performance-04",
+                                              "severity":  "medium",
+                                              "priority":  9,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "data-integrity-03",
+                                              "severity":  "medium",
+                                              "priority":  9,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "observability-02",
+                                              "severity":  "medium",
+                                              "priority":  8,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-07-10"
+                                          },
+                                          {
+                                              "id":  "game-design-04",
+                                              "severity":  "medium",
+                                              "priority":  10,
+                                              "runsOpen":  3,
+                                              "firstSeen":  "2026-07-11"
+                                          }
+                                      ],
+                     "tensionsOpen":  [
+                                          {
+                                              "lenses":  [
+                                                             "cost-economics",
+                                                             "reliability"
+                                                         ],
+                                              "runsSeen":  14
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "performance",
+                                                             "solo-tool-ux"
+                                                         ],
+                                              "runsSeen":  13
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "strategic-kill-this",
+                                                             "maintainability"
+                                                         ],
+                                              "runsSeen":  11
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "reliability",
+                                                             "maintainability"
+                                                         ],
+                                              "runsSeen":  8
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "solo-tool-ux",
+                                                             "reliability"
+                                                         ],
+                                              "runsSeen":  3
+                                          }
+                                      ]
+                 },
+    "metrics":  [
+                    {
+                        "k":  "units",
+                        "v":  "12"
+                    },
+                    {
+                        "k":  "buildings",
+                        "v":  "26"
+                    },
+                    {
+                        "k":  "enemies",
+                        "v":  "17"
+                    },
+                    {
+                        "k":  "tests",
+                        "v":  "1"
+                    },
+                    {
+                        "k":  "scenes",
+                        "v":  "51"
+                    },
+                    {
+                        "k":  "gdd kb",
+                        "v":  "712"
+                    }
+                ],
+    "workQueueDepth":  2,
+    "stale":  false,
+    "tags":  [
+                 "game-design",
+                 "orchestration",
+                 "release-pipeline",
+                 "public-voice"
+             ]
 }
