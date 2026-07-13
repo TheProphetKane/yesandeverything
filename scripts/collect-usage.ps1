@@ -172,6 +172,7 @@ $PROJECT_PATTERNS = @(
   @{ pat = "cross-project-digest"; id = "Everything" },
   @{ pat = "self-reprompt-loop";  id = "Everything" },
   @{ pat = "usage-refresh";       id = "Everything" },   # frequent dashboard-refresh routine; runs the collector itself
+  @{ pat = "claude-temp-cleanup"; id = "Everything" },   # daily local-disk cleanup routine
   # Counselor (X:\YesAndCounselor) has no dedicated session dir; its work ran
   # from root / Yes& Agents cwds, so it is matched by a strong content string,
   # not a cwd path. Placed high so it wins like a task-name identity.
