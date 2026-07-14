@@ -652,6 +652,12 @@ if ($Audit) {
   $L.Add("")
   [System.IO.File]::WriteAllText($reportPath, ($L -join "`n"), [System.Text.UTF8Encoding]::new($false))
   Write-Host "Audit report: $reportPath" -ForegroundColor Green
+  # Retention: keep only the newest USAGE_AUDIT report on disk (portfolio self-prune standard, 2026-07-06).
+  # These reports are gitignored (*AUDIT-20*.md); prune the older dated copies so they don't accumulate.
+  $reportDir = Split-Path $reportPath -Parent
+  Get-ChildItem $reportDir -Filter 'USAGE_AUDIT-*.md' -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -ne $reportPath } |
+    ForEach-Object { Remove-Item -Force $_.FullName -ErrorAction SilentlyContinue }
   foreach ($proj in $projects.Keys) {
     $a = $projects[$proj].allTime
     Write-Host ("  {0,-14} {1,12:n0} in / {2,12:n0} out  ~ `${3,9:n2}" -f $proj, $a.input, $a.output, $a.costUSD) -ForegroundColor DarkGray
