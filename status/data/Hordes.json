@@ -40,13 +40,21 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-14.md",
-    "latestReportAt": "2026-07-14T11:20:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-15.md",
+    "latestReportAt": "2026-07-15T11:20:59Z",
     "verdict": "in-progress",
-    "topFinding": "Third consecutive carry-forward: zero code commits since the 2026-07-11 full 35-lens fan-out (HEAD unchanged at ca762fd, v0.99.40), working tree byte-identical to the last two runs (only M CLAUDE.md, the world3d class_name count edit 10/22->11/23), no open BLOCK, and no work-queue movement, so the skip-unchanged gate fired and all 35 lens scores carry forward untouched at health 87. Both hard rules pass (GDD ends with </html>; colorblind_mode declared once). Cheap signals re-checked: audit-hordes-nightly produced CANONICAL_AUDIT-2026-07-14 with one carried LOW (the class_name count GDD prose) and no new drift; the bar-raise-hbh husk is confirmed disabled; queue depth stable at 4 pending HBH items (matches workQueueDepth). The real signal this cycle is aging: the five 2026-07-10 findings crossed the 5-run chronic threshold (runsOpen 4->5) and escalate to the constellation - playability-01 and skill-trigger-collisions-01 (open actions the queue can drain) plus strategic-kill-this-01, asset-pipeline-01, and art-direction-consistency-01 (deferred, gated on a Nick versioning/art-delivery decision). Three MED actions carry forward unchanged (R3D-04 mission layer, enemy-field frame-time logger, fully-qualified skill ids). The last full fan-out is 3 days old; the 7-day forced-full-pass boundary (2026-07-18) is not yet reached.",
-    "actionsOpen": 3,
+    "topFinding": "Targeted delta pass, not a carry-forward: HEAD is still ca762fd (v0.99.40, zero commits since the 2026-07-11 full 35-lens fan-out, tree byte-identical bar the known M CLAUDE.md class_name-count edit), but the work queue moved - queue-drain-hourly split off hbh-autopause-horde-day-signal-2026-07-14, and verifying it read-only confirmed a real reliability regression at HEAD. The auto_pause autoload (project.godot:29) exposes four player-facing toggles in Settings (settings.gd:920-923, auto_pause_horde_day defaults true) but its connect_wave_director / connect_command_post / connect_economy functions have zero callers anywhere in source/ (grep-confirmed), so the subsystem never subscribes to any signal and all four auto-pause triggers are silent no-ops - a clean instance of HBH's documented silent-no-op / orphaned-wiring hazard family. Compounding it, wave_director.gd declares only all_waves_cleared (L7) and never horde_day_announced, so even the auto_pause.gd:88 has_signal guard would fail closed. Opened as reliability-01 (HIGH, P20); the fix is partly queued (horde-day slice) but the root cause is broader - wire all three connect_* calls from the 3D bootstrap and re-port the horde_day_announced signal. Reliability drops 89->82; health holds at 87 (86.8 pre-round) under no-veto weighting, one lens of 35. Both hard rules pass (GDD ends </html>; colorblind_mode declared once), no BLOCK. Aging: observability-01 and cost-economics-01 cross to runsOpen 5 = chronic, joining the five 2026-07-10 chronics; the observability<->cost tension is now chronic. The 7-day forced-full-pass boundary is 2026-07-18.",
+    "actionsOpen": 4,
     "actionsClosed": 37,
     "actions": [
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "reliability-01",
+        "lens": "reliability",
+        "title": "Auto-pause subsystem is dead-wired: auto_pause.gd connect_wave_director/connect_command_post/connect_economy have zero callers in source/, and wave_director.gd never declares horde_day_announced, so all four player-facing auto-pause triggers (settings.gd:920-923) are silent no-ops. Wire the connect_* calls from the 3D bootstrap and re-port the horde_day_announced signal.",
+        "status": "open"
+      },
       {
         "severity": "MED",
         "priority": 15,
@@ -131,7 +139,7 @@
     "health": 87,
     "lensScores": {
       "architecture": 87,
-      "reliability": 89,
+      "reliability": 82,
       "security": 96,
       "performance": 89,
       "data-integrity": 90,
@@ -168,10 +176,17 @@
     },
     "openFindings": [
       {
+        "id": "reliability-01",
+        "severity": "high",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-15"
+      },
+      {
         "id": "playability-01",
         "severity": "medium",
         "priority": 15,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-07-10",
         "chronic": true
       },
@@ -179,7 +194,7 @@
         "id": "strategic-kill-this-01",
         "severity": "medium",
         "priority": 12,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-07-10",
         "chronic": true
       },
@@ -187,7 +202,7 @@
         "id": "skill-trigger-collisions-01",
         "severity": "medium",
         "priority": 12,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-07-10",
         "chronic": true
       },
@@ -195,21 +210,23 @@
         "id": "observability-01",
         "severity": "medium",
         "priority": 12,
-        "runsOpen": 4,
-        "firstSeen": "2026-07-11"
+        "runsOpen": 5,
+        "firstSeen": "2026-07-11",
+        "chronic": true
       },
       {
         "id": "cost-economics-01",
         "severity": "medium",
         "priority": 12,
-        "runsOpen": 4,
-        "firstSeen": "2026-07-11"
+        "runsOpen": 5,
+        "firstSeen": "2026-07-11",
+        "chronic": true
       },
       {
         "id": "asset-pipeline-01",
         "severity": "medium",
         "priority": 15,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-07-10",
         "chronic": true
       },
@@ -217,7 +234,7 @@
         "id": "art-direction-consistency-01",
         "severity": "medium",
         "priority": 12,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-07-10",
         "chronic": true
       }
@@ -228,31 +245,31 @@
           "performance",
           "maintainability"
         ],
-        "runsSeen": 15
+        "runsSeen": 16
       },
       {
         "lenses": [
           "performance",
           "architecture"
         ],
-        "runsSeen": 13
+        "runsSeen": 14
       },
       {
         "lenses": [
           "scale-architecture",
           "art-direction-consistency"
         ],
-        "runsSeen": 13
+        "runsSeen": 14
       },
       {
         "lenses": [
           "observability",
           "cost-economics"
         ],
-        "runsSeen": 4
+        "runsSeen": 5
       }
     ],
-    "reconcileNote": "Carry-forward 2026-07-14 (day 3, third consecutive): skip-unchanged gate fired (0 commits since 2026-07-11 full fan-out, HEAD ca762fd; tree byte-identical, only M CLAUDE.md class_name edit; no BLOCK; no queue movement). lensScores + health 87 carried verbatim; openFindings aged +1 run - the five 2026-07-10 findings crossed to runsOpen 5 = CHRONIC (playability-01, strategic-kill-this-01, skill-trigger-collisions-01, asset-pipeline-01, art-direction-consistency-01), flagged chronic:true and escalated to constellation; observability-01 and cost-economics-01 at runsOpen 4. tensions aged +1 (perf/maint 15, perf/arch 13, scale/art 13, obs/cost 4). Both hard rules pass. bar-raise-hbh husk confirmed disabled. Three MED actions carry forward. Queue: 4 pending HBH items (matches workQueueDepth 4); prior report's '8 pending' was a miscount, not a change. Standing queue-hygiene note: hbh-readme-provenance-visibility-reconcile-2026-07-11 still pending though the reconcile shipped in v0.99.40 (compliance-data-steward-02 closed 2026-07-12). No new items enqueued."
+    "reconcileNote": "Targeted delta pass 2026-07-15 (day 4 since the 2026-07-11 full fan-out). Skip-gate did NOT fire: 3 of 4 conditions held (0 commits since 2026-07-11, HEAD ca762fd; tree byte-identical, only M CLAUDE.md class_name edit; no BLOCK) but condition 4 broke - queue-drain-hourly added hbh-autopause-horde-day-signal-2026-07-14 (2026-07-14T21:41Z, after last bar-raise). Verified read-only: auto_pause subsystem dead-wired at HEAD (connect_wave_director/connect_command_post/connect_economy have zero callers in source/; wave_director.gd declares only all_waves_cleared, never horde_day_announced). Opened reliability-01 (HIGH P20); reliability 89->82. 34 other lens scores carried from 2026-07-11; health 87 (86.8 pre-round, no-veto weighting). openFindings aged +1: playability-01/strategic-kill-this-01/skill-trigger-collisions-01/asset-pipeline-01/art-direction-consistency-01 now runsOpen 6; observability-01 and cost-economics-01 cross to runsOpen 5 = CHRONIC and escalate to constellation. tensions aged +1 (perf/maint 16, perf/arch 14, scale/art 14, obs/cost 5=now chronic). Both hard rules pass. bar-raise-hbh husk disabled. Queue: 5 pending HBH items (was 4; +the autopause item); workQueueDepth field owned by queue tooling, not mutated here. No duplicate item enqueued - reliability-01 dedupes on the existing autopause item, whose scope should widen from the horde-day slice to the whole subsystem. Standing queue-hygiene note holds: hbh-readme-provenance-visibility-reconcile-2026-07-11 still pending though the reconcile shipped v0.99.40 (compliance-data-steward-02 closed 2026-07-12)."
   },
   "metrics": [
     {
