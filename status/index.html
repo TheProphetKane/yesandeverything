@@ -90,7 +90,19 @@
   .constellation.needs-attention { border-left-color: var(--amber); }
   .constellation.at-risk { border-left-color: var(--warn); }
   .constellation.stalled { border-left-color: var(--bad); }
+  .constellation.stale { border-color: var(--warn); border-left-color: var(--warn); }
   .constellation .label { font-size: 10px; color: var(--fg-2); text-transform: uppercase; letter-spacing: 1px; }
+  .constellation .asof { font-size: 10px; color: var(--fg-2); margin: 2px 0 0; }
+  .constellation .asof.is-stale {
+    display: inline-block;
+    background: rgba(245, 165, 36, 0.12);
+    color: var(--warn);
+    border: 1px solid rgba(245, 165, 36, 0.4);
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
   .constellation .verdict { font-size: 16px; font-weight: 600; margin: 4px 0 8px; }
   .constellation .summary { color: var(--fg-1); font-size: 13px; }
   .constellation .top-actions { margin-top: 12px; font-size: 12px; color: var(--fg-2); }
@@ -281,6 +293,7 @@
   <section class="constellation" id="constellation">
     <div class="label">portfolio verdict</div>
     <div class="verdict" id="cn-verdict">loading...</div>
+    <div class="asof" id="cn-asof"></div>
     <div class="summary" id="cn-summary"></div>
     <div class="top-actions" id="cn-top-actions"></div>
   </section>
@@ -527,6 +540,7 @@
     var verdict = $("cn-verdict");
     var summary = $("cn-summary");
     var actions = $("cn-top-actions");
+    var asof = $("cn-asof");
     var banner = $("constellation");
     banner.className = "constellation" + (data && data.portfolioVerdict ? " " + data.portfolioVerdict : "");
 
@@ -534,9 +548,23 @@
       verdict.textContent = "no constellation report yet";
       summary.textContent = "Phase 3 wires the cross-project synthesis. Until then this panel shows per-project state only.";
       actions.textContent = "";
+      asof.textContent = "";
+      asof.className = "asof";
       verdict.className = "verdict";
       verdict.style.color = "var(--fg-2)";
       return;
+    }
+
+    // Staleness guard: a lagging roll-up must not read as current portfolio state.
+    // Mirrors the per-project card .stale mechanism (renderCard above).
+    var cnStale = isStale(data.generatedAt, false);
+    if (cnStale) banner.className += " stale";
+    asof.className = "asof" + (cnStale ? " is-stale" : "");
+    if (data.generatedAt) {
+      var genDate = String(data.generatedAt).slice(0, 10);
+      asof.textContent = (cnStale ? "stale roll-up, as of " : "as of ") + genDate;
+    } else {
+      asof.textContent = "generation date unknown";
     }
 
     verdict.textContent = data.portfolioVerdict || "unknown";
