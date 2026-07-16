@@ -28,7 +28,7 @@
     "items": []
   },
   "repoUrl": "https://github.com/TheProphetKane/yesandscheduler",
-  "workTreeClean": true,
+  "workTreeClean": false,
   "audit": {
     "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-05.md",
     "latestReportAt": "2026-07-05T07:08:40Z",
@@ -39,30 +39,30 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-13.md",
-    "latestReportAt": "2026-07-13T11:34:50Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-16.md",
+    "latestReportAt": "2026-07-16T12:00:00Z",
     "verdict": "in-progress",
-    "topFinding": "The v0.7.x quality pass is written and correct but unshipped: 7 modified files plus 2 untracked ones (including migration 0011) have sat uncommitted 2-plus days on the loss-prone FUSE mount, so nearly the whole 2026-07-02 action list is resolved in the working tree yet none of it exists at HEAD. The batch-write rewrite of schedule generate (apps/api/src/routes/schedule.ts) fixes both the O(N-squared) plus serial-round-trip cost and the partial-write risk, the user-list N+1 is gone via usersWithMembershipsBulk (apps/api/src/lib/users.ts), the open-shifts double correlated subquery is now one grouped LEFT JOIN, migration 0011 adds the audit_log(organization_id, created_at) composite the doc long claimed, and scripts/sync-audit-dashboard.ps1 closes the audit-pointer gap open since 2026-06-28. Health rises to 89 (was 88) and all five hard rules pass, so there is no BLOCK and the verdict holds at in-progress. But actionsClosed is 0 by design: nothing is counted closed until it lands, and the untracked migration on a mount this project's own CLAUDE.md documents as prone to eating files is the single most important thing to fix. The one high-priority action is to commit and release the pass; everything else (wire the audit-sync script into the nightly routine, refresh the stale YaE project pages, resolve the drive-vs-park posture) is downstream or deferred on a Nick decision.",
+    "topFinding": "The v0.7.x quality pass is now five days stranded in the working tree and has crossed from hygiene nit into real drift at HEAD. The pass is good: schedule.ts replaces the per-assignment insert loop with a single db.batch() (kills the O(N-squared) existing.some() scan and the partial-write window), usersWithMembershipsBulk collapses the 1+2N user-list query into two chunked IN-queries and is wired at both callers, open-shifts.ts folds a double correlated subquery into one grouped LEFT JOIN, and migration 0011 creates the audit_log(organization_id, created_at) composite DESIGN section 15 described for weeks. None of it exists at HEAD. Migration 0011 and scripts/sync-audit-dashboard.ps1 are still untracked on the FUSE mount this project CLAUDE.md documents as prone to losing files, so committed schema stops at 0010. The new part: HEAD DESIGN section 15 still says the composite does not exist while disk says it does, so a reader at HEAD gets the pre-fix answer. Health slips to 88 (was 89) because five correct-but-unshipped fixes buy nothing in prod; all five hard rules pass so there is no BLOCK and the verdict holds at in-progress. release-sync-01 escalates MED to HIGH. audit-loop-integrity-01 is now chronic at five runs (the dashboard audit pointer reads 2026-07-05 while the 07-16 report sits on disk) and is blocked behind the same release, since its fix is one of the untracked files.",
     "actionsOpen": 3,
     "actionsClosed": 0,
     "actions": [
       {
-        "severity": "MED",
-        "title": "Commit and release the in-flight v0.7.x quality pass so untracked migration 0011, the schedule-generate batch rewrite, the usersWithMembershipsBulk N+1 fix, the open-shifts grouped-join fix, scripts/sync-audit-dashboard.ps1, and the DESIGN/CLAUDE doc updates land at HEAD and deploy (schema advances to 0011).",
+        "severity": "HIGH",
+        "title": "Commit and release the in-flight v0.7.x quality pass so untracked migration 0011, the schedule-generate batch rewrite, the usersWithMembershipsBulk N+1 fix, the open-shifts grouped-join fix, scripts/sync-audit-dashboard.ps1, and the DESIGN section 15/17/20 updates land at HEAD and deploy (schema advances to 0011). Escalated from MED: HEAD DESIGN section 15 now contradicts the disk, and two untracked files have sat 5 days on a loss-prone mount.",
         "lens": "release-sync",
         "priority": 25,
         "id": "release-sync-01"
       },
       {
         "severity": "MED",
-        "title": "After committing scripts/sync-audit-dashboard.ps1, wire a call to it into the nightly audit routine so the dashboard audit pointer self-syncs between releases; it currently reads 2026-07-05 while docs/CANONICAL_AUDIT-2026-07-13.md exists on disk.",
+        "title": "After committing scripts/sync-audit-dashboard.ps1, wire a call to it into the nightly audit routine so the dashboard audit pointer self-syncs between releases; it currently reads 2026-07-05 while docs/CANONICAL_AUDIT-2026-07-16.md exists on disk (11 days stale). Chronic at 5 runs; escalate at the next constellation.",
         "lens": "audit-loop-integrity",
         "priority": 15,
         "id": "audit-loop-integrity-01"
       },
       {
         "severity": "MED",
-        "title": "Refresh X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html from v0.4.x to the current v0.7.x surface (M7.1 org-switcher, v0.6.0 billing entitlement, migrations 0009/0010/0011).",
+        "title": "Refresh X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html from v0.4.1 to the current v0.7.x surface (M7.1 org-switcher, v0.6.0 billing entitlement, migrations 0009/0010/0011). The live:version marker stamps correctly; only the hand-written prose is stale (meta description line 7, what-s-new line 225).",
         "lens": "gate-page-publish",
         "priority": 12,
         "id": "gate-page-publish-01"
@@ -88,14 +88,14 @@
         "reason": "blocked on Nick decision: posture call"
       }
     ],
-    "health": 89,
+    "health": 88,
     "lensScores": {
       "architecture": 92,
-      "reliability": 90,
+      "reliability": 88,
       "security": 93,
-      "performance": 90,
-      "data-integrity": 90,
-      "maintainability": 88,
+      "performance": 88,
+      "data-integrity": 88,
+      "maintainability": 86,
       "solo-tool-ux": 90,
       "cost-economics": 90,
       "dependency": 93,
@@ -106,8 +106,8 @@
       "kv-data-shape": 92,
       "auth-token-hygiene": 94,
       "skill-suite-health": 92,
-      "work-queue-hygiene": 96,
-      "audit-loop-integrity": 74,
+      "work-queue-hygiene": 92,
+      "audit-loop-integrity": 70,
       "fuse-truncation-defense": 93,
       "incident-runbook-currency": 94,
       "scheduled-task-firing-state": 90,
@@ -116,36 +116,39 @@
       "per-project-ps1-stack": 91,
       "discord-notify-wiring": 95,
       "version-pill-drift": 74,
-      "gate-page-publish": 72
+      "gate-page-publish": 72,
+      "release-sync": 68
     },
     "openFindings": [
       {
         "id": "release-sync-01",
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-13"
       },
       {
         "id": "audit-loop-integrity-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-06-28"
+        "runsOpen": 5,
+        "firstSeen": "2026-06-28",
+        "chronic": true
       },
       {
         "id": "gate-page-publish-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-02"
       },
       {
         "id": "strategic-kill-this-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 4,
-        "firstSeen": "2026-06-28"
+        "runsOpen": 5,
+        "firstSeen": "2026-06-28",
+        "chronic": true
       }
     ],
     "tensionsOpen": [
@@ -154,14 +157,21 @@
           "cost-economics",
           "strategic-kill-this"
         ],
-        "runsSeen": 4
+        "runsSeen": 5
       },
       {
         "lenses": [
           "audit-loop-integrity",
           "work-queue-hygiene"
         ],
-        "runsSeen": 4
+        "runsSeen": 5
+      },
+      {
+        "lenses": [
+          "release-sync",
+          "audit-loop-integrity"
+        ],
+        "runsSeen": 1
       }
     ]
   },
