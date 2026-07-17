@@ -424,6 +424,15 @@
       }));
       metaRow.appendChild(wt);
     }
+    if (data.auth && data.auth.ok === false) {
+      // Headless-auth self-check (Agents): a failed credential means every run
+      // fails. Loudest chip on the card; reason in the hover title.
+      var au = el("div");
+      au.setAttribute("title", (data.auth.reason || "") + (data.auth.checkedAt ? " (checked " + fmtAgo(data.auth.checkedAt) + ")" : ""));
+      au.appendChild(el("span", { className: "k", text: "auth" }));
+      au.appendChild(el("span", { className: "v bad", text: "DOWN" }));
+      metaRow.appendChild(au);
+    }
     if (data.workQueueDepth !== undefined && data.workQueueDepth !== null) {
       var wq = el("div");
       wq.appendChild(el("span", { className: "k", text: "queue" }));
