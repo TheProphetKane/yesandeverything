@@ -4,12 +4,12 @@
   "private": true,
   "note": "Private family tool. Off the public site and status dashboard by DESIGN D9. This data file exists for the bar-raise / constellation tooling only; it is not linked from any public surface.",
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-10.md",
-    "latestReportAt": "2026-07-10T00:00:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-17.md",
+    "latestReportAt": "2026-07-17T06:00:00Z",
     "verdict": "in-progress",
-    "topFinding": "The HIGH runtime bug that set last week's verdict is genuinely fixed. src/dates.ts now carries the wall-clock semantics explicitly, normDate() passes a naive datetime-local string through verbatim, and google.ts sends it beside a timeZone field, so a 4pm entry from the phone form lands at 4pm Eastern. The all-day exclusive-end bug is closed the same way via nextDay(). What replaces it is not breakage but exposure: event creation is non-idempotent in all three front doors (src/google.ts:115, src/skylight.ts:159), and the only guard is a client-side disabled button at src/ui.ts:115, so a retried POST, a re-delivered email, or a curl retry silently doubles a calendar entry. Alongside that, the pure date functions that shipped a bug last month still have zero tests. The project works; it is under-instrumented against the next regression rather than currently broken, which is why the verdict moves from needs-attention to in-progress.",
+    "topFinding": "src/ is byte-identical to what the 2026-07-10 run measured, so every code finding carries forward unchanged, and the honest headline this week is a process failure rather than a code one. Two findings had been sitting in openFindings since 2026-07-03 with no matching item in .work-queue.json: maintainability-01, the project's highest-priority action at P20 HIGH, and security-01. They aged as counters for two weeks while the drain never saw them, which is exactly the drop the Wave 5 post-write gate exists to catch; both were enqueued this run. What did improve is real but small: the GCP service-account key moved out of the working tree to X:\\.secrets\\YesAndSkylight\\ in 139c7f0, closing the compliance and cloud-edge exposure, and 74e0ac5 trimmed part of the stale phase-2 framing. The tool still works and nothing is broken; it is under-instrumented against the next regression, and until this run its own repair loop was leaking its most important finding.",
     "actionsOpen": 15,
-    "actionsClosed": 2,
+    "actionsClosed": 1,
     "actions": [
       {
         "severity": "HIGH",
@@ -120,15 +120,9 @@
     "deferred": [
       {
         "severity": "MED",
-        "title": "Re-anchor .project-context.json completion/milestone/stack to reflect the shipped Google-primary driver.",
-        "lens": "strategic-kill-this",
-        "reason": "already queued by the 2026-07-02 canonical audit (S1)"
-      },
-      {
-        "severity": "MED",
-        "title": "Move the GCP service-account key from the repo root to X:\\.secrets\\Skylight.",
-        "lens": "compliance-data-steward",
-        "reason": "already queued (canonical-audit cred-hygiene + working-tree 2026-07-10)"
+        "title": "Re-anchor .project-context.json completion/milestone/remaining to the shipped Google-primary driver.",
+        "lens": "maintainability",
+        "reason": "blocked on a Nick judgment call; queued as canonical-audit S1 (blocked-on-user). 74e0ac5 fixed one line, the load-bearing fields remain."
       },
       {
         "severity": "MED",
@@ -140,13 +134,13 @@
         "severity": "LOW",
         "title": "Confirm SKYLIGHT_FRAME_ID via a live GET /api/setup, then set it or degrade the List/Chore/Task tabs.",
         "lens": "reliability",
-        "reason": "already queued (canonical-audit-2026-07-10 frame-id); needs a live probe with credentials"
+        "reason": "queued as canonical-audit-2026-07-10-skylight-frame-id-empty-var; needs a live probe with credentials"
       },
       {
         "severity": "LOW",
         "title": "Null out changelog_path or create the CHANGELOG.md it promises.",
         "lens": "release-pipeline",
-        "reason": "already queued by the 2026-07-02 canonical audit (S4)"
+        "reason": "queued as canonical-audit-2026-07-02-skylight-changelog-phantom (P3)"
       },
       {
         "severity": "LOW",
@@ -159,9 +153,15 @@
         "title": "Drop the canonical audit from nightly to weekly-or-on-change.",
         "lens": "strategic-kill-this",
         "reason": "blocked on a Nick decision about routine cadence"
+      },
+      {
+        "severity": "LOW",
+        "title": "Retire or repair the yac-skylight-audit Windows task husk shadowing the native routine.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on a Nick decision; tracked at handler-audit-2026-07-17-skylight-audit-task-husk"
       }
     ],
-    "health": 84,
+    "health": 85,
     "lensScores": {
       "architecture": 84,
       "reliability": 84,
@@ -173,9 +173,9 @@
       "cost-economics": 96,
       "dependency": 82,
       "observability": 74,
-      "strategic-kill-this": 85,
-      "compliance-data-steward": 83,
-      "cloud-edge": 87,
+      "strategic-kill-this": 87,
+      "compliance-data-steward": 90,
+      "cloud-edge": 90,
       "PWA": 91,
       "release-pipeline": 84
     },
@@ -184,105 +184,105 @@
         "id": "maintainability-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-03"
       },
       {
         "id": "security-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-03"
       },
       {
         "id": "data-integrity-01",
         "severity": "HIGH",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "dependency-01",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "observability-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "maintainability-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "architecture-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "reliability-03",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "data-integrity-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "observability-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "observability-03",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "data-integrity-03",
         "severity": "MED",
         "priority": 9,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "dependency-02",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "data-integrity-04",
         "severity": "MED",
         "priority": 6,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-10"
       }
     ],
@@ -292,28 +292,28 @@
           "security",
           "solo-tool-ux"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "observability",
           "compliance-data-steward"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "strategic-kill-this",
           "observability"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "cost-economics",
           "security"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       }
     ]
   }
