@@ -43,7 +43,8 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 18  # v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project —
+$ATTRIB_VERSION = 19  # v19 (2026-07-18): adds the deferred-review-weekly routine pattern -> Everything.
+# v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project —
 # kayak search; never publicly listed, same tier as Counselor/Skylight): kayak-scout task
 # name + folder patterns + REPO_PATHS + QUEUE_ALIAS entries.
 # v17 (2026-07-08): fixes Gnosis work leaking to Everything. The
@@ -173,6 +174,7 @@ $PROJECT_PATTERNS = @(
   @{ pat = "self-reprompt-loop";  id = "Everything" },
   @{ pat = "usage-refresh";       id = "Everything" },   # frequent dashboard-refresh routine; runs the collector itself
   @{ pat = "claude-temp-cleanup"; id = "Everything" },   # daily local-disk cleanup routine
+  @{ pat = "deferred-review";     id = "Everything" },   # weekly deferred/parked-item cull routine
   # Counselor (X:\YesAndCounselor) has no dedicated session dir; its work ran
   # from root / Yes& Agents cwds, so it is matched by a strong content string,
   # not a cwd path. Placed high so it wins like a task-name identity.
