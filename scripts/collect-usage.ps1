@@ -43,7 +43,7 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 19  # v19 (2026-07-18): adds the deferred-review-weekly routine pattern -> Everything.
+$ATTRIB_VERSION = 20  # v20 (2026-07-19): adds counselor-talk-ingest routine pattern -> Counselor.
 # v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project —
 # kayak search; never publicly listed, same tier as Counselor/Skylight): kayak-scout task
 # name + folder patterns + REPO_PATHS + QUEUE_ALIAS entries.
@@ -163,6 +163,7 @@ $PROJECT_PATTERNS = @(
   @{ pat = "audit-chains";        id = "Chains" },
   @{ pat = "audit-budget";        id = "Budget" },
   @{ pat = "audit-everything";    id = "Everything" },
+  @{ pat = "YesAndArchitecture";  id = "Architecture" },  # gated internal architecture doc (no routine); specific folder-name match
   # cross-project scheduled tasks -> Everything: they touch every repo by design,
   # so they must never attribute to whichever repo their prompt happens to mention.
   @{ pat = "loop-tick";           id = "Everything" },
@@ -179,6 +180,7 @@ $PROJECT_PATTERNS = @(
   # from root / Yes& Agents cwds, so it is matched by a strong content string,
   # not a cwd path. Placed high so it wins like a task-name identity.
   @{ pat = "appreciation-connections"; id = "Counselor" },
+  @{ pat = "counselor-talk-ingest";    id = "Counselor" },  # daily Talk-conversation ingest routine (2026-07-19)
   # repo folder names (match X:\ paths, /mnt/ paths, and dir-encoded forms)
   @{ pat = "HereBeHordes";        id = "Hordes" },
   @{ pat = "HereThereBeHordes";   id = "Hordes" },
@@ -716,6 +718,7 @@ $REPO_PATHS = @{
   Counselor = "X:\YesAndCounselor"; Skylight = "X:\YesAndSkylight"
   Ring = "X:\YesAndRing"; Cattery = "X:\YesAndCattery"
   Gnosis = "X:\YesAndGnosis"; Lexi = "X:\YesAndLexi"
+  Architecture = "X:\YesAndArchitecture"
 }
 $LogDir = Join-Path $RepoRoot "usage-log"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
