@@ -41,11 +41,11 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-23.md",
-        "latestReportAt": "2026-07-23T11:10:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+        "latestReportAt": "2026-07-24T06:40:00Z",
         "verdict": "in-progress",
-        "topFinding": "Full pass, not carry-forward: v0.59.40 and v0.59.41 landed at 16:54 and 16:58 on 2026-07-22, after the 11:06Z carry-forward, so the skip-unchanged gate could not fire. Both commits are clean art-integration and best-practices work, not gameplay-slice deliverables: v0.59.40 dropped the draw-override ratchet 17 to 16 (TreeSprite converted from a code-drawn _draw node to an artist-editable Sprite2D scene), added the shared ambient_light.tscn instanced by every unit scene, adopted the light-mask standard, and documented the migration path in docs/SCENE_ARCHITECTURE_PLAN.md; v0.59.41 wired her Barracks Spine rig into barracks.gd with null-guarded, transition-gated clip calls. Health holds at 82 and the verdict stays in-progress: architecture nudges 85 to 87 for the draw-override reduction and the documented plan, but the 22-finding chronic set is untouched because none of it maps to what these commits changed, and completion stays anchored at 50% since no gameplay-slice row moved. Both hard rules pass in intent (GDD closes cleanly; source/ is contamination-free, the alien-portal GDD strings are historical fork provenance). Queue reconciliation is clean: all 22 open HIGH/MED findings resolve to live pending items, so Auto-enqueued: 0.",
-        "actionsOpen": 22,
+        "topFinding": "The dashboard is reporting a project state the code contradicts. Rising.json itemsLeft and .project-context.json completion.remaining both list the Hold the Wall mission script and the Lantern Oil drain plus mission-fail clock UI as pending M1 deliverables, then assert outright that the six gameplay slice deliverables are unstarted. Both have shipped: the mission is data-driven through source/data/missions/m1_default.tres with the wave cadence in wave_director HORDE_DAYS, and lantern.gd:285-302 drains 4 Oil/min and emits lantern_oil_starved, consumed at gameplay.gd:506 into the loss flow with day_timer_widget.gd on the clock side. Today's canonical audit reached the same conclusion independently and traced the root cause: the GDD status layer (Roadmap milestone badges, strikethrough, and the Progress tab PROGRESS_DATA statuses) was never maintained through the v0.59.36-41 art wave, and the dashboard text was written from that stale doc rather than from code. Zero commits landed this window, so every source-level finding was re-verified directly against the files and all 22 carried findings are still open; health drops 82 to 81 on the observability and game-design scores. Nothing is broken at runtime, so the verdict stays in-progress, but the 50% completion hold now rests on a basis sentence that is factually wrong. Both hard rules pass, no BLOCK.",
+        "actionsOpen": 23,
         "actionsClosed": 0,
         "actions": [
             {
@@ -92,7 +92,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Convert the god-file guard in check_best_practices.py:23-30 from a hardcoded six-name list to a size threshold over all source/**/*.gd, then baseline building.gd, wave_director.gd, settings.gd, enemy_pool.gd.",
+                "title": "Convert the god-file guard in check_best_practices.py:22-29 from a hardcoded six-name list to a size threshold over all source GDScript files, then baseline building.gd, wave_director.gd, settings.gd, enemy_pool.gd.",
                 "lens": "architecture",
                 "priority": 15,
                 "id": "architecture-01"
@@ -113,7 +113,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Capture one peak-wave (day-28 horde) frame profile on the current build and log FPS plus top costs in docs/OPTIMIZATION_LOG.md; account for the new per-unit ambient lights.",
+                "title": "Capture one peak-wave (day-28 horde) frame profile on the current build and log FPS plus top costs in docs/OPTIMIZATION_LOG.md; account for the per-unit ambient lights.",
                 "lens": "performance",
                 "priority": 15,
                 "id": "performance-01"
@@ -127,6 +127,13 @@
             },
             {
                 "severity": "MED",
+                "title": "Rewrite Rising.json itemsLeft and .project-context.json completion.remaining against code instead of the stale GDD Roadmap tab, striking the two shipped M1 rows (Hold the Wall mission, Lantern Oil drain plus fail path) and re-deriving the completion figure.",
+                "lens": "observability",
+                "priority": 15,
+                "id": "observability-03"
+            },
+            {
+                "severity": "MED",
                 "title": "Add a Shipping section to CLAUDE.md documenting the release.ps1 stderr-abort symptom and the verify-HEAD-then-finish-via-Bash recovery.",
                 "lens": "solo-tool-ux",
                 "priority": 12,
@@ -134,7 +141,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Create the hazard catalog at the path .project-context.json:58 advertises, or repoint or remove the field, and add a hazards section to CLAUDE.md.",
+                "title": "Create the hazard catalog at the path .project-context.json:63 advertises, or repoint or remove the field, and add a hazards section to CLAUDE.md.",
                 "lens": "orchestration",
                 "priority": 12,
                 "id": "orchestration-03"
@@ -148,7 +155,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Delete the dead ASSET_SCALE_MASTER read from scripts/check_playability.py and strike it from RENDER_SCALING.md, ARCHITECTURE.md, and SPINE-INTEGRATION.md.",
+                "title": "Delete the dead ASSET_SCALE_MASTER read from scripts/check_playability.py:43 and strike it from RENDER_SCALING.md, ARCHITECTURE.md:21, and SPINE-INTEGRATION.md.",
                 "lens": "maintainability",
                 "priority": 10,
                 "id": "maintainability-03"
@@ -176,28 +183,28 @@
             },
             {
                 "severity": "MED",
-                "title": "Route enemy_base.gd:794-815 target-acquisition through get_units_near and get_buildings_near instead of walking the full group arrays per enemy.",
+                "title": "Route enemy_base.gd:794-800 target-acquisition through get_units_near and get_buildings_near instead of walking the full group arrays per enemy.",
                 "lens": "performance",
                 "priority": 9,
                 "id": "performance-04"
             },
             {
                 "severity": "MED",
-                "title": "Validate restored tiles against iso_grid.is_in_bounds before instantiation in save_load.gd:513-558.",
+                "title": "Validate restored tiles against iso_grid.is_in_bounds before instantiation in save_load.gd.",
                 "lens": "data-integrity",
                 "priority": 9,
                 "id": "data-integrity-03"
             },
             {
                 "severity": "MED",
-                "title": "Parse the newest CANONICAL_AUDIT-*.md for high, medium, and low counts in write-dashboard-status.ps1:169 so audit.findings stops rendering 0/0/0.",
+                "title": "Parse the newest CANONICAL_AUDIT report for high, medium, and low counts in write-dashboard-status.ps1:165-172 so audit.findings stops rendering 0/0/0.",
                 "lens": "observability",
                 "priority": 8,
                 "id": "observability-02"
             },
             {
                 "severity": "MED",
-                "title": "Correct the unit.gd:37-38 header to the live 256px native-1.0x model and sweep the inherited HBH version stamps from source/.",
+                "title": "Correct the unit.gd:35-40 header to the live 256px native-1.0x model and sweep the inherited HBH version stamps from source/.",
                 "lens": "game-design",
                 "priority": 8,
                 "id": "game-design-03"
@@ -206,7 +213,7 @@
         "deferred": [
             {
                 "severity": "MED",
-                "title": "Declare M1 closed and pull one M2 row (Leviathan boss or hatchery clear-to-expand) into active work.",
+                "title": "Declare M1 closed and pull one M2 row (Leviathan boss or hatchery clear-to-expand) into active work; this run's evidence puts M1 at four of six deliverables landed, so the close is a smaller lift than the dashboard implies.",
                 "lens": "strategic-kill-this",
                 "reason": "blocked on Nick M2 scope-lock decision"
             },
@@ -226,7 +233,7 @@
                 "severity": "LOW",
                 "title": "Decide the git-LFS migration and the pack-history rewrite; 5.4 MB of Spine DLLs now committed deepen the bloat, and an attended git gc could consolidate meanwhile.",
                 "lens": "cost-economics",
-                "reason": "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE; cost<->reliability tension runsSeen 23, promote via adr-promoter"
+                "reason": "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE; cost vs reliability tension runsSeen 24, promote via adr-promoter"
             },
             {
                 "severity": "LOW",
@@ -235,7 +242,7 @@
                 "reason": "pre-M4 Steam distribution prep"
             }
         ],
-        "health": 82,
+        "health": 81,
         "lensScores": {
             "architecture": 87,
             "reliability": 70,
@@ -246,10 +253,10 @@
             "solo-tool-ux": 87,
             "cost-economics": 79,
             "dependency": 85,
-            "observability": 73,
-            "strategic-kill-this": 80,
+            "observability": 68,
+            "strategic-kill-this": 82,
             "compliance-data-steward": 76,
-            "game-design": 88,
+            "game-design": 82,
             "orchestration": 88,
             "release-pipeline": 86,
             "public-voice": 86
@@ -259,155 +266,162 @@
                 "id": "performance-02",
                 "severity": "high",
                 "priority": 15,
-                "runsOpen": 22,
+                "runsOpen": 23,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "performance-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 22,
+                "runsOpen": 23,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "maintainability-03",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 22,
+                "runsOpen": 23,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "reliability-01",
                 "severity": "high",
                 "priority": 20,
-                "runsOpen": 20,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "reliability-02",
-                "severity": "medium",
-                "priority": 15,
-                "runsOpen": 20,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "data-integrity-01",
                 "severity": "high",
                 "priority": 20,
-                "runsOpen": 20,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "data-integrity-02",
-                "severity": "medium",
-                "priority": 15,
-                "runsOpen": 20,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-data-steward-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 20,
+                "runsOpen": 21,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "data-integrity-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 21,
+                "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "reliability-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "public-voice-01",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 20,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "architecture-01",
-                "severity": "medium",
-                "priority": 15,
-                "runsOpen": 13,
-                "firstSeen": "2026-07-10"
             },
             {
                 "id": "maintainability-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "maintainability-02",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "solo-tool-ux-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 13,
+                "runsOpen": 14,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "architecture-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "solo-tool-ux-04",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "orchestration-03",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 13,
-                "firstSeen": "2026-07-10"
-            },
-            {
-                "id": "compliance-data-steward-03",
-                "severity": "medium",
-                "priority": 10,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "game-design-02",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
-                "id": "game-design-03",
+                "id": "compliance-data-steward-03",
                 "severity": "medium",
-                "priority": 8,
-                "runsOpen": 13,
+                "priority": 10,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "performance-04",
                 "severity": "medium",
                 "priority": 9,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "data-integrity-03",
                 "severity": "medium",
                 "priority": 9,
-                "runsOpen": 13,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "observability-02",
                 "severity": "medium",
                 "priority": 8,
-                "runsOpen": 13,
+                "runsOpen": 14,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "game-design-03",
+                "severity": "medium",
+                "priority": 8,
+                "runsOpen": 14,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "game-design-04",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 12,
+                "runsOpen": 13,
                 "firstSeen": "2026-07-11"
+            },
+            {
+                "id": "observability-03",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-24"
             }
         ],
         "tensionsOpen": [
@@ -416,35 +430,35 @@
                     "cost-economics",
                     "reliability"
                 ],
-                "runsSeen": 23
+                "runsSeen": 24
             },
             {
                 "lenses": [
                     "performance",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 22
+                "runsSeen": 23
             },
             {
                 "lenses": [
                     "strategic-kill-this",
                     "maintainability"
                 ],
-                "runsSeen": 20
+                "runsSeen": 21
             },
             {
                 "lenses": [
                     "reliability",
                     "maintainability"
                 ],
-                "runsSeen": 17
+                "runsSeen": 18
             },
             {
                 "lenses": [
                     "solo-tool-ux",
                     "reliability"
                 ],
-                "runsSeen": 12
+                "runsSeen": 13
             }
         ]
     },
