@@ -36,20 +36,20 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-23.md",
-    "latestReportAt": "2026-07-23T11:33:33Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+    "latestReportAt": "2026-07-24T11:40:00Z",
     "verdict": "working",
-    "topFinding": "Carry-forward pass, day 3 since the 2026-07-20 full pass. Nothing measurable changed: HEAD still 4dd1546, working tree still the same uncommitted three-line src/main.js comment fix (v1.0.4 to v1.1.0 doc refs). The skip-unchanged gate fired on all conditions: zero commits since the last bar-raise, unchanged tree, no BLOCK, and the last full pass sits inside the 7-day force window. Both hard rules pass (no npm artifacts at root; version pills agree at v1.1.2 across PROJECT_SPEC.md, CHANGELOG.md, and index.html via check-version-pill.ps1). The nightly canonical audit ran clean today (0 high / 0 medium / 0 low). Three open findings aged to runsOpen 6; the one MED action (discord-notify.ps1:5-16 still naming the dead in-repo webhook path and two retired webhook names against its own line 39) stays chronic and flagged for the constellation, and it keeps its live pending queue item so nothing re-enqueued. Health holds at 85, verdict working.",
-    "actionsOpen": 1,
+    "topFinding": "Full pass, not carry-forward: the skip-unchanged gate failed on tree state. HEAD is still 4dd1546 with zero commits since 2026-07-18, but this morning's audit found the icon field undocumented in PROJECT_SPEC.md and drift-auto-fix applied the doc edit, so the tree now carries two uncommitted files instead of one. That is the real shape of the problem: the audit chain finds drift and fixes it correctly, then nothing ships it (src/main.js stranded 10 days, PROJECT_SPEC.md joined today). Both hard rules pass and all three suites are green (9 integrity checks, 31/0 migration, 71/0 render). New this run: .project-context.json tags read browser-app, celtic, label-designer, none of which map to a domain-lens folder, so a by-the-book Wave 4 mapping skips all 18 domain lenses and reviews this project on 12 dimensions instead of 30; the status JSON carries the four lens tags the fan-out actually uses, so the two files disagree about the review surface. Health dips one point to 84 on maintainability and two orchestration handoff dimensions, offset by data-integrity and audit-loop gains. Three findings now chronic at runsOpen 7.",
+    "actionsOpen": 3,
     "actionsClosed": 0,
-    "health": 85,
+    "health": 84,
     "lensScores": {
       "architecture": 95,
       "reliability": 93,
       "security": 93,
       "performance": 92,
-      "data-integrity": 92,
-      "maintainability": 90,
+      "data-integrity": 94,
+      "maintainability": 88,
       "solo-tool-ux": 90,
       "cost-economics": 87,
       "dependency": 95,
@@ -59,14 +59,14 @@
       "generative-art-schema-driven-correctness": 85,
       "generative-art-print-fidelity": 90,
       "generative-art-palette-discipline": 73,
-      "orchestration-skill-suite-health": 70,
-      "orchestration-work-queue-hygiene": 62,
-      "orchestration-audit-loop-integrity": 70,
+      "orchestration-skill-suite-health": 68,
+      "orchestration-work-queue-hygiene": 60,
+      "orchestration-audit-loop-integrity": 72,
       "orchestration-fuse-truncation-defense": 84,
       "orchestration-incident-runbook-currency": 82,
       "orchestration-scheduled-task-firing-state": 90,
       "orchestration-skill-trigger-collisions": 60,
-      "orchestration-skill-chain-handoff-integrity": 66,
+      "orchestration-skill-chain-handoff-integrity": 64,
       "release-pipeline-per-project-ps1-stack": 88,
       "release-pipeline-discord-notify-wiring": 80,
       "release-pipeline-version-pill-drift": 95,
@@ -78,7 +78,21 @@
     "actions": [
       {
         "severity": "MED",
-        "title": "scripts/discord-notify.ps1:5-16 header still names the dead in-repo webhook path and two retired webhook names (Apothecary Push, YesAndApothecary Headline Bot), contradicting line 39 of the same file and the naming standard at CLAUDE.md:147.",
+        "title": ".project-context.json tags (browser-app, celtic, label-designer) match no domain-lens folder, so a by-the-book Wave 4 mapping skips all 18 domain lenses; the status JSON carries the four lens tags the runs actually use. Add the lens tags to the context file, matching the BrackishRising pattern.",
+        "lens": "maintainability",
+        "priority": 20,
+        "id": "context-tags-no-domain-lens-match"
+      },
+      {
+        "severity": "MED",
+        "title": "Stranded working tree grew from one file to two: src/main.js (v1.0.4 to v1.1.0 comment stamp, uncommitted 10 days) and PROJECT_SPEC.md (today's icon documentation). Both correct, neither shipped. One release.ps1 run clears both.",
+        "lens": "orchestration-skill-chain-handoff-integrity",
+        "priority": 15,
+        "id": "stranded-tree-grew-to-two-files"
+      },
+      {
+        "severity": "MED",
+        "title": "scripts/discord-notify.ps1:5-16 header still names the dead in-repo webhook path and two retired webhook names (Apothecary Push, YesAndApothecary Headline Bot), contradicting line 39 of the same file and the naming standard at CLAUDE.md.",
         "lens": "release-pipeline-discord-notify-wiring",
         "priority": 15,
         "id": "discord-notify-header-stale-path-and-names"
@@ -87,7 +101,7 @@
     "deferred": [
       {
         "severity": "medium",
-        "title": "work-queue.json past FUSE-append threshold; drain then enqueue",
+        "title": "work-queue at 244 items and working-tree-2026-07-17-apothecary-stale-tree is still pending against a resolved claim (DEPLOY.md committed in 4dd1546, tree clean)",
         "lens": "orchestration-work-queue-hygiene",
         "reason": "YaE-scoped, outside X:\\YesAndApothecary"
       },
@@ -102,15 +116,39 @@
         "title": "skill-trigger collisions and skill-chain handoff gaps",
         "lens": "orchestration-skill-trigger-collisions",
         "reason": "cross-project skill suite, outside this repo"
+      },
+      {
+        "severity": "low",
+        "title": "orchestrator documents .project-context.json tags as the Wave 4 source but runs use the status JSON tags; nothing detects the divergence",
+        "lens": "orchestration-skill-suite-health",
+        "reason": "skill-side half; the in-repo half is tracked as an open action"
       }
     ],
     "openFindings": [
+      {
+        "id": "context-tags-no-domain-lens-match",
+        "severity": "medium",
+        "lens": "maintainability",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "title": ".project-context.json tags match no domain-lens folder; by-the-book Wave 4 mapping would skip all 18 domain lenses"
+      },
+      {
+        "id": "stranded-tree-grew-to-two-files",
+        "severity": "medium",
+        "lens": "orchestration-skill-chain-handoff-integrity",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "title": "Stranded uncommitted files went from one to two: src/main.js (10 days) plus PROJECT_SPEC.md (today)"
+      },
       {
         "id": "discord-notify-header-stale-path-and-names",
         "severity": "medium",
         "lens": "release-pipeline-discord-notify-wiring",
         "priority": 15,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "title": "discord-notify.ps1 header names the dead in-repo webhook path and two retired webhook names, contradicting its own line 39"
       },
@@ -119,21 +157,27 @@
         "severity": "low",
         "lens": "maintainability",
         "priority": 10,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
-        "title": "CLAUDE.md file-layout table omits src/util/migrate.js, shipped since v1.1.0; PROJECT_SPEC and main.js now correct, handler still does not"
+        "title": "CLAUDE.md file-layout table omits src/util/migrate.js and all three root test suites"
       },
       {
         "id": "discord-webhook-example-orphaned",
         "severity": "low",
         "lens": "release-pipeline-discord-notify-wiring",
         "priority": 5,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "title": "scripts/.discord_webhook.txt.example still tracked but referenced by nothing after 4dd1546 rewrote DEPLOY.md step 3"
       }
     ],
-    "tensionsOpen": []
+    "tensionsOpen": [
+      {
+        "id": "doc-fix-velocity-vs-release-discipline",
+        "title": "The audit chain applies correct doc fixes but is forbidden from releasing them, so correct edits accumulate uncommitted. Neither auto-releasing nor stopping the fixes is right; the gap belongs to a release trigger.",
+        "runsOpen": 1
+      }
+    ]
   },
   "metrics": [
     {
