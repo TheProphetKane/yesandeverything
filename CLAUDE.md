@@ -7,7 +7,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 
 ## What this repo is (and isn't)
 
-- **Is:** a static-site monorepo deployed by **GitHub Pages from `main`/root**. The pages have no build step, no framework, no SSR: pure HTML/CSS/JS, dark-mode by default, mono-font-first aesthetic. One exception now ships from here too: a small Cloudflare Worker under `dashboard-api/` (deployed separately via wrangler, not by Pages). So it's a static site PLUS one tiny API worker.
+- **Is:** a static-site monorepo deployed to **GitHub Pages by a GitHub Actions workflow** (`.github/workflows/deploy-pages.yml`: `configure-pages` then `upload-pages-artifact` then `deploy-pages`, serialized through a single `pages` concurrency group with `cancel-in-progress` so a burst of pushes stops colliding at the Pages deploy API and failing). This replaced the legacy Deploy-from-a-branch builder. No framework, no SSR: pure HTML/CSS/JS, dark-mode by default, mono-font-first aesthetic. The one workflow step beyond serving the repo root as-is is `node scripts/update-project-pages.mjs`, which stamps live version and milestone numbers from `status/data/*.json` into the homepage cards and project pages. One exception now ships from here too: a small Cloudflare Worker under `dashboard-api/` (deployed separately via wrangler, not by Pages). So it's a static site PLUS one tiny API worker.
 - **Is not:** the actual code of the projects it links to. Each project (Here Be Hordes, Brackish Rising, Chains, Scheduler, Apothecary, Budget, Gnosis, Cattery, Agents, Ring) lives in its own repo. This repo carries landing pages + mirrors, plus one small API worker (`dashboard-api/`, see Files at a glance).
 
 ## Files at a glance
@@ -19,7 +19,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `CNAME` | Custom-domain pointer for GitHub Pages: `yesandeverything.com`. |
 | `robots.txt` | Allows crawlers on root, disallows the private paths: `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/dashboard-api/`, `/sitemap/`, `/status/`, `/docs/`, `/usage-log/`, `/_skill-review/`. |
 | `dashboard-api/` | Small Cloudflare Worker (`worker.js` + `wrangler.toml`, git-tracked, landed 2026-06-24) backing the usage dashboard. The one server-side piece in an otherwise static repo; deployed separately by wrangler, not by GitHub Pages. **Exposure:** this folder sits inside the Pages-served tree, so `yesandeverything.com/dashboard-api/worker.js` and `/dashboard-api/wrangler.toml` are publicly fetchable. `wrangler.toml` should hold no secrets (those live in the Cloudflare dashboard); `robots.txt` now disallows `/dashboard-api/` alongside the other private paths. |
-| `.nojekyll` (implicit) | Tells GitHub Pages to skip Jekyll processing. |
+| `.nojekyll` | Real 0-byte file at the repo root. Tells GitHub Pages to serve the tree as-is (skip Jekyll processing). |
 | `hordes/index.html` | Password-gated HBH GDD mirror. Password: `SneakPeak`. Contains base64-inlined GDD via `var ENCODED = "..."`. **Generated, not hand-edited.** |
 | `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a 16-line meta-refresh stub that redirects to `/hordes/` so any old bookmark still lands on the gate. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
 | `projects/scheduler/{index,design}.html` | Scheduler project landing + design preview. |
@@ -35,12 +35,12 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
 | `scripts/` | Release tooling. `release.ps1` runs the integrity guards then commit + push + Discord; `push-to-github.ps1`, `discord-notify.ps1`, plus repo-parity and branch-protection helpers. `update-project-pages.mjs` stamps live version/milestone data from `status/data/*.json` into the homepage cards and project pages (runs in the Pages deploy workflow and locally). `collect-usage.ps1` drops `$PUBLIC_EXCLUDE` projects at the publish boundary; the list is currently empty (Agents was restored to the usage feed on 2026-07-08). |
 | `CLAUDE_SETTINGS.md` | Cross-project personal-Claude settings doc (the how-to-work-with-Nick rules). Source of truth for tone, pushback, voice. |
-| `PERSONAL_CLAUDE_ARCHITECTURE.md` | The handler-and-canonical pattern spec applied to all thirteen personal projects. Companion to CLAUDE_SETTINGS. |
+| `PERSONAL_CLAUDE_ARCHITECTURE.md` | The handler-and-canonical pattern spec applied to all fourteen personal projects. Companion to CLAUDE_SETTINGS. |
 | `IMPLEMENTATION_GUIDE.md` | How-to for the personal-Claude setup. Pairs with `CLAUDE_SETTINGS.md` (the rules) and `PERSONAL_CLAUDE_ARCHITECTURE.md` (the why). |
 | `docs/` | Per-project audit findings live here as `CANONICAL_AUDIT-YYYY-MM-DD.md` (written by the scheduled audit tasks). Handler audits land here too as `HANDLER_AUDIT-YYYY-MM-DD.md`. Cross-portfolio CONSTELLATION bar-raise reports also land here once Phase 3 of the bar-raise buildout ships. |
 | `docs/BAR_RAISE_ROADMAP.md` | Active build plan for the periodic-review skill + status dashboard. Multi-session; check phase status table before resuming. Source of truth for the JSON contract and URL slugs. |
-| `status/` | Static status dashboard at `yesandeverything.com/status/`. Reads per-project JSON files at `status/data/<project>.json` and renders cards. See BAR_RAISE_ROADMAP.md Phase 1+. Each project's release.ps1 writes its own dashboard JSON. |
-| `.work-queue.json` | Cross-project drain queue. Items get added by audits, processed by `work-queue-runner` skill on the every-4-hours `queue-drain-frequent` scheduled task. |
+| `status/` | Static status dashboard at `yesandeverything.com/status/`. The `PROJECTS` array in `status/index.html` drives which cards render; each listed project reads `status/data/<project>.json`. See BAR_RAISE_ROADMAP.md Phase 1+. Each project's release.ps1 writes its own dashboard JSON. **Not every tracked JSON gets a card — this is deliberate, not drift:** `status/data/Everything.json` (the YaE hub's own self-description) and `status/data/Skylight.json` (Skylight is intentionally off the homepage + status grid) are tracked metadata that are correctly absent from `PROJECTS`; `status/data/constellation.json` is the cross-portfolio bar-raise roll-up consumed by its own code path, not a per-project card. Audits should not flag these three as orphaned data files. |
+| `.work-queue.json` | Cross-project drain queue. Items get added by audits, processed by `work-queue-runner` skill on the hourly `queue-drain-hourly` scheduled task (bumped from every-4h to hourly 2026-07-11; fires at :30, interleaving with `loop-tick-hourly` which also drains). |
 | `_skill-review/` | Staged personal `.skill` files (installable) plus their review viewer. |
 | `invoices/` | Generated contract-drafting invoices and email templates (md + pdf + txt). Working files, not part of the public site. |
 
@@ -105,7 +105,7 @@ The Edit tool truncates files mid-write on this mount with non-trivial frequency
 
 ### Cross-project consistency
 
-CLAUDE_SETTINGS.md is the load-bearing how-to-work-with-Nick doc. PERSONAL_CLAUDE_ARCHITECTURE.md is the handler-and-canonical pattern spec. Both live at the YaE root because YaE is the cross-project hub. Per-project CLAUDE.md files (HBH, Rising, Budget, Chains, Scheduler, Apothecary, Agents, Ring, Cattery, Gnosis, Skylight, Counselor, YaE) inherit from these two and add project-local hazards. When updating cross-project rules, update them HERE first, then propagate to the per-project CLAUDE.md files.
+CLAUDE_SETTINGS.md is the load-bearing how-to-work-with-Nick doc. PERSONAL_CLAUDE_ARCHITECTURE.md is the handler-and-canonical pattern spec. Both live at the YaE root because YaE is the cross-project hub. Per-project CLAUDE.md files (HBH, Rising, Budget, Chains, Scheduler, Apothecary, Agents, Ring, Cattery, Gnosis, Skylight, Counselor, Architecture, YaE) inherit from these two and add project-local hazards. When updating cross-project rules, update them HERE first, then propagate to the per-project CLAUDE.md files.
 
 
 ## Turn-ending behavior
