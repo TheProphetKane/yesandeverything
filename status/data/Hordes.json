@@ -40,35 +40,83 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-23.md",
-    "latestReportAt": "2026-07-23T11:10:28Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+    "latestReportAt": "2026-07-24T11:35:00Z",
     "verdict": "needs-attention",
-    "topFinding": "Pause is broken in a way that makes the game actively worse to play, and the reason it stayed invisible is the review loop itself. Esc opens the pause menu but _toggle_pause (world_3d.gd:906) only flips a local bool: the enemy field keeps pathing and keeps damaging the command post while towers, production and every player input freeze, so pausing is strictly worse than not pausing. The same root cause kills auto_pause, which calls game_clock.set_paused() while world3d never reads game_clock at all, meaning the queued horde-day signal fix could not have revived it and the previous run's reliability-01 was both overstated (2 of 4 toggles fire, not 0) and under-scoped. Worse, that HIGH was never queued: the bar-raise's own (project, finding_id) dedupe key matched a COMPLETED 2026-07-10 item that reused the id reliability-01, so the finding was skipped for two runs while the post-write gate passed falsely. Separately, the v0.73.3 wrangler deploy never ran, so the published GDD's canonical-state sync has 404'd silently for two months, and the pending fix must not ship first because deploying would arm an unescaped innerHTML sink fed by an unauthenticated public write.",
-    "actionsOpen": 32,
-    "actionsClosed": 0,
+    "topFinding": "The first full 35-lens re-measurement since 2026-07-17 puts health at 73, down from the carried 80, because a deeper pass found more real breakage rather than because anything regressed on a tree whose last code commit was 2026-07-11. Three defects make the shipped build worse than the design describes, two of them new: pause is still not authoritative so the horde keeps pathing and damaging the command post while towers, production and every input freeze; economy.gd:33 ships DEBUG_INFINITE_RESOURCES as a compile-time true so every build starts with 10000 of each stockpile and no price is real; and run_config.wave_cap() returns 0 for campaign mode, so all_waves_cleared can never fire and a campaign run has no win condition. The bigger surprise is the publish side: yesandeverything.com/hordes/ answers an unauthenticated GET with both gate passwords in cleartext beside a payload that decodes with plain atob(), and check_gdd_integrity.py's auto-recovery can anchor on a duplicated closing tag and rebuild a 324 KB GDD from the 1.66 MB original while passing both the integrity check and the pre-publish gate. Two previously-open items did close on recomputation: the 30-day spend is $467.49 rather than the reported 3.09x blowout, and every live YaE surface already serves v0.99.40 because the Pages deploy restamps them.",
+    "actionsOpen": 106,
+    "actionsClosed": 2,
     "actions": [
       {
         "severity": "HIGH",
         "priority": 25,
         "id": "playability-02",
         "lens": "playability",
-        "title": "Make pause authoritative: _toggle_pause (world_3d.gd:906) only flips a local bool and shows the menu, so enemy_field_3d._physics_process keeps pathing and damaging the CP while towers, production and every input freeze. Drive game_clock.set_paused() plus get_tree().paused and guard the enemy field.",
+        "title": "Make pause authoritative: route world_3d._toggle_pause (world_3d.gd:906) through game_clock.set_paused and bail enemy_field_3d._physics_process, defense_system and unit_controller on it, so pausing stops the horde instead of only the player.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "playability-05",
+        "lens": "playability",
+        "title": "Flip DEBUG_INFINITE_RESOURCES off or move it behind debug_flags: economy.gd:33 is a compile-time const that ships every build with 10000 of each stockpile and short-circuits the cap clamp, so no build, train or research decision has a real price.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "fuse-truncation-defense-02",
+        "lens": "fuse-truncation-defense",
+        "title": "Require a unique splice anchor and a size floor in check_gdd_integrity.py:100-116: a cut at GDD.html line 1920 anchors on a duplicated </section> and rebuilds a 324 KB file from the 1.66 MB original that passes both is_intact() and the pre-publish gate.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "skill-chain-handoff-integrity-01",
+        "lens": "skill-chain-handoff-integrity",
+        "title": "Rewrite the bar-raise dedupe at 05_meta_synthesis.md:111 onto a dated content-stable slug restricted to non-terminal statuses plus a .work-queue-archive.json lookup; the documented fix was never applied and only queue-drain pruning keeps the trap dormant.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "skill-chain-handoff-integrity-02",
+        "lens": "skill-chain-handoff-integrity",
+        "title": "Split the release-ritual boilerplate out of enqueued prompts into a separate release_note field and add an attended HBH lane: all 36 pending items are auto_safe=false and every one trips the shell-command gate via its own prompt.",
         "status": "open"
       },
       {
         "severity": "HIGH",
         "priority": 20,
-        "id": "reliability-01",
-        "lens": "reliability",
-        "title": "Wire the auto_pause subsystem end to end or hide its dead toggles: connect_wave_director (auto_pause.gd:85) and connect_command_post (:95) have zero callers, wave_director.gd:7 never declares horde_day_announced, group 'enemies' has no registrar, the CP position is typed Vector2 in a 3D world, and _try_pause targets game_clock which world3d never reads, so the queued horde-day signal fix alone cannot revive it.",
+        "id": "playability-04",
+        "lens": "playability",
+        "title": "Give campaign mode a win condition: run_config.wave_cap() returns 0 for Mode.CAMPAIGN so all_waves_cleared can never fire, a campaign run can only end in a command-post loss, and no mission can unlock the next.",
         "status": "open"
       },
       {
         "severity": "HIGH",
         "priority": 20,
-        "id": "reliability-02",
-        "lens": "reliability",
-        "title": "Wire or delete the orphaned economy mission-stat and Terror API: record_player_unit_death (economy.gd:725), record_building_destroyed (:748), record_enemy_killed (:766) and record_wave_repelled (:773) all have zero call sites, so Terror spikes and the end-screen counters never fire.",
+        "id": "per-project-ps1-stack-02",
+        "lens": "per-project-ps1-stack",
+        "title": "Capture the push exit code into a local before calling Confirm-GitIntact: git-guard.ps1:55 clobbers $LASTEXITCODE so a failed git push is read as success at push-to-github.ps1:186, publish-gdd.ps1:585, write-dashboard-status.ps1:267 and sync-erik-branch.ps1:69.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "security-01",
+        "lens": "security",
+        "title": "Whitelist incoming canonical state against the STATES enum in syncFromCanonical and build the progress indicator with createElement/textContent; unvalidated KV values reach an innerHTML attribute sink at GDD.html:6572, :6907 and :8241.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "gate-page-publish-01",
+        "lens": "gate-page-publish",
+        "title": "Stop emitting the password literals from publish-gdd.ps1:303 and either move /hordes/ behind a server-side check or re-scope it as public; the live page answers an unauthenticated GET with var PASSWORD, var EDITOR and a payload that decodes with plain atob().",
         "status": "open"
       },
       {
@@ -76,31 +124,31 @@
         "priority": 20,
         "id": "maintainability-01",
         "lens": "maintainability",
-        "title": "Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3d.gd:72-79 runs the game, and economy.gd:361-368 reads cap bonuses off the dead tree so those bonuses are permanently 0.",
+        "title": "Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3d.gd:72-79 runs the game and economy.gd:361-368 reads cap bonuses off the dead tree so they are permanently 0.",
         "status": "open"
       },
       {
         "severity": "HIGH",
         "priority": 20,
-        "id": "incident-runbook-currency-01",
-        "lens": "incident-runbook-currency",
-        "title": "Close the XSS sink and the unauthenticated write, THEN run the pending wrangler deploy: the v0.73.3 dev-action never ran, so GET /api/hbh-canonical-state 404s (legacy /api/htbh-canonical-state still 200) and the published GDD canonical-state sync has been silently dead since 2026-05-21. Deploying first would arm the sink.",
+        "id": "reliability-02b",
+        "lens": "reliability",
+        "title": "Gate F5 and F9 on not _game_over and reset _game_over, _victory and _end_screen inside _load_run: after a defeat the player can overwrite a good save with an unwinnable cp_hp=0 run, or load into a permanently frozen world with the end screen still mounted.",
         "status": "open"
       },
       {
         "severity": "HIGH",
         "priority": 20,
-        "id": "skill-chain-handoff-integrity-01",
-        "lens": "skill-chain-handoff-integrity",
-        "title": "Fix the bar-raise auto-enqueue dedupe: the (project, finding_id) key matched the COMPLETED hbh-colony-size-buildings-group-noop-2026-07-10, so HBH's only open HIGH (reliability-01) was silently skipped for two runs while the post-write gate passed falsely. Restrict the gate to non-completed items and use a dated slug id.",
+        "id": "performance-02",
+        "lens": "performance",
+        "title": "Re-baseline the crowd measurements with directional shadows enabled and set SHADOW_CASTING_SETTING_OFF on the enemy crowd meshes: every FPS number in OPTIMIZATION_LOG was captured on a bare light while the shipped world_builder casts map-wide shadows.",
         "status": "open"
       },
       {
         "severity": "HIGH",
         "priority": 20,
-        "id": "skill-suite-health-01",
-        "lens": "skill-suite-health",
-        "title": "Repackage and reinstall personal-skills: every live skill serving HBH predates the .project-context.json Step 0 wiring, so live drift-auto-fix carries no atomic-write or hard_rules instruction. This session's own skill listing still reads 'HTBH docs/GDD.html backlog tab style', proving the stale copy is the loaded one.",
+        "id": "scope-discipline-01",
+        "lens": "scope-discipline",
+        "title": "File a locked decision admitting or cutting the 136-card Dispatches progression: it entered v1 in the GDD (3140-3243) and in draft_controller.gd with no decision, no backlog row and no milestone deliverable, alongside the still-unported 40-node research tree.",
         "status": "open"
       },
       {
@@ -108,63 +156,87 @@
         "priority": 20,
         "id": "per-project-ps1-stack-01",
         "lens": "per-project-ps1-stack",
-        "title": "Add a change-detected worker-deploy step to release.ps1 (model on YesAndChains release.ps1:380-398): HBH owns a Cloudflare Worker but the deploy is prose-only in cf-worker-setup.md:55, which is why the endpoint stayed dead for two months.",
+        "title": "Add a change-detected worker-deploy step to release.ps1 modelled on YesAndChains release.ps1:365-399, and promote the pending v0.73.3 deploy out of changelog prose into a tracked item; /api/hbh-canonical-state still 404s 64 days on.",
         "status": "open"
       },
       {
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 20,
-        "id": "reliability-03",
-        "lens": "reliability",
-        "title": "Add an autosave and a save-or-confirm step: _on_pause_menu (world_3d.gd:932) and _on_pause_quit (:936) discard the whole run with no save and no prompt, and options.gd:58 autosave_freq is persisted and shown in settings with no consumer.",
+        "id": "fuse-truncation-defense-01",
+        "lens": "fuse-truncation-defense",
+        "title": "Install a pre-commit hook that runs the four integrity guards and add a -Message parameter to push-to-github.ps1: the guards are opt-in to one script with no hook behind them, and 29 of the last 120 commits including HEAD ran none of them.",
         "status": "open"
       },
       {
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 20,
-        "id": "work-queue-hygiene-01",
-        "lens": "work-queue-hygiene",
-        "title": "Unblock HBH's queue slice: all 9 open items are auto_safe=false and 4 of 5 pending trip the shell-command gate, so nothing drains automatically, while all three P1s are blocked and all five actionable items are P2/P3.",
+        "id": "skill-suite-health-01",
+        "lens": "skill-suite-health",
+        "title": "Repackage and reinstall personal-skills: the bundle actually loaded in HBH sessions predates 2026-06-05, still routes at X:\\Scheduler, and calls the project Here There Be Hordes.",
         "status": "open"
       },
       {
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 20,
-        "id": "audit-loop-integrity-01",
-        "lens": "audit-loop-integrity",
-        "title": "Record that HBH's canonical doc is release-gated: every finding the nightly can produce is a GDD edit needing a release.ps1 pill bump the nightly is barred from, so the auto-fix lane is empty by construction rather than by chance.",
+        "id": "skill-suite-health-03",
+        "lens": "skill-suite-health",
+        "title": "Uninstall the duplicate plugin bundle so bar-raise, handler-audit and project-canonical-audit each have exactly one installed copy; the two handler-audit copies already disagree on whether the project is HBH or HTBH.",
         "status": "open"
       },
       {
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 20,
-        "id": "incident-runbook-currency-02",
-        "lens": "incident-runbook-currency",
-        "title": "Rewrite scripts/cf-worker-setup.md to branch first-time-deploy vs redeploy: followed literally today it runs wrangler kv namespace create and orphans the live namespace (4836bdc3...) holding the real canonical state.",
+        "id": "solo-dev-voice-portfolio-01",
+        "lens": "solo-dev-voice-portfolio",
+        "title": "Sweep the public GDD changelog and Decisions tab: Midjourney x5, a verbatim 21-slug memory-key dump at v0.73.3, 93 third-person the-dev attributions with 33 Per-the-dev openers, and two locked decisions reading every assistant reply.",
         "status": "open"
       },
       {
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 20,
-        "id": "scale-architecture-01",
-        "lens": "scale-architecture",
-        "title": "Rewrite _ring_cells (enemy_field_3d.gd:435) to walk the ring perimeter instead of scanning the whole (2r+1)^2 square with a fresh Array per ring: nearest_index is O(R^3) per unit per frame and enemies spawn about 13 rings away, so each unit burns roughly 3,600 iterations every frame.",
+        "id": "ai-tell-concealment-currency-01",
+        "lens": "ai-tell-concealment-currency",
+        "title": "Add zero-tolerance patterns to check_gdd_voice.py for AI tool names, agent vocabulary (bar-raise, subagent, skill source, work-queue), the memory-key list shape and assistant/reply/chat; the checker exits 0 today over every tell above.",
         "status": "open"
       },
       {
         "severity": "HIGH",
         "priority": 16,
-        "id": "cost-economics-02",
-        "lens": "cost-economics",
-        "title": "Attribute and budget-gate the review spend: HBH 30d spend went $252.59 to $779.87 (3.09x) while commits fell 210 to 68, and a frozen tree still burns about $6/day with no per-routine cost attribution.",
+        "id": "performance-01",
+        "lens": "performance",
+        "title": "Switch the in-run navmesh rebakes to bake_navigation_mesh(true) with a short debounce and rebake once after the _load_run restore loop: every building placement blocks the main thread on a full-map Recast bake, and loading a save runs one per restored building.",
         "status": "open"
       },
       {
-        "severity": "MED",
+        "severity": "HIGH",
         "priority": 16,
-        "id": "save-format-stability-02",
-        "lens": "save-format-stability",
-        "title": "Give user://options.tres the temp-file plus readback plus rename write that world3d_save.json already has, and fall back to options.new() when load() returns null (global.gd:11-15 has no null fallback and 75 call sites are unguarded).",
+        "id": "skill-trigger-collisions-01",
+        "lens": "skill-trigger-collisions",
+        "title": "Pin bar-raise-hordes/SKILL.md:10 to a fully-qualified skill id: two identically-described bar-raise skills are registered and the namespaced copy carries pre-fix orchestrator and synthesis logic whose failure mode is dropping findings.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 16,
+        "id": "reliability-01",
+        "lens": "reliability",
+        "title": "Drive game_clock.set_paused from world_3d._toggle_pause and _end_game so one pause state governs both halves: economy Provisions drain, Terror ticks, research progress and noise_field all keep running off a clock nothing ever pauses.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 16,
+        "id": "architecture-01",
+        "lens": "architecture",
+        "title": "Scale every world3d tick by game_clock.get_time_scale() so the documented 0.5x/1x/2x/4x speed control has an effect; a grep for game_clock across source/world3d returns zero hits at HEAD 1df5d93.",
+        "status": "open"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 15,
+        "id": "security-03",
+        "lens": "security",
+        "title": "Move the GDD gate server-side so the payload is only returned after auth, and stop shipping var PASSWORD = 'SneakPeak' and var EDITOR = 'KanesChosen' in a page that is also committed to a public repo.",
         "status": "open"
       },
       {
@@ -172,31 +244,335 @@
         "priority": 15,
         "id": "skill-suite-health-02",
         "lens": "skill-suite-health",
-        "title": "Repackage code-audit so the 2026-06-29 HTBH.md ships: the live hazard catalog describes the pre-v0.98.5 2D codebase, mandates a dual-path check against deleted files, and its FUSE-BLOCK list misses all 23 source/world3d/*.gd.",
+        "title": "Re-bundle so the post-2026-06-29 HTBH hazard catalog is the copy code-audit loads: the shipped one FUSE-checks five deleted 2D files and omits all 23 files in source/world3d.",
         "status": "open"
       },
       {
         "severity": "HIGH",
-        "priority": 15,
-        "id": "solo-dev-voice-portfolio-01",
-        "lens": "solo-dev-voice-portfolio",
-        "title": "Sweep AI tool and stack names out of the public GDD changelog (Midjourney x5, Claude x4, a verbatim memory-key dump at v0.73.3) and add zero-tolerance patterns to check_gdd_voice.py, which passes green today while the tells ship.",
+        "priority": 12,
+        "id": "voice-and-tone-01",
+        "lens": "voice-and-tone",
+        "title": "Rewrite the Mission 1 blurb at choose_mode.gd:46-47 into the clipped Order 42 operator register: the cozy pioneer-homesteader text implies a journey of arrival and collides with the locked portal-colony frame.",
         "status": "open"
       },
       {
         "severity": "MED",
-        "priority": 15,
+        "priority": 20,
+        "id": "reliability-05",
+        "lens": "reliability",
+        "title": "Wire auto_pause end to end or delete it with its four settings toggles: connect_wave_director (:85) and connect_command_post (:95) have zero callers, wave_director declares no horde_day_announced, the enemies group has no registrar, and the CP position is typed Vector2 in a 3D world.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "architecture-04",
+        "lens": "architecture",
+        "title": "Reconcile the economy autoload surface with its only live consumer: the four record_* Terror hooks (:725-773), the power ledger, warehouse caps and charge()/can_afford() all have zero live callers while world3d spends through raw add(), so is_in_brownout() is permanently false.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "data-integrity-01",
+        "lens": "data-integrity",
+        "title": "Persist the enemy field or refuse to save while alive_count() is above 0, and clear _enemy_field inside _clear_run; saving on the final wave and reloading fires all_waves_cleared for a false instant victory.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "data-integrity-02",
+        "lens": "data-integrity",
+        "title": "Serialise _techs_done (world_3d.gd:81) into the save and restore it before _build_research_panel: the derived _mods multipliers are persisted without it, so every purchased tech is re-offered and each re-purchase stacks another multiplier without bound.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "save-format-stability-02",
+        "lens": "save-format-stability",
+        "title": "Route the four ResourceSaver.save sites through one atomic temp-plus-readback-plus-rename helper and give global.gd:11-15 an options.new() fallback when load() returns null; roughly 74 global.settings dereferences are unguarded.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "fuse-truncation-defense-04",
+        "lens": "fuse-truncation-defense",
+        "title": "Make staged_or_dirty_files (check_source_integrity.py:306-313) abort the run on a non-zero git exit instead of returning an empty set: failing open lets the recovery splice a stale baseline over freshly edited files, which is the v0.61.43 regression the skip list exists to prevent.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "scale-architecture-01",
+        "lens": "scale-architecture",
+        "title": "Cache each unit's target on a roughly 1s reacquire cadence and make _ring_cells (enemy_field_3d.gd:435) walk the ring perimeter into a reused buffer instead of allocating a fresh Array and scanning the whole square per ring.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "work-queue-hygiene-02",
+        "lens": "work-queue-hygiene",
+        "title": "Collapse the three live entries covering the mission-layer work into one item with an explicit blocked-by pointer; they currently sit at three different priorities and one of them documents the dedupe bug that created the overlap.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "audit-loop-integrity-03",
+        "lens": "audit-loop-integrity",
+        "title": "Batch the three audit-originated GDD items into one attended release-gated session: no HBH audit item has ever been attempted, 31 of 39 have lastAttemptAt null, and the oldest has sat 13 days through roughly 170 drain cycles.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "audit-loop-integrity-02",
+        "lens": "audit-loop-integrity",
+        "title": "Derive audit.findings by parsing the newest docs/CANONICAL_AUDIT-*.md in Get-LatestAudit: write-dashboard-status.ps1:113 and :173 re-read their own prior value, so Hordes.json has published 0/0/0 across 15 consecutive commits while today's audit reports 1 medium and 2 low.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "incident-runbook-currency-02",
+        "lens": "incident-runbook-currency",
+        "title": "Split scripts/cf-worker-setup.md into a first-time-deploy path and a redeploy path: followed literally it runs wrangler kv namespace create and orphans the live namespace 4836bdc3 already bound at wrangler.toml:13.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
         "id": "security-02",
         "lens": "security",
-        "title": "Require a write token on the canonical-state Worker and reject Origin-less POSTs: cf-worker-canonical-state.js:89 skips the allowlist entirely when the Origin header is absent, making it a public unauthenticated write.",
+        "title": "Require a shared write token and reject Origin-less POSTs on the canonical-state worker: cf-worker-canonical-state.js:89 skips the allowlist entirely when Origin is absent, and the legacy /api/htbh-canonical-state route is live and answering 200.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "per-project-ps1-stack-05",
+        "lens": "per-project-ps1-stack",
+        "title": "Delete the blind git-lock Remove-Item loop at write-dashboard-status.ps1:230-236 and let the Assert-GitSafe call two lines later do the live-process-aware clearing; every other HBH git site removed exactly this block.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "reliability-08",
+        "lens": "reliability",
+        "title": "Add scripts/preship.ps1 that runs the seven Godot tests headlessly plus the python guards and gate release.ps1 on it with an env-var bypass; both sibling projects hard-gate on a preship and HBH runs no behavioural test anywhere in the push, release or CI path.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "playability-03",
+        "lens": "playability",
+        "title": "Delete the BUILDS cost table at world_3d.gd:97-106 and route the number-key path through BuildingCatalog3D: five of the eight hotkeys charge a different price than the build menu displays.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "playability-06",
+        "lens": "playability",
+        "title": "Convert world_3d._unhandled_input and iso_cam_3d to Input.is_action_* against the input_defaults actions and wire speed_half..speed_quad to game_clock: every rebindable hotkey the settings screen exposes is inert because no gameplay code reads the InputMap.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "playability-07",
+        "lens": "playability",
+        "title": "Add a HUD toast and a reason string to the five silent bail paths (_begin_build, _train_unit, _do_research, unit_controller.train, placement_3d._afford); the settings screen already exposes a toast duration for a system that does not exist.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "playability-01",
+        "lens": "playability",
+        "title": "[CHRONIC x13] Build the mission data layer (R3D-04) so a campaign mission carries authored objectives, a wave script, a map layout and a win predicate instead of a sandbox run with a text banner.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "observability-01",
+        "lens": "observability",
+        "title": "[CHRONIC x12] Add a debug_flags-gated 1 Hz sampler appending the FPS and alive-count pair already computed at world_3d.gd:522 plus Performance.TIME_PROCESS to a per-run CSV under user://.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "observability-02",
+        "lens": "observability",
+        "title": "Delete the six reader-less debug flags or wire verbose_pathing to real gated prints in the live world3d paths: its docstring names three functions that died with the 2D layer, and the whole 3D stack now emits no runtime diagnostic output at all.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "observability-03",
+        "lens": "observability",
+        "title": "Mirror _load_failed with a _save_failed(reason) helper that pushes to _game_hud.set_status for all three save-failure branches at world_3d.gd:726, :735 and :739; load failures already surface to the player and saves do not.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "skill-chain-handoff-integrity-03",
+        "lens": "skill-chain-handoff-integrity",
+        "title": "Teach drift-auto-fix Phase 1 to accept docs/BAR_RAISE-*.md and the bar-raise-finding queue kind, or state explicitly that only work-queue-runner consumes them: 32 of 36 pending HBH items carry a kind no consumer names.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 16,
+        "id": "scheduled-task-firing-state-01",
+        "lens": "scheduled-task-firing-state",
+        "title": "Add a write-dashboard-status.ps1 step to audit-hordes-nightly/SKILL.md mirroring audit-apothecary-nightly:14-15: Hordes.json still advertises docs/CANONICAL_AUDIT-2026-07-11.md, a path retention has already deleted.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 16,
+        "id": "performance-03",
+        "lens": "performance",
+        "title": "Pause the AnimationPlayer and drop visibility and processing for dormant and off-camera enemies, restoring on wake: dormancy is movement-only today, so an off-screen enemy still pays the full per-Node skinned cost the log identifies as the frame ceiling.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 16,
+        "id": "scale-architecture-02",
+        "lens": "scale-architecture",
+        "title": "Add a full-scene world_3d perf harness and re-derive wave_director.max_alive from its measured knee: the 900 cap comes from an isolated-field baseline captured with an enemy model the project's own log measures as roughly 17x cheaper than the shipped one.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 16,
+        "id": "observability-05",
+        "lens": "observability",
+        "title": "Bake the navmesh from collision shapes rather than RenderingServer visual meshes at world_3d.gd:123 and :388 so the repeated engine precision warnings stop drowning the 21 real push_warning sites, and record the outcome as an OPTIMIZATION_LOG row.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 16,
+        "id": "playability-08",
+        "lens": "playability",
+        "title": "Expose wave_director's time-to-next-wave in the game HUD with a horde-incoming alert: the build-versus-defend rhythm the whole session is built around is currently invisible to the player.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 15,
-        "id": "playability-03",
-        "lens": "playability",
-        "title": "Delete the BUILDS cost table and route the number-key path through BuildingCatalog3D: five of eight hotkeys charge a different price than the build menu, and the HUD only ever shows the catalog price.",
+        "id": "maintainability-02",
+        "lens": "maintainability",
+        "title": "Delete noise_field.gd and tutorial.gd with their project.godot entries and the orphaned noise-overlay keybind, or rewrite both headers to say plainly they are unwired scaffolding: 403 lines boot every run behind docs describing callers and triggers that do not exist.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "maintainability-04",
+        "lens": "maintainability",
+        "title": "Refresh the three stale line counts in BEST_PRACTICES_PARITY.md (world_3d.gd 800 vs 937, unit_controller 291 vs 351), resolve the A1 row against A3, and date-stamp the all-clear its own open HIGH row contradicts.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "maintainability-05",
+        "lens": "maintainability",
+        "title": "Replace the Untested end to end - fix-later scaffold line in world_3d.gd:7 with a pointer to tests/world3d_integration_test.gd, which boots and drives that file through train, build, wave, save and load at 8/8 PASS.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "architecture-05",
+        "lens": "architecture",
+        "title": "Attach nav agents on the crowd branch of enemy_field_3d (:99-117) or make it assert use_navigation is false: flipping use_crowd3d silently turns off pathfinding for every enemy while world_3d.gd:214 still sets use_navigation true.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "cost-economics-01",
+        "lens": "cost-economics",
+        "title": "Move bar-raise-hordes to the weekly Friday pre-reset window used by Ring, Cattery, Skylight, Gnosis and Scheduler for as long as the tree stays frozen: zero-commit days average $3.29 and 2026-07-12 to 07-24 cost $97.11 for two one-line docs commits.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "cost-economics-02",
+        "lens": "cost-economics",
+        "title": "Emit a per-routine cost breakdown alongside projects.<id>.daily in collect-usage.ps1 (the routine name is already matched at line 117) and surface a per-project daily-spend threshold, so the HBH floor can be split between the two routines.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "cost-economics-03",
+        "lens": "cost-economics",
+        "title": "Append the per-day cost series to usage-log/Hordes.jsonl on every collect: the file stores only allTime snapshots, the 7-day transcript prune destroys the source, and allTime is now a $432.60 high-water mark that no longer reconciles with its own components.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "dependency-01",
+        "lens": "dependency",
+        "title": "Register the vendored Tripo3D bridge plugin in ASSET_PROVENANCE.md with its source, pinned version and licence, or remove addons/Tripo3d_Godot_Bridge and its project.godot:41-47 entries; 28 tracked files ship with no licence text anywhere.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "compliance-data-steward-02",
+        "lens": "compliance-data-steward",
+        "title": "Correct the third-party inventory in ASSET_PROVENANCE.md:65-67 and ASSETS.md:36-38: the only-the-two-fonts claim omits the Tripo bridge plugin and assets/art/logos/godot_logo.png, which ships in the splash scene.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "compliance-data-steward-01",
+        "lens": "compliance-data-steward",
+        "title": "Restore a minimal attribution surface before any export: CREDITS.md was deleted in 9755ca7, no LICENSE file exists, and the build ships CC BY Godot marks plus Electrolize with no OFL text alongside assets/fonts/.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "scope-discipline-02",
+        "lens": "scope-discipline",
+        "title": "File a backlog row for skirmish mode with its real dependency on R3D-04 or drop it from the M5, M7 and section 12 v1 commitments: it is promised in three places with zero code and zero backlog presence.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "scope-discipline-03",
+        "lens": "scope-discipline",
+        "title": "Write a locked decision for the Scout cut and propagate it through section 7, section 8, the Mission 1 spec, the MVP-tagged asset row and its 4-tier doctrine chain: the unit left the roster with only a parenthetical in a roadmap line.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "scope-discipline-04",
+        "lens": "scope-discipline",
+        "title": "Mark GDD Assets sections C-H archived the way the v0.49.3 legacy block is and exclude archived rows from renderAssetHero: 91 rows of the retired 2D plan still drive the v1.0 percentage, and all 15 done rows sit inside them.",
         "status": "open"
       },
       {
@@ -204,310 +580,726 @@
         "priority": 15,
         "id": "asset-pipeline-02",
         "lens": "asset-pipeline",
-        "title": "Fix the art-drop gate: art-check.yml filters only assets/** and check_art.py has no .glb branch, so 51 of 55 tracked .glb under source/Erik/ are never checked and the .import sidecar check (the documented silent-placeholder trap) never runs on them.",
+        "title": "Add source/Erik/ to ASSET_ROOTS in check_art.py, add a .glb branch that checks the glTF magic plus the .import sidecar, and add source/Erik/** to the art-check.yml path filters: 55 of 55 tracked .glb files get no check at all.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 15,
-        "id": "audit-loop-integrity-02",
-        "lens": "audit-loop-integrity",
-        "title": "Derive the dashboard audit findings by parsing the newest CANONICAL_AUDIT-*.md: write-dashboard-status.ps1:113/173 re-reads its own prior value, so 0/0/0 is a permanent fixed point rather than a stale number.",
+        "id": "art-direction-consistency-03",
+        "lens": "art-direction-consistency",
+        "title": "Fold the v0.99.7 lighting ruling into GDD section 15: the locked what-must-survive list still says overcast, the local star never wins and no friendly skies, which the shipped clean-RTS lighting deliberately inverts, so the artist brief contradicts the live look.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 15,
-        "id": "scheduled-task-firing-state-01",
-        "lens": "scheduled-task-firing-state",
-        "title": "Add a write-dashboard-status.ps1 step to audit-hordes-nightly (mirroring audit-apothecary-nightly line 15): the audit pointer only refreshes on release, so Hordes.json advertises a 6-day-stale report at a path retention already deleted.",
+        "id": "art-direction-consistency-04",
+        "lens": "art-direction-consistency",
+        "title": "Pick one canonical artist credit (or state the handle-to-name mapping once in ASSET_PROVENANCE.md) and rewrite the section 15 asset paragraph to the live 3D roster: the GDD credits chmillout 18 times while the provenance record credits Erik.",
         "status": "open"
       },
       {
-        "severity": "HIGH",
-        "priority": 12,
-        "id": "security-01",
+        "severity": "MED",
+        "priority": 15,
+        "id": "save-format-stability-01",
+        "lens": "save-format-stability",
+        "title": "Add an options_version export to source/data/options.gd now: user://options.tres is entirely unversioned across 107 fields, and a semantic reinterpretation precedent already exists at :246-248 with no way to tell a pre-v0.57.0 file from a post one.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "reliability-09",
+        "lens": "reliability",
+        "title": "Autosave or prompt on the pause-menu and quit paths (world_3d.gd:932 and :936) and implement the autosave_freq timer: both discard a whole run with no save and no confirmation, and the persisted setting drives nothing.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "security-04",
         "lens": "security",
-        "title": "Whitelist canonical state to the STATES enum and build the indicator with createElement/textContent: unvalidated KV values land in an innerHTML attribute sink (GDD.html:6907 and :8241). Currently inert only because the fetch 404s.",
+        "title": "Add scripts/.wrangler/ to .gitignore and git rm --cached scripts/.wrangler/cache/wrangler-account.json: a build-tool cache carrying the Cloudflare account id and the owner's email address is committed to the repo.",
         "status": "open"
       },
       {
         "severity": "MED",
-        "priority": 12,
-        "id": "data-integrity-01",
-        "lens": "data-integrity",
-        "title": "Persist the enemy field or refuse to save while alive_count() is above 0: save/load erases the in-flight horde while wave_director state is restored, and saving on the final wave then reloading fires all_waves_cleared for a false instant victory.",
+        "priority": 15,
+        "id": "skill-suite-health-05",
+        "lens": "skill-suite-health",
+        "title": "Bump plugin.json on every re-bundle and record the shipped version in the run context: the version has stood at 0.5.1 while 16 of 116 bundled files diverged from source, so staleness is undetectable from inside a session.",
         "status": "open"
       },
       {
         "severity": "MED",
-        "priority": 12,
-        "id": "observability-01",
-        "lens": "observability",
-        "title": "[CHRONIC x6] Add a debug_flags-gated 1 Hz sampler appending the FPS and alive-count pair already computed at world_3d.gd:522 to a per-run log.",
-        "status": "open"
-      },
-      {
-        "severity": "MED",
-        "priority": 12,
-        "id": "playability-01",
-        "lens": "playability",
-        "title": "[CHRONIC x7] Build the mission data layer (R3D-04) so campaign missions carry authored objectives, wave scripts and win conditions instead of loading identical sandbox runs.",
-        "status": "open"
-      },
-      {
-        "severity": "MED",
-        "priority": 12,
-        "id": "skill-trigger-collisions-01",
+        "priority": 15,
+        "id": "skill-trigger-collisions-02",
         "lens": "skill-trigger-collisions",
-        "title": "[CHRONIC x7] Replace the trigger-phrase invocation in bar-raise-hordes/SKILL.md with a fully-qualified skill id: two bar-raise skills are registered and correct routing currently depends on the anthropic-skills copy shipping no description.",
+        "title": "Fully qualify the handler-audit invocation in handler-audit-nightly/SKILL.md:6 and rebuild the registered copy from the six-handler source: the nightly that covers HBH's CLAUDE.md picks between two copies that disagree on the project's own name.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "skill-trigger-collisions-03",
+        "lens": "skill-trigger-collisions",
+        "title": "Re-point the audit-hordes-nightly pin at the copy built from current source: the pin correctly avoids the namespace collision but locks HBH onto a project-canonical-audit revision older than both the source tree and the plugin bundle.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "skill-chain-handoff-integrity-04",
+        "lens": "skill-chain-handoff-integrity",
+        "title": "Normalize every HBH queue item to one project key (hordes) and coerce integer priorities to the P-string form: HBH is keyed three ways, and a naive sort over the mixed priority types raises TypeError.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "skill-chain-handoff-integrity-05",
+        "lens": "skill-chain-handoff-integrity",
+        "title": "Drop the 150-character cut in the enqueue writer: every dated HBH item's title ends mid-word while the same sentences land whole in the dashboard JSON.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "skill-chain-handoff-integrity-06",
+        "lens": "skill-chain-handoff-integrity",
+        "title": "Exempt the last full fan-out report from retention, or stop citing it: all 30 dated items and the previous report point at docs/BAR_RAISE-2026-07-17.md, which retention deleted and gitignore keeps out of history.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "incident-runbook-currency-03",
+        "lens": "incident-runbook-currency",
+        "title": "Delete the dead $GddDestRelPath block from diagnose-gdd-publish.ps1 (lines 8 and 92-115): the first-response publish diagnostic prints a red VERSION MISMATCH on a healthy pipeline because it checks a destination its own line 177 calls dead by design.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "incident-runbook-currency-04",
+        "lens": "incident-runbook-currency",
+        "title": "Replace the git-guard.ps1:62 recovery pointer with in-repo steps and add refs/heads/<branch>.lock to the Assert-GitSafe lock list: the named script does not exist here and its only portfolio copy performs the blind lock delete CLAUDE.md forbids.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "gate-page-publish-02",
+        "lens": "gate-page-publish",
+        "title": "Port BrackishRising's named-invariant Test-GatePageIntegrity into publish-gdd.ps1 and assert the written payload base64-decodes back to the exact GDD bytes: the current guard byte-compares the file against the same string it just built.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "gate-page-publish-03",
+        "lens": "gate-page-publish",
+        "title": "Delete or anchor the gate-page version-chip regex at publish-gdd.ps1:194-197: it rewrites the first v#.#.# string anywhere in a 2.2 MB file, has already corrupted the interceptor's own comment, and has never had a legitimate target.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "brand-consistency-cross-artifact-01",
+        "lens": "brand-consistency-cross-artifact",
+        "title": "Rewrite the GitHub repo description and topics off the retired hand-painted 2D isometric positioning: it still sells a stack every other HBH artifact and a locked GDD decision describe as retired at v0.98.5.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "brand-consistency-cross-artifact-02",
+        "lens": "brand-consistency-cross-artifact",
+        "title": "Correct the claim at YaE projects/here-be-hordes/design.html:161 that real art is wired across buildings, units, enemies and environment: the GDD, Hordes.json and the recruitment post all say 16 of 37 buildings and shared placeholder meshes.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "ai-tell-concealment-currency-03",
+        "lens": "ai-tell-concealment-currency",
+        "title": "Refresh the solo-dev-voice-audit severity table with an agent-workflow-artifact row and re-anchor its reference sweep to a v0.99.x example: its pattern set predates every orchestration term now in the published changelog.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 12,
-        "id": "dependency-01",
-        "lens": "dependency",
-        "title": "Register or drop the vendored Tripo3D editor plugin: addons/Tripo3d_Godot_Bridge/ is git-tracked and enabled at project.godot:43 with no license and no provenance row, falsifying the ASSET_PROVENANCE.md claim that the only remaining third-party files are the two UI fonts.",
+        "id": "performance-04",
+        "lens": "performance",
+        "title": "Prewarm one enemy and one unit model in world_3d._ready and amortize spawn_wave across frames with a per-frame budget: the v0.74.21 prewarm win was 2D-scene-only and died with the 2D layer, so every wave lands as a single-frame instantiation burst.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 12,
-        "id": "compliance-data-steward-01",
-        "lens": "compliance-data-steward",
-        "title": "Restore a minimal attribution surface: the Godot logo (CC BY 4.0) is wired into the boot splash and Electrolize (OFL) is bundled, but CREDITS.md was deleted in 9755ca7 and no LICENSE file exists anywhere.",
+        "id": "performance-05",
+        "lens": "performance",
+        "title": "Move the world_3d gameplay tick block from _process into _physics_process so targeting queries run once per spatial-hash rebuild instead of once per rendered frame; project.godot sets no max_fps.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 12,
-        "id": "voice-and-tone-01",
+        "id": "scale-architecture-03",
+        "lens": "scale-architecture",
+        "title": "Compose the crowd transforms into a reused PackedFloat32Array assigned to multimesh.buffer once per tick and skip records whose position and heading are unchanged: the crowd path writes one engine call per instance and never inherited the heading-change gate.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "scale-architecture-04",
+        "lens": "scale-architecture",
+        "title": "Cluster or merge overlapping vision discs into fog_3d's fixed 64 slots: past the cap the unsorted tail, always the placed buildings, silently loses its disc, while raising the cap costs a per-fragment loop over the whole 1080p quad.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "solo-tool-ux-01",
+        "lens": "solo-tool-ux",
+        "title": "Add scripts/drain-audit.ps1 that reads the newest docs/CANONICAL_AUDIT-*.md, applies its listed GDD edits atomically, bumps the pill once and hands off to release.ps1, so one attended command empties the nightly report.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "strategic-kill-this-05",
+        "lens": "strategic-kill-this",
+        "title": "Re-rank the HBH queue so R3D-04 is the single P1 and the eight review-apparatus P1s drop to P3: the highest-priority work registered against a 55%-complete game is majority maintenance of the review machinery.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "strategic-kill-this-04",
+        "lens": "strategic-kill-this",
+        "title": "Decide delete-versus-keep on the canonical-state worker before repairing it: its only payoff is cross-browser checkbox sync for one person's GDD, it has been dead 64 days, and deleting it closes four open items at once.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "strategic-kill-this-06",
+        "lens": "strategic-kill-this",
+        "title": "Cut M5 to a three-mission vertical campaign on placeholder art and move skirmish mode and the audio pass to M6: M5 currently commits one person to ten authored missions plus full final art while the mission data layer does not exist.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "voice-and-tone-02",
         "lens": "voice-and-tone",
-        "title": "Rename the craft and trench-register research nodes (Carpentry, Husbandry, Masonry, Brewing, Fixed Bayonets, Trench Guns) onto the Order 42 frame the buildings already use; the v0.79.0 and v0.94.2 naming passes skipped the research tree.",
+        "title": "Rename the four Tier-4 wonders (Cornucopia, The Sanctum, Pyre of the Dead, Perpetual Engine) into the Order 42 megastructure register in lockstep across building_catalog_3d.gd and the GDD: they are ungated player-visible build-menu strings today.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 12,
-        "id": "maintainability-04",
-        "lens": "maintainability",
-        "title": "Refresh the stale decomposition numbers in BEST_PRACTICES_PARITY.md (world_3d.gd 800 vs actual 937, unit_controller 291 vs 351) and drop the false 'all phases complete, no remaining violations' close.",
+        "id": "asset-pipeline-03",
+        "lens": "asset-pipeline",
+        "title": "Confirm the artist's current batch and expected drop date and re-sequence the GDD production order: the last art-touching commit was 2026-06-29 and origin/Erik-Lookdev is 0 commits ahead of main.",
         "status": "open"
       },
       {
         "severity": "MED",
         "priority": 12,
-        "id": "version-pill-drift-01",
-        "lens": "version-pill-drift",
-        "title": "Restamp the YaE live version markers: projects/here-be-hordes/index.html:76 and design.html:102 read v0.99.38 and the homepage card reads v0.99.x while the repo, GDD pill and dashboard all read v0.99.40, because nothing in HBH's release path runs update-project-pages.mjs.",
+        "id": "sound-design-discipline-02",
+        "lens": "sound-design-discipline",
+        "title": "Commit a default_bus_layout.tres matching the seven-bus tree and reference it from project.godot: the buses exist only in runtime code, so any AudioStreamPlayer authored in the editor during the M5 pass silently routes to Master.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "sound-design-discipline-03",
+        "lens": "sound-design-discipline",
+        "title": "Stop calling apply_all() and _persist() on every audio slider step: a single drag re-applies the whole display configuration and writes the settings resource to disk roughly 100 times.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "skill-suite-health-04",
+        "lens": "skill-suite-health",
+        "title": "Confirm every HBH-serving skill shows its description in the session listing after reinstall: five of twelve currently surface as bare names, including the one implementing the update_gdd_every_reply hard rule.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "skill-suite-health-06",
+        "lens": "skill-suite-health",
+        "title": "Run a with/without eval for code-audit and htbh-changelog-entry on HBH and store the transcripts in _skill-review/findings/: no trigger-accuracy pass has ever covered the HBH-serving skills.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "per-project-ps1-stack-06",
+        "lens": "per-project-ps1-stack",
+        "title": "Port BrackishRising's fetch-plus-rebase-plus-retry self-heal into write-dashboard-status.ps1 and move the Step 2.5 call ahead of publish-gdd: the second YaE push of every release degrades to a local-only commit on a remote-ahead reject.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "audit-loop-integrity-01",
+        "lens": "audit-loop-integrity",
+        "title": "Record the release-gated constraint durably in .project-context.json (a field such as auto_fix_lane: none-by-construction with the reason): today it lives only in reports that are gitignored and retention-deleted.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "cost-economics-04",
+        "lens": "cost-economics",
+        "title": "Run git gc --prune=now in X:\\HereBeHordes: roughly 468 MB of the 782 MB .git is prune-packable loose objects plus 19.53 MB of stale tmp_pack garbage, reclaimable with no history change.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "incident-runbook-currency-05",
+        "lens": "incident-runbook-currency",
+        "title": "Move the five retired-2D open investigations at OPTIMIZATION_LOG.md:118-157 into a clearly labelled closed section: the perf runbook CLAUDE.md requires you to consult points at deleted code, and one entry contradicts a resolved entry three lines above it.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "discord-notify-wiring-01",
+        "lens": "discord-notify-wiring",
+        "title": "Mark the four unprovisioned webhook rows in CLAUDE.md:135-138 as naming reserved: only the Release webhook exists in X:\\.secrets and only it has a caller, so the handler asserts a channel topology that does not exist.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "gate-page-publish-04",
+        "lens": "gate-page-publish",
+        "title": "Switch the injected here-strings in publish-gdd.ps1 to single-quoted form: backtick expansion emits a raw BEL control byte into the public gate page on every publish, currently at offset 2,224,606.",
+        "status": "open"
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "brand-consistency-cross-artifact-03",
+        "lens": "brand-consistency-cross-artifact",
+        "title": "Strike accuracy from the Terror pillar at GDD.html:1429 and the trade note at :1514: both contradict the locked no-accuracy decision printed lower in the same document and on the public design page.",
         "status": "open"
       }
     ],
     "deferred": [
       {
         "severity": "HIGH",
-        "title": "The shipped default per-Node skinned-FBX crowd path holds only about 26 fps at 1000 alive so the S-34 target is unreachable and max_alive=900 is a mitigation; the use_crowd3d A/B measured 1248 fps.",
+        "title": "Every milestone-advancing path is blocked on an owner action while automation re-verifies a frozen HEAD, and the park-or-continue call is not filed anywhere; last code commit was 2026-07-11.",
+        "lens": "strategic-kill-this",
+        "reason": "owner action: book an R3D-04 session or file a locked HBH-parked decision in the GDD Decisions tab"
+      },
+      {
+        "severity": "HIGH",
+        "title": "The shipped per-Node skinned crowd holds about 26 fps at 1000 alive so the S-34 target is unreachable and max_alive=900 is a mitigation; the use_crowd3d A/B measured 1248 fps.",
         "lens": "performance",
         "reason": "owner look-decision; hbh-multimesh-crowd-migration-2026-06-28 blocked-on-user"
       },
       {
-        "severity": "HIGH",
-        "title": "Every milestone-advancing path is formally blocked on an owner action while automation re-verifies a frozen HEAD, so the project is in unintentional stasis rather than a chosen pause.",
-        "lens": "strategic-kill-this",
-        "reason": "needs Kane to book an R3D-04 session or declare HBH parked in the GDD Decisions tab"
-      },
-      {
         "severity": "MED",
-        "title": "[CHRONIC x7] Renumber off the v0.99.x band, which reads as 1.0-imminent while the game sits at milestone 4 of 8.",
+        "title": "The v0.99.x band contradicts the GDD's own locked milestone-based versioning decision, which with M0-M2 done would put the project near v0.4.x, and the next minor collides with the name of milestone M7.",
         "lens": "strategic-kill-this",
         "reason": "blocked on a Nick decision about the versioning scheme"
       },
       {
         "severity": "MED",
-        "title": "[CHRONIC x7] 16 of 37 buildings on real models (rest placeholder boxes) and all 8 enemy archetypes share one placeholder mesh.",
-        "lens": "asset-pipeline",
-        "reason": "art-delivery gated, same gate as hbh-asset-production-pass (blocked-on-user since 2026-06-10)"
-      },
-      {
-        "severity": "MED",
-        "title": "[CHRONIC x7] Finals and placeholder boxes coexist across the roster so silhouette discipline and the locked section 15 register are not yet uniformly readable.",
-        "lens": "art-direction-consistency",
-        "reason": "art-delivery gated"
-      },
-      {
-        "severity": "MED",
-        "title": "[CHRONIC x6] The .git repo is about 794 MB on disk (313.55 MiB packed); removed pack blobs still live in history. GitHub only ever sees the packed figure, so ceiling headroom is wider than the on-disk number implies.",
-        "lens": "cost-economics",
-        "reason": "history rewrite / LFS migration is a Nick decision"
-      },
-      {
-        "severity": "MED",
-        "title": "The art long pole is stalled at the owner's own concept-batch step, not at the artist; no undelivered art is waiting (main..origin/Erik-Lookdev = 0).",
+        "title": "The art long pole is stalled at the owner's own concept-batch step, not at the artist; origin/Erik-Lookdev re-verified this run at 0 commits ahead of main.",
         "lens": "strategic-kill-this",
-        "reason": "owner action: run Batch A concept sheets, or descope the M5 art gate"
+        "reason": "owner action: run the Batch A concept sheets, or descope the M5 art gate"
       },
       {
         "severity": "MED",
-        "title": "building_registry_3d.gd:13-28 tunes each model with a per-model scale multiplier spanning 0.3 to 1.2, which contradicts the portfolio no-scale-constants rule that everything renders native 1.0x.",
+        "title": "21 of 37 catalog buildings render as placeholder boxes, all 8 enemy archetypes share one mesh and all 4 unit classes share one model.",
+        "lens": "asset-pipeline",
+        "reason": "art-delivery gated; hbh-asset-production-pass blocked-on-user since 2026-06-10"
+      },
+      {
+        "severity": "MED",
+        "title": "Finals and placeholder boxes coexist across the roster, so the locked section 15 silhouette rule that a Brute is unmistakable from a Shambler at fifty feet is not readable in the build.",
+        "lens": "art-direction-consistency",
+        "reason": "art-delivery gated; an interim per-archetype model_scale is the only zero-art step and is folded into the crowd work"
+      },
+      {
+        "severity": "MED",
+        "title": "building_registry_3d.gd:13-28 tunes each model with a per-entry scale multiplier from 0.3 to 1.2, contradicting the portfolio rule that everything renders at native 1.0x.",
         "lens": "art-direction-consistency",
         "reason": "needs an owner ruling: exempt HBH in writing or move sizing back to the source models"
       },
       {
         "severity": "MED",
-        "title": "_ARCHIVE/starlightfurnace/ is a 724 MB pack-shaped third-party art library (842 files, no license) with zero references, missed by the 2026-07-10 purge and absent from the ASSET_PROVENANCE deleted-masters list.",
+        "title": "The Mortend Bold display face ships across the whole UI on an unverified free claim with no source, no licence text and no pinned redistribution grant.",
+        "lens": "compliance-data-steward",
+        "reason": "owner or external licence check"
+      },
+      {
+        "severity": "MED",
+        "title": "The packed .git is 313.55 MiB and removed pack blobs still live in history; the deliberate no-filter-repo decision is recorded at ASSET_PROVENANCE.md:55-60.",
+        "lens": "cost-economics",
+        "reason": "history rewrite or LFS migration is a Nick decision"
+      },
+      {
+        "severity": "MED",
+        "title": "_ARCHIVE/starlightfurnace is a 721.8 MB unreferenced third-party art library (842 files, no licence) missed by the 2026-07-10 purge; it is gitignored and untracked, so the exposure is licensing rather than spend.",
         "lens": "cost-economics",
         "reason": "owner confirm whether it is still wanted before deleting or relocating"
       },
       {
         "severity": "LOW",
-        "title": "Mortend Bold display font ships with 'free' provenance and no pinned redistribution grant; confirm a grant or swap for an OFL/CC0 display face.",
-        "lens": "compliance-data-steward",
-        "reason": "owner/external license check"
-      },
-      {
-        "severity": "LOW",
-        "title": "Add a SAVE_VERSION migration dispatch and a full research tech-tree save block.",
+        "title": "No SAVE_VERSION migration dispatch and no research tech-tree save block; when the research block lands it will not be purely additive because v1 saves already carry derived _mods with no tech list to reconcile them against.",
         "lens": "save-format-stability",
-        "reason": "no 3D research consumer yet; correct to land with the research wiring, not before"
+        "reason": "correct to land with the research wiring, not before"
       },
       {
         "severity": "LOW",
-        "title": "Remove the 11 disabled scheduled-task husks still registered.",
+        "title": "13 orphaned scheduled-task SKILL.md directories remain on disk including an outdated bar-raise-hbh duplicate; the registry itself is already clean at 39 enabled and 1 intentionally disabled.",
         "lens": "scheduled-task-firing-state",
-        "reason": "removal requires the app closed; X:\\Claude\\restart-cleanup.ps1 covers it"
+        "reason": "removal requires the app closed; X:\\Claude\\restart-cleanup.ps1 covers 11 of the 13"
       },
       {
         "severity": "LOW",
         "title": "The game ships fully silent with no audio assets on disk.",
         "lens": "sound-design-discipline",
-        "reason": "on-plan; silent MVP is the dev's explicit definition, audio is v1.0 scope with a tracked manifest"
+        "reason": "on-plan; the GDD states MVP audio is deliberately empty and the pass is scheduled at M5 with a tracked manifest"
       }
     ],
-    "health": 80,
+    "health": 73,
     "lensScores": {
-      "architecture": 79,
-      "reliability": 74,
-      "security": 84,
-      "performance": 84,
-      "data-integrity": 86,
-      "maintainability": 80,
-      "solo-tool-ux": 78,
-      "cost-economics": 72,
-      "dependency": 80,
-      "observability": 78,
-      "strategic-kill-this": 76,
-      "compliance-data-steward": 82,
-      "playability": 71,
-      "scope-discipline": 85,
-      "scale-architecture": 86,
-      "asset-pipeline": 79,
-      "voice-and-tone": 85,
-      "sound-design-discipline": 91,
-      "art-direction-consistency": 78,
-      "save-format-stability": 82,
-      "skill-suite-health": 64,
-      "work-queue-hygiene": 76,
-      "audit-loop-integrity": 78,
-      "fuse-truncation-defense": 90,
-      "incident-runbook-currency": 68,
+      "architecture": 71,
+      "reliability": 70,
+      "security": 65,
+      "performance": 76,
+      "data-integrity": 78,
+      "maintainability": 74,
+      "solo-tool-ux": 72,
+      "cost-economics": 76,
+      "dependency": 78,
+      "observability": 74,
+      "strategic-kill-this": 70,
+      "compliance-data-steward": 78,
+      "playability": 60,
+      "scope-discipline": 64,
+      "scale-architecture": 82,
+      "asset-pipeline": 76,
+      "voice-and-tone": 79,
+      "sound-design-discipline": 85,
+      "art-direction-consistency": 76,
+      "save-format-stability": 80,
+      "skill-suite-health": 60,
+      "work-queue-hygiene": 64,
+      "audit-loop-integrity": 73,
+      "fuse-truncation-defense": 70,
+      "incident-runbook-currency": 63,
       "scheduled-task-firing-state": 84,
-      "skill-trigger-collisions": 82,
-      "skill-chain-handoff-integrity": 68,
-      "per-project-ps1-stack": 78,
-      "discord-notify-wiring": 89,
-      "version-pill-drift": 88,
-      "gate-page-publish": 70,
-      "solo-dev-voice-portfolio": 74,
-      "ai-tell-concealment-currency": 80,
-      "brand-consistency-cross-artifact": 86
+      "skill-trigger-collisions": 64,
+      "skill-chain-handoff-integrity": 60,
+      "per-project-ps1-stack": 70,
+      "discord-notify-wiring": 87,
+      "version-pill-drift": 89,
+      "gate-page-publish": 66,
+      "solo-dev-voice-portfolio": 70,
+      "ai-tell-concealment-currency": 58,
+      "brand-consistency-cross-artifact": 82
     },
     "openFindings": [
       {
         "id": "playability-02",
         "severity": "high",
         "priority": 25,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "reliability-01",
+        "id": "playability-05",
+        "severity": "high",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "fuse-truncation-defense-02",
+        "severity": "high",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-chain-handoff-integrity-01",
+        "severity": "high",
+        "priority": 25,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "skill-chain-handoff-integrity-02",
+        "severity": "high",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "playability-04",
+        "severity": "high",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "per-project-ps1-stack-02",
+        "severity": "high",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "security-01",
         "severity": "high",
         "priority": 20,
         "runsOpen": 7,
-        "firstSeen": "2026-07-15",
+        "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "reliability-02",
+        "id": "gate-page-publish-01",
         "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
         "id": "maintainability-01",
         "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "incident-runbook-currency-01",
+        "id": "reliability-02b",
         "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "skill-chain-handoff-integrity-01",
+        "id": "performance-02",
         "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "skill-suite-health-01",
+        "id": "scope-discipline-01",
         "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
         "id": "per-project-ps1-stack-01",
         "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "reliability-03",
-        "severity": "medium",
+        "id": "fuse-truncation-defense-01",
+        "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-suite-health-01",
+        "severity": "high",
+        "priority": 20,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "work-queue-hygiene-01",
-        "severity": "medium",
+        "id": "skill-suite-health-03",
+        "severity": "high",
         "priority": 20,
-        "runsOpen": 6,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "solo-dev-voice-portfolio-01",
+        "severity": "high",
+        "priority": 20,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "audit-loop-integrity-01",
+        "id": "ai-tell-concealment-currency-01",
+        "severity": "high",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "performance-01",
+        "severity": "high",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-trigger-collisions-01",
+        "severity": "high",
+        "priority": 16,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-10",
+        "chronic": true
+      },
+      {
+        "id": "reliability-01",
+        "severity": "high",
+        "priority": 16,
+        "runsOpen": 8,
+        "firstSeen": "2026-07-15",
+        "chronic": true
+      },
+      {
+        "id": "architecture-01",
+        "severity": "high",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "security-03",
+        "severity": "high",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-suite-health-02",
+        "severity": "high",
+        "priority": 15,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "voice-and-tone-01",
+        "severity": "high",
+        "priority": 12,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "reliability-05",
         "severity": "medium",
         "priority": 20,
-        "runsOpen": 6,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "architecture-04",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "data-integrity-01",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "save-format-stability-02",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "fuse-truncation-defense-04",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "scale-architecture-01",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "work-queue-hygiene-02",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "audit-loop-integrity-03",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "audit-loop-integrity-02",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
@@ -515,241 +1307,608 @@
         "id": "incident-runbook-currency-02",
         "severity": "medium",
         "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "scale-architecture-01",
-        "severity": "medium",
-        "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "cost-economics-02",
-        "severity": "high",
-        "priority": 16,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "save-format-stability-02",
-        "severity": "medium",
-        "priority": 16,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "skill-suite-health-02",
-        "severity": "high",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "solo-dev-voice-portfolio-01",
-        "severity": "high",
-        "priority": 15,
-        "runsOpen": 6,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
         "id": "security-02",
         "severity": "medium",
-        "priority": 15,
-        "runsOpen": 6,
+        "priority": 20,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
+      },
+      {
+        "id": "per-project-ps1-stack-05",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "reliability-08",
+        "severity": "medium",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
         "id": "playability-03",
         "severity": "medium",
-        "priority": 15,
-        "runsOpen": 6,
+        "priority": 20,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "asset-pipeline-02",
+        "id": "playability-06",
         "severity": "medium",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "audit-loop-integrity-02",
+        "id": "playability-07",
         "severity": "medium",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "scheduled-task-firing-state-01",
+        "id": "playability-01",
         "severity": "medium",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "security-01",
-        "severity": "high",
-        "priority": 12,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
-      },
-      {
-        "id": "data-integrity-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
+        "priority": 20,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-10",
         "chronic": true
       },
       {
         "id": "observability-01",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 11,
+        "priority": 20,
+        "runsOpen": 12,
         "firstSeen": "2026-07-11",
         "chronic": true
       },
       {
-        "id": "playability-01",
+        "id": "observability-02",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 12,
-        "firstSeen": "2026-07-10",
-        "chronic": true
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "skill-trigger-collisions-01",
+        "id": "observability-03",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 12,
-        "firstSeen": "2026-07-10",
-        "chronic": true
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "dependency-01",
+        "id": "skill-chain-handoff-integrity-03",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 6,
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "scheduled-task-firing-state-01",
+        "severity": "medium",
+        "priority": 16,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "compliance-data-steward-01",
+        "id": "performance-03",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "voice-and-tone-01",
+        "id": "scale-architecture-02",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "observability-05",
+        "severity": "medium",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "playability-08",
+        "severity": "medium",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
         "id": "maintainability-04",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 6,
+        "priority": 15,
+        "runsOpen": 7,
         "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "version-pill-drift-01",
+        "id": "maintainability-05",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-17",
-        "chronic": true
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "strategic-kill-this-01",
+        "id": "architecture-05",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 12,
-        "firstSeen": "2026-07-10",
-        "chronic": true
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
         "id": "cost-economics-01",
         "severity": "medium",
-        "priority": 12,
-        "runsOpen": 11,
-        "firstSeen": "2026-07-11",
-        "chronic": true
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       },
       {
-        "id": "asset-pipeline-01",
+        "id": "cost-economics-02",
         "severity": "medium",
         "priority": 15,
-        "runsOpen": 12,
-        "firstSeen": "2026-07-10",
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
         "chronic": true
       },
       {
-        "id": "art-direction-consistency-01",
+        "id": "cost-economics-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "dependency-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "compliance-data-steward-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "compliance-data-steward-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "scope-discipline-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "scope-discipline-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "scope-discipline-04",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "asset-pipeline-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "art-direction-consistency-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "art-direction-consistency-04",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "save-format-stability-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "reliability-09",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
+        "chronic": true
+      },
+      {
+        "id": "security-04",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-suite-health-05",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-trigger-collisions-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-trigger-collisions-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-chain-handoff-integrity-04",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-chain-handoff-integrity-05",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-chain-handoff-integrity-06",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "incident-runbook-currency-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "incident-runbook-currency-04",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "gate-page-publish-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "gate-page-publish-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "brand-consistency-cross-artifact-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "brand-consistency-cross-artifact-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "ai-tell-concealment-currency-03",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "performance-04",
         "severity": "medium",
         "priority": 12,
-        "runsOpen": 12,
-        "firstSeen": "2026-07-10",
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "performance-05",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "scale-architecture-03",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "scale-architecture-04",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "strategic-kill-this-05",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "strategic-kill-this-04",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "strategic-kill-this-06",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "voice-and-tone-02",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "asset-pipeline-03",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "sound-design-discipline-02",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "sound-design-discipline-03",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-suite-health-04",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "skill-suite-health-06",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "per-project-ps1-stack-06",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "audit-loop-integrity-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-17",
         "chronic": true
+      },
+      {
+        "id": "cost-economics-04",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "incident-runbook-currency-05",
+        "severity": "medium",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "discord-notify-wiring-01",
+        "severity": "medium",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "gate-page-publish-04",
+        "severity": "medium",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
+      },
+      {
+        "id": "brand-consistency-cross-artifact-03",
+        "severity": "medium",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24",
+        "chronic": false
       }
     ],
     "tensionsOpen": [
       {
         "lenses": [
+          "security",
+          "gate-page-publish"
+        ],
+        "runsSeen": 6
+      },
+      {
+        "lenses": [
           "performance",
           "maintainability"
         ],
-        "runsSeen": 21
+        "runsSeen": 22
       },
       {
         "lenses": [
           "performance",
           "architecture"
         ],
-        "runsSeen": 19
+        "runsSeen": 20
       },
       {
         "lenses": [
           "scale-architecture",
           "art-direction-consistency"
         ],
-        "runsSeen": 19
+        "runsSeen": 20
       },
       {
         "lenses": [
           "observability",
           "cost-economics"
         ],
-        "runsSeen": 10
+        "runsSeen": 11
       },
       {
         "lenses": [
-          "security",
-          "gate-page-publish"
+          "strategic-kill-this",
+          "security"
         ],
-        "runsSeen": 5
+        "runsSeen": 1
       }
     ],
-    "reconcileNote": "Carry-forward pass 2026-07-23 (day 6 since the 2026-07-17 full 35-lens fan-out). Skip-unchanged gate fired: zero commits since 2026-07-22 (HEAD still 1752caa, the 2026-07-16 docs-only CLAUDE.md already counted in the 2026-07-17 run), working tree clean, no open BLOCK. Both hard rules pass (GDD tail </html>; options.gd colorblind_mode decl count 1). Six days out, one day inside the 7-day forced-full boundary, so no re-fan-out; health 80, verdict needs-attention, all 35 lensScores carried verbatim. Enqueue reconciliation: all 32 immediately-actionable HIGH/MED openFindings resolve to a live pending queue item (reliability-01=hbh-autopause-horde-day-signal-2026-07-14, observability-01=hbh-observability-frame-time-logger-2026-07-11, the rest under 2026-07-17 dated slugs). No finding matched only a completed item, so the finding_id dedupe-trap did not recur. Auto-enqueued 0. HBH queue slice unchanged at 39 items (36 pending, 2 blocked-on-user, 1 blocked). Both HBH routines (audit-hordes-nightly last-ran 2026-07-23T06:06Z, bar-raise-hordes) registered and enabled. Aging tick: the 2026-07-17 cohort (28 findings) plus playability-02 crossed runsOpen 5->6; reliability-01 -> 7; observability-01/cost-economics-01 -> 11; playability-01/skill-trigger-collisions-01/strategic-kill-this-01/asset-pipeline-01/art-direction-consistency-01 -> 12. tensionsOpen advanced one run each (21/19/19/10/5). Full pass FORCED by 2026-07-24 (7-day boundary) regardless of whether HEAD moves."
+    "reconcileNote": "Full 35-lens fan-out 2026-07-24, forced by the 7-day boundary since the 2026-07-17 full pass and also triggered by a new commit (1df5d93, docs-only CLAUDE.md reword). Skip-unchanged gate did NOT fire. Health re-measured at 73 (was a carried 80); the drop is new detection, not regression. No BLOCK: both hard_rule_checks re-verified independently (GDD tail </html>; colorblind_mode declared once). actionsOpen 106 is the consolidated immediately-actionable HIGH+MED set after merging findings that describe the same defect across lenses (pause authority, the GDD gate exposure, the options.tres write path, the guard bypass). 2 previous actions closed: cost-economics-02 did not survive recomputation (30d spend $467.49, not a 3.09x blowout) and version-pill-drift-01 does not hold live (all served YaE surfaces read v0.99.40; only the checked-in copies lag, now LOW). Finding aging is matched by SUBJECT, not by bare lens ordinal, because the ordinals are unstable run to run; that instability is skill-chain-handoff-integrity-01, which this run confirms was never fixed at 05_meta_synthesis.md:111. Queue recount: 247 items total, 39 in the HBH slice, 36 pending, all auto_safe=false."
   },
   "metrics": [
     {
