@@ -9336,9 +9336,60 @@
       "drainNote": "Drained by loop-tick-hourly 1259. Both moot items verified independently (not taken on trust) and closed in the same locked write. Note for the record: this item named only backup.ts for Budget, but that queue item also covered apps/api/src/db.ts - it was checked separately and is likewise committed in eb5eea4, so the close is sound. No repo was touched; queue-only write.",
       "archivedAt": "2026-07-25T09:30Z",
       "archiveReason": "terminal-status-prune"
+    },
+    {
+      "id": "bar-raise-2026-07-17-yae-yae-write-dashboard-status-no-retry",
+      "added": "2026-07-17",
+      "project": "everything",
+      "kind": "bar-raise-finding",
+      "finding_id": "yae-write-dashboard-status-no-retry",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "done",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": "write-dashboard-status.ps1:50-58 is single-shot; queue-edit.ps1:100-110 wraps the identical protocol in a 5-attempt loop with a 300ms settle",
+      "tensions_with": [],
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): scripts/write-dashboard-status.ps1:50-58 uses the atomic-write-with-readback pattern but omits the retry its sibling has: WriteAllText tmp, parse, Move-Item, readback NUL check, re-parse, single-shot. scripts/queue-edit.ps1:100-110 wraps the identical protocol in `for ($attempt = 0; $attempt -lt 5; $attempt++)` with a 300ms settle, throwing only after 5 failures, with a comment noting FUSE 'false-failed safe_write 3x in one session'. So the known-flaky failure mode is retried in one writer and fatal-on-first-blip in the other. Port the 5-attempt loop. Related: collect-usage.ps1's Write-ValidatedJson (687-697) rewrites the 29.4MB dashboard/data/.usage-state.json every 30 minutes with a single-attempt write that THROWS on a stale read -- the project's largest FUSE write with the weakest retry. Give it the same loop.",
+      "notes": "Verified closed by bar-raise-everything 2026-07-25: write-dashboard-status.ps1 now parses the tmp file before replace and re-parses a fresh read with a NUL check; update-project-pages.mjs now throws on a missing PUBLIC_COPY entry and on a lost </html> tail.",
+      "archivedAt": "2026-07-25T12:36Z",
+      "archiveReason": "terminal-status-pruned"
+    },
+    {
+      "id": "bar-raise-2026-07-17-yae-yae-stamper-silent-stale",
+      "added": "2026-07-17",
+      "project": "everything",
+      "kind": "bar-raise-finding",
+      "finding_id": "yae-stamper-silent-stale",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "done",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": "scripts/update-project-pages.mjs:52-54 existsSync guard and catch -> console.error only; :121 always exits 0; identical at HEAD",
+      "tensions_with": [
+        "reliability",
+        "solo-tool-ux"
+      ],
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): scripts/update-project-pages.mjs:52-54 skips a missing or malformed status JSON with a console.error and continues; :121 ends on a console.log with no process.exit, so the script always exits 0. It runs as a workflow step in .github/workflows/deploy-pages.yml:36-38 with no exit-code assertion, so exit 0 = green deploy while the site ships stale version and milestone numbers with no signal anywhere. Verified identical at HEAD and in the working copy: the uncommitted diff is +19 lines, all of it the new sitemap block at :102-119, and touches nothing in the read/stamp path. Make it exit non-zero when a status JSON for a SLUGS id is absent or unparseable, and fail the deploy step on it. Related: :39 mfmt() hard-truncates milestone strings at 52 chars, publishing mid-word and unclosed-parenthesis copy on two live homepage cards (index.html:1889, :1977) -- truncate at the last word boundary instead.",
+      "notes": "Verified closed by bar-raise-everything 2026-07-25: write-dashboard-status.ps1 now parses the tmp file before replace and re-parses a fresh read with a NUL check; update-project-pages.mjs now throws on a missing PUBLIC_COPY entry and on a lost </html> tail.",
+      "archivedAt": "2026-07-25T12:36Z",
+      "archiveReason": "terminal-status-pruned"
     }
   ],
-  "last_append": "2026-07-25T09:30Z",
-  "archived": 491,
-  "lastArchivedAt": "2026-07-25T09:30Z"
+  "last_append": "2026-07-25T12:36Z",
+  "archived": 493,
+  "lastArchivedAt": "2026-07-25T12:36Z"
 }
