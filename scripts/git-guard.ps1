@@ -41,8 +41,36 @@ function Assert-GitSafe {
     }
 }
 
+# Run a native git command without letting its stderr become a terminating error.
+#
+# git writes ordinary progress to stderr ("To https://github.com/...", CRLF
+# warnings). Under $ErrorActionPreference = "Stop" PowerShell 5.1 wraps that in a
+# NativeCommandError and unwinds the caller, so a script aborts partway through
+# on a push that actually SUCCEEDED. Never add `2>&1` to a native git call
+# either: in 5.1 that turns each stderr LINE into an ErrorRecord and sets $?
+# false even on exit 0.
+#
+# Relaxing the preference here loses nothing, because git failure is detected by
+# $LASTEXITCODE, which callers check explicitly.
+function Invoke-Git {
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    & git @args
+  }
+  finally {
+    $ErrorActionPreference = $prev
+  }
+}
+
+
 function Confirm-GitIntact {
     param([string]$RepoRoot = (Get-Location).Path)
+    # This guard runs git itself, which overwrites $LASTEXITCODE. Callers invoke
+    # it right after the command they care about, so clobbering the exit code
+    # made a FAILED PUSH read as success. Capture on entry, restore on every
+    # exit path, so this stays a guard rather than a side effect.
+    $callerExitCode = $LASTEXITCODE
     $gitDir = Join-Path $RepoRoot ".git"
     $bad = @()
     foreach ($f in @("config", "packed-refs", "HEAD")) {
@@ -60,6 +88,8 @@ function Confirm-GitIntact {
         Write-Host "[git-guard] .git INTEGRITY FAIL after write:" -ForegroundColor Red
         $bad | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
         Write-Host "[git-guard] Recover: unstick-git.ps1 clears locks; if HEAD is unborn but packed-refs has the sha, run 'git update-ref refs/heads/main <sha>'." -ForegroundColor Yellow
+        $global:LASTEXITCODE = $callerExitCode
         throw "[git-guard] .git corruption detected post-write"
     }
+    $global:LASTEXITCODE = $callerExitCode
 }

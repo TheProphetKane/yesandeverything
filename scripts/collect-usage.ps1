@@ -833,7 +833,11 @@ try {
       # Embed the ACTIVE items (drop completed/done/wontfix) so the dashboard lists them
       # from the SAME live KV source as the counts -- not from the Pages-deployed (lagged)
       # .work-queue.json, which drifts from the counts and shows phantom/missing rows.
-      if ($st -notin @("completed", "done", "wontfix")) {
+      # "superseded" was missing from the terminal list, so a superseded item was
+      # embedded as a live row while being counted in no bucket: the live payload
+      # listed 177 rows against buckets summing to 174, and the three unaccounted
+      # rows were exactly the three superseded ones.
+      if ($st -notin @("completed", "done", "wontfix", "superseded")) {
         $title = "" + $it.title; if (-not $title) { $title = "" + $it.prompt }
         if (-not $title) { $title = "" + $it.body }; if (-not $title) { $title = "" + $it.id }
         $title = ($title -replace '\s+', ' ').Trim(); if ($title.Length -gt 200) { $title = $title.Substring(0, 200) }
@@ -844,11 +848,29 @@ try {
         }
       }
     }
+    # Cap the embedded rows. The COUNTS above are always exact and unaffected;
+    # this only bounds the row list the dashboard renders. It was unbounded and
+    # grew 34 -> 177 rows / 19 KB -> 97 KB in three weeks, on a payload pushed to
+    # KV and fetched by every dashboard load, tracking a source file that is
+    # itself up 9x. Highest priority first, then oldest, so the cap drops the
+    # least interesting tail rather than an arbitrary slice.
+    $QUEUE_ROWS_MAX = 60
+    $qTotal = $qItems.Count
+    $prioRank = { param($p) switch -Regex ("" + $p) { '^P?0$' { 0 } '^P?1$' { 1 } '^P?2$' { 2 } '^P?3$' { 3 } default { 4 } } }
+    $qItems = @($qItems | Sort-Object @{ Expression = { & $prioRank $_.priority } }, @{ Expression = { "" + $_.id } })
+    $qTruncated = [Math]::Max(0, $qTotal - $QUEUE_ROWS_MAX)
+    if ($qTruncated -gt 0) {
+      $qItems = @($qItems[0..($QUEUE_ROWS_MAX - 1)])
+      Write-Host "queue.json: embedding $QUEUE_ROWS_MAX of $qTotal rows ($qTruncated dropped; counts unaffected)." -ForegroundColor DarkGray
+    }
+
     Write-ValidatedJson (Join-Path $DataDir "queue.json") ([ordered]@{
       generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
       queued = $qCounts
       waiting = $qWaiting
       deferred = $qDeferred
+      itemsTotal = $qTotal
+      itemsTruncated = $qTruncated
       items = $qItems
     })
     Write-Host "Wrote queue.json (live queued counts per project)." -ForegroundColor Green
@@ -925,17 +947,25 @@ foreach ($lockName in @("index.lock", "HEAD.lock")) {
   $lock = ".git\$lockName"
   if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
 }
+# Failures here used to print a coloured warning and `exit 0`. This runs headless
+# every 30 minutes, so a failed KV or git push reported SUCCESS, the live
+# dashboard silently froze on last-good data, and the only evidence was a line in
+# a console nobody reads. Every failure path now exits non-zero so the routine
+# that calls it can actually tell.
 Assert-GitSafe
-& git add dashboard/data/usage.json dashboard/data/queue.json usage-log 2>&1 | Out-Null
+Invoke-Git add dashboard/data/usage.json dashboard/data/queue.json usage-log | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
 Assert-GitSafe
-& git commit -m "work: usage refresh" 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Write-Host "WARN: commit failed; staged only." -ForegroundColor Yellow; exit 0 }
+Invoke-Git commit -m "work: usage refresh" | Out-Null
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: commit failed; staged only. Dashboard data is NOT published." -ForegroundColor Red; exit 1 }
 $branch = git rev-parse --abbrev-ref HEAD 2>$null
 if (-not $branch) { $branch = "main" }
 Assert-GitSafe
-& git push origin $branch 2>&1 | Out-Null
+Invoke-Git push origin $branch | Out-Null
+# Capture BEFORE Confirm-GitIntact: it runs git itself. The guard now restores the
+# caller's code, but reading it first is the belt to that braces.
+$pushExit = $LASTEXITCODE
 Confirm-GitIntact
-if ($LASTEXITCODE -ne 0) { Write-Host "WARN: push failed; committed locally." -ForegroundColor Yellow; exit 0 }
+if ($pushExit -ne 0) { Write-Host "ERROR: push failed; committed locally only. Dashboard data is NOT published." -ForegroundColor Red; exit 1 }
 Write-Host "Pushed usage refresh; dashboard updates in ~30s." -ForegroundColor Green
