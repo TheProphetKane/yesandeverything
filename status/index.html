@@ -288,7 +288,7 @@
     </div>
   </header>
 
-  <div id="error-banner" class="error-banner" style="display:none"></div>
+  <div id="error-banner" class="error-banner" role="status" aria-live="polite" style="display:none"></div>
 
   <section class="constellation" id="constellation">
     <div class="label">portfolio verdict</div>
@@ -362,10 +362,14 @@
     if (isNaN(d)) return iso;
     return d.toISOString().slice(0, 10);
   }
+  // Fails CLOSED. A card with no lastReleaseAt, or an unparseable one, used to
+  // read as healthy - which is exactly backwards, since a missing timestamp is
+  // itself a sign nothing is writing that card. Gnosis has no lastReleaseAt key
+  // at all and was rendering fresh on that basis.
   function isStale(iso, parked) {
-    if (!iso) return false;
+    if (!iso) return true;
     var t = new Date(iso).getTime();
-    if (!isFinite(t)) return false;
+    if (!isFinite(t)) return true;
     var days = (Date.now() - t) / 86400000;
     return days > (parked ? STALE_DAYS_PARKED : STALE_DAYS_ACTIVE);
   }

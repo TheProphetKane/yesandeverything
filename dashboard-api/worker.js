@@ -28,7 +28,17 @@ export default {
     const key = KEYS[url.pathname];
     if (!key) return new Response("not found", { status: 404, headers: CORS });
     const val = await env.DASHBOARD.get(key);
-    return new Response(val == null ? "{}" : val, {
+    // A missing or evicted key used to answer 200 with "{}". The dashboard only
+    // falls back to its shipped static copy when the parsed body is null, and
+    // "{}" is not null, so it rendered zeroes instead of the last known-good
+    // data. 404 makes the absence legible to the caller.
+    if (val == null) {
+      return new Response(JSON.stringify({ error: "not_found", key }), {
+        status: 404,
+        headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
+    return new Response(val, {
       headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
     });
   },
