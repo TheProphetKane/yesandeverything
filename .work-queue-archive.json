@@ -2785,7 +2785,7 @@
       "result_path": null,
       "source": "bar-raise 2026-06-28 (ai-tell-concealment-currency-01/02/03)",
       "prompt": "The public-mirrored GDD changelog body (base64-inlined into yesandeverything.com/hordes/) leaks collaboration tells: 17x 'per Nick', 13x 'the user', 129 'Nick', and AI tool names Claude/Midjourney/Tripo (GDD.html lines ~4942,4956,4994,5028,5030,5044,5221,5258,5295). Rewrite every 'per Nick'/'the user'/'Nick <verb>' into solo-dev or impersonal phrasing while preserving the factual record, neutralize the AI tool names, and extend solo-dev-voice-audit to flag these patterns across the FULL changelog body (not just new entries) on every publish. Use Python atomic write on the GDD; verify </html> tail; update the GDD on ship.",
-      "notes": "Bar-raise 2026-06-28 P1. Mirror is password-gated (SneakPeak) so exposure is limited, but voice_scope for HBH is changelog-only and this is the artifact. | 2026-07-04 attended HBH session: SHIPPED v0.99.29-31: ~130 owner/user framings normalized (0 Nick refs remain), dangling attribution fixed, check_gdd_voice.py ratchet wired pre-commit."
+      "notes": "Bar-raise 2026-06-28 P1. Mirror is password-gated ([redacted]) so exposure is limited, but voice_scope for HBH is changelog-only and this is the artifact. | 2026-07-04 attended HBH session: SHIPPED v0.99.29-31: ~130 owner/user framings normalized (0 Nick refs remain), dangling attribution fixed, check_gdd_voice.py ratchet wired pre-commit."
     },
     {
       "id": "hbh-legacy-saveload-autoload-remove-2026-06-28",
@@ -7885,9 +7885,68 @@
       "archiveReason": "stale-no-action-14d",
       "archivedAt": "2026-07-25T01:37Z",
       "resolution": "Archived by queue-drain-hourly 2026-07-25T01:37Z: pending 16 days with no attempts, auto_safe=false (needs an attended pass), no blocking deps, P2/medium. Recoverable from this archive if Cattery work resumes."
+    },
+    {
+      "id": "handler-audit-skill-table-update-2026-06-14",
+      "added": "2026-06-14T08:26:21Z",
+      "project": "cross",
+      "kind": "drift-fix",
+      "prompt": "The handler-audit skill (skills/handler-audit/SKILL.md) hard-codes only four handlers and two pre-rename paths: X:\\HereThereBeHordes (now X:\\HereBeHordes) and X:\\Scheduler (now X:\\YesAndScheduler, per memory scheduler_repo_path). The portfolio now has six handlers (Apothecary + Budget added). Update the four-handler table to six with correct paths, and drop the stale Phase 4 note 'YaE may not have a docs/ folder yet' (it exists with 30+ files). NOTE: skill files are a read-only cache this session; this edit must be made via Settings > Capabilities or the staged source in X:\\YesAndEverything\\_skill-review.",
+      "priority": "P3",
+      "status": "archived",
+      "auto_safe": false,
+      "attempts": 0,
+      "result_path": "X:\\YesAndEverything\\.work-queue-results\\handler-audit-skill-table-update-2026-06-14.md",
+      "source": "docs/HANDLER_AUDIT-2026-06-14.md MEDIUM-2",
+      "notes": "2026-06-25: agent-side work DONE (staged source _skill-review/personal-skills-src/skills/handler-audit/SKILL.md expanded to six handlers, stale notes dropped). BLOCKED on a manual step only Nick can do: the installed skill cache is read-only to agents, so the personal-skills plugin must be repackaged and reinstalled via Cowork Settings > Capabilities for the change to go live. No further agent action possible until then. | 2026-07-16 handler-audit re-confirms this is still unfixed in the INSTALLED skill (still four handlers, still X:\\HereThereBeHordes + X:\\Scheduler). Scope has grown again: the routine now covers TWELVE handlers, so the staged six-handler fix in _skill-review is itself behind; widen it to twelve before Nick repackages. Also retire two now-resolved Special Cases in the skill: the chains@yesandeverything.com feedback-email warning (chains@ appears nowhere as a live address) and the 'registrar transfer from Squarespace pending' DNS note (YaC:98 and YaE:82 both correctly say it completed May 2026).",
+      "lastWorkedAt": "2026-06-14T13:10:00Z",
+      "lastNoticedAt": "2026-07-16",
+      "archiveReason": "deferred-review-dropped: superseded by handler-audit-2026-07-17-skill-itself-stale, which covers the same skills/handler-audit/SKILL.md rewrite with strictly larger scope (12 handlers vs 6, both stale paths, and the scope-lock line).",
+      "archivedAt": "2026-07-25T02:56Z"
+    },
+    {
+      "id": "handler-audit-2026-07-03-portfolio-discord-webhook-reconcile",
+      "added": "2026-07-03",
+      "project": "everything",
+      "kind": "consistency",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "archived",
+      "attempts": 2,
+      "result_path": "X:\\YesAndEverything\\.work-queue-results\\handler-audit-2026-07-03-portfolio-discord-webhook-reconcile.md",
+      "lastWorkedAt": "2026-07-14",
+      "lastAttemptAt": "2026-07-14T05:30:00Z",
+      "source": "handler-audit-nightly 2026-07-03 / docs/HANDLER_AUDIT-2026-07-03.md Cross-handler-HIGH",
+      "prompt": "Cross-handler consistency, NEEDS A DECISION (do not blind-edit). Several CLAUDE.md handlers list Discord webhook files under X:\\.secrets\\<Project>\\scripts\\ that do not exist: HBH names .discord_{announcements,audit,backlog,resources}_webhook.txt; Ring names ring-audit/ring-backlog webhooks (lines ~105-107); Scheduler names .discord_{backlog,resources}_webhook.txt (lines ~106-107). Only .discord_webhook.txt (plus a couple real ones per project) actually exist. Budget is a GENUINE mismatch: scripts/post-audit-digests.ps1 posts to #budget-resources using .discord_audit_webhook.txt while the handler names a nonexistent 'Budget Resources Bot' / .discord_resources_webhook.txt. Decide per project: either (a) create the missing webhooks per X:\\YesAndEverything\\DISCORD_WEBHOOK_NAMING.md, or (b) edit each handler to mark the extra lines 'not yet created' / correct Budget to reflect the audit bot dual-posting. Then apply and ship each affected repo via its release.ps1.",
+      "notes": "Caught by handler-audit 2026-07-03 (cross-handler HIGH). Portfolio template-drift: standard 5-webhook naming was documented but only a subset created per project. auto_safe:false because removal-vs-create is a judgment call and Budget needs a script-or-doc reconciliation. | 2026-07-15T03:40Z queue-drain-hourly: independent read-only re-enumeration of X:\\.secrets\\*webhook* + all 4 handler blocks. Confirms 2026-07-14 result file VERBATIM (no change): HBH missing announcements/audit/backlog/resources; Ring missing audit/backlog; Scheduler missing backlog/resources; Budget missing resources + post-audit-digests.ps1 L37 reads .discord_audit_webhook.txt while L42 labels #budget-resources (webhook routes to #budget-audit). Fully decision-ready; both completion paths (create Discord webhooks = external write; edit handlers + ship via release.ps1 = forbidden in drain task) are out of unattended scope. Flipping pending->blocked-on-user to stop hourly re-churn; awaits Kane create-vs-trim decision (recommend Option B doc-truth portfolio-wide + Budget doc/comment fix). Result file: .work-queue-results/handler-audit-2026-07-03-portfolio-discord-webhook-reconcile.md",
+      "drainNote": "2026-07-14 queue-drain-hourly: DRAINED (read-only reconcile). Re-verified all four handlers vs X:\\.secrets. Finding STILL HOLDS: handlers now uniformly document the full 5-Bot standard but files are a subset - HBH missing 4 (announcements/audit/backlog/resources), Ring missing 2 (audit/backlog), Scheduler missing 2 (backlog/resources), Budget missing 1 (resources). Only Budget has a live functional bug: post-audit-digests.ps1 intends #budget-resources (L3/L42) but posts via .discord_audit_webhook.txt (L37 -> #budget-audit) and the Budget Resources Bot webhook does not exist. Apply-ready create-vs-trim recommendation staged at result_path. LEFT PENDING: NEEDS A DECISION + auto_safe:false; creating Discord webhooks is outward-facing config, out of unattended-drain scope.",
+      "archiveReason": "deferred-review-dropped: duplicate of handler-audit-2026-07-10-webhook-boilerplate, which reconciled the same five-webhook-block finding read-only on 2026-07-13 and carries the full per-project table plus a trim-vs-provision recommendation in its result_path. Unique detail carried forward: Budget's scripts/post-audit-digests.ps1 posts to #budget-resources via .discord_audit_webhook.txt while the handler names a nonexistent 'Budget Resources Bot' / .discord_resources_webhook.txt.",
+      "archivedAt": "2026-07-25T02:56Z"
+    },
+    {
+      "id": "working-tree-2026-07-17-yae-stale-tree",
+      "added": "2026-07-17",
+      "project": "everything",
+      "kind": "tooling",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "archived",
+      "attempts": 0,
+      "source": "docs/CANONICAL_AUDIT-YAE-2026-07-17.md",
+      "title": "Stale working tree in Everything: 6 files uncommitted since 2026-07-11, including the sitemap self-heal that is authored but not live",
+      "detail": "git status shows scripts/update-project-pages.mjs, sitemap.xml, CLAUDE.md, docs/QUEUE_TRIAGE.md, status/data/constellation.json and status/data/Gnosis.json modified and uncommitted. This is an accumulation from three routines, not one in-flight batch, and the most valuable piece is already falsely closed. canonical-audit-2026-07-10-yae-sitemap-generator is marked status=completed, completedBy=queue-drain-hourly, completedAt=2026-07-11, and its completionNote says the deliverable was left uncommitted on purpose to ride YaE's next attended release rather than fragment the changeset. Six days on, that release has not happened: every YaE commit since has come from unattended routines writing status JSON and usage refreshes, which never review or ship a dirty tree. Because the item reads completed, nothing tracks it and no routine will revisit it. What is at stake: update-project-pages.mjs section 3 regenerates sitemap.xml from the same SLUGS map that gates every public card, so a new project card can never silently miss the sitemap again (the cattery/gnosis/ring c7231e8 miss). It runs in the Pages deploy workflow and self-heals on every release, but only once committed. Until then sitemap parity stays hand-maintained and will drift on the next new project. The CLAUDE.md rows (deploy flow to Actions workflow, .nojekyll as a real file, the status/ PROJECTS + non-cards note, the hourly queue-drain-hourly name) were verified correct against disk on 2026-07-17. Act: cd X:\\YesAndEverything, review git diff, then run .\\scripts\release.ps1. Do not blind commit. Left for an attended session because committing another routine's work is a judgment about whether its author considered it done, and the authoring routine deferred to an attended release specifically.",
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "notes": "Supersedes the tracking that canonical-audit-2026-07-10-yae-sitemap-generator dropped when it closed completed on 2026-07-11 with its deliverable uncommitted. Do not re-open that item; this one carries the thread.",
+      "archiveReason": "deferred-review-dropped: resolved - the four files the item named (scripts/update-project-pages.mjs, sitemap.xml, CLAUDE.md, docs/QUEUE_TRIAGE.md) were committed in YaE afb8c6d on 2026-07-24, so the sitemap self-heal is live; the tree's remaining dirty files are routine-written status/dashboard JSONs, a different condition.",
+      "archivedAt": "2026-07-25T02:56Z"
     }
   ],
-  "last_append": "2026-07-25",
-  "archived": 429,
-  "lastArchivedAt": "2026-07-25T01:37Z"
+  "last_append": "2026-07-24",
+  "archived": 432,
+  "lastArchivedAt": "2026-07-25T02:56Z"
 }

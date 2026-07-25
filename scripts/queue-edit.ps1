@@ -85,10 +85,31 @@ function Rotate-DrainLog($q) {
   $null = ([System.IO.File]::ReadAllText($tmp) | ConvertFrom-Json)
   Move-Item -Force $tmp $DrainLogPath
 }
+# Render the queue in the canonical shape every other writer uses. PowerShell
+# still does the read-modify-write; it just does not get to pick the bytes.
+# ConvertTo-Json -Compress here is only a transport format - escapes like
+# ' survive it losslessly and python decodes them back before rendering.
+function ConvertTo-CanonicalQueueJson($q) {
+  $inTmp  = "$QueuePath.ser-in.tmp"
+  $outTmp = "$QueuePath.ser-out.tmp"
+  $enc    = [System.Text.UTF8Encoding]::new($false)
+  try {
+    [System.IO.File]::WriteAllText($inTmp, ($q | ConvertTo-Json -Depth 30 -Compress), $enc)
+    $global:LASTEXITCODE = 0
+    & python (Join-Path $PSScriptRoot 'queue_canonical_json.py') $inTmp $outTmp
+    if ($LASTEXITCODE -ne 0) { throw "queue-edit: canonical serializer failed (exit $LASTEXITCODE); refusing to fall back to ConvertTo-Json" }
+    return [System.IO.File]::ReadAllText($outTmp)
+  }
+  finally {
+    foreach ($t in @($inTmp, $outTmp)) { if (Test-Path -LiteralPath $t) { Remove-Item -Force -LiteralPath $t -ErrorAction SilentlyContinue } }
+  }
+}
 function Write-QueueAtomic($q) {
-  $q.updated = [DateTime]::UtcNow.ToString('o')
+  # Same stamp shape the python writers use, so the field does not flap format
+  # between writers and show up as noise in every diff.
+  $q.updated = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm\Z')
   Rotate-DrainLog $q
-  $json = ($q | ConvertTo-Json -Depth 30)
+  $json = ConvertTo-CanonicalQueueJson $q
   # Atomic write + read-back verify, retried. The tmp is parse-validated before
   # the rename, but this FUSE mount can still land a truncated final file or
   # serve a stale read right after the move (it false-failed safe_write 3x in
