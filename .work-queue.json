@@ -446,7 +446,7 @@
     {
       "id": "canonical-audit-2026-07-02-skylight-google-phase2-framing",
       "added": "2026-07-02",
-      "lastNoticedAt": "2026-07-02T00:00:00Z",
+      "lastNoticedAt": "2026-07-25T05:30:00Z",
       "project": "skylight",
       "kind": "drift-fix",
       "auto_safe": false,
@@ -456,7 +456,7 @@
       "lastWorkedAt": "2026-07-14T05:30:00Z",
       "lastAttemptAt": "2026-07-14T05:30:00Z",
       "source": "audit-skylight-nightly 2026-07-02 / X:\\YesAndSkylight\\docs\\CANONICAL_AUDIT-2026-07-02.md Drift S1",
-      "prompt": "X:\\YesAndSkylight\\.project-context.json frames the Google Calendar driver as unshipped 'phase 2' work, but it is shipped and PRIMARY in code + docs: DESIGN.md D1 says events default to Google (CALENDAR_DRIVER='google'), src/router.ts:17-26 defaults the driver to google and calls google.createEvent, wrangler.jsonc:45 sets CALENDAR_DRIVER='google', and README Roadmap marks 'Google Calendar driver - done'. Three stale spots in .project-context.json contradict that: (1) milestone.label 'v0.1 - phase 1: web form + JSON API + email quick-add via the Skylight reverse API'; (2) stack entry 'Google Calendar API (phase 2)'; (3) completion.remaining[0] 'Phase 2: Google Calendar API driver (official, durable two-way sync) as a drop-in event-write driver'. Fix: drop the Google driver from remaining[] (it is done), change the stack entry to 'Google Calendar API' (no phase-2 tag), and re-judge completion.pct (currently 45%, anchored 2026-07-01) now that the primary event path is live. NOT auto-safe: completion.pct and milestone framing are a judgment call Nick should confirm. The nightly audit already aligned DESIGN.md section 2 wording + section 3 diagram to the shipped reality; this closes the .project-context side.",
+      "prompt": "X:\\YesAndSkylight\\.project-context.json frames the Google Calendar driver as unshipped 'phase 2' work, but it is shipped and PRIMARY in code + docs: DESIGN.md D1 says events default to Google (CALENDAR_DRIVER='google'), src/router.ts:17-26 defaults the driver to google and calls google.createEvent, wrangler.jsonc:45 sets CALENDAR_DRIVER='google', and README Roadmap marks 'Google Calendar driver - done'. Three stale spots in .project-context.json contradict that: (1) milestone.label 'v0.1 - phase 1: web form + JSON API + email quick-add via the Skylight reverse API'; (2) stack entry 'Google Calendar API (phase 2)'; (3) completion.remaining[0] 'Phase 2: Google Calendar API driver (official, durable two-way sync) as a drop-in event-write driver'. Fix: drop the Google driver from remaining[] (it is done), change the stack entry to 'Google Calendar API' (no phase-2 tag), and re-judge completion.pct (currently 45%, anchored 2026-07-01) now that the primary event path is live. NOT auto-safe: completion.pct and milestone framing are a judgment call Nick should confirm. The nightly audit already aligned DESIGN.md section 2 wording + section 3 diagram to the shipped reality; this closes the .project-context side. [re-confirmed 2026-07-25, audit CANONICAL_AUDIT-2026-07-25.md finding M5 folded in: the app now ships 0.4.0 (owner->calendar rewrite) while .project-context.json still reads milestone.id 'v0.1' status 'in-progress', completion.pct 45 anchored 2026-07-01 (24 days and two minor releases stale), and notes[2] still says 'Skylight reverse API is phase 1; Google Calendar API is phase 2'. Also completion.remaining[2] ('confirm no stray local Skylight/Google creds remain in-repo') is now VERIFIED DONE - no credential-shaped file exists in-repo and only .dev.vars.example is tracked - so that line can be struck.]",
       "notes": "Enqueued 2026-07-02 by audit-skylight-nightly drift-auto-fix chain. Single biggest drift this run: Google-primary is shipped (D1 + code + wrangler default + README) yet .project-context.json still treats it as pending phase-2. DESIGN.md sections 2/3 were auto-fixed in the same run; .project-context pct/milestone left for Nick. Private repo; ships via scripts/release.ps1 (not run overnight). | 2026-07-14T01:39Z queue-drain-hourly: DRAINED (read-only verify, first attempt on this item). Verified against Skylight HEAD 139c7f0. Finding CONFIRMED: Google Calendar driver is shipped + PRIMARY (router.ts:29-34 + index.ts/email.ts default env.CALENDAR_DRIVER||\"google\"; wrangler.jsonc:48 CALENDAR_DRIVER=google; README:227 marks it done), yet .project-context.json still frames it as phase-2 in 3 spots: stack[3] \"Google Calendar API (phase 2)\", completion.remaining[0] \"Phase 2: Google Calendar API driver...\", and milestone/pct (45%, anchored 2026-07-01) predate the ship. Apply-ready plan staged at result_path: two SAFE factual edits (drop the (phase 2) tag + drop remaining[0]) plus pct/milestone re-judgment left for Nick (why it stays auto_safe:false). NOT applied: no-publish unattended drain + judgment call; Skylight ships via release.ps1 (local-only, no remote). Kept pending for one attended Skylight session. | 2026-07-14T05:30Z queue-drain-hourly: PARTIALLY DRAINED + re-tagged blocked-on-user. Re-verified finding at Skylight HEAD 139c7f0 (clean tree, no lock): Google Calendar driver is shipped + PRIMARY (router.ts:29 default CALENDAR_DRIVER||\"google\"; wrangler.jsonc:48 CALENDAR_DRIVER=google; README:227 marks it done; CLAUDE.md files-table calls google.ts the 'primary event path'). APPLIED the two SAFE factual edits the finding staged: dropped '(phase 2)' tag from stack[3] (now 'Google Calendar API') and removed the done Google driver from completion.remaining[0]. Committed locally as Skylight 74e0ac5 (no remote, no publish). LEFT for Nick (why now blocked-on-user, not completed): completion.pct (45%, anchored 2026-07-01) + milestone.label re-judgment now that the primary event path is live, and notes[2]'s 'Google Calendar API is phase 2' narrative line — all judgment calls, out of unattended-drift scope.",
       "attempts": 2
     },
@@ -704,7 +704,8 @@
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
       "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
-      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour.",
+      "lastNoticedAt": "2026-07-25T05:30:00Z"
     },
     {
       "id": "canonical-audit-2026-07-10-gnosis-question-status-contract",
@@ -1090,7 +1091,8 @@
       "severity": "low",
       "impact": 1,
       "confidence": 5,
-      "notes": "2026-07-16T audit-skylight-nightly: enqueued. Finding re-confirmed live at HEAD 74e0ac5 (tree clean): `ls CHANGELOG.md` -> No such file; .project-context.json changelog_path still \"CHANGELOG.md\". Created because a queue search this run found NO item with this id despite the 07-02..07-15 audit reports all citing it as pending -- the finding was real but untracked. Not auto-fixed (co-owned file + convention decision)."
+      "notes": "2026-07-16T audit-skylight-nightly: enqueued. Finding re-confirmed live at HEAD 74e0ac5 (tree clean): `ls CHANGELOG.md` -> No such file; .project-context.json changelog_path still \"CHANGELOG.md\". Created because a queue search this run found NO item with this id despite the 07-02..07-15 audit reports all citing it as pending -- the finding was real but untracked. Not auto-fixed (co-owned file + convention decision).",
+      "lastNoticedAt": "2026-07-25T05:30:00Z"
     },
     {
       "id": "canonical-audit-2026-07-16-gnosis-public-to-gated-links",
@@ -3566,7 +3568,7 @@
       "id": "canonical-audit-2026-07-24-gnosis-globe-truescale-contract-unrecorded",
       "project": "Gnosis",
       "title": "Section 6's globe locked decision omits the continent true-scale contract (ratio 1.00 of canonical E-W mileage, land held near 28 percent) that audit_globe.py checks every run",
-      "detail": "The 2026-07-23 globe entry in section 6 records the shape-buffered cuts, tapered polar sizing, strict collision, no-orphaned-coastline, water-keying and label rules, and requires tools/globe/audit_globe.py to report zero hard-defect cells. It does not record the scale contract that v0.3.252-254 established and that the same script validates: every continent sits at ratio 1.00 of its canonical E-W mileage (Aldrgard 967 mi, Aestaria 1300, Titanoros 6667), holding land at about 28 percent against the 28.2 canon. That check is what caught the built sphere being wrong at 6.67 percent land when Titanoros had been capped at 77 degrees, so it belongs in the locked decision beside the defect-cell rule. Verified this run: audit_globe.py reports HARD DEFECT CELLS 0 and ratio 1.00 for every continent, with Titanoros i17 at 0.90 and i24 at 0.70 legitimately shrunk to fit. Note the authority for the canonical mileage, world/lore/world-scale.md, is itself a DM-gated page, so the spec should reference it as the gated source rather than restate the full sheet.",
+      "detail": "The 2026-07-23 globe entry in section 6 records the shape-buffered cuts, tapered polar sizing, strict collision, no-orphaned-coastline, water-keying and label rules, and requires tools/globe/audit_globe.py to report zero hard-defect cells. It does not record the scale contract that v0.3.252-254 established and that the same script validates: every continent sits at ratio 1.00 of its canonical E-W mileage (Aldrgard 967 mi, Aestaria 1300, Titanoros 6667), holding land at about 28 percent against the 28.2 canon. That check is what caught the built sphere being wrong at 6.67 percent land when Titanoros had been capped at 77 degrees, so it belongs in the locked decision beside the defect-cell rule. Verified this run: audit_globe.py reports HARD DEFECT CELLS 0 and ratio 1.00 for every continent, with Titanoros i17 at 0.90 and i24 at 0.70 legitimately shrunk to fit. Note the authority for the canonical mileage, world/lore/world-scale.md, is itself a DM-gated page, so the spec should reference it as the gated source rather than restate the full sheet. ADDENDUM 2026-07-25: section 6 names only audit_globe.py as the pre-ship gate, but tools/globe/verify_coverage.py (added dd5355e) is now a second one: it walks every painted source land pixel and reports DROPPED (land no patch renders), DOUBLED (land two patches both draw) and HARD EDGE (a straight alpha wall cutting across land, the signature of a rectangular slice). Verified clean this run over 806,501 land pixels: 100 px dropped (0.012 percent, no blob above the noise floor), 117 px doubled (0.015 percent), no hard straight edges. Record it in the same section 6 edit as the true-scale contract. Note the i17 0.90 / i24 0.70 figures in the detail above are from 2026-07-24; as of 2026-07-25 the only island under design width is i13 at 0.80.",
       "kind": "structural",
       "impact": "doc-accuracy",
       "severity": "medium",
@@ -6181,8 +6183,42 @@
       "title": "Cattery Phase-3 scope disagrees between handler and spec; PROJECT_SPEC views list is stale",
       "prompt": "Canonical audit 2026-07-25 (X:\\YesAndCattery). Two small doc-alignment items, grouped.\n\n1. Phase-3 scope disagrees between the two canonical docs. CLAUDE.md:55-56 lists Phase 3 as 'health-guarantee records, disputes, advanced search and matching'. PROJECT_SPEC.md:71-72 puts 'advanced search & sort' in Phase 2 as shipped, and scopes Phase 3 to 'health-guarantee records, dispute handling'. Per the spec's own rule (if code disagrees, trust the code), advanced search shipped in Phase 2, so the handler's Phase-3 line is the stale one. Drop 'advanced search and matching' from the CLAUDE.md Phase-3 bullet, or reword it to whatever matching work is genuinely still ahead.\n\n2. The views list at PROJECT_SPEC.md:114 no longer matches public/app.js. It names 'browse' and 'find', neither of which exists as a view function, and omits ten that do (Home, Favorites, Breed, About, Guide, Learn, How, Privacy, Terms, Standard). The real set is 25 view* functions: About Account Admin Apply Breed Breeds Catteries Cattery Contact Dashboard Escrow Faq Favorites Guide Home How Inbox Inquiry Kittens Learn Manage Privacy Standard Team Terms. Refresh the parenthetical to match, or replace the enumeration with a shorter description so it stops needing maintenance every time a view lands.\n\nNot auto-applied: item 1 touches CLAUDE.md, which drift-auto-fix prohibits editing.",
       "blocked_reason": null
+    },
+    {
+      "id": "canonical-audit-2026-07-25-gnosis-pin-locked-decision-superseded",
+      "project": "Gnosis",
+      "title": "Section 4's 2026-07-10 locked map-pin decision is superseded by the v0.3.264 topographic pin scheme and was never updated",
+      "detail": "Commit f11e5ef (v0.3.264) replaced the map's colour-coded pin model and touched PROJECT_SPEC.md only to bump the version pill. Section 4's locked decision still reads 'ONE shape for every kind, a small colored ring with a white halo, only the color changes by kind (city red, town orange, village gold, landmark violet, water blue, region teal)'. web/build.mjs now renders ten kind classes (city, town, village, mark, water, forest, relief, dry, ice, region) on a topographic palette, and settlement RANK is carried by symbol SIZE (--pd 17px city, 13px town, 10px village) rather than hue: all three settlement tiers are bone-white shades (#f6efe2, #e4d9c4, #c9bda6) and the code comment states outright 'that is why cities are not red here', since red means roads in USGS convention and hue is the wrong channel for an ordered variable. Also undocumented: per-kind legend filter toggles and an all-pins toggle (#pinlayer.hide-all). The shape half of the decision still holds (one ring, white halo, centered on the map art's own text, coordinate as ground truth). The rationale now living in the CSS comment is a better locked decision than the one in the spec; the question is only how Kane wants it framed and whether the 2026-07-10 quote is retired or amended.",
+      "kind": "structural",
+      "impact": "doc-accuracy",
+      "severity": "medium",
+      "priority": 3,
+      "confidence": "high",
+      "auto_safe": false,
+      "status": "pending",
+      "attempts": 0,
+      "added": "2026-07-25",
+      "source": "docs/CANONICAL_AUDIT-2026-07-25.md",
+      "notes": "Supersedes a locked decision, so surfaced rather than auto-edited. The decision was locked on Kane's own words ('I actually love the way the pins look') and he shipped the change himself, so this is almost certainly a doc catch-up rather than a regression."
+    },
+    {
+      "id": "canonical-audit-2026-07-25-gnosis-globe-readme-se-group-superseded",
+      "project": "Gnosis",
+      "title": "The globe README's SE-volcanic-group section states a conclusion the newest commit overturned, and section 6 delegates its rationale to that README",
+      "detail": "tools/globe/README.md ends on 'The SE volcanic group is NOT a defect (measured, 2026-07-24)', written by 11c475e, claiming the group correctly rides the mainland patch, the gap is 0.7 percent and invisible, cutting it out would move it for no visual gain, and only extremes past about 60 degrees still earn a patch. 39b5e6b, the newest commit, reverses all four and changed only CHANGELOG.md and the spec version pill. tools/globe/cut_titanoros.py now sets POLAR_LAT = 35 with Kane's own annotation: 'ASPECT, not size, is what breaks... 15% too narrow at 30, 31% at 40, 74% at 55... 35 deg is where the error passes ~20% and starts reading as visibly stretched. (An earlier note claiming a 0.7% difference compared two width multipliers and ignored this projection squeeze entirely.)' The earlier note being corrected is the README section still standing as current guidance. distortion_report.py, added by the same commit, opens with the same correction, and audit_globe.py now lists island patches at 38 to 42 degrees South, well inside the 'no patch before 60' rule the README still states. Fix: replace that section with the projection-squeeze rule (one equirectangular patch spans a fixed longitude range at every latitude it covers, so content riding the mainland is squeezed by cos(phi) against the patch centre; an island in its own patch is sized for its own parallel and escapes it), and note that POLAR_LAT is set from distortion_report.py's measurement.",
+      "kind": "structural",
+      "impact": "doc-accuracy",
+      "severity": "medium",
+      "priority": 3,
+      "confidence": "high",
+      "auto_safe": false,
+      "status": "pending",
+      "attempts": 0,
+      "added": "2026-07-25",
+      "source": "docs/CANONICAL_AUDIT-2026-07-25.md",
+      "notes": "Not auto-applied: correcting it means authoring the replacement rationale, and section 6's globe locked decision points at this README as the rationale home. Related: memory gnosis-world-globe."
     }
   ],
-  "last_drain": "2026-07-25T09:30Z",
-  "updated": "2026-07-25T09:36Z"
+  "last_drain": "2026-07-25T10:30Z",
+  "updated": "2026-07-25T10:36Z"
 }
