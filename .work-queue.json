@@ -2887,10 +2887,10 @@
       "finding_id": "yae-dashboard-aggregation-paths-diverge",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:31Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "high",
@@ -2901,7 +2901,8 @@
         "cost-economics",
         "solo-tool-ux"
       ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): dashboard/index.html has two aggregation paths over the same dashboard/data/usage.json and they have measurably diverged. Registry-driven: rows() at :1334-1335 does PROJECTS.map then usage.projects[p.id]; :1358 re-walks PROJECTS.forEach. Data-driven: byDayFor() at :1219-1233 does Object.keys(src).forEach, excluding only the literal 'unattributed' (:1225). usage.json carries 14 project ids; the PROJECTS registry (:976-990) carries 13. Measured against the live file: the ALL time-series totals $14,736.81 while the sum of the per-project bars totals $14,438.15 -- a divergence of exactly $298.66, the whole attributed cost of one retired project whose data is still current (6 daily entries, 2026-07-10 to 2026-07-15) via the still-live attribution pattern at collect-usage.ps1:129. So the cost surface does not reconcile against itself. Fix: derive both paths from one project list, and decide the retired project's disposition explicitly -- either give it a registry entry or add it to collect-usage.ps1's empty $PUBLIC_EXCLUDE (:675). This shares a root cause with yae-four-project-registries; unifying the registries subsumes the divergence but does not decide the disposition."
+      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): dashboard/index.html has two aggregation paths over the same dashboard/data/usage.json and they have measurably diverged. Registry-driven: rows() at :1334-1335 does PROJECTS.map then usage.projects[p.id]; :1358 re-walks PROJECTS.forEach. Data-driven: byDayFor() at :1219-1233 does Object.keys(src).forEach, excluding only the literal 'unattributed' (:1225). usage.json carries 14 project ids; the PROJECTS registry (:976-990) carries 13. Measured against the live file: the ALL time-series totals $14,736.81 while the sum of the per-project bars totals $14,438.15 -- a divergence of exactly $298.66, the whole attributed cost of one retired project whose data is still current (6 daily entries, 2026-07-10 to 2026-07-15) via the still-live attribution pattern at collect-usage.ps1:129. So the cost surface does not reconcile against itself. Fix: derive both paths from one project list, and decide the retired project's disposition explicitly -- either give it a registry entry or add it to collect-usage.ps1's empty $PUBLIC_EXCLUDE (:675). This shares a root cause with yae-four-project-registries; unifying the registries subsumes the divergence but does not decide the disposition.",
+      "resolution": "Shipped YaE 2c2b84c: the ALL series is now registry-scoped, so it agrees with the sum of the per-project bars by construction, and any usage.json id with no PROJECTS entry is named in a 'not charted' line under the strip instead of vanishing. Verified against the deployed page and live data: old data-driven ALL $10,559.75 vs sum-of-bars $10,228.43; new ALL $10,228.43, exactly equal. The two orphans are Architecture and Lexi. Deliberately did NOT decide which of them earn a card - that is a product call and one touches a project I add no surfaces for."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-skipgate-cannot-fire",
@@ -3004,10 +3005,10 @@
       "finding_id": "yae-superseded-rows-leak-to-dashboard",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:28Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "medium",
@@ -3015,7 +3016,8 @@
       "confidence": 5,
       "evidence": "177 rows published, buckets sum to 174; the 3 unaccounted rows are exactly the 3 superseded items, rendered as live actionable work",
       "tensions_with": [],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): scripts/collect-usage.ps1:830 embeds an item into the dashboard rows when $st -notin @('completed','done','wontfix') -- 'superseded' is absent from that list, and :823-826 bucket only deferred/pending/blocked/blocked-on-user, so superseded lands in no count either. Verified in the live dashboard/data/queue.json: 177 rows listed, buckets sum to 174, and the 3 unaccounted rows are exactly the 3 superseded items, rendered as actionable work that was explicitly superseded. One of them also carries mojibake, so the defect is visible on-screen. Add 'superseded' to the exclusion list and assert that the embedded row count equals the sum of the buckets before Write-ValidatedJson."
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): scripts/collect-usage.ps1:830 embeds an item into the dashboard rows when $st -notin @('completed','done','wontfix') -- 'superseded' is absent from that list, and :823-826 bucket only deferred/pending/blocked/blocked-on-user, so superseded lands in no count either. Verified in the live dashboard/data/queue.json: 177 rows listed, buckets sum to 174, and the 3 unaccounted rows are exactly the 3 superseded items, rendered as actionable work that was explicitly superseded. One of them also carries mojibake, so the defect is visible on-screen. Add 'superseded' to the exclusion list and assert that the embedded row count equals the sum of the buckets before Write-ValidatedJson.",
+      "resolution": "Shipped YaE b082dbb: 'superseded' added to the terminal list, so a superseded item is no longer embedded as a live row while being counted in no bucket. Verified on the regenerated payload: itemsTotal 313 reconciles exactly with the bucket sum of 313 (it was 177 rows against 174), and zero superseded rows remain."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-four-project-registries",
@@ -3213,10 +3215,10 @@
       "finding_id": "yae-collect-usage-exits-zero-on-failure",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:28Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "medium",
@@ -3227,7 +3229,8 @@
         "cost-economics",
         "solo-tool-ux"
       ],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): every failure path in scripts/collect-usage.ps1 writes a coloured console warning and then exits 0 -- :880 (KV push non-zero exit), :881, :903, :906, :928 ('WARN: commit failed; staged only'), :934 ('WARN: push failed; committed locally'). It runs headless every 30 minutes on the usage-refresh routine, so when a KV or git push fails the routine reports success, the live dashboard silently freezes on last-good data, and the only evidence is a line in a console nobody reads. The dashboard does surface generatedAt as a 'last collected' age (dashboard/index.html:1890, :2457) but applies no threshold and raises no banner. Exit non-zero on KV-push and git-push failure, and add a stale-data banner when usage.generatedAt exceeds ~90 minutes. NO Discord wiring -- YaE is excluded per the standing no-Discord-for-YaE rule."
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): every failure path in scripts/collect-usage.ps1 writes a coloured console warning and then exits 0 -- :880 (KV push non-zero exit), :881, :903, :906, :928 ('WARN: commit failed; staged only'), :934 ('WARN: push failed; committed locally'). It runs headless every 30 minutes on the usage-refresh routine, so when a KV or git push fails the routine reports success, the live dashboard silently freezes on last-good data, and the only evidence is a line in a console nobody reads. The dashboard does surface generatedAt as a 'last collected' age (dashboard/index.html:1890, :2457) but applies no threshold and raises no banner. Exit non-zero on KV-push and git-push failure, and add a stale-data banner when usage.generatedAt exceeds ~90 minutes. NO Discord wiring -- YaE is excluded per the standing no-Discord-for-YaE rule.",
+      "resolution": "Shipped YaE b082dbb: the commit and push failure paths now exit 1 instead of 0, so the 30-minute routine can tell that the dashboard data was not published. The push branch was dead code anyway - Confirm-GitIntact clobbered LASTEXITCODE, so the check after it always saw 0; fixed inside YaE's git-guard (same fix as Hordes) and the caller captures the code first regardless. Verified: the guard preserves a planted exit 9, and a real collector run publishes end to end at exit 0."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-queue-no-enum-validation",
@@ -3396,10 +3399,10 @@
       "finding_id": "yae-dashboard-queue-payload-uncapped",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:28Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "medium",
@@ -3410,7 +3413,8 @@
         "solo-tool-ux",
         "observability"
       ],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): scripts/collect-usage.ps1:830 embeds every item whose status is not completed/done/wontfix into dashboard/data/queue.json with no cap or pagination. Measured item counts by git rev: 34 (07-01) -> 109 (07-10) -> 81 (07-16) -> 177 now. On-disk bytes: 19,730 -> 46,823 -> 97,486, i.e. +108% in the 24h since the last run, while the source .work-queue.json went 242,844 (07-11) -> 592,180 now. Live wire cost is still only 15,623 bytes gzip, fetched at dashboard/index.html:3047, so this is not biting yet -- but it grows 1:1 with a backlog being enqueued faster than it drains, so the cliff arrives on a doubling curve rather than a flat one. Cap the array (newest or highest-priority N per project) and render a count plus a link for the remainder."
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): scripts/collect-usage.ps1:830 embeds every item whose status is not completed/done/wontfix into dashboard/data/queue.json with no cap or pagination. Measured item counts by git rev: 34 (07-01) -> 109 (07-10) -> 81 (07-16) -> 177 now. On-disk bytes: 19,730 -> 46,823 -> 97,486, i.e. +108% in the 24h since the last run, while the source .work-queue.json went 242,844 (07-11) -> 592,180 now. Live wire cost is still only 15,623 bytes gzip, fetched at dashboard/index.html:3047, so this is not biting yet -- but it grows 1:1 with a backlog being enqueued faster than it drains, so the cliff arrives on a doubling curve rather than a flat one. Cap the array (newest or highest-priority N per project) and render a count plus a link for the remainder.",
+      "resolution": "Shipped YaE b082dbb: the embedded rows are capped at 60, sorted highest-priority first, with itemsTotal and itemsTruncated published alongside so nothing is silently hidden. Counts are computed before the cap and stay exact. Verified: payload 97KB -> 35KB, 60 rows all P0/P1, and the live KV copy reports itemsTotal 313 / truncated 253."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-dashboard-usage-double-fetched",
@@ -3420,10 +3424,10 @@
       "finding_id": "yae-dashboard-usage-double-fetched",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:34Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "medium",
@@ -3434,7 +3438,8 @@
         "observability",
         "maintainability"
       ],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): dashboard/index.html:3047 fetches usage.json via fetchData('usage'), and :3351 fetches the SAME https://usage.yesandeverything.com/usage.json a second time from the enrichment IIFE. Both pass {cache:'no-store'} and a unique ?t=Date.now() bust (fetchJson at :1176), and the Worker itself returns Cache-Control: no-store (verified by GET, not HEAD), so neither copy can ever be served from cache. :3361 then re-runs it on setInterval(go, 300000). Measured 18,996 bytes per fetch: ~38KB per load plus ~19KB every 5 min (~228KB/h) per open tab, indefinitely. The comment at :3233 claims the re-read is '(cached)' -- it is not. Have the enrichment IIFE consume the already-fetched payload via a resolved promise or a module-scoped cache. Related low: dashboard/data/backfill.json has been byte-identical for 34 days but is force-refetched every load because the cache-bust is applied indiscriminately (:1176), defeating its own max-age=600."
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): dashboard/index.html:3047 fetches usage.json via fetchData('usage'), and :3351 fetches the SAME https://usage.yesandeverything.com/usage.json a second time from the enrichment IIFE. Both pass {cache:'no-store'} and a unique ?t=Date.now() bust (fetchJson at :1176), and the Worker itself returns Cache-Control: no-store (verified by GET, not HEAD), so neither copy can ever be served from cache. :3361 then re-runs it on setInterval(go, 300000). Measured 18,996 bytes per fetch: ~38KB per load plus ~19KB every 5 min (~228KB/h) per open tab, indefinitely. The comment at :3233 claims the re-read is '(cached)' -- it is not. Have the enrichment IIFE consume the already-fetched payload via a resolved promise or a module-scoped cache. Related low: dashboard/data/backfill.json has been byte-identical for 34 days but is force-refetched every load because the cache-bust is applied indiscriminately (:1176), defeating its own max-age=600.",
+      "resolution": "Shipped YaE 4057b89: the main render publishes its already-fetched payload on window and fires a yae:usage event; the enrichment consumes that and only hits the network if nothing has been published. Since the app refreshes every 60s and the enrichment ticked every 300s, the stale badge now reads fresher data as well as costing nothing. Verified by extracting go() from the DEPLOYED page and running it both ways against a fetch spy: no shared payload = 1 fetch, shared payload = 0 fetches and 1 enrich. The in-browser request count could not be observed directly because the dashboard is key-gated and never loads its data without it."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-amber-token-means-three-colors",
@@ -6184,5 +6189,5 @@
     }
   ],
   "last_drain": "2026-07-25T03:37Z",
-  "updated": "2026-07-25T04:23Z"
+  "updated": "2026-07-25T04:34Z"
 }

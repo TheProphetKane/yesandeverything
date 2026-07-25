@@ -11,19 +11,19 @@ describing it.
 | | |
 |---|---|
 | Considered (read and ranked) | 309 pending + 33 blocked/deferred |
-| Worked end to end | 44 |
-| **Resolved** | **40** |
+| Worked end to end | 49 |
+| **Resolved** | **45** |
 | Shipped through a release script | 34, across 16 releases in 5 repos |
 | Dropped as stale | 0 |
 | Newly escalated to Kane | 4 |
 
-**Queue depth: 309 pending at 22:00 -> 249 pending at 23:25.**
+**Queue depth: 309 pending at 22:00 -> 244 pending at 23:35.**
 
-The queue also now carries zero terminal items (249 pending / 54 blocked-on-user / 10
-deferred), down from 98 unpruned completions. Not all of the 60-item drop is mine: the
-hourly drain fired during the run and its severity guard escalated a batch of aging
-structural items to `blocked-on-user`, which is why that bucket went 29 -> 54 while I added
-only 4.
+The 98 unpruned terminal items are also gone: the queue closed the night at 244 pending /
+54 blocked-on-user / 10 deferred, with the last handful of completions pruned inline. Not
+all of the 65-item drop is mine - the hourly drain fired during the run and its severity
+guard escalated a batch of aging structural items to `blocked-on-user`, which is why that
+bucket went 29 -> 54 while I added only 4.
 
 Sixteen releases: Chains v0.58.0 through v0.58.3, Budget v0.14.6 through v0.14.10,
 Rising v0.59.46 and v0.59.47, Hordes twice at v0.99.40, and seven scoped YaE commits.
@@ -32,7 +32,7 @@ Rising v0.59.46 and v0.59.47, Hordes twice at v0.99.40, and seven scoped YaE com
 
 ## Resolved
 
-### YesAndEverything (23)
+### YesAndEverything (28)
 
 **Security and exposure**
 
@@ -90,6 +90,26 @@ Rising v0.59.46 and v0.59.47, Hordes twice at v0.99.40, and seven scoped YaE com
   mojibake (valid UTF-8, parses clean, renders as garbage). Now covers both and matches the
   byte signatures of double-encoded punctuation. Repaired the eight live occurrences.
   `304a3b1`.
+- **`yae-collect-usage-exits-zero-on-failure`** - every failure path printed a warning and
+  exited 0, so the 30-minute routine reported success while the live dashboard froze on
+  last-good data. Those paths now exit 1. The push branch was dead code anyway: YaE's
+  `Confirm-GitIntact` clobbered `$LASTEXITCODE` exactly as Hordes' did. `b082dbb`.
+- **`yae-superseded-rows-leak-to-dashboard`** + **`yae-dashboard-queue-payload-uncapped`** -
+  `superseded` was missing from the terminal list, so those rows shipped as live work while
+  counted in no bucket; the payload was also unbounded, at 34 rows / 19 KB three weeks ago
+  and 177 / 97 KB now, pushed to KV and fetched on every dashboard load. Superseded is now
+  terminal, and the rows are capped at the 60 highest-priority with `itemsTotal` and
+  `itemsTruncated` published alongside so nothing hides. Counts are computed before the cap
+  and now reconcile exactly at 313. Payload 97 KB -> 35 KB. `b082dbb`.
+- **`yae-dashboard-aggregation-paths-diverge`** (P1) - the ALL series walked the DATA while
+  every per-project bar walked the REGISTRY, so ALL counted projects that had no bar. ALL is
+  now registry-scoped and the two agree by construction; anything unregistered is named in a
+  "not charted" line rather than folded in. Verified against the deployed page and live data:
+  old ALL $10,559.75 vs bars $10,228.43; new ALL $10,228.43, exactly equal. `2c2b84c`.
+- **`yae-dashboard-usage-double-fetched`** - the enrichment re-read the same usage.json on
+  load and every 5 minutes, and the comment calling it "(cached)" was wrong. It now consumes
+  the payload the main render already has, which also happens to be fresher (60s vs 300s).
+  `4057b89`.
 
 **Public-page quality**
 
