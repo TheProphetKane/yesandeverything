@@ -4541,8 +4541,8 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "source": "bar-raise-hordes 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
       "severity": "high",
       "impact": 5,
@@ -4552,7 +4552,9 @@
       "evidence": "Flip DEBUG_INFINITE_RESOURCES off or move it behind debug_flags: economy.gd:33 is a compile-time const that ships every build with 10000 of each stockpile and short-circuits the cap clamp, so no build, train or research decision has a real price.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding playability-05 (HIGH, lens playability): Flip DEBUG_INFINITE_RESOURCES off or move it behind debug_flags: economy.gd:33 is a compile-time const that ships every build with 10000 of each stockpile and short-circuits the cap clamp, so no build, train or research decision has a real price. See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "resolution": "Shipped HBH (de46692): economy.gd's DEBUG_INFINITE_RESOURCES is no longer a compile-time const true. It is resolved in _ready from a new debug_flags.infinite_resources export that defaults FALSE, so a shipped build now has a real economy; DEFAULT_AMOUNTS is chosen after the flag resolves, and a missing debug_flags degrades to off. Verified in production shape by booting world_3d.tscn headless three times with a temporary print (since removed): default gives infinite=false, provisions 2000, cap(biomass) 50; flipping the export true gives infinite=true, provisions 10000, cap inf; restoring gives the real economy again. Also stripped a UTF-8 BOM PowerShell introduced into debug_flags.gd.",
+      "lastWorkedAt": "2026-07-25T03:53Z"
     },
     {
       "id": "bar-raise-2026-07-24-hordes-fuse-truncation-defense-02",
@@ -6578,5 +6580,5 @@
     }
   ],
   "last_drain": "2026-07-25T03:37Z",
-  "updated": "2026-07-25T03:49Z"
+  "updated": "2026-07-25T03:53Z"
 }
