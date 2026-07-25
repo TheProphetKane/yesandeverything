@@ -71,56 +71,6 @@
       "notes": "2026-07-17T02:36Z queue-drain-hourly: FIRST verification (never-attempted). CONFIRMED REAL - core claim and conclusion both hold, with two wording corrections worth carrying into the fix. (1) merchant.ts:14 does ship /\\*+\\d+/g. Executed the shipped normalizer verbatim: 'AMZN Mktp US*2X4RT8901' -> 'AMZN MKTP US X4RT8901' and 'AMZN Mktp US*9K7QQ1122' -> 'AMZN MKTP US K7QQ1122'. Both match the finding exactly - the pattern eats only the leading digit and leaves the order token attached, so every such transaction is its own merchant. (2) server.ts:483-487 does store body.merchant verbatim as the rule pattern (is_regex=0, match_field='normalizedMerchant'), and save-as-rule IS default-on (Categorize.tsx:27 useState(true)). So the unbounded rules-table growth is real. CORRECTION A: the finding calls the result an 'exact-string rule'; rules-engine.ts:73-76 actually matches by SUBSTRING (haystack.toUpperCase().includes(rule.upperPattern)), not exact equality. The conclusion is unchanged - a pattern carrying a per-order token can never be a substring of a different order's descriptor - but a fix that assumes exact-match semantics would be wrong. CORRECTION B: the 'same class: SQ *, TST*, PAYPAL *' claim does NOT reproduce as stated. Executed: 'SQ *COFFEE BAR SEATTLE WA' -> 'SQ COFFEE BAR', 'PAYPAL *STEAM GAMES' -> 'PAYPAL STEAM GAMES' - both collapse cleanly and are NOT affected. 'TST* PIZZA PLACE 4471' -> 'TST PIZZA PLACE 4471' retains a store number (the /\\s+#\\d+/ pattern only strips it when written '#4471'), which is stable per store and so does not grow the tail per-transaction. The bug is specific to descriptors carrying a PER-ORDER token, not to aggregator prefixes generally - scoping the fix to 'any aggregator prefix' would over-collapse distinct merchants (every SQ * merchant would fold into one). Repo state: HEAD a962350 (moved since the 2026-07-16 note's ba2ae66), working tree CLEAN. NOT APPLIED: auto_safe:false and the prompt says ship via scripts/release.ps1 = publishing, which is out of this task's no-publish scope. Kept PENDING for an attended YaB session. Fix is now de-risked: strip a trailing per-order alphanumeric run (require it to look like an order id - mixed letters+digits, length >= 6) rather than blanket-stripping the token after any '*', keep substring semantics in mind, and add a normalizer unit test covering both the AMZN collapse and the SQ */PAYPAL * non-regression before shipping."
     },
     {
-      "id": "bar-raise-2026-07-16-yab-finance-product-threat-model-01",
-      "added": "2026-07-16",
-      "project": "yab",
-      "kind": "bar-raise-finding",
-      "finding_id": "finance-product-threat-model-01",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": "2026-07-17T05:30Z",
-      "source": "bar-raise 2026-07-16 (X:\\YesAndBudget\\docs\\BAR_RAISE-2026-07-16.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "apps/api/src/server.ts:90-100 (cors mounted on /*); docs/DECISIONS.md:137",
-      "tensions_with": [
-        "solo-tool-ux",
-        "security"
-      ],
-      "prompt": "YaB HIGH (bar-raise 2026-07-16): the CORS allow-list at apps/api/src/server.ts:90-100 is mounted on '/*' with origin ['http://localhost:5173','http://127.0.0.1:5173','https://yesandeverything.com'], so the PUBLIC yesandeverything.com origin can read every route cross-origin - GET /api/transactions (:291), /api/accounts (:141), /api/analytics/* - not just the launcher probe. http://127.0.0.1 is a potentially-trustworthy origin so the https->http fetch is not mixed-content-blocked, and there is no auth to fail. docs/DECISIONS.md:137 records a factually incorrect rationale ('no transaction endpoints are exposed cross-origin in practice because the API doesn't bind to a public address') - loopback binding does not stop a page loaded from yesandeverything.com in the user's own browser. Per D-005/DECISIONS.md:133 the launcher only needs GET http://localhost:8787/. Fix: mount the broad allow-list on the two loopback dev origins only and a separate narrow cors() for the yesandeverything.com origin on the probe route, and correct the D-005 rationale text. SEQUENCING: land the probe-contract test (release-pipeline-gate-page-publish-05) first, or this narrowing silently breaks the published Launch path. Ship via scripts/release.ps1.",
-      "notes": "2026-07-17T05:30Z queue-drain-hourly: FIRST verification (never-attempted, att 0->1). Read-only at YaB HEAD 0dea79d, clean tree, no index.lock. CONFIRMED REAL - every claim holds verbatim, with ONE CORRECTION that changes the fix. (1) server.ts:90-91 mounts cors() on \"/*\" with origin exactly [http://localhost:5173, http://127.0.0.1:5173, https://yesandeverything.com] (:96) - every route, confirmed. (2) Data routes reachable cross-origin: /api/accounts:141, /api/transactions:291, /api/analytics/* :853-975 - all under the /* mount. (3) DECISIONS.md:137 rationale is factually wrong on BOTH counts as the finding states: it claims the allow-list is 'for the probe only' (it is on /*) and that loopback binding prevents cross-origin exposure (a page loaded from yesandeverything.com in the user's own browser reaches localhost regardless - the browser is on the same machine). CORRECTION to the finding's own text: the finding says 'Per D-005/DECISIONS.md:133 the launcher only needs GET http://localhost:8787/' - this is RIGHT, and it is the /api/stats framing that is wrong everywhere else. Verified the shipped launcher: X:\\YesAndEverything\budget/index.html:255 does fetch(API_BASE + \"/\") against API_BASE=http://localhost:8787 (:200). The probe hits GET / (server.ts:102), NOT /api/stats. So the narrow cors() must be scoped to GET / . Scoping it to /api/stats (as sibling item bar-raise-2026-07-04-yab-cors-scope-narrow prescribes) would BREAK the published Launch path. NOTE: server.ts:88-89's own comment ('probes /api/stats') is stale and is the likely source of the error - fold that comment correction into this fix. No fix applied: auto_safe:false + this task is no-publish (fix = server.ts restructure + DECISIONS.md D-005 edit, ships via scripts/release.ps1). Sequencing dependency on the probe-contract test still stands."
-    },
-    {
-      "id": "bar-raise-2026-07-16-yab-finance-product-backup-cadence-02",
-      "added": "2026-07-16",
-      "project": "yab",
-      "kind": "bar-raise-finding",
-      "finding_id": "finance-product-backup-cadence-02",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": "2026-07-17T04:40Z",
-      "source": "bar-raise 2026-07-16 (X:\\YesAndBudget\\docs\\BAR_RAISE-2026-07-16.md)",
-      "severity": "high",
-      "impact": 5,
-      "confidence": 4,
-      "evidence": "apps/api/src/backup.ts:100-116 (pruneOldBackups), :126-141 + server.ts:1227-1235 (pruneIfDue on every boot)",
-      "tensions_with": [
-        "cost-economics",
-        "solo-tool-ux"
-      ],
-      "prompt": "YaB HIGH (bar-raise 2026-07-16, CHRONIC runsOpen 7): backup creation is purely event-driven (import/rollback/manual/plaid-takeover only) while deletion is unconditional and time-driven - pruneIfDue(30) fires on every api boot and pruneOldBackups (backup.ts:100-116) is mtime-only with no keep-newest-N floor. Any user who does not import for 30 days converges to zero backups. That is the steady state RIGHT NOW: X:\\YesAndBudget\\data\\backups\\ and X:\\.budget\\backups\\ both contain 0 .db files, while data/yesandbudget.db is 548864 bytes with a current mtime. backup.test.ts:78-92 pins the prune behavior but never asserts a survivor floor. Fix: add a keep-at-least-3-newest floor to pruneOldBackups so it can never empty the directory, and add a periodic snapshot (boot-time createBackup('daily') gated by a meta day-key, mirroring pruneIfDue) so cadence does not depend on import frequency. Ship via scripts/release.ps1.",
-      "notes": "2026-07-17T04:40Z queue-drain-hourly: FIRST verification (never-attempted). CONFIRMED REAL on all four claims, read-only, no fix applied (auto_safe:false + this task is no-publish). (1) Creation is event-driven only: every non-test createBackup() call site is pre-import (import-pipeline.ts:70), pre-rollback (:188), manual (server.ts:1148), pre-plaid-takeover/restore (server.ts:1411/1425) plus three one-off scripts. No timer/cron/scheduled creator exists. (2) Deletion is unconditional and time-driven: pruneIfDue(30) runs on the api boot path (server.ts:1228-1235, comment 'Boot-side: run the backup pruner once per UTC day'). (3) pruneOldBackups (backup.ts:100-116) is mtime-only -- it unlinks every .db with mtimeMs < cutoff with no keep-newest-N floor, so the last surviving backup is deletable. (4) The zero-backup steady state is live RIGHT NOW: X:\\YesAndBudget\\data\backups\\ is empty and X:\\.budget\backups\\ is empty, while data/yesandbudget.db is 548864 bytes with a current mtime (matches the finding's numbers exactly). WORDING CORRECTIONS for whoever fixes this: (a) the operative directory is BACKUP_DIR = process.env.YAB_BACKUP_DIR ?? resolve(dirname(DB_PATH),'backups') (backup.ts:14), i.e. data\backups by default -- .budget\backups is not what the shipped code prunes, so cite data\backups as the one that matters. (b) backup.test.ts:78-92 pins prune-by-age (one 60-day file removed, one 1-day file kept); it does NOT assert that the final remaining backup may be deleted, so adding a keep-newest-N floor does not contradict the existing test and needs no test rewrite -- only a new case. Fix still needs Kane: it is a behavior change (floor value + whether to add a scheduled creator)."
-    },
-    {
       "id": "bar-raise-2026-07-16-yab-finance-product-dedupe-02",
       "added": "2026-07-16",
       "project": "yab",
@@ -263,7 +213,7 @@
       "kind": "handler-audit-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 1,
       "source": "docs/HANDLER_AUDIT-2026-07-10.md",
       "title": "The five-webhook block in every handler is boilerplate; only 1-4 of 5 URL files exist per project",
@@ -274,7 +224,8 @@
       "notes": "2026-07-13 queue-drain-hourly: read-only reconciliation refreshed at HEAD. On-disk webhook provisioning UNCHANGED since 2026-07-10 (nothing created in 3 days). Refined per-project missing-file lists; Ring's real gap is audit+backlog (it already has resources), not what the original text implied. Gnosis confirmed fully provisioned under its naming exception. Cannot resolve here: needs either handler-trim edits+releases or Discord-side webhook creation, both out of scope for audit-only drain. Full table + trim-vs-provision recommendation in result_path. Overlaps gated item handler-audit-2026-07-03-portfolio-discord-webhook-reconcile. Kicked back to pending for an owner pass.",
       "triageVerdict": "Keep - reconciled read-only 2026-07-13, still true; needs an attended pass",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - reconciled read-only 2026-07-13, still true; needs an' from the 2026-07-24 individual review -- verified live, substantive, needs an attended everything session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-07-ring-worker-observability",
@@ -713,7 +664,7 @@
       "kind": "canonical-audit-finding",
       "auto_safe": false,
       "priority": "P3",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 1,
       "source": "docs/CANONICAL_AUDIT-2026-07-10.md",
       "title": "Decide: add composite index audit_log(organization_id, created_at), or accept the two single-column indexes",
@@ -727,7 +678,8 @@
       "notes": " | 2026-07-15 queue-drain-hourly: DECISION RESOLVED read-only. Composite index was chosen and built as migrations/0011_audit_log_composite_index.sql (idx_audit_log_org_created ON audit_log(organization_id, created_at)); docs/DESIGN.md §15 already documents it. Migration 0011 is UNTRACKED — part of the unlanded v0.7.x pass whose landing needs release.ps1 (out of scope for audit-only drain, and partial-commit would fracture the atomic pass). No open design question remains; item is release-blocked, closable by an owner session when the v0.7.x pass lands. Full analysis in result_path.",
       "triageVerdict": "Keep - decision resolved, migration 0011 awaits an attended Scheduler ship",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - decision resolved, migration 0011 awaits an attended ' from the 2026-07-24 individual review -- verified live, substantive, needs an attended scheduler session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "working-tree-2026-07-10-ring-stale-tree",
@@ -736,7 +688,7 @@
       "kind": "tooling",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 1,
       "source": "scheduled-task: working-tree-scan-nightly",
       "title": "Stale working tree in Ring: 5 files modified, DEPLOY.md last committed 2026-06-30",
@@ -750,7 +702,8 @@
       "notes": "2026-07-15T02:38Z queue-drain-hourly: FIRST verification (never-attempted). Verified read-only: Ring HEAD 8076622 (2026-07-12 00:40 'Add CLAUDE_SETTINGS pointer...'); working tree STILL DIRTY with 7 modified files uncommitted (CHANGELOG.md, CLAUDE.md, DEPLOY.md, PROJECT_SPEC.md, README.md, public/app.js, src/index.js) - condition persists and has grown from the originally-filed 5 files; no index.lock. NEAR-DUPLICATE PAIR: working-tree-2026-07-10-ring-stale-tree and wq-2026-07-12-003 describe the SAME underlying condition (not byte-identical so not auto-archived). Fix = commit/clean the tree = publish, which is out of this task's audit-only no-publish drain scope (stop-condition). Kept PENDING; needs an attended Ring session to review + commit the 7 files. [canonical near-dup: wq-2026-07-12-003]",
       "triageVerdict": "Keep - Ring tree still dirty at this tick; awaits an attended Ring deploy",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - Ring tree still dirty at this tick; awaits an attende' from the 2026-07-24 individual review -- verified live, substantive, needs an attended ring session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "canonical-audit-2026-07-10-cattery-photos-bucket-listing",
@@ -780,7 +733,7 @@
       "kind": "canonical-audit-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 1,
       "source": "docs/CANONICAL_AUDIT-2026-07-10.md",
       "title": "wrangler.jsonc declares SKYLIGHT_FRAME_ID as an empty vars entry while README + code say to set it as a secret",
@@ -794,7 +747,8 @@
       "notes": "2026-07-15T16:41Z queue-drain-hourly: FIRST assessment (attempts 0 -> 1, kept pending). Skylight tree CLEAN, HEAD 74e0ac5. Finding CONFIRMED at current anchors: wrangler.jsonc:41 has \"SKYLIGHT_FRAME_ID\": \"\" (empty plain-text var); README.md:61 + src/index.ts:140-141 both say `wrangler secret put SKYLIGHT_FRAME_ID`; src/skylight.ts:64-65 throws \"SKYLIGHT_FRAME_ID is not set\" when empty. Empty var shares the binding namespace with secrets and can shadow/clobber a same-named secret on `wrangler deploy` (run by release.ps1) -> reverse-API surfaces (lists/chores/tasks) break; events unaffected (google.ts/D1 path never reads frame id). NOT auto-applied: deploy-affecting config, not verifiable live without `wrangler secret list` creds (this task holds none), co-owned repo. Recommend option (a): confirm the secret exists, then drop wrangler.jsonc:41 so the secret is sole source (docs already agree), ship via release.ps1 in an attended session. Apply-ready result written to result_path. Out of no-publish drain scope (stop-condition 2). Kept pending.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "canonical-audit-2026-07-10-gnosis-question-status-contract",
@@ -803,14 +757,15 @@
       "kind": "canonical-audit-finding",
       "auto_safe": false,
       "priority": "P3",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "docs/CANONICAL_AUDIT-2026-07-10.md",
       "title": "PROJECT_SPEC says questions are NEVER closed, but QSTATUS has two closed states (answered, lost)",
       "detail": "PROJECT_SPEC section 3: \"Questions are NEVER closed and carry no ask-tags.\" web/build.mjs:196: QSTATUS = { \"?\": \"open\", \"x\": \"answered\", \"~\": \"lost\" }, and the questions page renders a \"lost to time\" chip. CLAUDE.md documents both [x] and [~]. Current build reports 364 open, 79 answered, 0 lost to time. Per CLAUDE.md (\"if code disagrees with the spec, trust the code and update the spec\") the spec's absolute is the thing to soften -- but \"never closed\" may be the policy Kane actually wants, in which case [~] should come out of QSTATUS and the renderer instead. Needs Kane's call; not a safe fix. Also worth doing in the same pass: delete the unreachable e.secret branch at build.mjs:1800, since allQuestions only ever iterates pub (build.mjs:1653) and the dead branch implies secret entities are meant to surface on /questions.",
       "triageVerdict": "Keep - spec contradiction, needs an attended Gnosis decision",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - spec contradiction, needs an attended Gnosis decision' from the 2026-07-24 individual review -- verified live, substantive, needs an attended gnosis session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "hbh-velocity-off-critical-path-mission-layer-2026-07-10",
@@ -863,7 +818,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -874,7 +829,8 @@
       "prompt": "The Skylight lists/chores/tasks paths ride an unofficial reverse-engineered API whose request bodies were inferred, with no contract test to detect drift. Add a scheduled smoke probe that exercises one write per entity type and alerts on a 4xx, so an API shape change is caught before a family member hits it. Keep CALENDAR_DRIVER=google as the durable primary for events. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-observability-01",
@@ -883,7 +839,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -894,7 +850,8 @@
       "prompt": "Skylight has observability.enabled plus source maps, but the Worker emits no console output at all, so the top-level catch swallows every HTTP failure into a causeless 500. Add a console.error in the index.ts fetch catch carrying pathname and the error message. Do NOT log the request body or event summary: this tool handles a real family's calendar, and the compliance lens flags tail-log PII as the tension here. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-maintainability-02",
@@ -903,7 +860,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -914,7 +871,8 @@
       "prompt": "Skylight's entire client runtime lives in untyped template-literal strings that tsc never checks, and the HTML-escape helper exists in two copies that can drift. Extract the client script to a real typechecked source file and dedupe esc() to one implementation. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-architecture-01",
@@ -923,7 +881,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -934,7 +892,8 @@
       "prompt": "Skylight's two event-write drivers have diverged: the Google path silently drops categoryIds, so flipping CALENDAR_DRIVER changes per-person colour-coding rather than swapping a driver transparently. Define one canonical event-input type in src/types.ts and give both drivers a uniform createEvent(env, CanonicalEvent) signature. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-reliability-03",
@@ -943,7 +902,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -954,7 +913,8 @@
       "prompt": "Skylight's primary event path (Google Calendar) has no token-refresh retry, so a stale or revoked cached access token hard-fails with no self-healing, unlike the Skylight client which recovers on a 401. On a 401 or 403 from the events POST, delete the KV g:token key, re-mint via getAccessToken, and retry the write once. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-data-integrity-02",
@@ -963,7 +923,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -974,7 +934,8 @@
       "prompt": "In Skylight, a calendar write that succeeds but whose response body fails to parse throws, so the caller sees an error and retries, duplicating the event that already landed (compounds data-integrity-01). Treat a 2xx with an unreadable body as success with an unknown id rather than throwing. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-observability-02",
@@ -983,7 +944,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -994,7 +955,8 @@
       "prompt": "A dropped inbound email in Skylight leaves no trace: MIME parsing runs outside handleEmail's try block and the whole handler is fire-and-forget under ctx.waitUntil, so a malformed message never reaches /api/email-log, which CLAUDE.md names as the sole debug path. Wrap the whole handler in a try/catch that console.errors and best-effort writes a kind:'error' KV log entry. Supersedes reliability-04 from the same run. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-observability-03",
@@ -1003,7 +965,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -1014,7 +976,8 @@
       "prompt": "Skylight's only unauthenticated health surface reports ok:true regardless of downstream state, so a slow-burn failure (rotated service-account key, unshared calendar, reverse-API drift) stays green until a family member's add fails. Fold a lightweight downstream check into /api/health, or point an external uptime probe at /api/setup. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-data-integrity-03",
@@ -1023,7 +986,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -1034,7 +997,8 @@
       "prompt": "Skylight's inbound email ingestion has no Message-ID de-duplication, so a message delivered twice (dual path or routing retry) creates two calendar entries. Record processed Message-IDs in a short-TTL KV set and skip, logging as duplicate, any already seen. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-solo-tool-ux-01",
@@ -1043,7 +1007,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -1054,7 +1018,8 @@
       "prompt": "When Skylight's 30-day auth cookie expires or the PIN is rotated while the PWA is open, a family member who taps Add gets a dead-end red 'unauthorized' with no way back to sign-in. Detect a 401 from /api/state and /api/quick-add in ui.ts and redirect to '/' (or render a 'Session expired, tap to sign in' link). See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-dependency-02",
@@ -1063,7 +1028,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -1074,7 +1039,8 @@
       "prompt": "Skylight's wrangler devDependency is caret-pinned to the EOL v3 major, whose bundled workerd predates the project's own compatibility_date, so the deploy toolchain is frozen and receives no runtime or security updates. Bump to ^4.x, regenerate package-lock.json, and smoke-test `wrangler dev` plus a deploy. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "bar-raise-2026-07-10-skylight-data-integrity-04",
@@ -1083,7 +1049,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-10 / docs/BAR_RAISE-2026-07-10.md",
       "severity": "medium",
@@ -1094,7 +1060,8 @@
       "prompt": "In Skylight, start/end ordering is sound when both endpoints share a format, but a mixed naive-versus-absolute pair (reachable from the JSON API or the LLM email parser) is compared across two time frames and is off by the real UTC offset, so it can be wrongly rejected or wrongly accepted. Normalise both endpoints through DEFAULT_TIMEZONE before comparison, or reject a mixed pair outright. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-10.md.",
       "triageVerdict": "Keep - parked for an attended Skylight session",
       "triagedAt": "2026-07-24",
-      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion."
+      "triageNote": "2026-07-24 loop-tick R4 triage: crossed the strict age>14 predicate. Reviewed individually and found to be live, verified, substantive work - not stale clutter - so stamped rather than archived. Re-evaluate in an attended session; the stamp is a keep-decision, not a completion.",
+      "drainNote": "2026-07-25T03:37Z queue-drain-hourly: crossed the age>15d stale predicate (added 2026-07-10) but carries triageVerdict 'Keep - parked for an attended Skylight session' from the 2026-07-24 individual review -- verified live, substantive, needs an attended skylight session. Escalated to blocked-on-user rather than archived: escalate-don't-delete, and this stops the item re-triggering the stale predicate every hour."
     },
     {
       "id": "canonical-audit-2026-07-11-rising-assets-tab-artdrop-stale",
@@ -2065,23 +2032,6 @@
       "prompt": "Correct the source/units/unit.gd:37-38 header to the live 256px native-1.0x model (memory br-art-size-state), and sweep the inherited HBH version stamps from source/. Confirmed example: source/autoloads/save_load.gd:382 comments cite v0.61.2 and v0.61.0 while BR is at v0.59.39, which are HBH numbers carried over at the fork. Comments only, no behavior change. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-17.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety."
     },
     {
-      "id": "bar-raise-2026-07-17-chains-compliance-01",
-      "added": "2026-07-17",
-      "project": "chains",
-      "kind": "bar-raise-finding",
-      "finding_id": "compliance-01",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "severity": "HIGH",
-      "impact": 5,
-      "confidence": 5,
-      "evidence": "src/subscription.ts:280 (openBillingPortal early-returns on !CHAINS_VISIBLE); src/subscription.ts:332 (live Manage / cancel button); src/caddy.ts:62 (CHAINS_VISIBLE = false); src/subscription.ts:44 (PRO_PAYWALL_ENABLED = true)",
-      "source": "bar-raise-yac 2026-07-17 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-17.md",
-      "prompt": "Yes& Chains [HIGH, bar-raise finding compliance-01]: a paying subscriber cannot cancel in-app. openBillingPortal() opens with \"if (!CHAINS_VISIBLE) return;\" at src/subscription.ts:280, but CHAINS_VISIBLE is false (src/caddy.ts:62) because it gates the dormant AI recommender, while the Pro paywall is live and independently governed by PRO_PAYWALL_ENABLED = true (src/subscription.ts:44, Decision 33). The \"Manage / cancel subscription\" button still renders at src/subscription.ts:332, so the click is a no-op on real money. Decision 28 in CLAUDE.md already decouples the two flags in doctrine; this line never followed. Fix: re-gate openBillingPortal() (and any sibling billing-portal helper) on PRO_PAYWALL_ENABLED rather than CHAINS_VISIBLE. Verify the button path end to end once flipped. Ships via X:\\YesAndChains\\scripts\\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01."
-    },
-    {
       "id": "bar-raise-2026-07-17-chains-dataint-01",
       "added": "2026-07-17",
       "project": "chains",
@@ -2099,25 +2049,6 @@
       "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01."
     },
     {
-      "id": "bar-raise-2026-07-17-chains-webhook-01",
-      "added": "2026-07-17",
-      "project": "chains",
-      "kind": "bar-raise-finding",
-      "finding_id": "webhook-01",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "severity": "HIGH",
-      "impact": 4,
-      "confidence": 4,
-      "evidence": "worker/src/handlers/billing.js:656-690 (checkout.session.completed branch; no payment_status gate, no event.id dedupe, no stripe_subscription_id persisted, 200-ACKs a missing profile)",
-      "source": "bar-raise-yac 2026-07-17 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-17.md",
-      "prompt": "Yes& Chains [HIGH, bar-raise finding webhook-01]: the Stripe webhook handler is under-hardened on a live money path. At worker/src/handlers/billing.js:656-690 the checkout.session.completed branch does not gate on payment_status == \"paid\" (so an unpaid or async-pending session can grant Pro), does not dedupe on event.id (Stripe retries at-least-once, so replays re-apply), does not persist stripe_subscription_id (which dataint-01 reconciliation and finance-02 dunning both need), and 200-ACKs when the profile lookup misses, silently discarding the grant with no retry. Fix all four: gate on payment_status, add an idempotency table or KV key on event.id, store stripe_subscription_id, and return a non-2xx on a missing profile so Stripe retries. Pairs with dataint-01. Ships via X:\\YesAndChains\\scripts\\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01.\n2026-07-24T23:40Z queue-drain-hourly: FIRST verification (attempts 0 -> 1, kept pending). Read-only re-check at Chains HEAD 1780376: STILL LIVE, all four gaps intact (branch now ~lines 656-663). checkout.session.completed still upserts subscription_status active with no payment_status gate, no event.id dedupe, no stripe_subscription_id persisted, and the handler still returns 200 on the no-profile path (subscription branch console.warn + 200). Not auto-drainable: live money path, needs an attended pass.",
-      "attempts": 1,
-      "lastAttemptAt": "2026-07-24T23:40Z"
-    },
-    {
       "id": "bar-raise-2026-07-17-chains-compliance-02",
       "added": "2026-07-17",
       "project": "chains",
@@ -2125,14 +2056,17 @@
       "finding_id": "compliance-02",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "severity": "HIGH",
       "impact": 4,
       "confidence": 4,
       "evidence": "legal/terms.md (no subscription/billing/refund section); src/subscription.ts:209 (Cancel-anytime modal copy)",
       "source": "bar-raise-yac 2026-07-17 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-17.md",
       "prompt": "Yes& Chains [HIGH, bar-raise finding compliance-02]: the app takes real recurring payments and the terms say nothing about subscriptions, billing, or refunds. The Cancel-anytime modal copy at src/subscription.ts:209 makes a promise no document backs. legal/terms.md was restored to the full counsel master in fb10b49 (compliance-04, closed), so the file is now a sound base to extend. Fix: add a Subscription and Billing section covering billing cadence, renewal, cancellation effect and timing, and refund policy, and make sure the modal copy matches it word for word. Write legal/terms.md via tools/safe_write.py. Pairs with compliance-03 (the served copy in src/legal-view.ts must reconcile with the same text). Ships via X:\\YesAndChains\\scripts\\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01."
+      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01.",
+      "resolution": "Confirmed open: legal/terms.md has zero occurrences of subscription, billing or refund, while the upgrade modal promises 'Cancel anytime - no surprise bills'. DECISION KANE MUST MAKE: the refund policy. Everything else in the clause follows from how Stripe is already configured (cancel stops the next renewal, access runs to the end of the paid period), but 'no refunds for the unused part of a paid period' versus 'prorated refund on request' is a real legal position with consumer-law exposure, and legal/terms.md is a counsel-drafted master. Not amending counsel's document with a self-authored money clause unattended. Give the refund line and the section can be written and shipped in one pass.",
+      "lastWorkedAt": "2026-07-25T03:24Z",
+      "attempts": 1
     },
     {
       "id": "bar-raise-2026-07-17-chains-compliance-03",
@@ -2142,14 +2076,17 @@
       "finding_id": "compliance-03",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "severity": "HIGH",
       "impact": 4,
       "confidence": 4,
       "evidence": "src/legal-view.ts:295 (_DRAFT_BANNER_HTML); src/legal-view.ts:316 (banner injected into the served Terms)",
       "source": "bar-raise-yac 2026-07-17 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-17.md",
       "prompt": "Yes& Chains [HIGH, bar-raise finding compliance-03]: the Terms served to paying users still carry a DRAFT banner and no effective date. _DRAFT_BANNER_HTML is defined at src/legal-view.ts:295 and injected into the rendered Terms at src/legal-view.ts:316. Terms marked DRAFT are weak ground to enforce against a customer who has been charged. Fix: set an effective date, remove the DRAFT banner, and make sure the served text includes the payment and subscription clause from compliance-02. Do compliance-02 first so the banner drops on a complete document rather than an incomplete one. Ships via X:\\YesAndChains\\scripts\\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01."
+      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01.",
+      "resolution": "Blocked behind compliance-02 by design: the finding says do 02 first so the DRAFT banner drops on a complete document. The banner and missing effective date are confirmed still present (src/legal-view.ts). Dropping the banner now would just mark an incomplete document as final. Unblocks the moment Kane gives the refund policy.",
+      "lastWorkedAt": "2026-07-25T03:24Z",
+      "attempts": 1
     },
     {
       "id": "bar-raise-2026-07-17-chains-dataint-02",
@@ -2858,28 +2795,6 @@
       "prompt": "Skylight's inbound-mail allowlist fails open: src/email.ts:46-52 only enforces ALLOWED_SENDERS when the list is non-empty, so an unset or empty value would let mail from any sender be parsed, written to the family calendar, and replied to. Treat an unset or empty ALLOWED_SENDERS as reject-all. The populated default in wrangler.jsonc:44 means this costs the family zero friction; it only closes the misconfiguration path. Log the rejection to the KV ring buffer the same way the existing reject branch does. NOTE: open since 2026-07-03, never enqueued until now. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-17.md."
     },
     {
-      "id": "bar-raise-2026-07-17-yab-release-pipeline-gate-page-publish-06",
-      "added": "2026-07-17",
-      "project": "yab",
-      "kind": "bar-raise-finding",
-      "finding_id": "release-pipeline-gate-page-publish-06",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "source": "bar-raise 2026-07-17 (X:\\YesAndBudget\\docs\\BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "X:\\YesAndEverything\\projects\\budget\\index.html:236; design.html:120; contradicted by projects/budget/privacy/index.html:114",
-      "tensions_with": [],
-      "prompt": "YaB HIGH (bar-raise 2026-07-17): the published Details and Design pages advertise a false data-flow claim about a finance product. projects/budget/index.html:236 says 'no cloud, no multi-tenant, no Plaid, no Teller, no third-party API touching raw transactions' and design.html:120 repeats 'No cloud, no Plaid, no third-party API touching raw transactions'. The same site's privacy page at projects/budget/privacy/index.html:114 states the opposite: 'the application makes outbound HTTPS calls to production.plaid.com ... These calls retrieve your bank transactions from Plaid into your local database.' The Plaid connector shipped v0.13.0 under D-010/D-011. FIX: rewrite both blurbs to the shipped posture (CSV-first, local-only runtime, optional Plaid connector under D-010/D-011 with a metadata-only relay) so Details, Design and Privacy agree. REPRODUCE BEFORE YOU FIX: grep -n 'no Plaid' X:\\YesAndEverything\\projects\\budget\\index.html X:\\YesAndEverything\\projects\\budget\\design.html and grep -n 'production.plaid.com' X:\\YesAndEverything\\projects\\budget\\privacy\\index.html - all three must still hit before you edit. NOTE: this edits YaE, not YaB.",
-      "notes": null
-    },
-    {
       "id": "bar-raise-2026-07-17-yab-finance-product-categorization-tail-02",
       "added": "2026-07-17",
       "project": "yab",
@@ -2928,28 +2843,6 @@
       "notes": null
     },
     {
-      "id": "bar-raise-2026-07-17-yab-orchestration-incident-runbook-currency-04",
-      "added": "2026-07-17",
-      "project": "yab",
-      "kind": "bar-raise-finding",
-      "finding_id": "orchestration-incident-runbook-currency-04",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "source": "bar-raise 2026-07-17 (X:\\YesAndBudget\\docs\\BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "apps/web/src/pages/Settings.tsx:173; docs/PLAID_PHASE2_RUNBOOK.md:128-145; apps/api/src/db.ts:68 (journal_mode = WAL); data/yesandbudget.db-wal and -shm live on disk",
-      "tensions_with": [],
-      "prompt": "YaB HIGH (bar-raise 2026-07-17): every documented restore path tells the operator to swap a backup file over data/yesandbudget.db WITHOUT deleting the -wal and -shm sidecars. db.ts:68 sets journal_mode = WAL and both sidecars are live on disk right now, so under WAL the prior connection's frames replay into the restored file, producing a corrupted or silently-stale DB. Affects Settings.tsx:173 (the in-app restore instructions) and both rollback branches at docs/PLAID_PHASE2_RUNBOOK.md:128-145. This matters more since the 84fba3a rollback rewrite concentrated the entire post-finalize recovery story onto this path. FIX: add an explicit 'Remove-Item data\\yesandbudget.db-wal, data\\yesandbudget.db-shm' step ahead of the file swap in both places. REPRODUCE BEFORE YOU FIX: ls data/yesandbudget.db-wal data/yesandbudget.db-shm (both exist), read db.ts:68 (WAL), then read Settings.tsx:173 and the runbook rollback and confirm neither mentions the sidecars.",
-      "notes": null
-    },
-    {
       "id": "bar-raise-2026-07-17-yab-finance-product-threat-model-02",
       "added": "2026-07-17",
       "project": "yab",
@@ -2974,56 +2867,6 @@
       "notes": null
     },
     {
-      "id": "bar-raise-2026-07-17-yae-yae-public-link-to-gated-mirrors",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-public-link-to-gated-mirrors",
-      "auto_safe": false,
-      "priority": "P0",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:04Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 5,
-      "confidence": 5,
-      "evidence": "index.html:1849,1959; 404.html:133; projects/{brackish-rising,here-be-hordes}/index.html:89; projects/budget/index.html:335; projects/scheduler/index.html:277; plus projects/here-there-be-hordes/gdd.html:8,13 which were never in the tracked set of seven",
-      "tensions_with": [
-        "solo-tool-ux",
-        "compliance-data-steward"
-      ],
-      "prompt": "YaE BLOCK P0 (bar-raise-everything 2026-07-17): hard rule no_public_link_to_hordes_or_brackish_rising is breached for a TENTH consecutive run. Seven live public anchors link the robots-disallowed GDD mirrors: index.html:1849 (href=\"brackish-rising/\") and index.html:1959 (href=\"hordes/\"); 404.html:133 (href=\"/hordes/\"); projects/brackish-rising/index.html:89 (href=\"/brackish-rising/\"); projects/here-be-hordes/index.html:89 (href=\"/hordes/\"); projects/budget/index.html:335 (href=\"/hordes/\"); projects/scheduler/index.html:277 (href=\"/hordes/\"). TWO MORE were found this run that were never in the tracked set: projects/here-there-be-hordes/gdd.html:8 (rel=canonical to /hordes/) and :13 (click-here anchor). NOTE the prior fix prescription was under-scoped THREE runs running, so re-grep after fixing rather than trusting a count. Reroute the six Design anchors to the already-shipped, client-gated projects/{here-be-hordes,brackish-rising}/design.html; delete the 404.html:133 link; drop the stub's canonical tag. Then run: grep -rn 'href=\"[^\"]*\\(hordes\\|brackish-rising\\)/' --include=*.html . | grep -v '^./hordes/' | grep -v '^./brackish-rising/' and confirm zero hits outside the mirrors themselves. Ship via scripts/release.ps1.",
-      "resolution": "Shipped YaE 4c22697: all 8 public anchors rerouted to the client-gated projects/{here-be-hordes,brackish-rising}/design.html; 404 link deleted, stub canonical dropped. Re-grepped: zero hits to /hordes/ or /brackish-rising/ outside the mirrors."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-gate-secret-in-tracked-public-doc",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-gate-secret-in-tracked-public-doc",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:07Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "the handler is tracked and serves 200 publicly; it documents in cleartext the same literal the gate compares against, and the gate's comparison is plaintext with the payload inlined one line later",
-      "tensions_with": [
-        "solo-tool-ux",
-        "strategic-kill-this"
-      ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): the shared secret guarding the hordes mirror is published in cleartext in a tracked, repo-root Markdown handler that is publicly fetchable (HTTP 200, ~13.8KB). Verified this run: the value documented in that handler is byte-identical to the literal the gate compares against in hordes/index.html, the comparison is a plaintext client-side equality test, and the base64 payload is inlined one line below it. IMMEDIATE, NO DECISION NEEDED: the handler does not need to publish the password to do its job. Remove the secret line from the tracked handler and replace it with a pointer to X:\\.secrets. Do NOT paste the value into any commit message, report, queue item, or status JSON. The broader question of whether the mirrors should sit behind real server-side access control is a separate, deferred item awaiting Kane's call: do not decide it here.",
-      "resolution": "Shipped YaE 4b71fa5: CLAUDE.md now points at X:\\.secrets instead of quoting the phrase; literal also redacted from the skill-review artifacts, status/data/Hordes.json and the queue/dashboard JSONs. Server-side gating left open for Kane."
-    },
-    {
       "id": "bar-raise-2026-07-17-yae-yae-tracked-queue-artifacts-public",
       "added": "2026-07-17",
       "project": "everything",
@@ -3046,53 +2889,6 @@
         "data-integrity"
       ],
       "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): internal cross-project working artifacts are tracked and publicly served (all confirmed HTTP 200 against a known-404 baseline control). 68 tracked paths are already named by .gitignore:38-44 (the live queue, two corrupt dumps, the 65-file .work-queue-results/ tree) but the rules were added AFTER the files were tracked, so they have never bound. CORRECTION TO THE PRIOR RUN'S PRESCRIPTION: four further artifacts are tracked and served but match NO ignore rule at all (.work-queue-archive.json, a .recon dump, and two backups whose suffixes carry a trailing timestamp so the *.bak pattern at .gitignore:26 cannot match). git rm --cached alone would therefore leave them to be re-staged by push-to-github.ps1:92's git add -A. ORDER: (1) add patterns covering .work-queue-archive.json, *.recon, *.bak* ; (2) git rm --cached across all 72 paths; (3) release; (4) re-fetch each and confirm 404. Contains no credential values (a 483-file sweep against 13 credential patterns returned zero hits) but does name deliberately-unlisted projects several hundred times."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-queue-edit-ps-serializer-roundtrip",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-queue-edit-ps-serializer-roundtrip",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "scripts/queue-edit.ps1:91 ConvertTo-Json round-trips 592KB to 692,871 chars (+17.1%) and escapes 1349 apostrophes; python round-trip is byte-identical",
-      "tensions_with": [
-        "data-integrity"
-      ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): scripts/queue-edit.ps1:91 `$json = ($q | ConvertTo-Json -Depth 30)` violates the standing never-PowerShell-round-trip rule. Re-measured against the live file: disk 591,559 chars vs PS round-trip 692,871 (+101,312, +17.1%); python json.dumps(indent=2, ensure_ascii=False)+LF round-trips byte-identical at 592,180. PS 5.1 emits 4-space indent with colon-padding and escapes ' -> \\u0027, < > & similarly; the queue holds 1349 apostrophes. CRITICAL SEQUENCING, DO NOT REORDER: a serializer fingerprint proves ConvertTo-Json has NEVER written this file (0 backslash-u escapes, 3449 python-style colon-space, 2-space indent) because the pwsh invocation that calls it is broken. The pwsh fix (separate item yae-work-queue-runner-pwsh-not-installed) is what would FIRE this dormant bug and rewrite all 592KB into a mangled shape. Land THIS fix first. Swap ONLY line 91's serializer; keep the lock, tmp+parse+rename and 5-attempt readback at :98-111 exactly as they are, they are the best-built part of this tooling."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-queue-lock-bypassed-in-practice",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-queue-lock-bypassed-in-practice",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "queue-drain-hourly and loop-tick-hourly both mutate the queue with unlocked python writes and name no queue lock; docs/QUEUE_TRIAGE.md records a live lost-update today",
-      "tensions_with": [
-        "performance",
-        "reliability"
-      ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): the single-flight lock that scripts/queue-edit.ps1 implements correctly is never actually taken by either live writer, so the lost-update race it was built for is live again. work-queue-runner/SKILL.md:22 says every mutation must go through the helper, but C:\\Users\\Kane\\.claude\\scheduled-tasks\\queue-drain-hourly\\SKILL.md:15 and loop-tick-hourly\\SKILL.md:24,38 both say 'Python atomic-write-with-readback' and reference no queue lock at all (their only lock mention is .git\\index.lock). Independently corroborated: the live queue's serializer fingerprint is 100% python, so the PS helper has never written it. docs/QUEUE_TRIAGE.md documents the consequence in the present tense: 'last pass's removal did not stick ... a later writer rebuilt over from a stale read' and 'the same race can silently revert any queue write'. Fix AFTER the serializer swap: either point both routine SKILL.md files at queue-edit.ps1, or give the python writer the same .work-queue.lock acquire/30s-stale-break protocol so all writers serialize on one lock."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-release-add-all-sweeps-operational-state",
@@ -3209,30 +3005,6 @@
       "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): twelve PowerShell JSON reads lack -Encoding utf8, and the resulting cp1252 corruption is LIVE right now, unchanged across a tenth run. This bug was reproduced firsthand this run: python json.load(open('.work-queue.json')) without encoding= raises UnicodeDecodeError 'charmap' at byte 371547. Mechanism: PS 5.1 decodes the UTF-8-no-BOM queue as cp1252 at collect-usage.ps1:812, then Write-ValidatedJson re-emits it as UTF-8. The full site list is 12, not the 4 previously recorded: collect-usage.ps1:341,619,692,734,738,812,896; write-dashboard-status.ps1:19,27,54; estimate-usage-backfill.ps1:53,179. (The prior report's '693' is off by one; 693 is the Move-Item, the read is 692.) NEW: write-dashboard-status.ps1:27 is a COMPOUNDING round-trip that re-reads Everything.json's prose blocks cp1252 and re-emits UTF-8 on every release, doubling any non-ASCII each time; it is clean today only because the no-em-dash voice rule keeps it ASCII. Fix all twelve (or swap to [System.IO.File]::ReadAllText, which queue-edit.ps1:63 already does correctly) and repair the 3 corrupted strings each in status/data/Ring.json and dashboard/data/queue.json."
     },
     {
-      "id": "bar-raise-2026-07-17-yae-yae-queue-uncommitted-multiday-gap",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-queue-uncommitted-multiday-gap",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "git is the queue's ONLY recoverable copy; a 5.2-day window (07-11 to 07-16) had zero commits while the disk copy grew ~133KB; .gitignore:38 names a tracked file",
-      "tensions_with": [
-        "security",
-        "cost-economics"
-      ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): the work queue's sole recoverable copy is git, and no drain commits it. Commit history proves the exposure: 059b583 (07-11, 242,844 bytes) -> c8482d8 (07-16, 244,459) is a 5.2-day window with zero commits while the disk copy grew ~133KB. Today's gap is only 76,129 bytes / ~6h, and ONLY because another project's bar-raise (58de690, status(Chains)) happened to commit the file this morning -- nothing systematic changed. The file is up 9.4x in 13 days (62,989 on 07-04 -> 592,180 now). No kv_backup-style sidecar exists (contrast X:\\YesAndChains\\tools\\kv_backup.py). TRAP: .gitignore:38 lists .work-queue.json while git ls-files still tracks it, so a single git rm --cached, or the file ever being untracked once, silently ends the only backup with zero signal. Fix: commit .work-queue.json at the end of every drain, scoped with an explicit pathspec (-- .work-queue.json .work-queue-archive.json) per the yae-commit-sweeps-staged-index rule, and resolve the .gitignore:38 contradiction."
-    },
-    {
       "id": "bar-raise-2026-07-17-yae-yae-dashboard-aggregation-paths-diverge",
       "added": "2026-07-17",
       "project": "everything",
@@ -3255,78 +3027,6 @@
         "solo-tool-ux"
       ],
       "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): dashboard/index.html has two aggregation paths over the same dashboard/data/usage.json and they have measurably diverged. Registry-driven: rows() at :1334-1335 does PROJECTS.map then usage.projects[p.id]; :1358 re-walks PROJECTS.forEach. Data-driven: byDayFor() at :1219-1233 does Object.keys(src).forEach, excluding only the literal 'unattributed' (:1225). usage.json carries 14 project ids; the PROJECTS registry (:976-990) carries 13. Measured against the live file: the ALL time-series totals $14,736.81 while the sum of the per-project bars totals $14,438.15 -- a divergence of exactly $298.66, the whole attributed cost of one retired project whose data is still current (6 daily entries, 2026-07-10 to 2026-07-15) via the still-live attribution pattern at collect-usage.ps1:129. So the cost surface does not reconcile against itself. Fix: derive both paths from one project list, and decide the retired project's disposition explicitly -- either give it a registry entry or add it to collect-usage.ps1's empty $PUBLIC_EXCLUDE (:675). This shares a root cause with yae-four-project-registries; unifying the registries subsumes the divergence but does not decide the disposition."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-budget-auditable-claim-404",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-budget-auditable-claim-404",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "SIX not five: projects/budget/{privacy:101,135; pre-install:137; security:153; security-notices:104; security/pgp-key:104} all 404, while privacy:101 asserts the source is published and auditable",
-      "tensions_with": [
-        "security",
-        "compliance-data-steward"
-      ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): SIX links (not the five previously tracked) on the public Budget compliance pages point at a repo that 404s for every visitor. Re-verified on disk this run -- note the prior report's paths were wrong (these are dir/index.html, not flat .html): projects/budget/privacy/index.html:101 and :135; pre-install/index.html:137; security/index.html:153; security-notices/index.html:104; and NEWLY FOUND security/pgp-key/index.html:104. All href the same GitHub repo; curl -L with a browser UA returns 404, and the GitHub repos API lists exactly one public repo for the account. Caveat: an unauthenticated 404 cannot distinguish private from deleted, but either way no visitor can reach it. The load-bearing problem is privacy/index.html:101, which reads 'The source is published at ... and is auditable' on a Plaid-facing privacy page. Also budget/index.html:178 instructs the reader to clone the same unreachable repo (bare <code>, not an anchor). Either make the repo public or rewrite the six anchors as plain 'private repository' text and drop the auditability claim and the clone instruction.",
-      "resolution": "Shipped YaE 5c2d9ef: repo confirmed private via the GitHub API; all six anchors rewritten as plain text naming it private, the 'is auditable' claim dropped from the privacy page, and the clone instruction reworded. Making the repo public is still available to Kane and would let the links come back."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-hero-stats-stale-count",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-hero-stats-stale-count",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "index.html:1758 'six things in flight'; :1763-1772 claims 6/6 projects, 4 live, 6 in build against nine real cards; open 10 runs",
-      "tensions_with": [
-        "observability",
-        "performance"
-      ],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): the homepage hero has been wrong for TEN runs. index.html:1758 says 'six things in flight'; the stat strip at :1763-1772 claims data-count 6 /6 Projects, 4 live Shipping, 6 in build Cooking. Nine real cards were counted this run at index.html:1811,1833,1855,1877,1899,1921,1943,1965,1987 (Apothecary, Brackish Rising, Budget, Cattery, Chains, Gnosis, Here Be Hordes, Ring, Scheduler). The strip is also internally incoherent: 4 live + 6 in build = 10 against a stated total of 6. Fix: derive the three counts from the rendered card set at runtime (count .project articles and their .status class) so the strip cannot drift again, and change the tagline to a count-free phrasing. sitemap/index.html:86 carries the same six-vs-nine drift and should be fixed in the same pass.",
-      "resolution": "Shipped YaE 1e9c1f4: the strip now counts .project articles and their .status class at runtime (verified live: data-count 9/6/3, unit reads /9) and the tagline is count-free. sitemap/index.html fixed in the same pass."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-intro-prose-six-omits-three",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-intro-prose-six-omits-three",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "high",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "index.html:1792-1794 enumerates six; Cattery, Gnosis and Ring have cards and two have live Launch links but zero prose; open 10 runs",
-      "tensions_with": [],
-      "prompt": "YaE HIGH (bar-raise-everything 2026-07-17): index.html:1792 enumerates 'two survival RTS games in Godot, a disc-golf caddy, an employee scheduler, a jar-label designer, and a budget tool' (six), and :1793-1794 give narrative paragraphs to Hordes, Rising, Chains, Scheduler, Apothecary and Budget only. Cattery, Gnosis and Ring appear nowhere in the About prose despite having cards (index.html:1877,1921,1965) and live Launch links (gnosis.yesandeverything.com, ring.yesandeverything.com). Open 10 runs. Extend the enumeration and add a fourth paragraph covering all three. Voice: solo-dev, no em dashes, no AI vocabulary.",
-      "resolution": "Shipped YaE 1e9c1f4: About enumeration now names all nine, plus a fourth paragraph covering Ring, Cattery and Gnosis."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-skipgate-cannot-fire",
@@ -3578,54 +3278,6 @@
         "visual-reuse"
       ],
       "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): grep -rl 'og:image' --include=*.html returns exactly one file: index.html (:14-16). The 7 current-template detail pages each carry og:title + og:description + og:type and ZERO og:image/og:url/twitter:card, so every project page shares as a blank social preview. apothecary/index.html:14-18 carries twitter:card content='summary' with no image, rendering a card frame with an empty thumbnail. og.png is live and valid (HTTP 200, image/png, 51,012 bytes, IHDR 1200x630). Add og:image (https://yesandeverything.com/og.png), og:url and twitter:card=summary_large_image to every public page, ideally via a head pass in scripts/update-project-pages.mjs so it cannot drift per-page. NOTE apothecary/ is a mirror (hard rule): fix it in X:\\YesAndApothecary and ship via that repo's release, never here."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-meta-og-omits-cattery-gnosis",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-meta-og-omits-cattery-gnosis",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 5,
-      "evidence": "index.html:7,11,20 and the JSON-LD hasPart at :24 each enumerate exactly 7 of 9 projects",
-      "tensions_with": [
-        "architecture"
-      ],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): all four homepage enumerations still list 7 of 9 projects. index.html:7 (meta description), :11 (og:description), :20 (twitter:description) each name Hordes, Rising, Chains, Scheduler, Apothecary, Budget, Ring; the JSON-LD hasPart at :24 parses to exactly those same 7. The homepage renders 9 cards and SLUGS at update-project-pages.mjs:25-35 lists the same 9, so Cattery and Gnosis appear in the card grid but in no machine-readable description of the site. Add both to all four, and derive them from the same registry that gates the cards so the next project cannot miss again.",
-      "resolution": "Shipped YaE 1e9c1f4: update-project-pages.mjs regenerates meta/og/twitter descriptions and the JSON-LD hasPart from a PUBLIC_COPY registry keyed to SLUGS, and throws if a card ships without copy. Verified live: all four now list nine."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-sitemap-no-parity-guard",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-sitemap-no-parity-guard",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 5,
-      "evidence": "git show HEAD:scripts/update-project-pages.mjs has zero sitemap logic; the regenerator lives only in the working tree at :102-119, uncommitted 7 days, while the workflow runs the committed script",
-      "tensions_with": [
-        "strategic-kill-this"
-      ],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): card-to-sitemap parity HOLDS today (live sitemap.xml returns 13 <loc> entries: 4 static + all 9 project slugs, matching the 9 cards) but it is entirely unenforced. `git show HEAD:scripts/update-project-pages.mjs | grep -c sitemap.xml` returns 0 -- the COMMITTED script has no sitemap logic at all. The regenerator exists only in the working tree at :102-119, uncommitted for 7 days, and .github/workflows/deploy-pages.yml:39 runs the committed version. The uncommitted sitemap.xml diff is ordering-only, confirming the current parity was achieved by hand after a documented miss, not by the guard. Ship it (folds into yae-staged-fixes-unshipped-since-0710). While there: sitemap.xml:4-5 submit /budget/ and /terms/, which both carry noindex (Search Console reports this as an error), and five indexable budget policy sub-pages are absent from the sitemap because the regenerator's one-loc-per-slug loop cannot see sub-pages.",
-      "resolution": "Already shipped: update-project-pages.mjs section 3 regenerates sitemap.xml from SLUGS on every Pages deploy. Verified 13 locs against 9 cards plus 4 static URLs."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-design-titles-copypaste-chains",
@@ -4084,28 +3736,6 @@
       "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): status/index.html:291 `<div id=\"error-banner\" class=\"error-banner\" style=\"display:none\">` carries no role and no aria-live, and is revealed only via banner.style.display='block' at :643-646. The page auto-refreshes on a 300000ms interval (:653) plus on visibilitychange (:655-660), so a refresh failure is announced to no assistive tech and to any user not watching the top of the page. grep for aria-live/role=status across status/index.html returns zero hits. Lift the attribute set from X:\\YesAndRing\\public\\app.js:1681, which sets role=status + aria-live=polite + aria-atomic=true on its toast: add those three to the #error-banner div. Fits the locked aesthetic (no framework, no build step, self-contained page)."
     },
     {
-      "id": "bar-raise-2026-07-17-yae-yae-ring-status-label-contradiction",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-ring-status-label-contradiction",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 5,
-      "evidence": "index.html:1975 renders class=\"status live\" with the label 'In progress' while projects/ring/index.html:76 renders 'Live'; all eight other projects agree across both artifacts",
-      "tensions_with": [],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): index.html:1975 renders Ring's card status as <span class=\"status live\">In progress</span>, while projects/ring/index.html:76 renders <span class=\"pill status\">Live</span>. The card's CSS class says live while its label says in progress. Ring is the ONLY project whose card and project page contradict each other -- all eight others agree across both artifacts (Apothecary Live/Live, Rising Pre-MVP/Pre-MVP, Budget Post-MVP/Post-MVP, Cattery In build/In build, Chains Live/Live, Gnosis 'Live · gated'/'Live · gated', Hordes Pre-MVP/Pre-MVP, Scheduler Live/Live). Set the index.html:1975 label to 'Live' to match its own status class and its working https://ring.yesandeverything.com Launch link.",
-      "resolution": "Shipped YaE 1e9c1f4: card label set to Live, matching its status class and its working Launch link. Verified live."
-    },
-    {
       "id": "bar-raise-2026-07-17-yae-yae-privacy-claim-overreaches-portfolio",
       "added": "2026-07-17",
       "project": "everything",
@@ -4127,28 +3757,6 @@
         "compliance-data-steward"
       ],
       "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): index.html:1796 reads 'Live deployments link out. Private repos stay private. There are no trackers, no analytics, no fonts pulled from a CDN, no cookies set.' and :1757-1758 says 'six things in flight, none of them tracking you.' Both are phrased portfolio-wide. Verified against the two live subdomains this run: ring.yesandeverything.com references fonts.googleapis.com and fonts.gstatic.com (plus challenges.cloudflare.com and supabase.co); scheduler.yesandeverything.com preconnects and loads fonts.bunny.net. So the claims are true of index.html itself and false of two Launch-linked deployments. Scope both sentences explicitly to this page, e.g. 'This page sets no cookies, pulls no fonts from a CDN, and runs no analytics.' Do not weaken the claim where it is true."
-    },
-    {
-      "id": "bar-raise-2026-07-17-yae-yae-sitemap-page-six-of-nine",
-      "added": "2026-07-17",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "finding_id": "yae-sitemap-page-six-of-nine",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "completed",
-      "attempts": 1,
-      "result_path": null,
-      "lastWorkedAt": "2026-07-25T03:12Z",
-      "lastAttemptAt": null,
-      "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
-      "severity": "medium",
-      "impact": 2,
-      "confidence": 5,
-      "evidence": "sitemap/index.html:86 describes 'six project cards'; :101-106 lists only six project pages, omitting cattery, gnosis and ring; last committed 2026-06-10",
-      "tensions_with": [],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): sitemap/index.html:86 describes the landing page as 'hero, about, six project cards', and the /projects/ subtree at :101-106 lists only here-be-hordes, brackish-rising, chains, scheduler, apothecary and budget. Cattery, Gnosis and Ring are absent. Last committed 23bd7d0 on 2026-06-10, five weeks stale. This is the same six-vs-nine drift as the homepage hero, so fix it in the same pass. By contrast the root sitemap.xml IS current: all nine project pages present, card-to-loc parity holds. Note this page is robots-disallowed, so this is internal-consistency work, not an SEO item.",
-      "resolution": "Shipped YaE 1e9c1f4: sitemap/index.html says nine cards and lists cattery, gnosis and ring under /projects/."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-external-links-missing-rel",
@@ -4727,23 +4335,6 @@
       ],
       "evidence": "status/data/Rising.json itemsLeft[0] and .project-context.json completion.remaining[0] both list 'Hold the Wall 5-7 wave mission script' and 'Lantern Oil drain + mission-fail clock UI' as still pending, and remaining[3] asserts 'the six gameplay slice deliverables above are unstarted'. Code says otherwise: source/data/missions/m1_default.tres drives the mission against the Mission resource with the cadence in wave_director HORDE_DAYS, and lantern.gd:285-302 drains 4 Oil/min and emits lantern_oil_starved, consumed at gameplay.gd:506 into the loss flow with day_timer_widget.gd on the clock side. docs/CANONICAL_AUDIT-2026-07-24.md finding 3 reaches the same conclusion from independent evidence.",
       "prompt": "The Rising dashboard reports a project state the code contradicts. status/data/Rising.json itemsLeft and X:\\BrackishRising\\.project-context.json completion.remaining both name four pending M1 gameplay deliverables and then assert the gameplay slice is 'unstarted'; two of the four have shipped (Hold the Wall mission via source/data/missions/m1_default.tres + wave_director HORDE_DAYS, and the Lantern Oil drain + mission-fail path via lantern.gd:285-302 -> gameplay.gd:506 -> the loss flow, with day_timer_widget.gd present). Genuinely still pending: Shambler + Lunger combat tuning, and Hatchery destruction + Coral Receding VFX (brood_mound.gd / hatchery.gd / leviathan_cyst.gd headers all still say the VFX lands in M1). Rewrite both remaining/itemsLeft texts against code, not against the GDD Roadmap tab, and re-derive the completion figure from the corrected list. The root cause is the stale GDD status layer, tracked separately as canonical-audit-2026-07-24-rising-roadmap-milestone-badges-stale; fix that first or in the same pass so the two do not diverge again. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-24.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety."
-    },
-    {
-      "id": "bar-raise-2026-07-24-chains-observability-01",
-      "added": "2026-07-24",
-      "project": "chains",
-      "kind": "bar-raise-finding",
-      "finding_id": "observability-01",
-      "auto_safe": false,
-      "priority": "P1",
-      "status": "pending",
-      "severity": "HIGH",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": "tools/audit_dashboard.py:73 _SEV_RX matches only the bracketed form [MEDIUM ...]. The audit skill tags severity as a heading suffix instead (docs/CANONICAL_AUDIT-2026-07-24.md lines 23/34/40 end in '— MEDIUM' / '— LOW'), so 'python tools/audit_dashboard.py findings docs/CANONICAL_AUDIT-2026-07-24.md' prints crit=0 high=0 med=0 low=0 for a report holding 1 MEDIUM and 2 LOW, and status/data/Chains.json now carries 0/0/0/0. Older reports use '(LOW)' and 'H1.' forms, also unmatched; YaE git history shows the audit block all-zero on 19 of the last 20 writes.",
-      "source": "bar-raise-yac 2026-07-24 / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-24.md",
-      "prompt": "Yes& Chains [HIGH, bar-raise finding observability-01]: the dashboard audit block is silently reporting zero findings. tools/audit_dashboard.py exists specifically because carried-over 0/0/0 counts masked a real CRITICAL on 2026-06-23 (see its module docstring), but its severity regex _SEV_RX (line ~73) only matches a bracketed '[MEDIUM ...]' tag, while the canonical-audit skill writes severity as a heading suffix ('### 1. <title> — MEDIUM') or in parens ('(LOW)'). Result: docs/CANONICAL_AUDIT-2026-07-24.md holds 1 MEDIUM + 2 LOW and parses to 0/0/0/0, and X:\\YesAndEverything\\status\\data\\Chains.json shows no findings. Fix: widen the regex to accept the heading-suffix and parenthesized forms the reports actually use, and add a self-check that exits non-zero (or warns loudly) when the '## Drift found' section contains numbered '###' findings but the parsed counts are all zero, so a future format drift fails loudly instead of silently. Re-run 'python tools/audit_dashboard.py findings docs/CANONICAL_AUDIT-2026-07-24.md' to confirm it reports med=1 low=2, then 'sync' to correct the dashboard block. Ships via X:\\YesAndChains\\scripts\release.ps1. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "New this run. Same failure class the module was written to prevent, one layer up: the loop runs daily but its output is not landing truthfully."
     },
     {
       "id": "bar-raise-2026-07-24-yab-orchestration-audit-loop-integrity-06",
@@ -6458,26 +6049,6 @@
       "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
     },
     {
-      "id": "bar-raise-2026-07-24-everything-yae-gate-secret-republished-in-status-json",
-      "added": "2026-07-24",
-      "project": "everything",
-      "kind": "bar-raise-finding",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "completed",
-      "attempts": 1,
-      "source": "bar-raise-everything 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 5,
-      "finding_id": "yae-gate-secret-republished-in-status-json",
-      "title": "The gate's shared secret is now verbatim in two tracked, published status JSONs (status/data/Everything.json and status/data/Hordes.json) because prior bar-raise topFinding prose quoted it; stripping it from CLAUDE.md alone will not clear the exposure.",
-      "evidence": "grep -c on status/data/Hordes.json and status/data/Everything.json each returns 1; both files are git-tracked and served from the public Pages tree. The 2026-07-24 Everything run removed its own occurrence by not quoting the literal in topFinding, leaving Hordes.json.",
-      "prompt": "cd X:\\YesAndEverything first. Remove the literal gate password from status/data/Hordes.json's barRaise.topFinding prose (rewrite the sentence to name the finding without quoting the secret), and add a reject pattern for the literal to scripts/check-status-json.ps1 so no future writer can republish it. Do NOT rewrite any other field in that JSON. Related: the same secret still sits in CLAUDE.md (finding yae-gate-secret-in-tracked-public-doc) and the real fix there is separate. Atomic-write with readback; the file is on a FUSE mount.",
-      "resolution": "Shipped YaE 4b71fa5: Hordes.json prose redacted, and check-status-json.ps1 gained a republish guard that reads the live literals out of the mirror pages (stores no secret). Verified it passes clean and fails on a planted literal.",
-      "lastWorkedAt": "2026-07-25T03:07Z"
-    },
-    {
       "id": "bar-raise-2026-07-24-ring-missing-sharing-leak-test",
       "added": "2026-07-24",
       "project": "ring",
@@ -6992,6 +6563,6 @@
       "notes": "Auto-enqueued by bar-raise-scheduler 2026-07-24 as blocked-on-user. Chronic at 6 runs; also carried in the status JSON deferred[] block."
     }
   ],
-  "last_drain": "2026-07-25T02:37Z",
-  "updated": "2026-07-25T03:15Z"
+  "last_drain": "2026-07-25T03:37Z",
+  "updated": "2026-07-25T03:37Z"
 }
