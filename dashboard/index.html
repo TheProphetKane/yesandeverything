@@ -950,6 +950,8 @@
 
   <div class="strip" id="strip"></div>
 
+  <div id="usage-orphans" role="status" style="display:none;max-width:1400px;margin:6px auto 0;padding:0 18px;font-size:11px;letter-spacing:.04em;color:var(--fg-2, #8b95a3);"></div>
+
   <footer class="page-foot">
     Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; costs at published API rates, frozen at collection &middot; progress data from <a href="/status/">status</a> JSON, refreshed by every release and review pass &middot; &larr; &rarr; spin the wheel, v cycles the wave, click any widget to enlarge &middot; <a href="/sitemap/">sitemap</a> &middot; no backend, no analytics, no tracking.
   </footer>
@@ -1216,6 +1218,21 @@
     }
     return d;
   }
+  // Ids present in usage.json but absent from the PROJECTS registry above. The
+  // ALL series used to walk the DATA while every per-project bar walked the
+  // REGISTRY, so ALL silently included projects that had no bar: the ALL total
+  // ran $298.66 ahead of the sum of the bars, exactly one unregistered project's
+  // whole attributed cost. ALL is now registry-scoped so the two paths agree by
+  // construction, and anything unregistered is surfaced rather than folded in.
+  var REGISTERED_IDS = {};
+  PROJECTS.forEach(function (p) { REGISTERED_IDS[p.id] = true; });
+  function unregisteredIds() {
+    if (!LAST || !LAST.usage || !LAST.usage.projects) return [];
+    return Object.keys(LAST.usage.projects).filter(function (pid) {
+      return pid !== "unattributed" && !REGISTERED_IDS[pid];
+    });
+  }
+
   function byDayFor(id) {
     var out = {};
     if (!LAST || !LAST.usage || !LAST.usage.projects) return out;
@@ -1223,6 +1240,7 @@
     Object.keys(src).forEach(function (pid) {
       if (id !== "ALL" && pid !== id) return;
       if (id === "ALL" && pid === "unattributed") return;
+      if (id === "ALL" && !REGISTERED_IDS[pid]) return;
       (src[pid].daily || []).forEach(function (d) {
         if (!out[d.d]) out[d.d] = { d: d.d, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, costUSD: 0 };
         out[d.d].input += d.input || 0; out[d.d].output += d.output || 0;
@@ -1896,6 +1914,19 @@
     setCell(5, tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k", "burn rate today");
     setCell(6, actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag);
     setCell(7, usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected");
+    // Anything in usage.json with no PROJECTS entry gets no bar and is excluded
+    // from ALL, so say so rather than letting it vanish. Empty in the normal case.
+    var orphans = unregisteredIds();
+    var orphanEl = $("usage-orphans");
+    if (orphanEl) {
+      if (orphans.length) {
+        orphanEl.textContent = "not charted: " + orphans.join(", ") + " (no PROJECTS entry)";
+        orphanEl.style.display = "";
+      } else {
+        orphanEl.textContent = "";
+        orphanEl.style.display = "none";
+      }
+    }
     document.title = "dashboard · " + (FILTER === "ALL" ? "" : metaFor(FILTER).tag + " · ") + fmtUSD(tToday.cost) + " today";
   }
 
