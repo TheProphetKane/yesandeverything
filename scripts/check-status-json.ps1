@@ -24,7 +24,43 @@ Set-Location (Join-Path $PSScriptRoot "..")
 $bad    = @()
 $healed = @()
 
-Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue | ForEach-Object {
+# Mojibake byte signatures. These are the UTF-8 encodings of text that was
+# already mojibake - a UTF-8 string decoded as cp1252 and re-encoded, the classic
+# em-dash-to-garbage round trip. The result is VALID UTF-8 and parses clean, so
+# every check below passes it while the dashboard renders rubbish;
+# status/data/Ring.json carried three of them for weeks. Matched as raw bytes on
+# purpose: putting the literal characters in this .ps1 would itself be an
+# encoding hazard under PS 5.1's cp1252 default read of a BOM-less script.
+$MOJIBAKE = @(
+  @{ Name = "double-encoded punctuation"; Bytes = @(0xC3, 0xA2, 0xE2, 0x82, 0xAC) },
+  @{ Name = "double-encoded A-tilde-cent"; Bytes = @(0xC3, 0x83, 0xC2, 0xA2) },
+  @{ Name = "double-encoded A-circumflex-euro"; Bytes = @(0xC3, 0x82, 0xE2, 0x82, 0xAC) }
+)
+
+function Find-Mojibake([byte[]]$bytes, [int]$end) {
+  foreach ($sig in $MOJIBAKE) {
+    $pat = $sig.Bytes
+    $limit = $end - $pat.Count
+    for ($i = 0; $i -le $limit; $i++) {
+      $hit = $true
+      for ($k = 0; $k -lt $pat.Count; $k++) {
+        if ($bytes[$i + $k] -ne $pat[$k]) { $hit = $false; break }
+      }
+      if ($hit) { return $sig.Name }
+    }
+  }
+  return $null
+}
+
+# status/data/*.json AND the two files the live dashboard actually reads. The
+# dashboard pair crossed no guard at all, despite the header above claiming this
+# script catches corruption before it ships to the live dashboard.
+$targets = @()
+$targets += Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue
+$targets += Get-ChildItem "dashboard\data\usage.json" -ErrorAction SilentlyContinue
+$targets += Get-ChildItem "dashboard\data\queue.json" -ErrorAction SilentlyContinue
+
+$targets | ForEach-Object {
   $path  = $_.FullName
   $name  = $_.Name
   $bytes = [System.IO.File]::ReadAllBytes($path)
@@ -57,6 +93,11 @@ Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue | ForEach-Objec
         }
         else {
           try { $null = $body | ConvertFrom-Json } catch { $why = "does not parse: $($_.Exception.Message)" }
+        }
+
+        if (-not $why) {
+          $moji = Find-Mojibake $bytes $end
+          if ($moji) { $why = "contains mojibake ($moji) - a string was decoded as cp1252 and re-encoded somewhere upstream" }
         }
 
         # Body is valid but the file carried trailing NUL pad: heal it byte-exact.
