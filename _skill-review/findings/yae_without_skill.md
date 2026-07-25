@@ -87,7 +87,7 @@ For the avoidance of doubt, these are all good:
 - `CNAME` is exactly `yesandeverything.com` (no newline drama).
 - `.nojekyll` is present and empty (correct).
 - `robots.txt` disallows `/hordes/` as CLAUDE.md describes.
-- `hordes/index.html` is a hand-authored password gate (`PASSWORD = 'SneakPeak'`), has `var ENCODED = "..."` containing a base64-encoded GDD, decodes via `atob` + `TextDecoder('utf-8')` + `document.write` — matches CLAUDE.md exactly.
+- `hordes/index.html` is a hand-authored password gate (`PASSWORD = '[redacted]'`), has `var ENCODED = "..."` containing a base64-encoded GDD, decodes via `atob` + `TextDecoder('utf-8')` + `document.write` — matches CLAUDE.md exactly.
 - `404.html` is a simple meta-refresh to `/`, dark-mode, matches the site aesthetic.
 - `projects/scheduler/index.html` faithfully mirrors what DESIGN.md says (Aquatics, Lifeguard + Swim Instructor, magic link, six-week window, etc.), uses the established dark palette, and properly disclosing the design doc as password-gated.
 - Single-file-per-page convention is held throughout (no shared CSS/JS imports).

@@ -12,12 +12,12 @@ The deploy plumbing (CNAME, robots.txt, .nojekyll, hordes/ base64 gate) is sound
 - **robots.txt** — `Allow: /`, `Disallow: /hordes/`. Matches CLAUDE.md's rule that "/hordes/ is private GDD."
 - **.nojekyll** — present at root, matches CLAUDE.md table and DEPLOY.md inventory.
 - **404.html** — present, dark-mode, mono font, auto-refreshes to `/`. Matches the "dark-mode by default, mono-font-first" aesthetic.
-- **hordes/index.html base64-injection structure** — password gate intact (`var PASSWORD = 'SneakPeak'` on line 98), `var ENCODED = "..."` on line 99 holds the live GDD payload. Most recent commit `cd20f41 docs(htbh): publish GDD v0.34.22` confirms the publish script is hitting the gate page correctly. CLAUDE.md's "Never copy `gdd.html` into `hordes/`" injection rule is being respected.
+- **hordes/index.html base64-injection structure** — password gate intact (`var PASSWORD = '[redacted]'` on line 98), `var ENCODED = "..."` on line 99 holds the live GDD payload. Most recent commit `cd20f41 docs(htbh): publish GDD v0.34.22` confirms the publish script is hitting the gate page correctly. CLAUDE.md's "Never copy `gdd.html` into `hordes/`" injection rule is being respected.
 - **DEPLOY.md** — accurate one-time runbook; the GitHub Pages + DNS setup described matches the live CNAME and the four `185.199.108-111.153` A-record pattern that GitHub Pages requires.
 - **File inventory in CLAUDE.md "Files at a glance"** — every listed file exists at the claimed path (`index.html`, `404.html`, `CNAME`, `robots.txt`, `hordes/index.html`, `projects/scheduler/{index,design}.html`, `DEPLOY.md`, `unstick-git.ps1`).
 - **Chains description** (index.html line 277-289) — broadly matches `X:\YesAndChains\PROJECT_SPEC.md` and `CONTEXT.md`. Course count (~6,300), TechDisc/UDisc CSV import, PWA + offline, opt-in AI caddy with per-user spend caps, Cloudflare Worker proxy all confirmed in the YaC canonical layer. The "v0.34.x → 1.0" version is wrong (see Drift #1) but the prose is right.
 - **Scheduler description** (index.html line 327-337 + `projects/scheduler/index.html`) — matches `X:\YesAndScheduler\docs\DESIGN.md` §1, §2, §3. Aquatics department, Lifeguard + Swim Instructor sub-departments, preference-driven six-week auto-fill, review queue, mobile-first, Cloudflare Workers + D1 + Vite/React/Tailwind + Supabase magic-link. Stack and feature scope all reconcile.
-- **Scheduler design.html** — password-gated (`var PASSWORD = 'SeeSchedule'`) base64 mirror of `X:\YesAndScheduler\docs\DESIGN.md`. Same shape as hordes/index.html. Note: CLAUDE.md doesn't document this password, only `SneakPeak` for hordes/.
+- **Scheduler design.html** — password-gated (`var PASSWORD = 'SeeSchedule'`) base64 mirror of `X:\YesAndScheduler\docs\DESIGN.md`. Same shape as hordes/index.html. Note: CLAUDE.md doesn't document this password, only `[redacted]` for hordes/.
 - **hordes/ is not linked from index.html** — only the HTBH card's "GDD →" anchor (line 318) goes to `hordes/`, matching robots.txt's noindex intent. The orphan `projects/here-there-be-hordes/gdd.html` is also not linked from any page in the site.
 
 ---
@@ -98,7 +98,7 @@ The Chains pill renders as `v0.34.x → 1.0` (line 292) — even after fixing th
 
 ### 7. CLAUDE.md doesn't document the Scheduler password — INFO
 
-CLAUDE.md line 19 documents the hordes/ password (`SneakPeak`) but doesn't mention that `projects/scheduler/design.html` is also password-gated with `SeeSchedule`. If someone is grepping the handler doc for "password," they'd miss the second gate.
+CLAUDE.md line 19 documents the hordes/ password (`[redacted]`) but doesn't mention that `projects/scheduler/design.html` is also password-gated with `SeeSchedule`. If someone is grepping the handler doc for "password," they'd miss the second gate.
 
 ---
 

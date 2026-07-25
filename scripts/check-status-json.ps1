@@ -92,6 +92,35 @@ Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue | ForEach-Objec
   if ($why) { $bad += "${name}: $why" }
 }
 
+# --- Gate-secret republish guard (2026-07-24) ---
+# Bar-raise prose kept quoting the mirrors' gate phrases into topFinding fields,
+# which then shipped to the public status tree. Rather than hard-code the
+# literals here (that would be the same leak in a new file), read them back out
+# of the generated gate pages and check the status JSONs for a match. No gate
+# page present = nothing to compare, so the check skips quietly.
+$secrets = @()
+foreach ($gate in @("hordes\index.html", "brackish-rising\index.html")) {
+  if (-not (Test-Path -LiteralPath $gate)) { continue }
+  $html = Get-Content -LiteralPath $gate -Raw -Encoding utf8
+  foreach ($varName in @("PASSWORD", "EDITOR")) {
+    $m = [regex]::Match($html, "var\s+$varName\s*=\s*(['`"])(.*?)\1")
+    if ($m.Success -and $m.Groups[2].Value.Length -ge 6) { $secrets += $m.Groups[2].Value }
+  }
+}
+$secrets = $secrets | Sort-Object -Unique
+
+if ($secrets.Count -gt 0) {
+  Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue | ForEach-Object {
+    $text = Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8
+    foreach ($s in $secrets) {
+      if ($text -and $text.Contains($s)) {
+        $bad += "$($_.Name): republishes a gate phrase from the mirror pages (rewrite the prose to name the finding without quoting the secret)"
+        break
+      }
+    }
+  }
+}
+
 if ($healed.Count -gt 0) {
   Write-Host "Healed trailing-NUL padding (FUSE) on:" -ForegroundColor Yellow
   $healed | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
