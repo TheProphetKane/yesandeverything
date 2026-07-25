@@ -577,6 +577,40 @@ function Get-LedgerHighWater([string]$proj) {
 }
 
 # ----- Roll up --------------------------------------------------------------
+$BACKFILL = @{  # est fill for 3 historical daily-holes (2026-06-20/21, 07-05); transcripts aged out
+  # before capture. Neighbor-averaged, est-flagged, DISPLAY-ONLY (never added to allTime). Real data wins.
+  'Agents|2026-06-20' = @{ input=528; output=23464; cacheRead=2566563; cacheWrite=60994; cost=2.2538 }
+  'Agents|2026-06-21' = @{ input=528; output=23464; cacheRead=2566563; cacheWrite=60994; cost=2.2538 }
+  'Agents|2026-07-05' = @{ input=9142; output=33946; cacheRead=6753717; cacheWrite=215974; cost=10.3453 }
+  'Apothecary|2026-06-20' = @{ input=4; output=7510; cacheRead=214096; cacheWrite=6812; cost=0.3374 }
+  'Apothecary|2026-06-21' = @{ input=4; output=7510; cacheRead=214096; cacheWrite=6812; cost=0.3374 }
+  'Apothecary|2026-07-05' = @{ input=18993; output=43291; cacheRead=10803796; cacheWrite=228918; cost=14.5536 }
+  'Budget|2026-06-20' = @{ input=2; output=1214; cacheRead=56821; cacheWrite=5574; cost=0.0936 }
+  'Budget|2026-06-21' = @{ input=2; output=1214; cacheRead=56821; cacheWrite=5574; cost=0.0936 }
+  'Cattery|2026-07-05' = @{ input=47126; output=175417; cacheRead=72564226; cacheWrite=1414632; cost=77.138 }
+  'Chains|2026-06-20' = @{ input=4; output=806; cacheRead=368093; cacheWrite=924; cost=0.21 }
+  'Chains|2026-06-21' = @{ input=4; output=806; cacheRead=368093; cacheWrite=924; cost=0.21 }
+  'Chains|2026-07-05' = @{ input=4196; output=21675; cacheRead=9298122; cacheWrite=232280; cost=13.3274 }
+  'Counselor|2026-06-20' = @{ input=37698; output=240330; cacheRead=96013598; cacheWrite=1960520; cost=66.4567 }
+  'Counselor|2026-06-21' = @{ input=37698; output=240330; cacheRead=96013598; cacheWrite=1960520; cost=66.4567 }
+  'Counselor|2026-07-05' = @{ input=9786; output=25590; cacheRead=2618792; cacheWrite=119842; cost=5.0349 }
+  'Everything|2026-06-20' = @{ input=29446; output=15379; cacheRead=2904279; cacheWrite=577177; cost=5.5912 }
+  'Everything|2026-06-21' = @{ input=29446; output=15379; cacheRead=2904279; cacheWrite=577177; cost=5.5912 }
+  'Everything|2026-07-05' = @{ input=4931; output=13438; cacheRead=9230660; cacheWrite=661778; cost=17.1596 }
+  'Gnosis|2026-07-05' = @{ input=157631; output=798721; cacheRead=482287741; cacheWrite=3867576; cost=493.429 }
+  'Hordes|2026-06-20' = @{ input=5976; output=122760; cacheRead=24960039; cacheWrite=466680; cost=18.4956 }
+  'Hordes|2026-06-21' = @{ input=5976; output=122760; cacheRead=24960039; cacheWrite=466680; cost=18.4956 }
+  'Hordes|2026-07-05' = @{ input=21726; output=61532; cacheRead=42322326; cacheWrite=105168; cost=46.9308 }
+  'Ring|2026-07-05' = @{ input=25921; output=16487; cacheRead=23147923; cacheWrite=1310738; cost=34.5967 }
+  'Rising|2026-06-20' = @{ input=13868; output=214630; cacheRead=35834434; cacheWrite=922549; cost=29.1182 }
+  'Rising|2026-06-21' = @{ input=13868; output=214630; cacheRead=35834434; cacheWrite=922549; cost=29.1182 }
+  'Rising|2026-07-05' = @{ input=2057; output=8352; cacheRead=5963434; cacheWrite=282892; cost=9.9378 }
+  'Scheduler|2026-06-20' = @{ input=11889; output=2753; cacheRead=898639; cacheWrite=14399; cost=0.6676 }
+  'Scheduler|2026-06-21' = @{ input=11889; output=2753; cacheRead=898639; cacheWrite=14399; cost=0.6676 }
+  'Skylight|2026-06-20' = @{ input=6180; output=9441; cacheRead=1487641; cacheWrite=668258; cost=5.1874 }
+  'Skylight|2026-06-21' = @{ input=6180; output=9441; cacheRead=1487641; cacheWrite=668258; cost=5.1874 }
+}
+
 $cutoff = (Get-Date).Date.AddDays(-60)
 $projects = [ordered]@{}
 foreach ($proj in ($Agg.Keys | Sort-Object)) {
@@ -607,6 +641,16 @@ foreach ($proj in ($Agg.Keys | Sort-Object)) {
       $models[$fam] = [ordered]@{ input = $bm.input; output = $bm.output; cacheRead = $bm.cacheRead; cacheWrite = $bm.cacheWrite; costUSD = [math]::Round($bm.cost, 2) }
     }
   }
+  # Estimated backfill for historical daily-holes (source transcripts aged out before capture);
+  # neighbor-averaged, est-flagged, DISPLAY-ONLY (never added to allTime). Real scanned data always wins.
+  foreach ($bk in $BACKFILL.Keys) {
+    $bp, $bday = $bk -split '\|', 2
+    if ($bp -ne $proj) { continue }
+    if ($Agg[$proj].ContainsKey($bday)) { continue }
+    $bf = $BACKFILL[$bk]
+    $daily += [ordered]@{ d = $bday; input = $bf.input; output = $bf.output; cacheRead = $bf.cacheRead; cacheWrite = $bf.cacheWrite; costUSD = $bf.cost; est = $true }
+  }
+  $daily = @($daily | Sort-Object { $_.d })
   $projects[$proj] = [ordered]@{ allTime = $allTime; sessions = $sessions; models = $models; daily = $daily }
 }
 # the true horizon: oldest day in the aggregates (incremental scans only see
