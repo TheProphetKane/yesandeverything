@@ -3111,6 +3111,16 @@
       }
       var statuses = results[3] || {};
       LAST = { usage: usage, statuses: statuses, backfill: backfill, queue: queueLive };
+      // Publish for the enrichment IIFE below, which used to fetch the SAME
+      // usage.json a second time on load and again every 5 minutes. Nothing can
+      // serve either copy from cache (no-store on both ends plus a unique bust),
+      // so it was ~19 KB of duplicate transfer per load and per tick, per open
+      // tab, forever. This refresh runs every 60s, so the enrichment now reads
+      // FRESHER data than it was fetching for itself.
+      try {
+        window.__YAE_USAGE__ = usage;
+        window.dispatchEvent(new CustomEvent("yae:usage"));
+      } catch (e) {}
       renderAll();
       $("last-refreshed").textContent = "refreshed " + new Date().toLocaleTimeString();
       btn.disabled = false;
@@ -3383,6 +3393,15 @@
   }
 
   function go() {
+    // Prefer the payload the main app has already fetched (it refreshes every
+    // 60s, so this is fresher than a self-fetch as well as free). Only go to the
+    // network if the app has not published one yet.
+    var shared = null;
+    try { shared = window.__YAE_USAGE__ || null; } catch (e) { shared = null; }
+    if (shared && shared.projects) {
+      try { enrich(shared); } catch (e) {}
+      return;
+    }
     // Worker-first (live KV data), fall back to the static file. no-store: the
     // force-cache here once pinned the stale badge to an old HTTP-cache copy while
     // the main app was already showing fresh data.
@@ -3397,7 +3416,8 @@
     var app = document.getElementById("app");
     if (app && !app.hidden) {
       setTimeout(go, 400);
-      setInterval(go, 300000);   // re-evaluate every 5 min so the badge tracks reality
+      try { window.addEventListener("yae:usage", function () { go(); }); } catch (e) {}
+      setInterval(go, 300000);   // backstop if the app stops publishing
       return;
     }
     setTimeout(wait, 300);
