@@ -859,7 +859,12 @@ $QUEUE_ALIAS = @{
 }
 try {
   if (Test-Path $QueuePath) {
-    $q = Get-Content -Raw $QueuePath | ConvertFrom-Json
+    # Read as UTF-8 explicitly. PS 5.1's `Get-Content -Raw` decodes a BOM-less file as
+    # cp1252, which turns an em-dash (E2 80 94) into three chars and re-emits them as the
+    # C3 A2 E2 82 AC ... mojibake when the rows are written back as UTF-8 -- exactly the
+    # corruption check-status-json.ps1 aborts the release on. ReadAllText decodes UTF-8
+    # (and strips a BOM if present), matching the UTF-8 write side.
+    $q = [System.IO.File]::ReadAllText($QueuePath, [System.Text.UTF8Encoding]::new($false)) | ConvertFrom-Json
     $qCounts = @{}; $qWaiting = @{}; $qDeferred = @{}; $qItems = @()
     foreach ($it in $q.items) {
       $qp = ("" + $it.project).ToLowerInvariant()
@@ -965,7 +970,9 @@ try {
     foreach ($sf in (Get-ChildItem -Path $statusDir -Filter *.json -File)) {
       if ($sf.Name -eq "constellation.json") { continue }   # rollup, not a project card
       $sid = [System.IO.Path]::GetFileNameWithoutExtension($sf.Name)
-      try { $bundle[$sid] = (Get-Content -Raw $sf.FullName | ConvertFrom-Json) }
+      # UTF-8 read (see queue note above): Get-Content -Raw would cp1252-mojibake any
+      # em-dash / smart punctuation in a status field before it reaches the KV bundle.
+      try { $bundle[$sid] = ([System.IO.File]::ReadAllText($sf.FullName, [System.Text.UTF8Encoding]::new($false)) | ConvertFrom-Json) }
       catch { Write-Host "KV statuses: skipped $($sf.Name) (parse error)" -ForegroundColor Yellow }
     }
     $statusTmp = Join-Path ([System.IO.Path]::GetTempPath()) "yae-statuses.kv.json"
