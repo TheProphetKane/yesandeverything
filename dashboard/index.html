@@ -1586,7 +1586,7 @@
       });
       if (ti + to > 0) estRatioIn = ti / (ti + to);
     })();
-    var days = [], max = 1, sum7 = 0, sum30 = 0;
+    var days = [], maxUp = 1, maxDown = 1, maxCost = 1, sum7 = 0, sum30 = 0;
     var upKey = VIEW === "cache" ? "cacheRead" : "input";
     var dnKey = VIEW === "cache" ? "cacheWrite" : "output";
     // "in" = TOTAL input tokens: uncached input + cache reads + cache writes are all input-side.
@@ -1604,8 +1604,11 @@
         rec.output += Math.round(rec.estTok * (1 - estRatioIn));
         rec.cost += e0.cost || 0;
       }
-      if (VIEW === "cost") max = Math.max(max, rec.cost);
-      else max = Math.max(max, upVal(rec), dnVal(rec));
+      // Each series is normalized to ITS OWN peak, so "in" and "out" (very different
+      // magnitudes once cache is counted) are each readable rather than one flattening the other.
+      maxUp = Math.max(maxUp, upVal(rec));
+      maxDown = Math.max(maxDown, dnVal(rec));
+      maxCost = Math.max(maxCost, rec.cost);
       sum30 += rec.input + rec.output;
       if (i < 7) sum7 += rec.input + rec.output;
       days.push(rec);
@@ -1629,7 +1632,7 @@
     var upPathEl = null, dnPathEl = null, lastY = MID;
     if (VIEW === "cost") {
       var base = H - 20;
-      var cPts = days.map(function (r, i) { return [i * step, base - (r.cost / max) * (base - 8)]; });
+      var cPts = days.map(function (r, i) { return [i * step, base - (r.cost / maxCost) * (base - 8)]; });
       lastY = cPts[cPts.length - 1][1];
       var dnD = smoothPath(cPts);
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gc-" + projId + ")", d: dnD + " L" + W + "," + base + " L0," + base + " Z" }));
@@ -1638,8 +1641,8 @@
       svg.appendChild(dnPathEl);
       labelUp = "est $"; labelDn = "";
     } else {
-      var upPts = days.map(function (r, i) { return [i * step, MID - (upVal(r) / max) * AMP]; });
-      var dnPts = days.map(function (r, i) { return [i * step, MID + (dnVal(r) / max) * AMP]; });
+      var upPts = days.map(function (r, i) { return [i * step, MID - (upVal(r) / maxUp) * AMP]; });
+      var dnPts = days.map(function (r, i) { return [i * step, MID + (dnVal(r) / maxDown) * AMP]; });
       lastY = dnPts[dnPts.length - 1][1];
       var upD = smoothPath(upPts), dnD2 = smoothPath(dnPts);
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gin-" + projId + ")", d: upD + " L" + W + "," + MID + " L0," + MID + " Z" }));
@@ -1737,13 +1740,13 @@
       function yCss(svgY) { return (svgY / H) * rect.height; }
       if (VIEW === "cost") {
         var base = H - 20;
-        snapO.style.left = px + "px"; snapO.style.top = yCss(base - (r.cost / max) * (base - 8)) + "px"; snapO.style.opacity = "1";
+        snapO.style.left = px + "px"; snapO.style.top = yCss(base - (r.cost / maxCost) * (base - 8)) + "px"; snapO.style.opacity = "1";
         snapI.style.opacity = "0";
       } else {
         var uV = upVal(r);
         var dV = dnVal(r);
-        snapI.style.left = px + "px"; snapI.style.top = yCss(MID - (uV / max) * AMP) + "px"; snapI.style.opacity = "1";
-        snapO.style.left = px + "px"; snapO.style.top = yCss(MID + (dV / max) * AMP) + "px"; snapO.style.opacity = "1";
+        snapI.style.left = px + "px"; snapI.style.top = yCss(MID - (uV / maxUp) * AMP) + "px"; snapI.style.opacity = "1";
+        snapO.style.left = px + "px"; snapO.style.top = yCss(MID + (dV / maxDown) * AMP) + "px"; snapO.style.opacity = "1";
       }
       var ago = (DAYS - 1) - idx;
       tip.innerHTML = "";
