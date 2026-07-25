@@ -99,4 +99,23 @@ for (const [slug, id] of Object.entries(SLUGS)) {
   }
 }
 
+// 3. sitemap.xml - regenerate from the same public-project source (SLUGS) that
+// gates every card, so a new project can never silently miss the sitemap again
+// (cattery/gnosis/ring shipped cards in c7231e8 and never reached it). Static
+// top-level URLs are listed explicitly; each projects/<slug>/ entry is derived
+// from SLUGS and emitted only when its directory actually exists on disk. Runs
+// in the Pages deploy workflow, so it self-heals on every release.
+{
+  const STATIC = ["/", "/budget/", "/terms/", "/apothecary/"];
+  const locs = [...STATIC];
+  for (const slug of Object.keys(SLUGS)) {
+    if (existsSync(join(ROOT, "projects", slug, "index.html"))) locs.push(`/projects/${slug}/`);
+  }
+  const body = locs.map((l) => `  <url><loc>https://yesandeverything.com${l}</loc></url>`).join("\n");
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+  const p = join(ROOT, "sitemap.xml");
+  const before = existsSync(p) ? readFileSync(p, "utf8") : "";
+  if (xml !== before) { writeFileSync(p, xml); changed++; console.log(`sitemap.xml: rewritten (${locs.length} urls)`); }
+}
+
 console.log(`update-project-pages: ${stamped} span(s) current across ${Object.keys(data).length} project(s); ${changed} file(s) rewritten.`);

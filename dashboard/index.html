@@ -1589,6 +1589,11 @@
     var days = [], max = 1, sum7 = 0, sum30 = 0;
     var upKey = VIEW === "cache" ? "cacheRead" : "input";
     var dnKey = VIEW === "cache" ? "cacheWrite" : "output";
+    // "in" = TOTAL input tokens: uncached input + cache reads + cache writes are all input-side.
+    // Previously "in" showed only uncached input, which is tiny once prompt caching kicks in, so
+    // input looked far smaller than output. The separate "cache" view still breaks cache out on its own.
+    function upVal(r) { return VIEW === "cache" ? (r.cacheRead || 0) : ((r.input || 0) + (r.cacheRead || 0) + (r.cacheWrite || 0)); }
+    function dnVal(r) { return VIEW === "cache" ? (r.cacheWrite || 0) : (r.output || 0); }
     for (var i = DAYS - 1; i >= 0; i--) {
       var k = dayKey(i), d = byDay[k] || {};
       var rec = { d: k, input: d.input || 0, output: d.output || 0, cacheRead: d.cacheRead || 0, cacheWrite: d.cacheWrite || 0, cost: d.costUSD || 0 };
@@ -1600,7 +1605,7 @@
         rec.cost += e0.cost || 0;
       }
       if (VIEW === "cost") max = Math.max(max, rec.cost);
-      else max = Math.max(max, rec[upKey], rec[dnKey]);
+      else max = Math.max(max, upVal(rec), dnVal(rec));
       sum30 += rec.input + rec.output;
       if (i < 7) sum7 += rec.input + rec.output;
       days.push(rec);
@@ -1633,8 +1638,8 @@
       svg.appendChild(dnPathEl);
       labelUp = "est $"; labelDn = "";
     } else {
-      var upPts = days.map(function (r, i) { return [i * step, MID - (r[upKey] / max) * AMP]; });
-      var dnPts = days.map(function (r, i) { return [i * step, MID + (r[dnKey] / max) * AMP]; });
+      var upPts = days.map(function (r, i) { return [i * step, MID - (upVal(r) / max) * AMP]; });
+      var dnPts = days.map(function (r, i) { return [i * step, MID + (dnVal(r) / max) * AMP]; });
       lastY = dnPts[dnPts.length - 1][1];
       var upD = smoothPath(upPts), dnD2 = smoothPath(dnPts);
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gin-" + projId + ")", d: upD + " L" + W + "," + MID + " L0," + MID + " Z" }));
@@ -1735,17 +1740,17 @@
         snapO.style.left = px + "px"; snapO.style.top = yCss(base - (r.cost / max) * (base - 8)) + "px"; snapO.style.opacity = "1";
         snapI.style.opacity = "0";
       } else {
-        var uV = VIEW === "cache" ? r.cacheRead : r.input;
-        var dV = VIEW === "cache" ? r.cacheWrite : r.output;
+        var uV = upVal(r);
+        var dV = dnVal(r);
         snapI.style.left = px + "px"; snapI.style.top = yCss(MID - (uV / max) * AMP) + "px"; snapI.style.opacity = "1";
         snapO.style.left = px + "px"; snapO.style.top = yCss(MID + (dV / max) * AMP) + "px"; snapO.style.opacity = "1";
       }
       var ago = (DAYS - 1) - idx;
       tip.innerHTML = "";
       tip.appendChild(el("div", { className: "d", text: dow(r.d) + " " + r.d + (ago === 0 ? " · today" : " · " + ago + "d ago") }));
-      tip.appendChild(el("div", { className: "ti", text: "in  " + fmtTok(r.input) }));
+      tip.appendChild(el("div", { className: "ti", text: "in  " + fmtTok((r.input || 0) + (r.cacheRead || 0) + (r.cacheWrite || 0)) }));
       tip.appendChild(el("div", { className: "to", text: "out " + fmtTok(r.output) }));
-      tip.appendChild(el("div", { className: "d", text: "cache " + fmtTok(r.cacheRead + r.cacheWrite) }));
+      tip.appendChild(el("div", { className: "d", text: "of which cached " + fmtTok(r.cacheRead + r.cacheWrite) }));
       tip.appendChild(el("div", { className: "tc", text: fmtUSD(r.cost) + " est" }));
       var eD = estMap[r.d];
       if (eD && eD.tok) tip.appendChild(el("div", { className: "d", text: "incl ~" + fmtTok(eD.tok) + " / " + fmtUSD(eD.cost) + " est (logs thin)" }));

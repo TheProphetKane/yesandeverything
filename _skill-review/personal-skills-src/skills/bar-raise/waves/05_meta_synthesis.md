@@ -108,8 +108,10 @@ Auto-enqueue (closes the report -> queue -> drift-auto-fix loop):
 
 - `blocking: true` -> queue priority P0. P0 pauses the drain for review, which is right for a hard-rule breach.
 - HIGH -> P1. MEDIUM -> P2. LOW is not queued.
-- Each queue item carries the finding id. Before enqueuing, check the previous run's `openFindings` and the current `X:\YesAndEverything\.work-queue.json` for that id; if it is present in either, skip. The daily run must never enqueue the same finding twice.
+- Each queue item carries the finding id. Before enqueuing, check `X:\YesAndEverything\.work-queue.json` ONLY for a match on `(project, finding_id)`; if it is present there, skip. The daily run must never enqueue the same finding twice.
+- Never dedupe against the previous run's `openFindings`. That list is written by this same synthesis step, so a finding that fails to enqueue once would be skipped forever and survive only as a dashboard counter. The live queue is the single source of truth for what is already queued; deduping against it alone is what lets a dropped finding self-heal on the next run. The sibling chain does this correctly -- see `project-canonical-audit/SKILL.md` Phase 8, step 2.
 - Enqueue through the work-queue-runner add flow so the queue file's shape and triage log stay consistent.
+- Post-write gate (REQUIRED): after enqueuing, re-read the live queue and assert every `openFindings` id at HIGH/MEDIUM resolves to a queue item. Print `## Auto-enqueued: N` in the report listing each id added, or `## Auto-enqueue FAILED` with the unresolved ids if any remain. If zero were added because everything was already queued, say so explicitly: `Auto-enqueued: 0 (all findings already present in .work-queue.json)`. A silent pass is not acceptable -- an openFindings id with no queue item is the exact failure this gate exists to catch.
 
 ## Markdown report format
 

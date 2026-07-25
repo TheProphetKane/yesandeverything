@@ -4,16 +4,16 @@
   "private": true,
   "note": "Private family tool. Off the public site and status dashboard by DESIGN D9. This data file exists for the bar-raise / constellation tooling only; it is not linked from any public surface.",
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-17.md",
-    "latestReportAt": "2026-07-17T06:00:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+    "latestReportAt": "2026-07-25T02:11:40Z",
     "verdict": "in-progress",
-    "topFinding": "src/ is byte-identical to what the 2026-07-10 run measured, so every code finding carries forward unchanged, and the honest headline this week is a process failure rather than a code one. Two findings had been sitting in openFindings since 2026-07-03 with no matching item in .work-queue.json: maintainability-01, the project's highest-priority action at P20 HIGH, and security-01. They aged as counters for two weeks while the drain never saw them, which is exactly the drop the Wave 5 post-write gate exists to catch; both were enqueued this run. What did improve is real but small: the GCP service-account key moved out of the working tree to X:\\.secrets\\YesAndSkylight\\ in 139c7f0, closing the compliance and cloud-edge exposure, and 74e0ac5 trimmed part of the stale phase-2 framing. The tool still works and nothing is broken; it is under-instrumented against the next regression, and until this run its own repair loop was leaking its most important finding.",
-    "actionsOpen": 15,
-    "actionsClosed": 1,
+    "topFinding": "Skylight shipped real work this week for the first time in three weeks, and it was the right work: f52a1c4 corrected DEFAULT_TIMEZONE from America/New_York to America/Chicago, which means every timed event the app wrote before 2026-07-24 was sent as wall clock in the wrong zone and landed an hour out on the physical frame. The fix corrects new writes only. Nothing has swept the events already on livinwithloynds that were written under the bad zone, and that sweep is the single most valuable thing left on this project right now. Alongside it, 0.3.0 and 0.3.1 added a required owner picker, the three-colour mapping in src/owners.ts, and a full recurrence builder in src/recur.ts with DST-aware UNTIL handling. That is 123 lines of date math and RRULE compilation shipped with zero tests, into a repo that still has no test runner at all, which is why maintainability-01 stays the highest-priority open action for a fourth run.",
+    "actionsOpen": 18,
+    "actionsClosed": 0,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Add a vitest suite over normDate/epochOf/addHour/nextDay/fmtWhen and extractJson, and wire it into release.ps1 beside the typecheck.",
+        "title": "Add a vitest suite over buildRrule, localToUtc, normDate, epochOf, addHour, nextDay, fmtWhen, resolveOwner, inferOwner and extractJson, and wire it into release.ps1 beside the typecheck.",
         "lens": "maintainability",
         "priority": 20,
         "id": "maintainability-01"
@@ -24,6 +24,13 @@
         "lens": "dependency",
         "priority": 20,
         "id": "dependency-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "List events on livinwithloynds created by the service account before 2026-07-24 and correct the ones sitting an hour out from the old America/New_York default.",
+        "lens": "data-integrity",
+        "priority": 16,
+        "id": "data-integrity-05"
       },
       {
         "severity": "HIGH",
@@ -55,6 +62,13 @@
       },
       {
         "severity": "MED",
+        "title": "Correct the colour column in FAMILY_CALENDAR_MIGRATION.md section 5 so it matches the name-based rule recorded in section 4b.",
+        "lens": "maintainability",
+        "priority": 15,
+        "id": "maintainability-03"
+      },
+      {
+        "severity": "MED",
         "title": "Define one canonical event-input type and give both drivers a uniform createEvent signature.",
         "lens": "architecture",
         "priority": 12,
@@ -80,6 +94,13 @@
         "lens": "observability",
         "priority": 12,
         "id": "observability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Append the COUNT off-by-one warning to the /api/quick-add response message so API callers see what the form shows.",
+        "lens": "solo-tool-ux",
+        "priority": 12,
+        "id": "solo-tool-ux-02"
       },
       {
         "severity": "MED",
@@ -120,15 +141,27 @@
     "deferred": [
       {
         "severity": "MED",
-        "title": "Re-anchor .project-context.json completion/milestone/remaining to the shipped Google-primary driver.",
+        "title": "Finish the Google calendar migration: recreate the remaining seven series on livinwithloynds and delete the originals.",
+        "lens": "data-integrity",
+        "reason": "gated on Nick sharing TheProphetKane and the Family secondary calendar with the service account (docs/FAMILY_CALENDAR_MIGRATION.md section 5); browser-driven deletion proved unreliable"
+      },
+      {
+        "severity": "MED",
+        "title": "Re-anchor .project-context.json completion/milestone/remaining to the shipped 0.3.1 Google-primary driver.",
         "lens": "maintainability",
-        "reason": "blocked on a Nick judgment call; queued as canonical-audit S1 (blocked-on-user). 74e0ac5 fixed one line, the load-bearing fields remain."
+        "reason": "blocked on a Nick judgment call; queued as canonical-audit S1 (blocked-on-user)"
       },
       {
         "severity": "MED",
         "title": "Gate inbound mail on a DMARC pass before honouring the From-based allowlist.",
         "lens": "security",
         "reason": "post-1.0; Email Routing filters upstream and the attacker needs both an allowed address and the private inbound address"
+      },
+      {
+        "severity": "LOW",
+        "title": "Rule the owner colour for D&D and for the 51 pre-existing ad-hoc-coloured entries on livinwithloynds.",
+        "lens": "solo-tool-ux",
+        "reason": "blocked on a Nick decision; several are medical or work items where guessing is worse than asking"
       },
       {
         "severity": "LOW",
@@ -150,12 +183,6 @@
       },
       {
         "severity": "LOW",
-        "title": "Drop the canonical audit from nightly to weekly-or-on-change.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on a Nick decision about routine cadence"
-      },
-      {
-        "severity": "LOW",
         "title": "Retire or repair the yac-skylight-audit Windows task husk shadowing the native routine.",
         "lens": "strategic-kill-this",
         "reason": "blocked on a Nick decision; tracked at handler-audit-2026-07-17-skylight-audit-task-husk"
@@ -163,126 +190,147 @@
     ],
     "health": 85,
     "lensScores": {
-      "architecture": 84,
+      "architecture": 86,
       "reliability": 84,
       "security": 80,
-      "performance": 91,
-      "data-integrity": 75,
-      "maintainability": 78,
-      "solo-tool-ux": 86,
+      "performance": 90,
+      "data-integrity": 70,
+      "maintainability": 74,
+      "solo-tool-ux": 87,
       "cost-economics": 96,
       "dependency": 82,
       "observability": 74,
-      "strategic-kill-this": 87,
-      "compliance-data-steward": 90,
+      "strategic-kill-this": 92,
+      "compliance-data-steward": 88,
       "cloud-edge": 90,
       "PWA": 91,
-      "release-pipeline": 84
+      "release-pipeline": 86
     },
     "openFindings": [
       {
         "id": "maintainability-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-03"
-      },
-      {
-        "id": "security-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-03"
-      },
-      {
-        "id": "data-integrity-01",
-        "severity": "HIGH",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-07-10"
       },
       {
         "id": "dependency-01",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "data-integrity-05",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
+      },
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "security-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-07-03"
       },
       {
         "id": "observability-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "maintainability-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "maintainability-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "architecture-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "reliability-03",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "data-integrity-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "observability-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "solo-tool-ux-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "observability-03",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "data-integrity-03",
         "severity": "MED",
         "priority": 9,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "dependency-02",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "data-integrity-04",
         "severity": "MED",
         "priority": 6,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-10"
       }
     ],
@@ -292,28 +340,28 @@
           "security",
           "solo-tool-ux"
         ],
-        "runsSeen": 3
+        "runsSeen": 4
       },
       {
         "lenses": [
           "observability",
           "compliance-data-steward"
         ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "strategic-kill-this",
-          "observability"
-        ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "cost-economics",
           "security"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
+      },
+      {
+        "lenses": [
+          "compliance-data-steward",
+          "maintainability"
+        ],
+        "runsSeen": 1
       }
     ]
   }

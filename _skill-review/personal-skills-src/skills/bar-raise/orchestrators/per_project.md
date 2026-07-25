@@ -32,10 +32,13 @@ Before fanning out 12 subagents, check whether a full pass would measure anythin
 
 - zero commits since the previous bar-raise (`latestReportAt` in the status JSON), AND
 - the working tree is unchanged vs what the previous run saw, AND
-- no open BLOCK, AND
-- the work queue shows no movement on this project's items.
+- no open BLOCK.
 
-When all four hold, run a carry-forward pass instead of the full fan-out: keep the previous `lensScores` and `health`, increment `runsOpen` on every open finding (aging still ticks; a stalled project gets staler, not invisible), re-check only the cheap signals (queue depth, scheduled-task firing, dirty tree), and write a short report noting "carry-forward; no change since YYYY-MM-DD, day N". Refresh the JSON timestamps.
+Queue movement is deliberately NOT a gate condition. A starved queue is not evidence of a quiet project: if this project's findings failed to enqueue, the resulting lack of movement would satisfy the gate, re-fire carry-forward, and the drop could never be repaired -- the gate would be reading its own failure as calm. Judge quiet by commits and tree state only.
+
+When all three hold, run a carry-forward pass instead of the full fan-out: keep the previous `lensScores` and `health`, increment `runsOpen` on every open finding (aging still ticks; a stalled project gets staler, not invisible), re-check only the cheap signals (queue depth, scheduled-task firing, dirty tree), and write a short report noting "carry-forward; no change since YYYY-MM-DD, day N". Refresh the JSON timestamps.
+
+Enqueue reconciliation (REQUIRED on the carry-forward path too): before writing the report, re-read `X:\YesAndEverything\.work-queue.json` and enqueue any `openFindings` id at HIGH/MEDIUM that has no live queue item, using the same Wave 5 auto-enqueue rules. Carry-forward is precisely when a dropped finding would otherwise be unrepairable, so this path must be able to heal the queue rather than only age counters. Report the result with the same `## Auto-enqueued: N` / `## Auto-enqueue FAILED` line the full pass prints.
 
 Force a full pass at least every 7 days regardless, so drift cannot hide behind the gate. A BLOCK always forces a full pass. Projects that ship daily (HBH) never hit this gate; projects that ship in bursts (YaC, Scheduler between milestones) hit it most days, which is the point: the daily re-confirmation of an identical finding set is exactly the waste the gate removes.
 
