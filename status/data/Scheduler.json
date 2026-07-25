@@ -39,36 +39,70 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-16.md",
-    "latestReportAt": "2026-07-16T12:00:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+    "latestReportAt": "2026-07-25T02:30:00Z",
     "verdict": "in-progress",
-    "topFinding": "The v0.7.x quality pass is now five days stranded in the working tree and has crossed from hygiene nit into real drift at HEAD. The pass is good: schedule.ts replaces the per-assignment insert loop with a single db.batch() (kills the O(N-squared) existing.some() scan and the partial-write window), usersWithMembershipsBulk collapses the 1+2N user-list query into two chunked IN-queries and is wired at both callers, open-shifts.ts folds a double correlated subquery into one grouped LEFT JOIN, and migration 0011 creates the audit_log(organization_id, created_at) composite DESIGN section 15 described for weeks. None of it exists at HEAD. Migration 0011 and scripts/sync-audit-dashboard.ps1 are still untracked on the FUSE mount this project CLAUDE.md documents as prone to losing files, so committed schema stops at 0010. The new part: HEAD DESIGN section 15 still says the composite does not exist while disk says it does, so a reader at HEAD gets the pre-fix answer. Health slips to 88 (was 89) because five correct-but-unshipped fixes buy nothing in prod; all five hard rules pass so there is no BLOCK and the verdict holds at in-progress. release-sync-01 escalates MED to HIGH. audit-loop-integrity-01 is now chronic at five runs (the dashboard audit pointer reads 2026-07-05 while the 07-16 report sits on disk) and is blocked behind the same release, since its fix is one of the untracked files.",
-    "actionsOpen": 3,
+    "topFinding": "The stranded v0.7.x pass is now 14 days old and the pile grew again, but the sharper find this run is what happens when its blocked sibling finally lands. scripts/sync-audit-dashboard.ps1 (untracked, written 2026-07-10 to close the chronic audit-pointer finding) unconditionally Remove-Item -Force's .git/index.lock and .git/HEAD.lock in YesAndEverything at lines 104-107, with no live-process check and no git-guard.ps1 dot-source. That is the exact pattern this project's CLAUDE.md and the portfolio git-safety standard forbid, aimed at the busiest repo on the FUSE mount: YaE takes writes from every per-project routine, the hourly queue drain, and the 30-minute usage refresh. Wiring it as written trades a stale dashboard pointer for NUL-corrupted YaE git state. Everything else holds: all five hard rules pass, so no BLOCK, and the 139 tests across 21 files run green in the dirty tree, so the unshipped work is verified-correct rather than merely unfinished. Health slips 88 to 85 entirely on machinery findings, not app regressions; release-sync-01 stays HIGH at 3 runs and audit-loop-integrity-01 is chronic at 6.",
+    "actionsOpen": 7,
     "actionsClosed": 0,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Commit and release the in-flight v0.7.x quality pass so untracked migration 0011, the schedule-generate batch rewrite, the usersWithMembershipsBulk N+1 fix, the open-shifts grouped-join fix, scripts/sync-audit-dashboard.ps1, and the DESIGN section 15/17/20 updates land at HEAD and deploy (schema advances to 0011). Escalated from MED: HEAD DESIGN section 15 now contradicts the disk, and two untracked files have sat 5 days on a loss-prone mount.",
+        "title": "Bump the version, write the CHANGELOG entry, and run scripts/release.ps1 so the 14-day v0.7.x pass lands at HEAD and migration 0011 applies (prod schema advances from 0010).",
         "lens": "release-sync",
         "priority": 25,
         "id": "release-sync-01"
       },
       {
+        "severity": "HIGH",
+        "title": "Replace the two blind Remove-Item lock deletions in scripts/sync-audit-dashboard.ps1:104-107 with a git-guard.ps1 dot-source plus Assert-GitSafe, and add Confirm-GitIntact after the push, before that script is ever wired into a routine.",
+        "lens": "per-project-ps1-stack",
+        "priority": 20,
+        "id": "per-project-ps1-stack-01"
+      },
+      {
         "severity": "MED",
-        "title": "After committing scripts/sync-audit-dashboard.ps1, wire a call to it into the nightly audit routine so the dashboard audit pointer self-syncs between releases; it currently reads 2026-07-05 while docs/CANONICAL_AUDIT-2026-07-16.md exists on disk (11 days stale). Chronic at 5 runs; escalate at the next constellation.",
+        "title": "Wire the hardened sync-audit-dashboard.ps1 into audit-scheduler-nightly so the dashboard audit pointer stops sitting 19 days stale (reads 2026-07-05 while CANONICAL_AUDIT-2026-07-24.md is on disk). Chronic at 6 runs.",
         "lens": "audit-loop-integrity",
         "priority": 15,
         "id": "audit-loop-integrity-01"
       },
       {
         "severity": "MED",
-        "title": "Refresh X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html from v0.4.1 to the current v0.7.x surface (M7.1 org-switcher, v0.6.0 billing entitlement, migrations 0009/0010/0011). The live:version marker stamps correctly; only the hand-written prose is stale (meta description line 7, what-s-new line 225).",
+        "title": "Add cloud-edge, orchestration, and release-pipeline to the tags array in X:\\YesAndScheduler\\.project-context.json so the orchestrator and the domain-lens README resolve the same 16 domain lenses instead of zero.",
+        "lens": "skill-chain-handoff-integrity",
+        "priority": 15,
+        "id": "skill-chain-handoff-integrity-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Rewrite the v0.4.1 prose in X:\\YesAndEverything\\projects\\scheduler\\{index,design}.html to the current v0.7.x surface (meta description line 7, what's-new line 225); the live:version marker already stamps correctly.",
         "lens": "gate-page-publish",
         "priority": 12,
         "id": "gate-page-publish-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Replace the 'remove the lock if it is older than ~10 minutes' instruction in the bar-raise-scheduler task brief with the Assert-GitSafe guarded path the project handler mandates.",
+        "lens": "fuse-truncation-defense",
+        "priority": 12,
+        "id": "fuse-truncation-defense-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Delete the stale 'Runs twice weekly (Monday and Thursday)' sentence from the bar-raise-scheduler task brief body; the frontmatter and the live cron both say weekly Friday 21:10.",
+        "lens": "scheduled-task-firing-state",
+        "priority": 10,
+        "id": "scheduled-task-firing-state-01"
       }
     ],
     "deferred": [
+      {
+        "severity": "MED",
+        "title": "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
+        "lens": "cost-economics",
+        "reason": "blocked on Nick decision: commit to a Stripe milestone"
+      },
       {
         "severity": "MED",
         "title": "Surface the drive-to-first-user-via-seed-demo vs re-park posture decision to Nick; both completion gates dead-end on it.",
@@ -76,102 +110,124 @@
         "reason": "blocked on Nick decision: posture (drive vs park)"
       },
       {
-        "severity": "MED",
-        "title": "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
-        "lens": "cost-economics",
-        "reason": "blocked on Nick decision: commit to Stripe milestone"
-      },
-      {
         "severity": "LOW",
-        "title": "Record an explicit DESIGN section 23 decision on whether YaS is driven to first real user or re-parked.",
+        "title": "Record an explicit DESIGN section 23 decision on whether YaS is driven to a first real user or re-parked.",
         "lens": "strategic-kill-this",
         "reason": "blocked on Nick decision: posture call"
       }
     ],
-    "health": 88,
+    "health": 85,
     "lensScores": {
       "architecture": 92,
-      "reliability": 88,
+      "reliability": 90,
       "security": 93,
-      "performance": 88,
-      "data-integrity": 88,
-      "maintainability": 86,
-      "solo-tool-ux": 90,
+      "performance": 86,
+      "data-integrity": 86,
+      "maintainability": 84,
+      "solo-tool-ux": 88,
       "cost-economics": 90,
       "dependency": 93,
       "observability": 82,
       "strategic-kill-this": 80,
       "compliance-data-steward": 93,
-      "worker-cpu-budget": 94,
+      "worker-cpu-budget": 92,
       "kv-data-shape": 92,
       "auth-token-hygiene": 94,
       "skill-suite-health": 92,
-      "work-queue-hygiene": 92,
-      "audit-loop-integrity": 70,
-      "fuse-truncation-defense": 93,
+      "work-queue-hygiene": 88,
+      "audit-loop-integrity": 66,
+      "fuse-truncation-defense": 80,
       "incident-runbook-currency": 94,
-      "scheduled-task-firing-state": 90,
+      "scheduled-task-firing-state": 78,
       "skill-trigger-collisions": 91,
-      "skill-chain-handoff-integrity": 90,
-      "per-project-ps1-stack": 91,
+      "skill-chain-handoff-integrity": 76,
+      "per-project-ps1-stack": 72,
       "discord-notify-wiring": 95,
       "version-pill-drift": 74,
       "gate-page-publish": 72,
-      "release-sync": 68
+      "release-sync": 64
     },
     "openFindings": [
       {
         "id": "release-sync-01",
         "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-07-13"
+      },
+      {
+        "id": "per-project-ps1-stack-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "audit-loop-integrity-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-06-28",
         "chronic": true
+      },
+      {
+        "id": "skill-chain-handoff-integrity-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "gate-page-publish-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-07-02"
+      },
+      {
+        "id": "fuse-truncation-defense-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "strategic-kill-this-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 5,
+        "runsOpen": 6,
         "firstSeen": "2026-06-28",
         "chronic": true
+      },
+      {
+        "id": "scheduled-task-firing-state-01",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-24"
       }
     ],
     "tensionsOpen": [
       {
         "lenses": [
-          "cost-economics",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 5
-      },
-      {
-        "lenses": [
           "audit-loop-integrity",
-          "work-queue-hygiene"
+          "per-project-ps1-stack"
         ],
-        "runsSeen": 5
+        "runsSeen": 1
       },
       {
         "lenses": [
           "release-sync",
           "audit-loop-integrity"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 6
       }
     ]
   },
