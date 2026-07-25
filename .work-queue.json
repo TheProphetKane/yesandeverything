@@ -2980,10 +2980,10 @@
       "finding_id": "yae-queue-terminal-items-never-pruned",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:23Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "medium",
@@ -2993,7 +2993,8 @@
       "tensions_with": [
         "observability"
       ],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): 98 terminal items (94 completed + 3 superseded + 1 done) of 277 have never been pruned to .work-queue-archive.json. Measured: pruning reclaims 234,036 of 592,180 bytes (39.5%), cutting the live array 277 -> 179. Oldest resident completed item is 17 days old; the work-queue-runner spec says to prune after each commit. Every mutation rewrites the whole 592KB under the lock (queue-edit.ps1:100-110), so the dead 39.5% rides every FUSE write on a file with four recorded corruptions on disk (.work-queue.json.corrupt-2026-06-{16,17,18,19}). Use a python writer (json.dumps indent=2 ensure_ascii=False + trailing LF, tmp+replace+readback) -- verified this run that the on-disk bytes are byte-identical to that shape. Then make the drain prune terminal items older than 7 days on every pass."
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): 98 terminal items (94 completed + 3 superseded + 1 done) of 277 have never been pruned to .work-queue-archive.json. Measured: pruning reclaims 234,036 of 592,180 bytes (39.5%), cutting the live array 277 -> 179. Oldest resident completed item is 17 days old; the work-queue-runner spec says to prune after each commit. Every mutation rewrites the whole 592KB under the lock (queue-edit.ps1:100-110), so the dead 39.5% rides every FUSE write on a file with four recorded corruptions on disk (.work-queue.json.corrupt-2026-06-{16,17,18,19}). Use a python writer (json.dumps indent=2 ensure_ascii=False + trailing LF, tmp+replace+readback) -- verified this run that the on-disk bytes are byte-identical to that shape. Then make the drain prune terminal items older than 7 days on every pass.",
+      "resolution": "Resolved: the queue now carries zero terminal items (250 pending / 54 blocked-on-user / 10 deferred). queue-drain-hourly Step 0 is doing the pruning - it moved 26 of tonight's completions to the archive mid-run on its own - and the final 19 were pruned inline at the end of the burndown, deduped by id. The 98-item backlog the finding measured is gone. Separately noted: the archive holds 108 duplicate ids, which is the yae-archive-not-clean-terminal-store finding (it cited 4) and was left alone."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-superseded-rows-leak-to-dashboard",
@@ -3262,7 +3263,7 @@
       "status": "pending",
       "attempts": 0,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-25T04:23Z",
       "lastAttemptAt": null,
       "source": "bar-raise-everything 2026-07-17 (docs/BAR_RAISE-2026-07-17.md)",
       "severity": "medium",
@@ -3270,7 +3271,8 @@
       "confidence": 5,
       "evidence": "4 duplicate ids in the archive; one id exists in both .work-queue.json and the archive with status pending on both sides; queue-edit.ps1:158-162 drop deletes outright",
       "tensions_with": [],
-      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): .work-queue-archive.json is not a clean terminal store. It contains 4 duplicate ids (br-assets-manifest-regen-2026-06-18, br-gdd-footer-v05814-v05840-2026-06-18, br-changelog-bare-automsg-v05825-v05840-2026-06-18, br-release-footer-and-automsg-gate-2026-06-18, each x2 of 201 items). Worse: id canonical-audit-2026-07-02-skylight-changelog-phantom exists in BOTH .work-queue.json and the archive with status 'pending' on both sides, so an unfinished task has two authoritative copies and no rule says which wins. scripts/queue-edit.ps1:158-162 `drop` deletes an item outright with no archive hop, which is a plain data-loss path. The archive is also 13 days stale against disk (325,559 bytes on disk vs 317,131 at its last commit 8133522, 2026-07-04). Dedupe by id, resolve the double-copy to a single owner, and make drop move to the archive rather than delete."
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): .work-queue-archive.json is not a clean terminal store. It contains 4 duplicate ids (br-assets-manifest-regen-2026-06-18, br-gdd-footer-v05814-v05840-2026-06-18, br-changelog-bare-automsg-v05825-v05840-2026-06-18, br-release-footer-and-automsg-gate-2026-06-18, each x2 of 201 items). Worse: id canonical-audit-2026-07-02-skylight-changelog-phantom exists in BOTH .work-queue.json and the archive with status 'pending' on both sides, so an unfinished task has two authoritative copies and no rule says which wins. scripts/queue-edit.ps1:158-162 `drop` deletes an item outright with no archive hop, which is a plain data-loss path. The archive is also 13 days stale against disk (325,559 bytes on disk vs 317,131 at its last commit 8133522, 2026-07-04). Dedupe by id, resolve the double-copy to a single owner, and make drop move to the archive rather than delete.",
+      "drainNote": "2026-07-24 backlog-burndown: re-measured. The archive now holds 471 rows with 108 duplicate ids (one extra row each), not the 4 the finding cites - the drain appends without an id check. Left alone deliberately: deduping an append-only audit store is a judgment call about which copy wins, and tonight's own append was id-filtered so it added none."
     },
     {
       "id": "bar-raise-2026-07-17-yae-yae-local-git-never-packed",
@@ -6182,5 +6184,5 @@
     }
   ],
   "last_drain": "2026-07-25T03:37Z",
-  "updated": "2026-07-25T04:22Z"
+  "updated": "2026-07-25T04:23Z"
 }
