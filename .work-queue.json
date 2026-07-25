@@ -1651,8 +1651,8 @@
       "finding_id": "data-integrity-01",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "source": "bar-raise-rising 2026-07-17 / docs/BAR_RAISE-2026-07-17.md",
       "severity": "high",
       "impact": 4,
@@ -1661,7 +1661,9 @@
         "solo-tool-ux"
       ],
       "evidence": "source/autoloads/save_load.gd:148-152 opens the live slot with FileAccess.open(_full_path(file_name), FileAccess.WRITE) and store_string(json) directly. No temp path, no readback-parse, no .bak copy. A crash or full disk mid-write truncates the only copy of the save.",
-      "prompt": "The save write is not crash-safe: source/autoloads/save_load.gd:148-152 writes the live slot in place. Make it crash-safe: write to a temp path, read it back and parse it, copy the existing slot to .bak, then rename the verified temp over the slot. Apply the same path to the autosave-on-quit. This is the same atomic-write-with-readback shape the portfolio uses for JSON. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-17.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety."
+      "prompt": "The save write is not crash-safe: source/autoloads/save_load.gd:148-152 writes the live slot in place. Make it crash-safe: write to a temp path, read it back and parse it, copy the existing slot to .bak, then rename the verified temp over the slot. Apply the same path to the autosave-on-quit. This is the same atomic-write-with-readback shape the portfolio uses for JSON. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-17.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety.",
+      "resolution": "Shipped Rising v0.59.46 (cc64d21, changelog 78ae58f): save_to now writes to a temp, reads it back byte-for-byte, parses it, moves the previous slot to .bak, then renames the verified temp over the slot, restoring the old save if the commit rename fails. Both autosave paths inherit it via save_to. Also guarded the two get_tree() assumptions in _snapshot/_snapshot_group_state that took the whole save down outside an active tree. 11 new headless assertions; 569 passed / 0 failed, and the full preship gauntlet including the Skirmish boot smoke test is green.",
+      "lastWorkedAt": "2026-07-25T03:44Z"
     },
     {
       "id": "bar-raise-2026-07-17-rising-strategic-kill-this-01",
@@ -4619,8 +4621,8 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "source": "bar-raise-hordes 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
       "severity": "high",
       "impact": 4,
@@ -4630,7 +4632,9 @@
       "evidence": "Capture the push exit code into a local before calling Confirm-GitIntact: git-guard.ps1:55 clobbers $LASTEXITCODE so a failed git push is read as success at push-to-github.ps1:186, publish-gdd.ps1:585, write-dashboard-status.ps1:267 and sync-erik-branch.ps1:69.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding per-project-ps1-stack-02 (HIGH, lens per-project-ps1-stack): Capture the push exit code into a local before calling Confirm-GitIntact: git-guard.ps1:55 clobbers $LASTEXITCODE so a failed git push is read as success at push-to-github.ps1:186, publish-gdd.ps1:585, write-dashboard-status.ps1:267 and sync-erik-branch.ps1:69. See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "resolution": "Shipped HBH v0.99.40 (63c4534): fixed in Confirm-GitIntact itself rather than at the four call sites - it now captures the caller's LASTEXITCODE on entry and restores it on every exit path, so a failed push is still a failure at push-to-github.ps1, publish-gdd.ps1, write-dashboard-status.ps1, sync-erik-branch.ps1 and anywhere added later. Verified by dot-sourcing the guard and running it after a deliberate exit 7: code survives as 7, and a success stays 0.",
+      "lastWorkedAt": "2026-07-25T03:49Z"
     },
     {
       "id": "bar-raise-2026-07-24-hordes-gate-page-publish-01",
@@ -4639,8 +4643,8 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "blocked-on-user",
+      "attempts": 1,
       "source": "bar-raise-hordes 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
       "severity": "high",
       "impact": 4,
@@ -4650,7 +4654,9 @@
       "evidence": "Stop emitting the password literals from publish-gdd.ps1:303 and either move /hordes/ behind a server-side check or re-scope it as public; the live page answers an unauthenticated GET with var PASSWORD, var EDITOR and a payload that decodes with plain atob().",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding gate-page-publish-01 (HIGH, lens gate-page-publish): Stop emitting the password literals from publish-gdd.ps1:303 and either move /hordes/ behind a server-side check or re-scope it as public; the live page answers an unauthenticated GET with var PASSWORD, var EDITOR and a payload that decodes with plain atob(). See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "resolution": "Re-verified tonight: yesandeverything.com/hordes/ still answers an unauthenticated GET with both gate literals beside an atob() payload. DECISION KANE MUST MAKE, and it is a fork with no safe default: either (a) the GDD mirror goes behind a real server-side check - a Worker in front of /hordes/ and /brackish-rising/ that gates on a secret held in Cloudflare, meaning publish-gdd.ps1 stops emitting any literal - or (b) the mirrors are re-scoped as public and the theatre is dropped. Both are defensible and they lead to completely different work. Partial progress tonight (YaE 4b71fa5): the phrase no longer appears in CLAUDE.md, the status JSONs, the skill-review artifacts or the queue, and check-status-json.ps1 now fails a release that republishes it - so the exposure is narrowed to the gate page itself, which is exactly the part this decision governs.",
+      "lastWorkedAt": "2026-07-25T03:49Z"
     },
     {
       "id": "bar-raise-2026-07-24-hordes-reliability-02b",
@@ -4659,8 +4665,8 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "source": "bar-raise-hordes 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
       "severity": "high",
       "impact": 4,
@@ -4670,7 +4676,9 @@
       "evidence": "Gate F5 and F9 on not _game_over and reset _game_over, _victory and _end_screen inside _load_run: after a defeat the player can overwrite a good save with an unwinnable cp_hp=0 run, or load into a permanently frozen world with the end screen still mounted.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding reliability-02b (HIGH, lens reliability): Gate F5 and F9 on not _game_over and reset _game_over, _victory and _end_screen inside _load_run: after a defeat the player can overwrite a good save with an unwinnable cp_hp=0 run, or load into a permanently frozen world with the end screen still mounted. See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "resolution": "Shipped HBH v0.99.40 (63c4534): F5 and F9 are now gated on 'not _game_over' like every other in-run hotkey, and _load_run calls a new _clear_end_state() that resets _game_over/_victory and frees the end screen. Verified by booting world_3d.tscn headless for 360 frames with output captured to files (the GUI exe writes straight to the console, so an in-process capture reads empty): _ready ran through the nav bake with zero SCRIPT ERROR / Parse Error / Failed to load.",
+      "lastWorkedAt": "2026-07-25T03:49Z"
     },
     {
       "id": "bar-raise-2026-07-24-hordes-performance-02",
@@ -4819,8 +4827,8 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "blocked-on-user",
+      "attempts": 1,
       "source": "bar-raise-hordes 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
       "severity": "high",
       "impact": 3,
@@ -4830,7 +4838,9 @@
       "evidence": "Move the GDD gate server-side so the payload is only returned after auth, and stop shipping var PASSWORD = '[redacted]' and var EDITOR = '[redacted]' in a page that is also committed to a public repo.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding security-03 (HIGH, lens security): Move the GDD gate server-side so the payload is only returned after auth, and stop shipping var PASSWORD = '[redacted]' and var EDITOR = '[redacted]' in a page that is also committed to a public repo. See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "resolution": "Same decision as gate-page-publish-01: server-side gate versus re-scoping the mirrors as public. Tracking both against Kane's one call rather than doing half of it twice.",
+      "lastWorkedAt": "2026-07-25T03:49Z"
     },
     {
       "id": "bar-raise-2026-07-24-hordes-reliability-05",
@@ -6568,5 +6578,5 @@
     }
   ],
   "last_drain": "2026-07-25T03:37Z",
-  "updated": "2026-07-25T03:39Z"
+  "updated": "2026-07-25T03:49Z"
 }
