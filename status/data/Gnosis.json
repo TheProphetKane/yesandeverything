@@ -1,192 +1,198 @@
 {
-  "project": "Gnosis",
-  "displayName": "Gnosis",
-  "milestone": "v0.5 - campaigns + proficiency training tracker",
-  "completion": {
-    "pct": 55,
-    "anchored": "2026-07-06"
-  },
-  "version": "v0.3.188",
-  "lastCommit": {
-    "message": "Ingest 183 DM answers across the Aestaria continent: dragon roster (Vulcaris, Argentyr, Cadmarre, Cupraxis, Aurethys, Saturnyx, Platyr), Guardian cosmology, inverted economy, all 13 regions + 5 cities; new Tarnish + Sunderage pages; consolidate 74 duplicate answer cards; polish stale NPC names",
-    "at": "2026-07-16T06:11:04-05:00",
-    "sha": "dbaff2f"
-  },
-  "liveUrl": "https://gnosis.yesandeverything.com",
-  "updatedAt": "2026-07-16T06:11:23-05:00",
-  "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-16.md",
-    "latestReportAt": "2026-07-16T11:51:00Z",
-    "verdict": "needs-attention",
-    "topFinding": "BLOCK: a data surface that the DM gate is supposed to cover is reachable without the gate, so content flagged secret: true is being served to readers who should not have it. The page-level gate itself works; the defect is that the deploy-time check only ever proves the page gate and never exercises the data path behind it, which is why this went unnoticed. Verified live this run by comparing identifier sets only, with no secret text read out. Specifics are deliberately withheld from this file: status JSON is a public surface and the hole is still open. Full evidence and the fix are in the local gitignored report at docs/BAR_RAISE-2026-07-16.md. Nine of twelve dimensions are strong (dependency 96, strategic 95, cost 92, solo-tool-ux 90, data-integrity 88), so health lands at 80; the BLOCK gates the verdict without rewriting scores.",
-    "actionsOpen": 8,
-    "actionsClosed": 0,
-    "health": 80,
-    "lensScores": {
-      "architecture": 78,
-      "reliability": 82,
-      "security": 35,
-      "performance": 76,
-      "data-integrity": 88,
-      "maintainability": 68,
-      "solo-tool-ux": 90,
-      "cost-economics": 92,
-      "dependency": 96,
-      "observability": 74,
-      "strategic-kill-this": 95,
-      "compliance-data-steward": 80
+    "project": "Gnosis",
+    "displayName": "Gnosis",
+    "milestone": "v0.5 - campaigns + proficiency training tracker",
+    "completion": {
+        "pct": 55,
+        "anchored": "2026-07-06"
     },
-    "openFindings": [
-      {
-        "id": "security-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "reliability-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "security-02",
-        "severity": "MED",
-        "priority": 16,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "architecture-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "observability-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "performance-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "maintainability-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "compliance-01",
-        "severity": "MED",
-        "priority": 9,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-16"
-      }
-    ],
-    "tensionsOpen": [
-      {
-        "lenses": [
-          "security",
-          "solo-tool-ux"
+    "version": "v0.3.264",
+    "lastCommit": {
+        "message": "Maps: pin classes follow topographic convention with settlements ranked by symbol size, Titanoros subtypes normalized, wider shoreline buffer, all-pins toggle",
+        "at": "2026-07-24T17:12:50-05:00",
+        "sha": "f11e5ef"
+    },
+    "liveUrl": "https://gnosis.yesandeverything.com",
+    "updatedAt": "2026-07-24T17:13:20-05:00",
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+        "latestReportAt": "2026-07-24T23:55:00Z",
+        "verdict": "needs-attention",
+        "topFinding": "The DM answer store is still served unauthenticated and the exposure grew four times since 2026-07-16. GET /api/answers and /api/answers/export return before the DM gate in web/worker.js, and an anonymous probe today served 731 answered qids of which 554 appear only on /questions-dm, 285,492 characters of DM answer payload, against 183 qids and 68,394 characters eight days ago. The v0.3.251 board split correctly moved 654 lore questions onto the DM board, and approving those drafts wrote them into the same public keyspace, because the data layer under the page gate has no concept of secrecy. Separately, scripts/write-dashboard-status.ps1 is the portfolio's only clobber-writer and has been wiping this project's bar-raise and audit blocks on every release since 2026-07-16, so the one project carrying a live BLOCK is the one whose dashboard card cannot show it.",
+        "actionsOpen": 10,
+        "actionsClosed": 1,
+        "actions": [
+            {
+                "p": 25,
+                "severity": "high",
+                "title": "Namespace DM answers under a d: KV prefix, filter loadAnswers by the gate cookie, and require the password on /api/answers/export",
+                "lens": "security",
+                "finding": "security-01",
+                "blocking": true
+            },
+            {
+                "p": 20,
+                "severity": "high",
+                "title": "Add an anonymous GET /api/answers payload assertion to release.ps1 that fails the deploy when a /questions-dm qid appears in the response",
+                "lens": "reliability",
+                "finding": "reliability-01"
+            },
+            {
+                "p": 20,
+                "severity": "high",
+                "title": "Give write-dashboard-status.ps1 the read-modify-write preamble the other five projects use, so releases stop wiping barRaise and audit",
+                "lens": "reliability",
+                "finding": "reliability-02"
+            },
+            {
+                "p": 16,
+                "severity": "medium",
+                "title": "Cap the text length on /api/answer, /api/sticky and /api/note, and reject character: \"DM\" without a valid gate cookie",
+                "lens": "security",
+                "finding": "security-02"
+            },
+            {
+                "p": 15,
+                "severity": "medium",
+                "title": "Promote LORE-21 to a build-breaking check so a public page linking a dm-paths URL fails the build",
+                "lens": "architecture",
+                "finding": "architecture-01"
+            },
+            {
+                "p": 15,
+                "severity": "medium",
+                "title": "Lazy-load the globe's base patches by visible hemisphere instead of pulling 17.6MB before first paint",
+                "lens": "performance",
+                "finding": "performance-02"
+            },
+            {
+                "p": 12,
+                "severity": "medium",
+                "title": "Log KV write failures instead of swallowing them, and assert payloads rather than status codes",
+                "lens": "observability",
+                "finding": "observability-01"
+            },
+            {
+                "p": 12,
+                "severity": "medium",
+                "title": "Serve the public question board from a cached projection instead of walking the whole answer store on every load",
+                "lens": "performance",
+                "finding": "performance-01"
+            },
+            {
+                "p": 12,
+                "severity": "medium",
+                "title": "Hoist one esc() into a shared client preamble, delete the eight copies, and split the globe data table out of web/build.mjs",
+                "lens": "maintainability",
+                "finding": "maintainability-01"
+            },
+            {
+                "p": 10,
+                "severity": "medium",
+                "title": "Record the pinned three.js revision, its licence, and the do-not-upgrade reason in PROJECT_SPEC.md",
+                "lens": "dependency",
+                "finding": "dependency-01"
+            }
         ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "security",
-          "cost-economics"
+        "deferred": [
+            {
+                "severity": "low",
+                "title": "Gate password literal sits in CLAUDE.md, PROJECT_SPEC.md and web/worker.js",
+                "lens": "security",
+                "reason": "blocked on Kane's decision, queued as handler-audit-2026-07-10-gnosis-gate-password-decision; repo is PRIVATE so this is defense in depth"
+            },
+            {
+                "severity": "low",
+                "title": "Item catalog open5e/OGL provenance is not recorded in PROJECT_SPEC.md",
+                "lens": "compliance-data-steward",
+                "reason": "blocked on Kane's framing, queued as canonical-audit-2026-07-16-gnosis-catalog-ogl-provenance; should land with the three.js provenance note"
+            }
         ],
-        "runsSeen": 1
-      }
-    ],
-    "actions": [
-      {
-        "severity": "HIGH",
-        "priority": 25,
-        "id": "security-01",
-        "lens": "security",
-        "title": "Close the gated-data exposure: scope the shared store so gated content is not served on the open path, and require the gate on its export. See the local report."
-      },
-      {
-        "severity": "HIGH",
-        "priority": 20,
-        "id": "reliability-01",
-        "lens": "reliability",
-        "title": "Extend the release check past the page gate: assert the data path carries no gated identifiers for an anonymous caller."
-      },
-      {
-        "severity": "MED",
-        "priority": 16,
-        "id": "security-02",
-        "lens": "security",
-        "title": "Cap field lengths on the unauthenticated write paths and stop accepting the privileged author name without the gate cookie."
-      },
-      {
-        "severity": "MED",
-        "priority": 15,
-        "id": "architecture-01",
-        "lens": "architecture",
-        "title": "Teach the build that a public page linking a gated URL is a broken link."
-      },
-      {
-        "severity": "MED",
-        "priority": 12,
-        "id": "observability-01",
-        "lens": "observability",
-        "title": "Log KV write failures instead of swallowing them, and assert payloads rather than status codes."
-      },
-      {
-        "severity": "MED",
-        "priority": 12,
-        "id": "performance-01",
-        "lens": "performance",
-        "title": "Serve the public question board from a cached projection instead of walking the whole answer store on every load."
-      },
-      {
-        "severity": "MED",
-        "priority": 12,
-        "id": "maintainability-01",
-        "lens": "maintainability",
-        "title": "Hoist one esc() into a shared client preamble and delete the six divergent copies in web/build.mjs."
-      },
-      {
-        "severity": "MED",
-        "priority": 9,
-        "id": "compliance-01",
-        "lens": "compliance-data-steward",
-        "title": "Add hard_rules and hard_rule_checks to .project-context.json so the BLOCK gate has something to check against."
-      }
-    ],
-    "deferred": [
-      {
-        "severity": "LOW",
-        "title": "The DM gate password literal sits in three tracked files in the private repo.",
-        "lens": "security",
-        "reason": "blocked on Kane decision (queue item handler-audit-2026-07-10-gnosis-gate-password-decision)"
-      },
-      {
-        "severity": "MED",
-        "title": "One character carries secret: true while being named on two public pages; the flag or the references has to give.",
-        "lens": "compliance-data-steward",
-        "reason": "blocked on Kane decision (queue item canonical-audit-2026-07-16-gnosis-agramoth-secret-flag)"
-      },
-      {
-        "severity": "LOW",
-        "title": "PROJECT_SPEC never records the item catalog's open5e/OGL provenance.",
-        "lens": "compliance-data-steward",
-        "reason": "blocked on Kane's framing (queue item canonical-audit-2026-07-16-gnosis-catalog-ogl-provenance)"
-      }
-    ]
-  }
+        "health": 75,
+        "lensScores": {
+            "architecture": 76,
+            "reliability": 72,
+            "security": 28,
+            "performance": 68,
+            "data-integrity": 90,
+            "maintainability": 62,
+            "solo-tool-ux": 88,
+            "cost-economics": 90,
+            "dependency": 82,
+            "observability": 66,
+            "strategic-kill-this": 96,
+            "compliance-data-steward": 78
+        },
+        "openFindings": [
+            {
+                "id": "security-01",
+                "severity": "high",
+                "runsOpen": 2,
+                "blocking": true
+            },
+            {
+                "id": "security-02",
+                "severity": "medium",
+                "runsOpen": 2
+            },
+            {
+                "id": "security-03",
+                "severity": "low",
+                "runsOpen": 2,
+                "deferred": true
+            },
+            {
+                "id": "reliability-01",
+                "severity": "high",
+                "runsOpen": 2
+            },
+            {
+                "id": "reliability-02",
+                "severity": "high",
+                "runsOpen": 1
+            },
+            {
+                "id": "architecture-01",
+                "severity": "medium",
+                "runsOpen": 2
+            },
+            {
+                "id": "performance-01",
+                "severity": "medium",
+                "runsOpen": 2
+            },
+            {
+                "id": "performance-02",
+                "severity": "medium",
+                "runsOpen": 1
+            },
+            {
+                "id": "maintainability-01",
+                "severity": "medium",
+                "runsOpen": 2
+            },
+            {
+                "id": "dependency-01",
+                "severity": "medium",
+                "runsOpen": 1
+            },
+            {
+                "id": "observability-01",
+                "severity": "medium",
+                "runsOpen": 2
+            },
+            {
+                "id": "compliance-02",
+                "severity": "low",
+                "runsOpen": 2,
+                "deferred": true
+            }
+        ],
+        "tensionsOpen": [
+            "security vs solo-tool-ux (shared answer store keeps the approve flow one click)",
+            "security vs performance (keyspace split before the cached projection)",
+            "art fidelity vs performance (16K globe masters vs 17.6MB cold start)"
+        ],
+        "blocking": true
+    }
 }
