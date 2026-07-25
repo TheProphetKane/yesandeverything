@@ -1629,8 +1629,8 @@
       "finding_id": "reliability-01",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 1,
+      "status": "completed",
+      "attempts": 2,
       "source": "bar-raise-rising 2026-07-17 / docs/BAR_RAISE-2026-07-17.md",
       "severity": "high",
       "impact": 4,
@@ -1641,7 +1641,9 @@
       "evidence": "source/world/pathfinder.gd (A* + binary heap, extracted v0.59.9) and source/world/spatial_index.gd carry the movement core; tests/run_tests.gd covers neither. Rising.json metrics report tests=1. Six commits since v0.59.36 were all art/UI and touched neither file.",
       "prompt": "The pathfinder and spatial-index core is untested. Add headless tests to tests/run_tests.gd driving pathfinder.find_path, can_traverse, and the binary-heap _heap_pop, plus SpatialIndex bucket queries, all against a stub grid. Assert optimal-path output, heap ordering, and partial-path fallback. Memory br-unit-building-collision applies: headless cannot drive unit movement, so verify contracts deterministically rather than by simulating a unit. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-17.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety.",
       "notes": "2026-07-24T23:40Z queue-drain-hourly: FIRST verification (attempts 0 -> 1, kept pending). Read-only re-check at BR HEAD 9129519: STILL LIVE. source/world/pathfinder.gd and source/world/spatial_index.gd both present; tests/run_tests.gd (548 lines) contains zero matches for pathfind/spatial/heap, so the movement core remains untested. Not auto-drainable: new headless tests + commit-per-patch.",
-      "lastAttemptAt": "2026-07-24T23:40Z"
+      "lastAttemptAt": "2026-07-24T23:40Z",
+      "resolution": "Shipped Rising v0.59.47 (b7dc5db, docs c5ff934): 33 headless assertions over pathfinder.find_path, can_traverse, _heap_push/_heap_pop and SpatialIndex bucket queries, all against a StubGrid implementing exactly the oracle methods the pathfinder queries. Asserts optimal-path output (inclusive, adjacent-stepping, octile diagonal), heap ordering, partial-path fallback, and exact bucket membership. 602 passed / 0 failed, full preship gauntlet green including the Skirmish boot smoke. Verified non-vacuous by mutating one assertion and confirming the harness reports it.",
+      "lastWorkedAt": "2026-07-25T04:04Z"
     },
     {
       "id": "bar-raise-2026-07-17-rising-data-integrity-01",
@@ -1693,8 +1695,8 @@
       "finding_id": "performance-02",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "source": "bar-raise-rising 2026-07-17 / docs/BAR_RAISE-2026-07-17.md",
       "severity": "high",
       "impact": 3,
@@ -1703,7 +1705,9 @@
         "maintainability"
       ],
       "evidence": "tests/run_tests.gd has no MAX_EXPANSIONS partial-path assertion (the cap added in v0.59.26 to stop the ~800ms unreachable-goal freeze) and no get_units_near / get_buildings_near exact-membership assertion.",
-      "prompt": "Add pathfinder and spatial_index coverage to tests/run_tests.gd: a MAX_EXPANSIONS partial-path assertion (guards the v0.59.26 unreachable-goal freeze fix from regressing) and a get_units_near / get_buildings_near exact-membership assertion. Overlaps reliability-01; land them together if you pick up both. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-17.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety."
+      "prompt": "Add pathfinder and spatial_index coverage to tests/run_tests.gd: a MAX_EXPANSIONS partial-path assertion (guards the v0.59.26 unreachable-goal freeze fix from regressing) and a get_units_near / get_buildings_near exact-membership assertion. Overlaps reliability-01; land them together if you pick up both. Read X:\\BrackishRising\\docs\\BAR_RAISE-2026-07-17.md and CLAUDE.md first. BR hard rule: commit per patch. Everything renders at native 1.0x, never add a scale constant. Do not rip out existing /root/ autoload paths or `as ClassName` casts, they are boot-safety.",
+      "resolution": "Shipped Rising v0.59.47 (b7dc5db) alongside reliability-01, as the finding suggested. Includes the MAX_EXPANSIONS assertion (an 80x80 sealed map terminates on the budget and still returns a usable partial path that never claims the goal, guarding the v0.59.26 freeze fix) and exact-membership assertions for get_units_near and get_buildings_near, plus radius-0 clamping, unregister and clear.",
+      "lastWorkedAt": "2026-07-25T04:04Z"
     },
     {
       "id": "bar-raise-2026-07-17-rising-maintainability-01",
@@ -3988,14 +3992,17 @@
       "finding_id": "finance-03",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "severity": "MED",
       "impact": 3,
       "confidence": 4,
       "evidence": "worker/src/handlers/billing.js:566-604 (checkout session creation). No guard against an already-active subscription and no Stripe idempotency key, so a double-tap can create a second live subscription.",
       "source": "bar-raise-yac 2026-07-20 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-20.md",
       "prompt": "Yes& Chains [MED, bar-raise finding finance-03]: checkout can create a second live subscription for an already-subscribed user. The checkout-session handler (worker/src/handlers/billing.js:566-604) does not check for an existing active subscription and sends no Stripe idempotency key, so a double-tap or retry can open a duplicate subscription and double-bill. Fix: block checkout when the user is already entitled/active, and pass a Stripe idempotency key derived from the user + intent so a retry is a no-op. Ships via X:\\YesAndChains\\scripts\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-20. Finding open since 2026-07-04 (13 runs); its prior blocked-on-user queue item is gone, so re-enqueued to restore the handoff."
+      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-20. Finding open since 2026-07-04 (13 runs); its prior blocked-on-user queue item is gone, so re-enqueued to restore the handoff.",
+      "resolution": "Shipped Chains v0.58.2 (aa464c9, worker 9bcfeacd): checkout now returns 409 already_subscribed without touching Stripe when the user is already entitled, and passes an Idempotency-Key derived from user+plan+price so a double-tap replays one session instead of creating a second subscription. Key is per-plan so a monthly-to-annual switch still works. Frontend reads the 409 as 'you are already Pro' and refreshes rather than showing an error. Four new assertions in the preship gate-8d test, including zero Stripe calls for an entitled user; 13/13 pass, full gauntlet green.",
+      "lastWorkedAt": "2026-07-25T03:59Z",
+      "attempts": 1
     },
     {
       "id": "bar-raise-2026-07-20-chains-sync-01",
@@ -6580,5 +6587,5 @@
     }
   ],
   "last_drain": "2026-07-25T03:37Z",
-  "updated": "2026-07-25T03:53Z"
+  "updated": "2026-07-25T04:04Z"
 }
