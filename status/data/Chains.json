@@ -43,23 +43,37 @@
     "repoUrl": "https://github.com/TheProphetKane/yesandchains",
     "workTreeClean": true,
     "audit": {
-        "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-25.md",
-        "latestReportAt": "2026-07-25T06:48:02Z",
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-26.md",
+        "latestReportAt": "2026-07-26T07:03:23Z",
         "findings": {
             "critical": 0,
-            "high": 0,
-            "medium": 3,
-            "low": 1
+            "high": 1,
+            "medium": 4,
+            "low": 4
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-25.md",
-        "latestReportAt": "2026-07-25T11:40:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-26.md",
+        "latestReportAt": "2026-07-26T13:05:00Z",
         "verdict": "needs-attention",
-        "topFinding": "The 0.58.x wave did exactly what it set out to do: compliance-01, observability-01, reliability-02, webhook-01 and finance-03 are all verified fixed in current source and closed this run, the first non-zero actionsClosed this project has recorded. What the deeper pass then surfaced is that the money path has a second, larger problem underneath the one just fixed. supabase/migrations/0001_init.sql:190 grants profiles_update_own with a USING clause and no WITH CHECK, and every privilege column since (subscription_status, comped, role from migrations 0016 to 0019) landed on that same table, so any signed-in user can PATCH their own row through PostgREST with the shipped anon key and self-grant Pro or superadmin. Alongside it, account deletion never cancels the Stripe subscription (src/profile.ts:1487-1533 calls no Stripe path) so a subscriber who deletes their account keeps being billed with no cancel route left, and the billing routes still take identity from an unverified body.userId (auth-01, open 20 runs). Separately the release pipeline has been lying: scripts/git-guard.ps1 is the pre-fix copy whose Confirm-GitIntact overwrites the push exit code before it is checked, which is the likely reason four consecutive releases posted no Discord notification and left every public version pill at 0.57.0. Health moved 86 to 73, but read that as depth: this run's lenses read the RLS policies, benchmarked the KV index and fetched the live site for the first time, so most of the drop is newly measured rather than newly true.",
-        "actionsOpen": 95,
-        "actionsClosed": 5,
+        "topFinding": "No code moved since the 2026-07-25 pass: HEAD is still 77efb38 / 0.58.3 with zero commits, so the money-path finding set is unchanged and unrepaired and was re-verified present in current source rather than assumed. security-01 (any signed-in user can PATCH their own profiles row and self-grant Pro or superadmin), compliance-03 (account deletion never cancels the Stripe subscription) and auth-01 (billing identity from an unverified body.userId, now open 21 runs) all still read exactly as they did yesterday. What moved is the publish path, and it moved the wrong way by standing still: the dashboard version has been stuck at 0.57.0 for two days across roughly five scheduled passes over the same file while canonical is 0.58.3, and the Discord release notification has not landed for four releases going back to 2026-07-07. Today's canonical audit then found the one public document nobody was sweeping: README.md is 24 releases stale, lists three shipped features as designed-but-not-built, and never mentions that the app has taken real money since 0.54.0. That is the third instance this week of the same class of problem, which is that YaC's outward-facing surfaces are updated by unchecked best-effort steps while its code gates are strict.",
+        "actionsOpen": 97,
+        "actionsClosed": 0,
         "actions": [
+            {
+                "severity": "HIGH",
+                "priority": 20,
+                "id": "readme-01",
+                "lens": "brand-consistency",
+                "title": "Rewrite README.md against 0.58.3, drop the three shipped features from the designed-but-not-built list, state the Pro paywall, and add README to the CLAUDE.md routing table."
+            },
+            {
+                "severity": "MED",
+                "priority": 15,
+                "id": "audit-loop-integrity-03",
+                "lens": "audit-loop-integrity",
+                "title": "Make the bar-raise skip gate ignore markdown-only working-tree churn so doc fixes stop forcing a full re-derivation against unchanged code."
+            },
             {
                 "severity": "HIGH",
                 "title": "Add a WITH CHECK to `profiles_update_own` and revoke UPDATE on the subscription, comped and role columns from the authenticated role.",
@@ -712,7 +726,7 @@
             "security": 58,
             "performance": 78,
             "data-integrity": 76,
-            "maintainability": 80,
+            "maintainability": 79,
             "solo-tool-ux": 84,
             "cost-economics": 74,
             "dependency": 79,
@@ -727,7 +741,7 @@
             "dataset-size": 72,
             "skill-suite-health": 70,
             "work-queue-hygiene": 88,
-            "audit-loop-integrity": 86,
+            "audit-loop-integrity": 85,
             "fuse-truncation-defense": 80,
             "incident-runbook-currency": 68,
             "scheduled-task-firing-state": 84,
@@ -735,236 +749,250 @@
             "skill-chain-handoff-integrity": 72,
             "per-project-ps1-stack": 70,
             "discord-notify-wiring": 60,
-            "version-pill-drift": 76,
+            "version-pill-drift": 74,
             "gate-page-publish": 70,
             "solo-dev-voice-portfolio": 64,
             "ai-tell-concealment-currency": 74,
-            "brand-consistency": 78
+            "brand-consistency": 76
         },
         "openFindings": [
             {
                 "id": "architecture-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "auth-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 20,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "per-project-ps1-stack-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "security-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "compliance-04",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "cost-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dataset-size-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dependency-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "discord-notify-wiring-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "incident-runbook-currency-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "install-offline-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 20,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "kv-data-shape-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "maintainability-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "reliability-04",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-chain-handoff-integrity-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-suite-health-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "solo-dev-voice-portfolio-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-02",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "observability-10",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "per-project-ps1-stack-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "reliability-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "security-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-suite-health-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-01",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 20,
+                "runsOpen": 21,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "version-pill-drift-01",
                 "severity": "HIGH",
                 "priority": 15,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 10,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
+            },
+            {
+                "id": "readme-01",
+                "severity": "HIGH",
+                "priority": 20,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-26"
+            },
+            {
+                "id": "audit-loop-integrity-03",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-26"
             }
         ],
         "tensionsOpen": [
@@ -973,49 +1001,49 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 25
+                "runsSeen": 26
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 22
+                "runsSeen": 23
             },
             {
                 "lenses": [
                     "data-integrity",
                     "cost-economics"
                 ],
-                "runsSeen": 19
+                "runsSeen": 20
             },
             {
                 "lenses": [
                     "security",
                     "data-integrity"
                 ],
-                "runsSeen": 1
+                "runsSeen": 2
             },
             {
                 "lenses": [
                     "install-and-offline",
                     "dependency"
                 ],
-                "runsSeen": 1
+                "runsSeen": 2
             },
             {
                 "lenses": [
                     "solo-dev-voice-portfolio",
                     "ai-tell-concealment-currency"
                 ],
-                "runsSeen": 1
+                "runsSeen": 2
             },
             {
                 "lenses": [
                     "strategic-kill-this",
                     "cost-economics"
                 ],
-                "runsSeen": 1
+                "runsSeen": 2
             }
         ]
     },
