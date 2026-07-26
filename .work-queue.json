@@ -1507,7 +1507,10 @@
       "attempts": 0,
       "source": "docs/CANONICAL_AUDIT-2026-07-17.md",
       "added": "2026-07-17",
-      "notes": "Doc gap, not a live leak. Cheap to close now, expensive after the first hidden_from use."
+      "notes": "Doc gap, not a live leak. Cheap to close now, expensive after the first hidden_from use.",
+      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, read-only, with two path corrections for whoever takes it. The build.mjs comment has MOVED -- it is now web/build.mjs:1530 and :1893 (hidden_from described as a courtesy filter), not line 1688; the resolver is web/build.mjs:1897. PROJECT_SPEC.md now has exactly one incidental hit (line 363, '/map-aestaria' inside the Aestaria section); 'character gate', 'hidden_from', '/api/whoami', '/dm-logout' and 'gnosis-char' are still absent from PROJECT_SPEC.md AND CLAUDE.md (CLAUDE.md still zero matches of any kind). Still NOT a live exposure: zero files under world/ use hidden_from. The armed-trap framing holds.",
+      "lastAttemptAt": "2026-07-26T10:30Z",
+      "lastNoticedAt": "2026-07-26T10:30:00Z"
     },
     {
       "id": "canonical-audit-2026-07-17-gnosis-milestone-stamp-hand-maintained",
@@ -1961,7 +1964,10 @@
       "evidence": "scripts/discord-notify.ps1:5-7 and :16 name scripts/.discord_webhook.txt (in-repo) and the webhook names 'Apothecary Push' / 'YesAndApothecary Headline Bot'; line 39 of the same file reads Join-Path \"X:\\.secrets\\YesAndApothecary\\scripts\" \".discord_webhook.txt\"; CLAUDE.md:147 locks the names to 'Apothecary Release Bot' / 'Apothecary Headline Bot'",
       "source": "bar-raise-apothecary 2026-07-17 / X:\\YesAndApothecary\\docs\\BAR_RAISE-2026-07-17.md",
       "prompt": "Yes& Apothecary [MED, bar-raise finding discord-notify-header-stale-path-and-names]: scripts/discord-notify.ps1's own header lies about the path its code reads. Lines 5-7 tell the reader the webhook files live at scripts/.discord_webhook.txt and scripts/.discord_announcements_webhook.txt inside the repo and are gitignored; line 39 actually reads them from X:\\.secrets\\YesAndApothecary\\scripts\\. Line 16's setup step names the webhooks 'Apothecary Push' and 'YesAndApothecary Headline Bot', both retired by the naming standard locked at CLAUDE.md:147 ('Apothecary Release Bot' for #apothecary-dev-log, 'Apothecary Headline Bot' for #apothecary-announcements). Consequence: anyone following the header creates a wrongly-named webhook, saves the URL where nothing reads it, and gets a silent skip at release time. Fix the header comment block only (lines 5-16); line 39 is already correct, do not touch it. Point the reader at X:\\.secrets\\YesAndApothecary\\scripts\\ and use the locked webhook names. While there: DEPLOY.md's 2026-07-17 edit removed the pointer to scripts/.discord_webhook.txt.example on the false premise that the file does not exist (it does: tracked, 23 bytes, 'PASTE_WEBHOOK_URL_HERE'), so either restore a pointer to it or delete the orphaned file. Ships via cd X:\\YesAndApothecary; .\\scripts\\release.ps1 -Message \"...\" (the script owns the version bump; do not hand-edit the pill). Solo-dev voice, no em dashes. Re-verify the cited line numbers before editing.",
-      "notes": "Handed up from docs/drift-fixes-2026-07-17.md:81, which correctly declined it as out of scope for a canonical-doc audit (code comments). First seen 2026-07-17."
+      "notes": "Handed up from docs/drift-fixes-2026-07-17.md:81, which correctly declined it as out of scope for a canonical-doc audit (code comments). First seen 2026-07-17.",
+      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, verbatim, read-only. scripts/discord-notify.ps1 lines 5-7 still advertise scripts/.discord_webhook.txt + scripts/.discord_announcements_webhook.txt as the read paths; line 15 still names 'Apothecary Push' and 'YesAndApothecary Headline Bot'; CLAUDE.md:147-148 still locks 'Apothecary Release Bot' / 'Apothecary Headline Bot'. Lines 39-40 correctly read X:\\.secrets\\YesAndApothecary\\scripts\\ (leave alone). Fix is a pure comment-block edit (lines 5-16), no code path touched -- cheapest attended item in the queue, take it first in the next attended pass.",
+      "lastAttemptAt": "2026-07-26T10:30Z",
+      "lastNoticedAt": "2026-07-26T10:30:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-apothecary-comment-accuracy-sweep",
@@ -2035,7 +2041,10 @@
       "title": "Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3",
       "evidence": "Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3d.gd:72-79 runs the game, and economy.gd:361-368 reads cap bonuses off the dead tree so those bonuses are permanently 0.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-17 finding maintainability-01 (HIGH, P1, lens maintainability): Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3d.gd:72-79 runs the game, and economy.gd:361-368 reads cap bonuses off the dead tree so those bonuses are permanently 0. See docs/BAR_RAISE-2026-07-17.md for full evidence. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump + changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-17."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
+      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, read-only, all three legs confirmed. (1) research autoload still registered at project.godot:27. (2) Zero live 'Research.' call sites anywhere under source/ outside the autoload itself. (3) The 5-tech stand-in RESEARCH_TECHS dict is still the thing driving the game at source/world3d/world_3d.gd:72-79 (field/munitions/drill/logistics/fortify). economy.gd get_cap still resolves the dead tree via /root/research for Mass Fabrication cap bonuses, so those bonuses remain permanently 0.",
+      "lastAttemptAt": "2026-07-26T10:30Z",
+      "lastNoticedAt": "2026-07-26T10:30:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-hordes-incident-runbook-currency-01",
@@ -2073,7 +2082,10 @@
       "title": "Fix the bar-raise auto-enqueue dedupe: the (project, finding_id) key matched the COMPLETED hbh-colony-size-buildings-group-noop-2026-07-10, so HBH's o",
       "evidence": "Fix the bar-raise auto-enqueue dedupe: the (project, finding_id) key matched the COMPLETED hbh-colony-size-buildings-group-noop-2026-07-10, so HBH's only open HIGH (reliability-01) was silently skipped for two runs while the post-write gate passed falsely. Restrict the gate to non-completed items and use a dated slug id.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-17 finding skill-chain-handoff-integrity-01 (HIGH, P1, lens skill-chain-handoff-integrity): Fix the bar-raise auto-enqueue dedupe: the (project, finding_id) key matched the COMPLETED hbh-colony-size-buildings-group-noop-2026-07-10, so HBH's only open HIGH (reliability-01) was silently skipped for two runs while the post-write gate passed falsely. Restrict the gate to non-completed items and use a dated slug id. See docs/BAR_RAISE-2026-07-17.md for full evidence. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump + changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-17."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
+      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, read-only, at source. _skill-review/personal-skills-src/skills/bar-raise/waves/05_meta_synthesis.md:111 still instructs the enqueue check to look 'ONLY for a match on (project, finding_id); if it is present there, skip' with no status filter -- so a completed item still swallows a re-found open finding. drift-auto-fix/SKILL.md:142 has the better shape already (matches on an EXISTING PENDING item) and is the wording to copy. Graded 'Do this session' at docs/QUEUE_TRIAGE.md:95; severity-guarded, never archive on age.",
+      "lastAttemptAt": "2026-07-26T10:30Z",
+      "lastNoticedAt": "2026-07-26T10:30:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-hordes-skill-suite-health-01",
@@ -2111,7 +2123,10 @@
       "title": "Add a change-detected worker-deploy step to release.ps1 (model on YesAndChains release.ps1:380-398): HBH owns a Cloudflare Worker but the deploy is pr",
       "evidence": "Add a change-detected worker-deploy step to release.ps1 (model on YesAndChains release.ps1:380-398): HBH owns a Cloudflare Worker but the deploy is prose-only in cf-worker-setup.md:55, which is why the endpoint stayed dead for two months.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-17 finding per-project-ps1-stack-01 (HIGH, P1, lens per-project-ps1-stack): Add a change-detected worker-deploy step to release.ps1 (model on YesAndChains release.ps1:380-398): HBH owns a Cloudflare Worker but the deploy is prose-only in cf-worker-setup.md:55, which is why the endpoint stayed dead for two months. See docs/BAR_RAISE-2026-07-17.md for full evidence. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump + changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-17."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
+      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, read-only. scripts/release.ps1 in HBH has zero matches for 'wrangler' or 'worker' -- the deploy is still prose-only in cf-worker-setup.md. The cited model is intact and copyable: X:\\YesAndChains\\scripts\\release.ps1:380-398 is a change-detected 'Step 3/4: deploy worker' block gated on $workerChanged -or $ForceWorker with a $SkipWorker escape and non-fatal failure handling.",
+      "lastAttemptAt": "2026-07-26T10:30Z",
+      "lastNoticedAt": "2026-07-26T10:30:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-hordes-reliability-03",
@@ -2282,7 +2297,10 @@
       "title": "Sweep AI tool and stack names out of the public GDD changelog (Midjourney x5, Claude x4, a verbatim memory-key dump at v0.73.3) and add zero-tolerance",
       "evidence": "Sweep AI tool and stack names out of the public GDD changelog (Midjourney x5, Claude x4, a verbatim memory-key dump at v0.73.3) and add zero-tolerance patterns to check_gdd_voice.py, which passes green today while the tells ship.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-17 finding solo-dev-voice-portfolio-01 (HIGH, P1, lens solo-dev-voice-portfolio): Sweep AI tool and stack names out of the public GDD changelog (Midjourney x5, Claude x4, a verbatim memory-key dump at v0.73.3) and add zero-tolerance patterns to check_gdd_voice.py, which passes green today while the tells ship. See docs/BAR_RAISE-2026-07-17.md for full evidence. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump + changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-17."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
+      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live but the COUNTS IN THIS ITEM ARE STALE -- do not chase the original numbers. docs/GDD.html now has Midjourney x2 (v0.37.5 'adopted from the Midjourney pack' + the v0.34.18 entry that documents the earlier sweep itself) and Claude x1 (v0.44.9 'personal Claude stack'), not x5/x4. The verbatim memory-key dump IS still present at the v0.73.3 entry (~line 4799, ~21 snake_case memory slugs inline). scripts/check_gdd_voice.py still has ZERO patterns for midjourney/claude/anthropic/copilot/gpt -- the zero-tolerance half of this finding is untouched and is the part that has real forward value.",
+      "lastAttemptAt": "2026-07-26T10:30Z",
+      "lastNoticedAt": "2026-07-26T10:30:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-hordes-security-02",
@@ -7399,8 +7417,25 @@
       "finding_id": "wts-2026-07-26-01",
       "title": "Six uncommitted Budget edits strand a correction to the published security policy",
       "detail": "X:\\YesAndBudget has six files modified and uncommitted, none of them touched by a commit since 2026-07-16 and the oldest not since 2026-07-01: .github/workflows/security.yml, SECURITY.md, docs/DESIGN.md, docs/SECURITY_POLICY.md, scripts/README.md, scripts/release.ps1 (42 insertions, 15 deletions). No stash entries. The tree has been dirty across at least the last two nightly scans.\n\nWhy this is P1 rather than the usual P2 for a stale tree: docs/SECURITY_POLICY.md says of itself that it is mirrored at https://yesandeverything.com/projects/budget/security and that the mirror is canonical. The committed-and-published version of section 4 still reads 'Application-layer encryption is not implemented today; if added (see Wave 6 SQLCipher plan)...'. The uncommitted correction says the SQLCipher capability (Wave 6, D-008) is in fact implemented and tested but not engaged on this install, so nothing is encrypting the database file today and a migration command engages it. Both halves of that correction matter and neither is public: the published text understates what shipped and leaves a reader unable to tell that their own database is currently unencrypted. SECURITY.md and SECURITY_POLICY.md also drop the stale 'D-001 through D-011' decision range in favour of pointing at docs/DECISIONS.md as a whole, and security.yml's header comment is corrected from two jobs to three (audit, typecheck, tests) with an explicit note that the web package's tests do not run in CI.\n\nAction: review the six diffs, commit them, and ship through scripts\release.ps1 so the yesandeverything.com security mirror picks up the corrected text. Per the BR/YaB release note, finish the commit through Bash if PowerShell-wrapped git stderr aborts release.ps1. If any edit is judged wrong, revert that file explicitly rather than leaving it sitting."
+    },
+    {
+      "id": "canonical-audit-2026-07-26-gnosis-orphaned-i24-globe-textures",
+      "project": "gnosis",
+      "title": "Two orphaned Titanoros i24 globe textures still ship after the island renumbering",
+      "detail": "Commit dd2989f renumbered the Titanoros island patches, dropping the old i24 and shifting i12 through i23. GLOBE_CONTINENTS in web/build.mjs now ends at i23, and the string 'i24' appears nowhere in build.mjs, any tools/globe/*.py, or tools/globe/titan_pieces.json. But web/assets/globe/titanoros-i24.webp and titanoros-i24-labels.webp both survive, and the build copies them into web/dist/assets/globe/, so they are live, fetchable, unreferenced map art on a public host. The fix is to delete both files from web/assets/globe/ (dist regenerates), after confirming no future renumbering is expected to reuse the i24 slot. Surfaced rather than applied because deleting files is always a user decision.",
+      "kind": "structural",
+      "impact": "hygiene",
+      "severity": "low",
+      "priority": "P4",
+      "confidence": "high",
+      "auto_safe": false,
+      "status": "pending",
+      "attempts": 0,
+      "added": "2026-07-26",
+      "source": "docs/CANONICAL_AUDIT-2026-07-26.md",
+      "notes": "Roughly 150 KB of dead weight, and it is Kane's own Patreon art sitting on a public path with nothing linking to it. Now covered by the robots.txt /assets/globe/ line landed in the same drift pass, so the exposure is bounded; this is cleanup, not a leak."
     }
   ],
-  "last_drain": "2026-07-26T09:30Z",
-  "updated": "2026-07-26T09:39Z"
+  "last_drain": "2026-07-26T10:30Z",
+  "updated": "2026-07-26T10:39Z"
 }
