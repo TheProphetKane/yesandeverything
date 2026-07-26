@@ -25,7 +25,7 @@
     "items": []
   },
   "repoUrl": "https://github.com/TheProphetKane/yesandbudget",
-  "workTreeClean": true,
+  "workTreeClean": false,
   "audit": {
     "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-24.md",
     "latestReportAt": "2026-07-24T07:51:29Z",
@@ -36,26 +36,26 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-25.md",
-    "latestReportAt": "2026-07-25T11:45:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-26.md",
+    "latestReportAt": "2026-07-26T11:30:00Z",
     "verdict": "needs-attention",
-    "topFinding": "Five releases landed since yesterday (v0.14.6 to v0.14.10) and they closed three of the eight standing HIGH findings plus four MED ones, the best closure run this project has had: CORS is now a tested policy module at apps/api/src/cors-policy.ts instead of a flat allow-list on /*, the documented restore names the WAL sidecars, and the published pages stopped claiming \"no Plaid\". Two HIGH findings are new. pnpm --filter @yab/api test opens the live 649-row ledger: analytics/core.ts:12 imports db.js, which runs new Database(DB_PATH) and a WAL pragma at module load, and the mtimes on data/yesandbudget.db plus both sidecars moved when this run executed the suite, while vitest.config.ts:7 states the opposite. And scripts/write-dashboard-status.ps1:85-92 did the thing it was already flagged for: on the v0.14.8 release it rebuilt the barRaise block from six fields and deleted 78 actions, 13 deferred, 90 openFindings, 28 lensScores and five tensions, which this run restored from YaE commit 0d51600. All four hard rules verify clean, so there is no BLOCK; the verdict stays needs-attention on the still-unguarded destructive routes at server.ts:532-556.",
-    "actionsOpen": 72,
-    "actionsClosed": 8,
+    "topFinding": "One commit landed since the last review (663dc73, a CLAUDE.md pointer fix) and no application code moved, so every open code finding carries forward re-verified: bulk-delete at server.ts:532-542 still deletes without a snapshot, the transactions natural key at db.ts:120 is still the four-column UNIQUE that cannot express a genuine twin charge, and the api test suite still opens the live 649-row ledger through analytics/core.ts:12. All four hard rules verify clean, so there is no BLOCK. The movement is in the audit machinery and it goes both ways: the queue prune landed and all 18 Budget rows are non-terminal, but drift-auto-fix edits from 2026-07-25 and 2026-07-26 are stacked six files deep and uncommitted, and two of them already fix findings this report still has to list as open. The 2026-07-25 synthesis also minted data-integrity-03 for a new HIGH while an open MED already held that id, shadowing it from aging, dedupe and the enqueue gate; the collision is repaired in this run's state and the mechanism is now a finding. Verdict stays needs-attention on the unguarded destructive routes and the test suite writing the live ledger.",
+    "actionsOpen": 73,
+    "actionsClosed": 1,
     "actions": [
       {
         "severity": "HIGH",
-        "priority": 20,
-        "lens": "data-integrity",
         "title": "Point the api test suite at a temp database; pnpm --filter @yab/api test opens the live ledger (analytics/core.ts:12 -> db.ts:64,68), and vitest.config.ts:7 claims the opposite.",
-        "findingId": "data-integrity-03"
+        "lens": "data-integrity",
+        "priority": 20,
+        "id": "data-integrity-06"
       },
       {
         "severity": "HIGH",
-        "priority": 20,
-        "lens": "orchestration-audit-loop-integrity",
         "title": "Make write-dashboard-status.ps1:85-92 copy every existing barRaise key instead of enumerating six; it deleted 78 actions, 13 deferred, 90 openFindings and 28 lensScores on the v0.14.8 release.",
-        "findingId": "orchestration-audit-loop-integrity-07"
+        "lens": "orchestration-audit-loop-integrity",
+        "priority": 20,
+        "id": "orchestration-audit-loop-integrity-07"
       },
       {
         "severity": "HIGH",
@@ -332,6 +332,20 @@
       },
       {
         "severity": "MED",
+        "title": "Give the audit chain a commit step or a hand-off owner; drift-auto-fix edits from 2026-07-25 and 2026-07-26 are stacked uncommitted across six files and two of them already fix open bar-raise findings that keep re-reporting as open.",
+        "lens": "orchestration-audit-loop-integrity",
+        "priority": 15,
+        "id": "orchestration-audit-loop-integrity-08"
+      },
+      {
+        "severity": "MED",
+        "title": "Mint finding ids against the existing openFindings set; the 2026-07-25 run issued data-integrity-03 to a new HIGH while an open MED already held it, and aging, dedupe and the enqueue gate all key on that id.",
+        "lens": "orchestration-audit-loop-integrity",
+        "priority": 15,
+        "id": "orchestration-audit-loop-integrity-09"
+      },
+      {
+        "severity": "MED",
         "title": "Enqueue a real adr-promoter item per tension past runsSeen 3; three Budget tensions qualify and none ever has.",
         "lens": "orchestration-skill-chain-handoff-integrity",
         "priority": 12,
@@ -476,13 +490,6 @@
         "lens": "orchestration-skill-suite-health",
         "priority": 10,
         "id": "orchestration-skill-suite-health-04"
-      },
-      {
-        "severity": "MED",
-        "title": "Delete the stale audit-yab sentence from audit-budget-nightly/SKILL.md:6; that routine was retired 2026-07-06.",
-        "lens": "orchestration-scheduled-task-firing-state",
-        "priority": 10,
-        "id": "orchestration-scheduled-task-firing-state-01"
       },
       {
         "severity": "MED",
@@ -635,26 +642,26 @@
       "security": 78,
       "performance": 82,
       "data-integrity": 55,
-      "maintainability": 76,
+      "maintainability": 78,
       "solo-tool-ux": 83,
       "cost-economics": 97,
       "dependency": 79,
       "observability": 71,
       "strategic-kill-this": 70,
-      "compliance-data-steward": 78,
+      "compliance-data-steward": 80,
       "finance-product-dedupe": 47,
       "finance-product-categorization-tail": 62,
       "finance-product-threat-model": 74,
-      "finance-product-backup-cadence": 74,
+      "finance-product-backup-cadence": 76,
       "orchestration-skill-suite-health": 76,
-      "orchestration-work-queue-hygiene": 64,
-      "orchestration-audit-loop-integrity": 52,
+      "orchestration-work-queue-hygiene": 70,
+      "orchestration-audit-loop-integrity": 48,
       "orchestration-fuse-truncation-defense": 86,
       "orchestration-incident-runbook-currency": 80,
-      "orchestration-scheduled-task-firing-state": 93,
+      "orchestration-scheduled-task-firing-state": 96,
       "orchestration-skill-trigger-collisions": 74,
       "orchestration-skill-chain-handoff-integrity": 65,
-      "release-pipeline-ps1-stack": 82,
+      "release-pipeline-ps1-stack": 84,
       "release-pipeline-discord-notify": 84,
       "release-pipeline-version-pill-drift": 100,
       "release-pipeline-gate-page-publish": 78
@@ -664,588 +671,581 @@
         "id": "data-integrity-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 18,
+        "runsOpen": 19,
         "firstSeen": "2026-07-04"
       },
       {
         "id": "finance-product-categorization-tail-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "finance-product-categorization-tail-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "finance-product-dedupe-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "orchestration-work-queue-hygiene-05",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-backup-cadence-03",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "orchestration-work-queue-hygiene-03",
         "severity": "MED",
         "priority": 16,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-threat-model-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "performance-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 16,
+        "runsOpen": 17,
         "firstSeen": "2026-07-07"
       },
       {
         "id": "release-pipeline-ps1-stack-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "compliance-data-steward-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "orchestration-audit-loop-integrity-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-audit-loop-integrity-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "security-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "finance-product-backup-cadence-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "maintainability-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "orchestration-skill-chain-handoff-integrity-07",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "data-integrity-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-suite-health-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "orchestration-skill-trigger-collisions-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "reliability-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "solo-tool-ux-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-fuse-truncation-defense-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "architecture-05",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "finance-product-categorization-tail-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "dependency-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "release-pipeline-ps1-stack-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-work-queue-hygiene-06",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "data-integrity-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-dedupe-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "architecture-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-suite-health-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "reliability-07",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "reliability-08",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "architecture-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "data-integrity-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "maintainability-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 16,
+        "runsOpen": 17,
         "firstSeen": "2026-07-07"
       },
       {
         "id": "reliability-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "dependency-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "reliability-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "compliance-data-steward-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-backup-cadence-05",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-chain-handoff-integrity-04",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "reliability-05",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "reliability-06",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "release-pipeline-gate-page-publish-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "release-pipeline-gate-page-publish-05",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-chain-handoff-integrity-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "dependency-05",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "orchestration-incident-runbook-currency-05",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-incident-runbook-currency-07",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "observability-04",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "observability-03",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-trigger-collisions-04",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "maintainability-05",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "release-pipeline-discord-notify-01",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 18,
+        "runsOpen": 19,
         "firstSeen": "2026-07-04"
       },
       {
         "id": "maintainability-03",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "data-integrity-05",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "compliance-data-steward-03",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-incident-runbook-currency-06",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-dedupe-06",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-suite-health-04",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "orchestration-scheduled-task-firing-state-01",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 7,
-        "firstSeen": "2026-07-17"
       },
       {
         "id": "release-pipeline-gate-page-publish-07",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "release-pipeline-gate-page-publish-03",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-trigger-collisions-02",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "release-pipeline-gate-page-publish-04",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "architecture-03",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "maintainability-04",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "release-pipeline-ps1-stack-05",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "strategic-kill-this-04",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "observability-01",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-10"
       },
       {
         "id": "orchestration-audit-loop-integrity-05",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-skill-trigger-collisions-03",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "release-pipeline-gate-page-publish-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "strategic-kill-this-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "security-01",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 18,
+        "runsOpen": 19,
         "firstSeen": "2026-07-04"
       },
       {
         "id": "finance-product-threat-model-04",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-dedupe-01",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 16,
+        "runsOpen": 17,
         "firstSeen": "2026-07-07"
       },
       {
         "id": "strategic-kill-this-02",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "strategic-kill-this-03",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "orchestration-work-queue-hygiene-04",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 8,
+        "runsOpen": 9,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "solo-tool-ux-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 13,
+        "runsOpen": 14,
         "firstSeen": "2026-07-10",
         "mergedInto": "solo-tool-ux-01"
       },
@@ -1253,7 +1253,7 @@
         "id": "solo-tool-ux-05",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-16",
         "mergedInto": "solo-tool-ux-01"
       },
@@ -1261,7 +1261,7 @@
         "id": "finance-product-dedupe-05",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-16",
         "mergedInto": "reliability-06"
       },
@@ -1269,23 +1269,37 @@
         "id": "release-pipeline-ps1-stack-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 7,
+        "runsOpen": 8,
         "firstSeen": "2026-07-16",
         "mergedInto": "orchestration-fuse-truncation-defense-01"
       },
       {
-        "id": "data-integrity-03",
+        "id": "data-integrity-06",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-25"
       },
       {
         "id": "orchestration-audit-loop-integrity-07",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "orchestration-audit-loop-integrity-08",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-26"
+      },
+      {
+        "id": "orchestration-audit-loop-integrity-09",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-26"
       }
     ],
     "tensionsOpen": [
@@ -1294,35 +1308,42 @@
           "security",
           "solo-tool-ux"
         ],
-        "runsSeen": 21
+        "runsSeen": 22
       },
       {
         "lenses": [
           "data-integrity",
           "solo-tool-ux"
         ],
-        "runsSeen": 18
+        "runsSeen": 19
       },
       {
         "lenses": [
           "reliability",
           "data-integrity"
         ],
-        "runsSeen": 14
+        "runsSeen": 15
       },
       {
         "lenses": [
           "data-integrity",
           "maintainability"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "strategic-kill-this",
           "observability"
         ],
-        "runsSeen": 8
+        "runsSeen": 9
+      },
+      {
+        "lenses": [
+          "orchestration-audit-loop-integrity",
+          "maintainability"
+        ],
+        "runsSeen": 1
       }
     ]
   },
@@ -1340,7 +1361,7 @@
       "v": "30"
     }
   ],
-  "workQueueDepth": 8,
+  "workQueueDepth": 18,
   "stale": false,
   "tags": [
     "finance-product",
