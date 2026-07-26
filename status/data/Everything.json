@@ -1,593 +1,574 @@
 {
-    "project":  "Everything",
-    "displayName":  "Yes\u0026 Everything",
-    "version":  "537e3f5",
-    "lastReleaseAt":  "2026-07-25T15:00:24-05:00",
-    "lastReleaseMessage":  "yae: update 12 files",
-    "milestone":  null,
-    "completion":  null,
-    "itemsLeft":  null,
-    "repoUrl":  "https://github.com/TheProphetKane/yesandeverything",
-    "workTreeClean":  true,
-    "audit":  null,
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-07-25.md",
-                     "latestReportAt":  "2026-07-25T12:15:00Z",
-                     "verdict":  "needs-attention",
-                     "topFinding":  "The BLOCK is clear for the first time in seventeen runs: every anchor into the two gated mirrors now resolves to a client-gated design page, the gate phrase is out of the tracked handler, and the homepage hero counts derive from the card grid at index.html:2329. Twenty-eight HIGH and MEDIUM findings closed against the previous run and health rose 64 to 75. The verdict stays needs-attention for a wholly different reason: the release pipeline is blocked right now. check-status-json.ps1 exits 1 on dashboard/data/queue.json, which carries a double-encoded em dash at byte 3145, and release.ps1:22 aborts on that exit code, so scripts/release.ps1 cannot ship today. The cause is one unencoded read at collect-usage.ps1:818, which pipes .work-queue.json through Get-Content with no -Encoding utf8 and lets PowerShell 5.1\u0027s cp1252 default mangle every non-ASCII character into the published snapshot. Fix that line, repair the one string, and the release unblocks; the guard shipped yesterday is working exactly as designed.",
-                     "actionsOpen":  28,
-                     "actionsClosed":  28,
-                     "actions":  [
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Add -Encoding utf8 to collect-usage.ps1:818, repair the mojibaked string in dashboard/data/queue.json, and confirm check-status-json.ps1 passes so releases unblock; then sweep the other twenty-two unencoded reads",
-                                         "lens":  "data-integrity",
-                                         "priority":  25,
-                                         "id":  "yae-cp1252-json-readers-mojibake-live"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Widen the ignore patterns, then git rm --cached all 208 tracked internal artifacts under .work-queue-results/ and _skill-review/, redeploy, and confirm each 404s",
-                                         "lens":  "security",
-                                         "priority":  20,
-                                         "id":  "yae-tracked-queue-artifacts-public"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Scope the staging at push-to-github.ps1:92 to an explicit pathspec so the sanctioned release path can ship a targeted edit",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  20,
-                                         "id":  "yae-release-add-all-sweeps-operational-state"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Move the status-JSON, index.html tail and CNAME assertions into deploy-pages.yml so every writer crosses a guard",
-                                         "lens":  "architecture",
-                                         "priority":  20,
-                                         "id":  "yae-guards-absent-from-workflow-path"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Scope the bar-raise skip-gate\u0027s commit and tree checks to YaE-owned paths so the gate can fire at all",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  20,
-                                         "id":  "yae-skipgate-cannot-fire"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Record the run\u0027s measured token cost into the status JSON alongside actionsOpen and actionsClosed",
-                                         "lens":  "cost-economics",
-                                         "priority":  16,
-                                         "id":  "yae-barraise-run-cost-unmeasured"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Re-run check-status-json.ps1 after release.ps1 Step 2 so a corrupt dashboard JSON cannot be written and pushed",
-                                         "lens":  "reliability",
-                                         "priority":  15,
-                                         "id":  "yae-release-step-ordering-corrupt-json-ships"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Migrate .project-context.json to schema v1.1 and add hard_rule_checks and completion",
-                                         "lens":  "maintainability",
-                                         "priority":  15,
-                                         "id":  "yae-project-context-stale-and-v1"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Promote one projects.json to source of truth with per-surface visibility flags",
-                                         "lens":  "architecture",
-                                         "priority":  15,
-                                         "id":  "yae-four-project-registries"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add schemaVersion plus a required-key assertion to check-status-json.ps1 and reconcile Skylight.json",
-                                         "lens":  "architecture",
-                                         "priority":  15,
-                                         "id":  "yae-statusjson-contract-unversioned"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Change the four pwsh invocations to powershell -File; the serializer prerequisite is satisfied",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  15,
-                                         "id":  "yae-work-queue-runner-pwsh-not-installed"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Copy the homepage\u0027s :focus-visible and prefers-reduced-motion patterns into the 18 sub-pages, status and 404",
-                                         "lens":  "accessibility",
-                                         "priority":  15,
-                                         "id":  "yae-subpage-no-reduced-motion-focus-visible"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Promote section labels to real h2 headings on the seven project pages and status, and give 404.html an h1",
-                                         "lens":  "accessibility",
-                                         "priority":  15,
-                                         "id":  "yae-subpage-no-heading-structure"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Port the Budget and Scheduler project pages onto the current template",
-                                         "lens":  "org-writing",
-                                         "priority":  15,
-                                         "id":  "yae-budget-scheduler-off-template"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Validate project, priority, severity and status against enums in the queue-edit.ps1 add path",
-                                         "lens":  "data-integrity",
-                                         "priority":  15,
-                                         "id":  "yae-queue-no-enum-validation"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Dedupe the 108 duplicate archive ids and make the queue-edit.ps1 drop path archive rather than delete",
-                                         "lens":  "data-integrity",
-                                         "priority":  15,
-                                         "id":  "yae-archive-not-clean-terminal-store"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Run git gc and git prune on the local clone once, with no scheduled routines in flight",
-                                         "lens":  "cost-economics",
-                                         "priority":  15,
-                                         "id":  "yae-local-git-never-packed"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add defensive ignore patterns for secret-shaped filenames and a pre-push staged-file check",
-                                         "lens":  "security",
-                                         "priority":  15,
-                                         "id":  "yae-gitignore-no-secret-shape-patterns"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Untrack the staged skill tree under _skill-review/",
-                                         "lens":  "security",
-                                         "priority":  15,
-                                         "id":  "yae-skillreview-tree-public"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Cap the items array in the published queue payload and render a count plus a link",
-                                         "lens":  "cost-economics",
-                                         "priority":  15,
-                                         "id":  "yae-dashboard-queue-payload-uncapped"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Retire BAR_RAISE_ROADMAP.md as complete and delete BAR_RAISE_HANDOVER.md",
-                                         "lens":  "maintainability",
-                                         "priority":  15,
-                                         "id":  "yae-handover-roadmap-stale-scheduling"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Commit dashboard/data/queue.json on every drain run and drop the stale .gitignore:38 entry",
-                                         "lens":  "data-integrity",
-                                         "priority":  12,
-                                         "id":  "yae-queue-uncommitted-multiday-gap"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add a pack script that rebuilds every .skill from source on release, or delete the stale artifacts",
-                                         "lens":  "maintainability",
-                                         "priority":  12,
-                                         "id":  "yae-skill-artifacts-stale-vs-source"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add an -Op list with -Project, -Status and -Priority filters to queue-edit.ps1",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  10,
-                                         "id":  "yae-queue-get-returns-unfiltered-blob"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Align the Budget page\u0027s --amber to the homepage\u0027s gold and delete the unreferenced declarations",
-                                         "lens":  "visual-reuse",
-                                         "priority":  10,
-                                         "id":  "yae-amber-token-means-three-colors"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add role=status and aria-live=polite to the status page error banner",
-                                         "lens":  "observability",
-                                         "priority":  10,
-                                         "id":  "yae-status-error-banner-not-announced"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Extend the gate-payload guard to both gates and drop the stale claim from CLAUDE.md",
-                                         "lens":  "reliability",
-                                         "priority":  10,
-                                         "id":  "yae-gate-payload-decode-guard-residual"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Untrack the six stale dated reports in docs/ and delete the unreferenced one-shot scripts",
-                                         "lens":  "maintainability",
-                                         "priority":  10,
-                                         "id":  "yae-housekeeping-tracked-cruft"
-                                     }
-                                 ],
-                     "deferred":  [
-                                      {
-                                          "severity":  "HIGH",
-                                          "title":  "The public repo is roughly 95% of GitHub\u0027s 1 GB advisory threshold and grows about 3.4 MB/day against a 28 MB site",
-                                          "lens":  "cost-economics",
-                                          "reason":  "blocked on a Kane decision: which lever. Cutting the generated-data commit cadence is a cadence call, and revisiting the base64 gate payloads needs changes in two other repos. Could not be re-measured this run; du and git count-objects both time out on this mount"
-                                      },
-                                      {
-                                          "severity":  "HIGH",
-                                          "title":  "Both gates are decorative client-side equality checks whose payload ships to every requester, so neither is access control",
-                                          "lens":  "security",
-                                          "reason":  "blocked on a Kane decision: are the mirrors secret or merely unadvertised. If secret they need a real server-side check; if not, record the decorative gate as a locked decision"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Drop the git commit of dashboard/data/*.json to once daily while leaving the KV push every run",
-                                          "lens":  "cost-economics",
-                                          "reason":  "cadence change is a Kane decision; per the standing lesson, do not mint cadence cuts on his behalf"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Cadence review: bar-raise daily, usage-refresh every 30 min, loop-tick hourly on an essentially static site",
-                                          "lens":  "cost-economics",
-                                          "reason":  "this run closed 28 findings, the largest delta on record, so the cost case for daily just strengthened. Revisit once the run-cost field lands and two more runs produce closure data"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Token and cost telemetry is committed to this public repo and names three never-listed projects",
-                                          "lens":  "compliance-data-steward",
-                                          "reason":  "blocked on a Kane decision: populate the existing empty exclude list at the collector publish boundary, or accept as locked"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "The live robots.txt is Cloudflare-Managed and diverges from the repo file (2,126 bytes served vs 290 on disk)",
-                                          "lens":  "seo-open-graph",
-                                          "reason":  "needs a Kane call plus a Cloudflare dashboard action. The repo\u0027s disallows still apply via RFC 9309 same-agent group merging, so nothing is broken today"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "The live Ring page ships five em dashes including its title and social-card titles",
-                                          "lens":  "org-writing",
-                                          "reason":  "cross-project: fix in X:\\YesAndRing and ship via its own release"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Port the read-back verify into the Agents-side Node queue writer, the one writer on the queue without it",
-                                          "lens":  "data-integrity",
-                                          "reason":  "cross-project: lives in the Agents repo, fix Agents-side"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Apothecary swatch picker eager-loads roughly 14.8 MB of full-res parchment JPEGs",
-                                          "lens":  "performance",
-                                          "reason":  "cross-project: apothecary/ is a mirror (hard rule), fix in X:\\YesAndApothecary and re-release"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "The Apothecary footer source link 404s, a third instance of the same dead-repo pattern",
-                                          "lens":  "link-rot",
-                                          "reason":  "cross-project: apothecary/ is a mirror (hard rule), fix in X:\\YesAndApothecary"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "The base64 wrapper costs roughly 52% extra wire bytes on one gate and 54% on the other",
-                                          "lens":  "performance",
-                                          "reason":  "needs a Kane call and touches two other repos\u0027 publish scripts; also the storage half of the repo-growth finding"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "queue-drain-4h is an orphan routine directory that reads as live and is registered nowhere",
-                                          "lens":  "maintainability",
-                                          "reason":  "outside YaE scope: the routine store and restart-cleanup.ps1 are not this repo. Surfaced for Kane rather than edited"
-                                      },
-                                      {
-                                          "severity":  "LOW",
-                                          "title":  "terms/ uses the real legal name and an em dash in the title while the site brands as Kane, and states no effective date",
-                                          "lens":  "org-writing",
-                                          "reason":  "a legal page plausibly requires the real name; needs a Kane call, not a silent rewrite"
-                                      },
-                                      {
-                                          "severity":  "LOW",
-                                          "title":  "The Ring design tablist declares ARIA tab roles without the APG keyboard contract",
-                                          "lens":  "accessibility",
-                                          "reason":  "the tabs are real buttons, natively focusable, Enter/Space works and aria-selected updates. An APG conformance gap, not a keyboard trap"
-                                      },
-                                      {
-                                          "severity":  "LOW",
-                                          "title":  "Google Fonts render-blocking stylesheet and a four-year-stale html2canvas CDN pin on the public apothecary page",
-                                          "lens":  "dependency",
-                                          "reason":  "cross-project: apothecary/ is a mirror, fix in the source repo"
-                                      }
-                                  ],
-                     "health":  75,
-                     "lensScores":  {
-                                        "architecture":  73,
-                                        "reliability":  68,
-                                        "security":  72,
-                                        "performance":  86,
-                                        "dataIntegrity":  58,
-                                        "maintainability":  68,
-                                        "soloToolUx":  66,
-                                        "costEconomics":  56,
-                                        "dependency":  87,
-                                        "observability":  82,
-                                        "strategicKillThis":  66,
-                                        "complianceDataSteward":  70,
-                                        "visualReuse":  80,
-                                        "orgWriting":  84,
-                                        "linkRot":  90,
-                                        "seoOpenGraph":  86,
-                                        "accessibility":  78
-                                    },
-                     "openFindings":  [
-                                          {
-                                              "id":  "yae-cp1252-json-readers-mojibake-live",
-                                              "severity":  "high",
-                                              "priority":  25,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-tracked-queue-artifacts-public",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  15,
-                                              "firstSeen":  "2026-07-10"
-                                          },
-                                          {
-                                              "id":  "yae-release-add-all-sweeps-operational-state",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-guards-absent-from-workflow-path",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-skipgate-cannot-fire",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  15,
-                                              "firstSeen":  "2026-07-10"
-                                          },
-                                          {
-                                              "id":  "yae-barraise-run-cost-unmeasured",
-                                              "severity":  "high",
-                                              "priority":  16,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-release-step-ordering-corrupt-json-ships",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-project-context-stale-and-v1",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-four-project-registries",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-statusjson-contract-unversioned",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  15,
-                                              "firstSeen":  "2026-07-10"
-                                          },
-                                          {
-                                              "id":  "yae-work-queue-runner-pwsh-not-installed",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-subpage-no-reduced-motion-focus-visible",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  17,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "yae-subpage-no-heading-structure",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-budget-scheduler-off-template",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-queue-no-enum-validation",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-archive-not-clean-terminal-store",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-local-git-never-packed",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-gitignore-no-secret-shape-patterns",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-skillreview-tree-public",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  15,
-                                              "firstSeen":  "2026-07-10"
-                                          },
-                                          {
-                                              "id":  "yae-dashboard-queue-payload-uncapped",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-handover-roadmap-stale-scheduling",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  15,
-                                              "firstSeen":  "2026-07-10"
-                                          },
-                                          {
-                                              "id":  "yae-queue-uncommitted-multiday-gap",
-                                              "severity":  "medium",
-                                              "priority":  12,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-skill-artifacts-stale-vs-source",
-                                              "severity":  "medium",
-                                              "priority":  12,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-queue-get-returns-unfiltered-blob",
-                                              "severity":  "medium",
-                                              "priority":  10,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-amber-token-means-three-colors",
-                                              "severity":  "medium",
-                                              "priority":  10,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-status-error-banner-not-announced",
-                                              "severity":  "medium",
-                                              "priority":  10,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-07-17"
-                                          },
-                                          {
-                                              "id":  "yae-gate-payload-decode-guard-residual",
-                                              "severity":  "medium",
-                                              "priority":  10,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          },
-                                          {
-                                              "id":  "yae-housekeeping-tracked-cruft",
-                                              "severity":  "medium",
-                                              "priority":  10,
-                                              "runsOpen":  9,
-                                              "firstSeen":  "2026-07-16"
-                                          }
-                                      ],
-                     "tensionsOpen":  [
-                                          {
-                                              "id":  "guards-vs-one-command-release",
-                                              "lenses":  [
-                                                             "architecture",
-                                                             "solo-tool-ux",
-                                                             "cost-economics"
-                                                         ],
-                                              "runsSeen":  9,
-                                              "resolution":  "Move the guards to deploy-pages.yml so every writer crosses them, AND scope push-to-github.ps1\u0027s staging to a pathspec so the one-command flow survives. Both dimensions win. PROMOTE via adr-promoter."
-                                          },
-                                          {
-                                              "id":  "observability-vs-privacy",
-                                              "lenses":  [
-                                                             "observability",
-                                                             "compliance-data-steward"
-                                                         ],
-                                              "runsSeen":  15,
-                                              "resolution":  "Use the existing empty exclude list at the publish boundary, or accept as locked. Narrow question for Kane. PROMOTE via adr-promoter."
-                                          },
-                                          {
-                                              "id":  "artifact-exposure-vs-local-convenience",
-                                              "lenses":  [
-                                                             "security",
-                                                             "solo-tool-ux"
-                                                         ],
-                                              "runsSeen":  1,
-                                              "resolution":  "git rm --cached the 208 internal artifacts behind widened ignore patterns and keep the files on disk. The working copy is unchanged; only the published surface shrinks."
-                                          },
-                                          {
-                                              "id":  "queue-size-vs-commit-cadence",
-                                              "lenses":  [
-                                                             "data-integrity",
-                                                             "cost-economics"
-                                                         ],
-                                              "runsSeen":  1,
-                                              "resolution":  "Dedupe the archive and cap the published payload first. Both shrink the artifact without touching commit cadence, which is Kane\u0027s call."
-                                          },
-                                          {
-                                              "id":  "cost-cadence-vs-freshness",
-                                              "lenses":  [
-                                                             "cost-economics",
-                                                             "strategic-kill-this"
-                                                         ],
-                                              "runsSeen":  15,
-                                              "resolution":  "This run closed 27 findings, so the value case for daily just strengthened. Land the run-cost field, then decide with a cost-per-closed-action number."
-                                          },
-                                          {
-                                              "id":  "motion-richness-vs-a11y-floor",
-                                              "lenses":  [
-                                                             "accessibility",
-                                                             "visual-reuse"
-                                                         ],
-                                              "runsSeen":  17,
-                                              "resolution":  "Add the guard, keep the motion. Not a real tension; the contrast lift held the same cool hue."
-                                          }
-                                      ]
-                 },
-    "stale":  false,
-    "tags":  [
-                 "hub",
-                 "static-site",
-                 "github-pages",
-                 "cross-project"
-             ]
+    "project": "Everything",
+    "displayName": "Yes& Everything",
+    "version": "537e3f5",
+    "lastReleaseAt": "2026-07-25T15:00:24-05:00",
+    "lastReleaseMessage": "yae: update 12 files",
+    "milestone": null,
+    "completion": null,
+    "itemsLeft": null,
+    "repoUrl": "https://github.com/TheProphetKane/yesandeverything",
+    "workTreeClean": true,
+    "audit": null,
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-07-26.md",
+        "latestReportAt": "2026-07-26T12:10:00Z",
+        "verdict": "working",
+        "topFinding": "The release pipeline is unblocked. collect-usage.ps1:867 now reads the queue through an explicit UTF8 ReadAllText instead of a cp1252-default Get-Content, the double-encoded em dash is gone from dashboard/data/queue.json, and check-status-json.ps1 exits 0, so release.ps1 clears Step 1/4. That was the only breakage signal, so the verdict moves to working for the first time in eighteen runs. What did not move is the public surface: /.work-queue.json (797 KB), /.work-queue-archive.json (1,042 KB), a corrupt queue snapshot and the .work-queue-results/ tree all return HTTP 200, and robots.txt carries no work-queue entry at all. The morning canonical audit corrected the fix and caught a real trap: the previous run's action to git rm --cached all tracked artifacts would have destroyed the only backup of the live queue. Untrack the 70 disposable ones and drop the two backup-bearing files from the Pages artifact instead.",
+        "actionsOpen": 26,
+        "actionsClosed": 2,
+        "actions": [
+            {
+                "severity": "HIGH",
+                "title": "Untrack the 70 disposable artifacts only, drop .work-queue.json and .work-queue-archive.json from the Pages artifact in deploy-pages.yml, add the robots disallow, then confirm all four URL classes 404; do not run the superseded blanket-untrack order",
+                "lens": "security",
+                "priority": 20,
+                "id": "yae-tracked-queue-artifacts-public"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Scope the staging at push-to-github.ps1:92 to an explicit pathspec so the sanctioned release path can ship a targeted edit",
+                "lens": "solo-tool-ux",
+                "priority": 20,
+                "id": "yae-release-add-all-sweeps-operational-state"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Move the status-JSON, index.html tail and CNAME assertions into deploy-pages.yml so every writer crosses a guard",
+                "lens": "architecture",
+                "priority": 20,
+                "id": "yae-guards-absent-from-workflow-path"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Scope the bar-raise skip-gate's commit and tree checks to YaE-owned paths so the gate can fire at all",
+                "lens": "solo-tool-ux",
+                "priority": 20,
+                "id": "yae-skipgate-cannot-fire"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Record the run's measured token cost into the status JSON alongside actionsOpen and actionsClosed",
+                "lens": "cost-economics",
+                "priority": 16,
+                "id": "yae-barraise-run-cost-unmeasured"
+            },
+            {
+                "severity": "MED",
+                "title": "Re-run check-status-json.ps1 after release.ps1 Step 2 so a corrupt dashboard JSON cannot be written and pushed",
+                "lens": "reliability",
+                "priority": 15,
+                "id": "yae-release-step-ordering-corrupt-json-ships"
+            },
+            {
+                "severity": "MED",
+                "title": "Migrate .project-context.json to schema v1.1 and add hard_rule_checks and completion",
+                "lens": "maintainability",
+                "priority": 15,
+                "id": "yae-project-context-stale-and-v1"
+            },
+            {
+                "severity": "MED",
+                "title": "Promote one projects.json to source of truth with per-surface visibility flags",
+                "lens": "architecture",
+                "priority": 15,
+                "id": "yae-four-project-registries"
+            },
+            {
+                "severity": "MED",
+                "title": "Add schemaVersion plus a required-key assertion to check-status-json.ps1 and reconcile Skylight.json",
+                "lens": "architecture",
+                "priority": 15,
+                "id": "yae-statusjson-contract-unversioned"
+            },
+            {
+                "severity": "MED",
+                "title": "Change the four pwsh invocations to powershell -File",
+                "lens": "solo-tool-ux",
+                "priority": 15,
+                "id": "yae-work-queue-runner-pwsh-not-installed"
+            },
+            {
+                "severity": "MED",
+                "title": "Add real h2 headings to the current project-page template and re-apply it across the seven ported pages; give 404.html an h1",
+                "lens": "accessibility",
+                "priority": 15,
+                "id": "yae-subpage-no-heading-structure"
+            },
+            {
+                "severity": "MED",
+                "title": "Copy the homepage's :focus-visible and prefers-reduced-motion patterns into the 18 sub-pages, status and 404",
+                "lens": "accessibility",
+                "priority": 15,
+                "id": "yae-subpage-no-reduced-motion-focus-visible"
+            },
+            {
+                "severity": "MED",
+                "title": "Port the Budget and Scheduler project pages onto the current template",
+                "lens": "org-writing",
+                "priority": 15,
+                "id": "yae-budget-scheduler-off-template"
+            },
+            {
+                "severity": "MED",
+                "title": "Validate project, priority, severity and status against enums in the queue-edit.ps1 add path",
+                "lens": "data-integrity",
+                "priority": 15,
+                "id": "yae-queue-no-enum-validation"
+            },
+            {
+                "severity": "MED",
+                "title": "Dedupe the 108 duplicate archive ids and make the queue-edit.ps1 drop path archive rather than delete",
+                "lens": "data-integrity",
+                "priority": 15,
+                "id": "yae-archive-not-clean-terminal-store"
+            },
+            {
+                "severity": "MED",
+                "title": "Run git gc and git prune on the local clone once, with no scheduled routines in flight",
+                "lens": "cost-economics",
+                "priority": 15,
+                "id": "yae-local-git-never-packed"
+            },
+            {
+                "severity": "MED",
+                "title": "Add defensive ignore patterns for secret-shaped filenames and a pre-push staged-file check",
+                "lens": "security",
+                "priority": 15,
+                "id": "yae-gitignore-no-secret-shape-patterns"
+            },
+            {
+                "severity": "MED",
+                "title": "Untrack the staged skill tree under _skill-review/ and add it to .gitignore",
+                "lens": "security",
+                "priority": 15,
+                "id": "yae-skillreview-tree-public"
+            },
+            {
+                "severity": "MED",
+                "title": "Cap the items array in the published queue payload and render a count plus a link",
+                "lens": "cost-economics",
+                "priority": 15,
+                "id": "yae-dashboard-queue-payload-uncapped"
+            },
+            {
+                "severity": "MED",
+                "title": "Retire BAR_RAISE_ROADMAP.md as complete and delete BAR_RAISE_HANDOVER.md",
+                "lens": "maintainability",
+                "priority": 15,
+                "id": "yae-handover-roadmap-stale-scheduling"
+            },
+            {
+                "severity": "MED",
+                "title": "Commit dashboard/data/queue.json on every drain run and untrack .work-queue-results/ so the ignore rule and the index agree",
+                "lens": "data-integrity",
+                "priority": 12,
+                "id": "yae-queue-uncommitted-multiday-gap"
+            },
+            {
+                "severity": "MED",
+                "title": "Add a pack script that rebuilds every .skill from source on release, or delete the stale artifacts",
+                "lens": "maintainability",
+                "priority": 12,
+                "id": "yae-skill-artifacts-stale-vs-source"
+            },
+            {
+                "severity": "MED",
+                "title": "Add an -Op list with -Project, -Status and -Priority filters to queue-edit.ps1",
+                "lens": "solo-tool-ux",
+                "priority": 10,
+                "id": "yae-queue-get-returns-unfiltered-blob"
+            },
+            {
+                "severity": "MED",
+                "title": "Align the Budget page's --amber to the homepage's gold and delete the unreferenced declarations",
+                "lens": "visual-reuse",
+                "priority": 10,
+                "id": "yae-amber-token-means-three-colors"
+            },
+            {
+                "severity": "MED",
+                "title": "Extend the gate-payload guard to both gates and drop the stale claim from CLAUDE.md:81",
+                "lens": "reliability",
+                "priority": 10,
+                "id": "yae-gate-payload-decode-guard-residual"
+            },
+            {
+                "severity": "MED",
+                "title": "Untrack the six stale dated reports in docs/ and delete the unreferenced one-shot scripts",
+                "lens": "maintainability",
+                "priority": 10,
+                "id": "yae-housekeeping-tracked-cruft"
+            }
+        ],
+        "deferred": [
+            {
+                "severity": "HIGH",
+                "title": "The public repo is roughly 95% of GitHub's 1 GB advisory threshold and the served tree grew 28 MB to 35 MB in a day",
+                "lens": "cost-economics",
+                "reason": "blocked on a Kane decision: which lever. Cutting the generated-data commit cadence is a cadence call, and revisiting the base64 gate payloads needs changes in two other repos. du and git count-objects both time out on this mount"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Both gates are decorative client-side equality checks whose payload ships to every requester, so neither is access control",
+                "lens": "security",
+                "reason": "blocked on a Kane decision: are the mirrors secret or merely unadvertised. If secret they need a real server-side check; if not, record the decorative gate as a locked decision"
+            },
+            {
+                "severity": "MED",
+                "title": "Drop the git commit of dashboard/data/*.json to once daily while leaving the KV push every run",
+                "lens": "cost-economics",
+                "reason": "cadence change is a Kane decision; per the standing lesson, do not mint cadence cuts on his behalf"
+            },
+            {
+                "severity": "MED",
+                "title": "Cadence review: bar-raise daily, usage-refresh every 30 min, loop-tick hourly on an essentially static site",
+                "lens": "cost-economics",
+                "reason": "this run closed 2 findings against yesterday's 28, so the closure rate is volatile. Revisit once the run-cost field lands and two more runs produce closure data"
+            },
+            {
+                "severity": "MED",
+                "title": "Token and cost telemetry is committed to this public repo, and the publicly served .work-queue.json names Skylight 220 times with no robots entry",
+                "lens": "compliance-data-steward",
+                "reason": "blocked on a Kane decision: populate the existing empty exclude list at the collector publish boundary, or accept as locked. The robots half is covered by the top security action"
+            },
+            {
+                "severity": "MED",
+                "title": "The live robots.txt is Cloudflare-Managed and diverges from the repo file (2,126 bytes served vs 290 on disk)",
+                "lens": "seo-open-graph",
+                "reason": "needs a Kane call plus a Cloudflare dashboard action. Re-confirmed this run that the repo's disallows do survive the merge, so nothing is broken today"
+            },
+            {
+                "severity": "MED",
+                "title": "The live Ring page ships em dashes in its title and social-card titles",
+                "lens": "org-writing",
+                "reason": "cross-project: fix in X:\\YesAndRing and ship via its own release"
+            },
+            {
+                "severity": "MED",
+                "title": "Port the read-back verify into the Agents-side Node queue writer, the one writer on the queue without it",
+                "lens": "data-integrity",
+                "reason": "cross-project: lives in the Agents repo, fix Agents-side"
+            },
+            {
+                "severity": "MED",
+                "title": "Apothecary swatch picker eager-loads roughly 14.8 MB of full-res parchment JPEGs; parchment-04.jpg alone is 4.9 MB",
+                "lens": "performance",
+                "reason": "cross-project: apothecary/ is a mirror (hard rule), fix in X:\\YesAndApothecary and re-release"
+            },
+            {
+                "severity": "MED",
+                "title": "The Apothecary footer source link 404s, a third instance of the same dead-repo pattern",
+                "lens": "link-rot",
+                "reason": "cross-project: apothecary/ is a mirror (hard rule), fix in X:\\YesAndApothecary"
+            },
+            {
+                "severity": "MED",
+                "title": "The base64 wrapper costs roughly 52% extra wire bytes on one gate and 54% on the other; hordes/index.html alone is 2.2 MB",
+                "lens": "performance",
+                "reason": "needs a Kane call and touches two other repos' publish scripts; also the storage half of the repo-growth finding"
+            },
+            {
+                "severity": "MED",
+                "title": "queue-drain-4h is an orphan routine directory that reads as live and is registered nowhere",
+                "lens": "maintainability",
+                "reason": "outside YaE scope: the routine store and restart-cleanup.ps1 are not this repo. Surfaced for Kane rather than edited"
+            },
+            {
+                "severity": "LOW",
+                "title": "terms/ uses the real legal name while the site brands as Kane, and states no effective date",
+                "lens": "org-writing",
+                "reason": "a legal page plausibly requires the real name; needs a Kane call, not a silent rewrite"
+            },
+            {
+                "severity": "LOW",
+                "title": "The Ring design tablist declares ARIA tab roles without the APG keyboard contract",
+                "lens": "accessibility",
+                "reason": "the tabs are real buttons, natively focusable, Enter/Space works and aria-selected updates. An APG conformance gap, not a keyboard trap"
+            },
+            {
+                "severity": "LOW",
+                "title": "Google Fonts render-blocking stylesheet and a four-year-stale html2canvas CDN pin on the public apothecary page",
+                "lens": "dependency",
+                "reason": "cross-project: apothecary/ is a mirror, fix in the source repo"
+            }
+        ],
+        "health": 76,
+        "lensScores": {
+            "architecture": 73,
+            "reliability": 78,
+            "security": 72,
+            "performance": 86,
+            "dataIntegrity": 72,
+            "maintainability": 68,
+            "soloToolUx": 66,
+            "costEconomics": 54,
+            "dependency": 87,
+            "observability": 86,
+            "strategicKillThis": 66,
+            "complianceDataSteward": 64,
+            "visualReuse": 80,
+            "orgWriting": 84,
+            "linkRot": 90,
+            "seoOpenGraph": 86,
+            "accessibility": 78
+        },
+        "openFindings": [
+            {
+                "id": "yae-tracked-queue-artifacts-public",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 16,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "yae-release-add-all-sweeps-operational-state",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-guards-absent-from-workflow-path",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-skipgate-cannot-fire",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 16,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "yae-barraise-run-cost-unmeasured",
+                "severity": "high",
+                "priority": 16,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-release-step-ordering-corrupt-json-ships",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-project-context-stale-and-v1",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-four-project-registries",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-statusjson-contract-unversioned",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 16,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "yae-work-queue-runner-pwsh-not-installed",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-subpage-no-heading-structure",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-subpage-no-reduced-motion-focus-visible",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 18,
+                "firstSeen": "2026-07-07"
+            },
+            {
+                "id": "yae-budget-scheduler-off-template",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-queue-no-enum-validation",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-archive-not-clean-terminal-store",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-local-git-never-packed",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-gitignore-no-secret-shape-patterns",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-skillreview-tree-public",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 16,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "yae-dashboard-queue-payload-uncapped",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-handover-roadmap-stale-scheduling",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 16,
+                "firstSeen": "2026-07-10"
+            },
+            {
+                "id": "yae-queue-uncommitted-multiday-gap",
+                "severity": "medium",
+                "priority": 12,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-skill-artifacts-stale-vs-source",
+                "severity": "medium",
+                "priority": 12,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-queue-get-returns-unfiltered-blob",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-amber-token-means-three-colors",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 9,
+                "firstSeen": "2026-07-17"
+            },
+            {
+                "id": "yae-gate-payload-decode-guard-residual",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            },
+            {
+                "id": "yae-housekeeping-tracked-cruft",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 10,
+                "firstSeen": "2026-07-16"
+            }
+        ],
+        "tensionsOpen": [
+            {
+                "id": "queue-exposure-vs-only-backup",
+                "lenses": [
+                    "security",
+                    "data-integrity"
+                ],
+                "runsSeen": 1,
+                "resolution": "Untrack the 70 disposable artifacts only, and close the remaining exposure at the deploy artifact by deleting .work-queue.json and .work-queue-archive.json in deploy-pages.yml before upload. They stay in git as the only backup and never reach Pages. Replaces artifact-exposure-vs-local-convenience."
+            },
+            {
+                "id": "guards-vs-one-command-release",
+                "lenses": [
+                    "architecture",
+                    "solo-tool-ux",
+                    "cost-economics"
+                ],
+                "runsSeen": 10,
+                "resolution": "Move the guards to deploy-pages.yml so every writer crosses them, AND scope push-to-github.ps1's staging to a pathspec so the one-command flow survives. Both dimensions win. PROMOTE via adr-promoter."
+            },
+            {
+                "id": "observability-vs-privacy",
+                "lenses": [
+                    "observability",
+                    "compliance-data-steward"
+                ],
+                "runsSeen": 16,
+                "resolution": "The robots half is now covered by the top security action. What remains is the exclude-list question at the publish boundary: populate it or accept as locked. Narrow question for Kane. PROMOTE via adr-promoter."
+            },
+            {
+                "id": "queue-size-vs-commit-cadence",
+                "lenses": [
+                    "data-integrity",
+                    "cost-economics"
+                ],
+                "runsSeen": 2,
+                "resolution": "Dedupe the 108 archive dups and cap the published payload first. Both shrink the artifact without touching commit cadence, which is Kane's call."
+            },
+            {
+                "id": "cost-cadence-vs-freshness",
+                "lenses": [
+                    "cost-economics",
+                    "strategic-kill-this"
+                ],
+                "runsSeen": 16,
+                "resolution": "Closure was 28 yesterday and 2 today, so the value case swings hard run to run. Land the run-cost field, then decide with a cost-per-closed-action number rather than an anecdote."
+            },
+            {
+                "id": "template-port-vs-heading-structure",
+                "lenses": [
+                    "accessibility",
+                    "org-writing"
+                ],
+                "runsSeen": 1,
+                "resolution": "Fix the current template's heading structure before porting the last two pages onto it, otherwise the port removes the h2 elements Budget and Scheduler already have. Sequence the two actions rather than dropping either."
+            },
+            {
+                "id": "motion-richness-vs-a11y-floor",
+                "lenses": [
+                    "accessibility",
+                    "visual-reuse"
+                ],
+                "runsSeen": 18,
+                "resolution": "Add the guard, keep the motion. Not a real tension; the contrast lift held the same cool hue."
+            }
+        ]
+    },
+    "stale": false,
+    "tags": [
+        "hub",
+        "static-site",
+        "github-pages",
+        "cross-project"
+    ]
 }
