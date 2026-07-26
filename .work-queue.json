@@ -1028,12 +1028,16 @@
       "kind": "canonical-audit-finding",
       "priority": "P3",
       "source": "audit-ring-nightly 2026-07-12 / docs/CANONICAL_AUDIT-2026-07-12.md (finding 5)",
-      "status": "pending",
+      "status": "blocked-on-user",
       "added": "2026-07-12",
       "attempts": 0,
       "auto_safe": false,
-      "lastAttemptAt": "2026-07-15T03:38Z",
-      "notes": "2026-07-15T03:38Z queue-drain-hourly: RE-VERIFIED read-only, drift STILL LIVE in current Ring tree (HEAD 8076622, unchanged). PROJECT_SPEC.md:102 says 'Ring role', CLAUDE.md:78 says 'Cats' role - genuine one-word mismatch confirmed present. Cannot resolve read-only: which name is truth depends on the actual Discord server role granted for #ring-* channels (external, not in-repo), and the fix is a doc edit + commit = out of no-publish audit-only drain scope (stop-condition 2). Needs Kane's call on the canonical role name (likely 'Cats' per CLAUDE.md Discord section) then a one-line doc sync. Kept pending."
+      "lastAttemptAt": "2026-07-26T00:35Z",
+      "notes": "2026-07-15T03:38Z queue-drain-hourly: RE-VERIFIED read-only, drift STILL LIVE in current Ring tree (HEAD 8076622, unchanged). PROJECT_SPEC.md:102 says 'Ring role', CLAUDE.md:78 says 'Cats' role - genuine one-word mismatch confirmed present. Cannot resolve read-only: which name is truth depends on the actual Discord server role granted for #ring-* channels (external, not in-repo), and the fix is a doc edit + commit = out of no-publish audit-only drain scope (stop-condition 2). Needs Kane's call on the canonical role name (likely 'Cats' per CLAUDE.md Discord section) then a one-line doc sync. Kept pending.",
+      "triageVerdict": "keep",
+      "triageNote": "2026-07-26T00:04Z loop-tick-hourly R4 triage: KEEP. Crossed the 14d bar at 14.0d, unstamped, read in full. Re-derived the evidence live rather than trusting the item's own line numbers, which were recorded at Ring HEAD 8076622 and have since shifted: the drift is STILL PRESENT at PROJECT_SPEC.md:102 ('Ring role') vs CLAUDE.md:80 ('Cats' role), now :80 not the :78 the notes cite. Genuine one-word doc mismatch, not stale clutter. Unresolvable from the repo - which name is canonical depends on the live Discord category, which is external. Stays pending for Kane; NOT archived.",
+      "triagedAt": "2026-07-26T00:04Z",
+      "drainNote": "queue-drain-hourly 2026-07-26T00:35Z: ESCALATED pending -> blocked-on-user at 14d rather than archived. The drift is real and still live (re-verified by the 00:04Z triage at PROJECT_SPEC.md:102 Ring role vs CLAUDE.md:80 Cats role), so archiving it would delete a true finding. It cannot be drained unattended either: which name is canonical depends on the role actually granted in the live Discord category, which is not in the repo. Needs one look at Discord, then a one-word doc sync. Escalate, do not delete."
     },
     {
       "id": "hbh-autopause-horde-day-signal-2026-07-14",
@@ -1092,7 +1096,9 @@
       "impact": 1,
       "confidence": 5,
       "notes": "2026-07-16T audit-skylight-nightly: enqueued. Finding re-confirmed live at HEAD 74e0ac5 (tree clean): `ls CHANGELOG.md` -> No such file; .project-context.json changelog_path still \"CHANGELOG.md\". Created because a queue search this run found NO item with this id despite the 07-02..07-15 audit reports all citing it as pending -- the finding was real but untracked. Not auto-fixed (co-owned file + convention decision).",
-      "lastNoticedAt": "2026-07-25T05:30:00Z"
+      "lastNoticedAt": "2026-07-25T05:30:00Z",
+      "drainNote": "queue-drain-hourly 2026-07-26T00:35Z: RE-VERIFIED still live, read-only. X:\\YesAndSkylight\\.project-context.json still sets changelog_path to CHANGELOG.md and no CHANGELOG.md exists in the repo root (root holds CLAUDE.md, DESIGN.md, README.md, docs/, scripts/, src/, wrangler.jsonc, package.json, tsconfig.json). Fix is a one-line choice: repoint changelog_path at wherever the Skylight changelog actually lives, or create the file. Not drained here because it ends in a repo commit, which is outside the audit-and-queue-only scope of this routine.",
+      "lastAttemptAt": "2026-07-26T00:35Z"
     },
     {
       "id": "canonical-audit-2026-07-16-gnosis-public-to-gated-links",
@@ -1443,27 +1449,6 @@
       "notes": "auto_safe=false: the skill runs nightly unattended; a bad rewrite silently degrades every future handler audit. Report-only default and the hordes inject-not-copy check are the parts worth preserving verbatim."
     },
     {
-      "id": "working-tree-2026-07-17-apothecary-stale-tree",
-      "added": "2026-07-17",
-      "project": "apothecary",
-      "kind": "hygiene",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
-      "source": "working-tree-scan-nightly 2026-07-17",
-      "severity": "low",
-      "evidence": "git status --porcelain in X:\\YesAndApothecary shows ' M DEPLOY.md' and ' M PROJECT_SPEC.md'; DEPLOY.md was last committed 2026-06-11 (5 weeks ago), PROJECT_SPEC.md 2026-07-14",
-      "title": "Stale working tree in Apothecary: DEPLOY.md has sat modified since its last commit 5 weeks ago",
-      "prompt": "Working-tree scan 2026-07-17 found two uncommitted files in X:\\YesAndApothecary. DEPLOY.md is the stale one: HEAD last touched it 2026-06-11, five weeks back, so whatever is in the working copy has been unshipped that whole time. PROJECT_SPEC.md is recent (committed 2026-07-14) and is probably live work from the Apothecary bar-raise or audit routine - check before assuming it is abandoned. An earlier, larger version of this same finding (working-tree-2026-07-11-apothecary-stale-tree, 19 files) was drained to completion, so this is a fresh recurrence rather than the same edit rotting. DO: read the diff for both files, decide per file whether the change is wanted, then commit it or revert it - do not leave a third recurrence. If the diffs are real and self-consistent, commit and run the Apothecary release script per the standing ship-when-verified rule. If either diff is a half-finished thought, revert it rather than committing a partial. Note Apothecary's release.ps1 may abort on PowerShell-wrapped git stderr; finish the commit via the Bash tool if that happens.",
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "impact": 2,
-      "confidence": 5,
-      "notes": "auto_safe=false: the scan cannot tell a wanted edit from an abandoned one, and PROJECT_SPEC.md may belong to a routine that is mid-flight. Recurrence of a finding already drained once on 2026-07-11 - if it lands a third time, the underlying habit is worth fixing rather than the tree."
-    },
-    {
       "id": "working-tree-2026-07-17-cattery-stale-docs-tree",
       "added": "2026-07-17",
       "project": "cattery",
@@ -1474,15 +1459,16 @@
       "attempts": 0,
       "source": "working-tree-scan-nightly 2026-07-17",
       "severity": "low",
-      "evidence": "git status --porcelain in X:\\YesAndCattery shows ' M CLAUDE.md', ' M PROJECT_SPEC.md', ' M docs/DATA-MODEL.md'; DATA-MODEL.md last committed 2026-06-29 (2 weeks ago). HEAD is 4aed8c1, 5 days old.",
-      "title": "Stale working tree in Cattery: three docs uncommitted, DATA-MODEL.md untouched by a commit for 2 weeks",
+      "evidence": "git status --porcelain in X:\\YesAndCattery shows ' M CLAUDE.md', ' M PROJECT_SPEC.md', ' M docs/DATA-MODEL.md'; DATA-MODEL.md last committed 2026-06-29 (2 weeks ago). HEAD is 4aed8c1, 5 days old. | FOLDED 2026-07-26 from working-tree-2026-07-23-cattery-untracked-migrations: four untracked Supabase migrations sit in this same tree - supabase/migrations/0009_reviews_and_ratings.sql, 0010_waitlists.sql, 0018_drop_photos_public_listing.sql, 0019_orders_cattery_fk_restrict.sql. Live git status this run: M PROJECT_SPEC.md, M docs/DATA-MODEL.md, M test/money.test.js plus those four untracked files. test/money.test.js was not in the original 2026-07-17 body; it is part of the same unshipped tree.",
+      "title": "Stale working tree in Cattery: three files modified plus four untracked migrations, all unshipped",
       "prompt": "Working-tree scan 2026-07-17 found three modified docs in X:\\YesAndCattery: CLAUDE.md, PROJECT_SPEC.md, and docs/DATA-MODEL.md. DATA-MODEL.md is the stale one - HEAD last committed it 2026-06-29, two weeks ago. Cattery's HEAD (4aed8c1) is itself 5 days old, so this repo has gone quiet with edits stranded in the tree. SCOPE NOTE - do not touch the two untracked migrations in this repo: supabase/migrations/0018_drop_photos_public_listing.sql and 0019_orders_cattery_fk_restrict.sql are each already owned by their own blocked-on-user queue items (canonical-audit-2026-07-10-cattery-photos-bucket-listing and canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied). Applying a migration is Kane's call and is not this item's job; this item covers the three DOC files only. DO: read the diff for CLAUDE.md, PROJECT_SPEC.md and docs/DATA-MODEL.md, and commit what is accurate or revert what is not. Watch for one trap: if the DATA-MODEL.md diff documents the schema changes those two unapplied migrations WOULD make, then committing it makes the doc claim a prod state that does not exist - in that case leave DATA-MODEL.md alone, say so, and let it land with the migration it belongs to.",
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-26T00:35Z",
       "lastAttemptAt": null,
       "impact": 2,
       "confidence": 5,
-      "notes": "auto_safe=false: DATA-MODEL.md may describe post-migration schema, in which case committing it early makes the doc lie about prod. Migrations 0018/0019 deliberately excluded - owned by existing blocked-on-user items."
+      "notes": "auto_safe=false: DATA-MODEL.md may describe post-migration schema, in which case committing it early makes the doc lie about prod. Migrations 0018/0019 deliberately excluded - owned by existing blocked-on-user items.",
+      "drainNote": "queue-drain-hourly 2026-07-26T00:35Z: absorbed working-tree-2026-07-23-cattery-untracked-migrations, closing bar-raise-2026-07-24-cattery-queue-dupe-worktree. This is now the single item for the whole Cattery tree. Still auto_safe=false: draining it means reading real source and migration diffs and deciding commit-or-revert per file, which needs an attended pass."
     },
     {
       "id": "working-tree-2026-07-17-queue-duplicate-stale-tree-items",
@@ -1499,12 +1485,12 @@
       "title": "The same two stale trees are queued twice each and have sat pending for a week, so the queue is describing work instead of draining it",
       "prompt": "Found by the working-tree scan's own dedup step on 2026-07-17, and it is really two problems wearing one coat. FIRST, duplicates: the Scheduler stale tree is queued as BOTH working-tree-2026-07-11-scheduler-stale-tree AND wq-2026-07-12-002, and the Ring stale tree as BOTH working-tree-2026-07-10-ring-stale-tree AND wq-2026-07-12-003. All four are pending. Two scanners with different id conventions (working-tree-* vs wq-*) described the same trees and neither saw the other, because dedup was by body match and the bodies were worded differently. SECOND, and worse: those trees are STILL DIRTY as of 2026-07-17. Scheduler has 8 changes (5 source files under apps/api/, docs/DESIGN.md, plus untracked migrations/0011_audit_log_composite_index.sql and scripts/sync-audit-dashboard.ps1) whose HEAD commits date to 2026-07-03 and, for open-shifts.ts, 2026-05-18. Ring has 6 changes including public/app.js and src/index.js, last committed 2026-07-04. Real source edits have sat unshipped for two weeks while the queue accumulated four items about them - exactly the rotting-tracked-item shape Kane has said to refuse. DO: (1) supersede one duplicate of each pair, keeping the richer body; (2) actually drain the two survivors - read the diffs, commit or revert per file, ship via each project's release script if the change is real and verified; (3) then fix the cause - dedup future stale-tree findings by (project, kind) rather than by body text, so differently-worded reports of the same tree collapse. Ask Kane before committing Scheduler's or Ring's source diffs; two-week-old uncommitted source may be a deliberate park rather than a forgotten one, and this item's job is to force the decision, not to guess it.",
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-26T00:35Z",
       "lastAttemptAt": null,
       "impact": 4,
       "confidence": 5,
       "notes": "auto_safe=false: draining these means committing or reverting two weeks of real source diffs in Scheduler and Ring - a judgement call, not a mechanical fix. The dedup-by-body weakness is why this scan nearly filed a fifth and sixth duplicate; fixing the dedup key is the durable half.",
-      "drainNote": "2026-07-21T07:37Z queue-drain-hourly: DEDUP APPLIED. Archived wq-2026-07-12-002 (scheduler) and wq-2026-07-12-003 (ring) as superseded-by-duplicate; their canonical partners (working-tree-2026-07-11-scheduler-stale-tree, working-tree-2026-07-10-ring-stale-tree) remain pending. Structural half (fix dedup-by-body key so scanner stops re-filing) still open, auto_safe=false."
+      "drainNote": "queue-drain-hourly 2026-07-26T00:35Z: SCOPE NARROWED, part 1 of 3 is already done. Re-checked all four ids this run: working-tree-2026-07-11-scheduler-stale-tree, wq-2026-07-12-002 and wq-2026-07-12-003 are all gone from the queue, so both duplicate pairs have collapsed; only working-tree-2026-07-10-ring-stale-tree survives and it sits at blocked-on-user, not pending. Part 2 is STILL LIVE and is the real content of this item: X:\\YesAndScheduler is dirty with 7 modified files plus untracked migrations/0011_audit_log_composite_index.sql and scripts/sync-audit-dashboard.ps1, and X:\\YesAndRing is dirty with 7 files including public/app.js and src/index.js. Both are now three weeks unshipped, not two. Part 3, dedup future stale-tree findings by (project, kind) rather than by body text, is untouched. Committing those two source trees needs a call from Kane, which is why this stays pending and not auto_safe."
     },
     {
       "id": "canonical-audit-2026-07-17-gnosis-character-gate-undocumented",
@@ -3176,27 +3162,6 @@
       "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-17): deferred housekeeping re-confirmed with two corrections to the prior report. (1) Loop probes: 56 on disk (not ~63), dated 2026-06-07 to 06-12, ALL untracked and matched by .gitignore:21 -- a pure local rm. (2) Stale queue snapshots: 5, all TRACKED, ~360KB (.work-queue.json.bak-1781024899, .bak.1778937105, .corrupt-2026-06-16, .corrupt-2026-06-17, .recon) -- these need `git rm --cached`, NOT a plain delete as the prior report implied; .gitignore:26 `*.bak` never matches the suffix-form .bak-NNNN / .bak.NNNN names, so widen it to `*.bak*`. (3) Tracked dated docs/ reports: exactly 4 (DASHBOARD-IMPROVEMENTS-2026-06-11, IMPROVEMENTS-2026-06-08, TRUNCATION_INVESTIGATION-2026-06-12, WORK_INVENTORY-2026-06-11); all predate the retention rules at .gitignore:13-19 and none matches those patterns, while the other 9 dated docs/ files are correctly untracked. (4) Seven one-shot scripts with zero references outside themselves: apply-branch-protection.ps1, apply-repo-cleanup.ps1, backfill_barraise_actions.py, consolidate-audit-files.ps1, estimate-usage-backfill.ps1, migrate-ids-to-words.ps1, propagate-git-guard.ps1. Fold the git rm work into the yae-tracked-queue-artifacts-public pass."
     },
     {
-      "id": "working-tree-2026-07-20-apothecary-stale-main-js",
-      "added": "2026-07-20",
-      "project": "apothecary",
-      "kind": "hygiene",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
-      "source": "working-tree-scan-nightly 2026-07-20",
-      "severity": "low",
-      "evidence": "git status --porcelain in X:\\YesAndApothecary shows a lone ' M src/main.js' (3 insertions / 3 deletions). HEAD is 4dd1546 (2026-07-18), but the last commit to touch src/main.js is 9ba343e (2026-07-11, v1.1.0) - 9 days ago, past the 7-day stale line. The repo committed since (HEAD 2 days old) while this small edit sat behind.",
-      "title": "Stale working tree in Apothecary: src/main.js has a 3-line uncommitted edit stranded for 9 days",
-      "prompt": "Working-tree scan 2026-07-20 found one stale change in X:\\YesAndApothecary: src/main.js is modified (3 insertions, 3 deletions) but uncommitted, and HEAD last touched that file on 2026-07-11 (v1.1.0, 9ba343e) - 9 days ago. HEAD (4dd1546) is only 2 days old, so the repo moved on and left this edit behind; a tiny diff is exactly how these get forgotten. DO: read `git diff src/main.js`, then either commit it (via scripts/release.ps1 if release-worthy, else a plain scoped commit) or revert with `git checkout -- src/main.js` if it is an abandoned experiment. auto_safe=false: a 3-line main.js edit could be a half-finished behavior change - eyeball the diff first, do not blind-commit.",
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "impact": 2,
-      "confidence": 5,
-      "notes": "No stash entries in Apothecary. The prior apothecary stale-tree trackers (working-tree-2026-07-11/-07-17-apothecary-stale-tree) are completed+archived, so this is a fresh occurrence, not a duplicate."
-    },
-    {
       "id": "working-tree-2026-07-20-agents-stale-architecture-doc",
       "added": "2026-07-20",
       "project": "agents",
@@ -3352,20 +3317,6 @@
       "severity": "low",
       "title": "ADHERENCE doc lists a completed path-extends remediation as still pending",
       "evidence": "docs/GODOT_BEST_PRACTICES_ADHERENCE.md lines 358/368 still describe \"6 remaining path_extends\" and \"3 dead source/world/{brood_mound,hatchery,leviathan_cyst}.gd orphan stubs want a git rm (FUSE blocks unlink)\" as outstanding work. Code truth: those three source/world/*.gd stubs no longer exist (removed) and scripts/.bp_baseline.json path_extends is now 3, i.e. the 6->3 drop already landed. The remaining-work narrative is carrying a done item. Fix is a prose rewrite of the remediation list (not a mechanical count swap), so it wants a human/edit pass rather than a blind auto-edit. The nightly drift-auto-fix already applied the sibling draw_files=17->16 count reconciliation in the same doc."
-    },
-    {
-      "id": "working-tree-2026-07-23-cattery-untracked-migrations",
-      "added": "2026-07-23",
-      "project": "cattery",
-      "kind": "working-tree-scan",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
-      "source": "working-tree-scan-nightly 2026-07-23",
-      "severity": "low",
-      "title": "Four untracked Supabase migrations sitting uncommitted in Cattery (0009, 0010, 0018, 0019)",
-      "evidence": "git status --porcelain in X:\\YesAndCattery shows '?? supabase/migrations/0009_reviews_and_ratings.sql', '0010_waitlists.sql', '0018_drop_photos_public_listing.sql', '0019_orders_cattery_fk_restrict.sql', plus ' M test/money.test.js'. The existing cattery stale-tree item (working-tree-2026-07-17-cattery-stale-docs-tree) only covers the three modified docs, not these migrations. Untracked migrations mean the schema-of-record diverges from git on a repo where RLS is the security boundary — verify each is applied vs tracked, then commit or drop. Numbering gap (0011-0017 already committed) suggests these are genuinely new work left on the floor."
     },
     {
       "id": "canonical-audit-2026-07-23-gnosis-three-continent-globe-public-spec-update",
@@ -5446,28 +5397,6 @@
       "notes": "Auto-enqueued by bar-raise-cattery 2026-07-24. New this run. Also flagged in docs/CANONICAL_AUDIT-2026-07-24.md under 'What's aligned'."
     },
     {
-      "id": "bar-raise-2026-07-24-cattery-queue-dupe-worktree",
-      "added": "2026-07-24",
-      "project": "cattery",
-      "kind": "drift-fix",
-      "auto_safe": false,
-      "priority": "P3",
-      "status": "pending",
-      "attempts": 0,
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "source": "bar-raise-cattery 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
-      "finding_id": "solo-tool-ux-02",
-      "title": "Two overlapping queue items track the same Cattery working tree",
-      "detail": "working-tree-2026-07-17-cattery-stale-docs-tree and working-tree-2026-07-23-cattery-untracked-migrations both describe the same uncommitted tree (4 modified files plus 0009/0010/0018/0019). Collapse them into one item so the board stops double-counting a single commit's worth of work.",
-      "severity": "medium",
-      "impact": 2,
-      "confidence": 5,
-      "prompt": "Collapse the two overlapping Cattery working-tree queue items in X:\\YesAndEverything\\.work-queue.json: working-tree-2026-07-17-cattery-stale-docs-tree and working-tree-2026-07-23-cattery-untracked-migrations describe the same tree (4 modified files plus untracked migrations 0009, 0010, 0018, 0019). Keep one, close the other as a duplicate. Edit the queue file textually with a python round-trip, never a PowerShell ConvertTo-Json.",
-      "notes": "Auto-enqueued by bar-raise-cattery 2026-07-24. New this run. Also noted in docs/CANONICAL_AUDIT-2026-07-24.md finding #3."
-    },
-    {
       "id": "bar-raise-2026-07-24-gnosis-reliability-02",
       "project": "gnosis",
       "priority": "P1",
@@ -7067,5 +6996,5 @@
     }
   ],
   "last_drain": "2026-07-25T22:37Z",
-  "updated": "2026-07-25T22:37Z"
+  "updated": "2026-07-26T00:40Z"
 }
