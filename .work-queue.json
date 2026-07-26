@@ -1463,12 +1463,12 @@
       "title": "Stale working tree in Cattery: three files modified plus four untracked migrations, all unshipped",
       "prompt": "Working-tree scan 2026-07-17 found three modified docs in X:\\YesAndCattery: CLAUDE.md, PROJECT_SPEC.md, and docs/DATA-MODEL.md. DATA-MODEL.md is the stale one - HEAD last committed it 2026-06-29, two weeks ago. Cattery's HEAD (4aed8c1) is itself 5 days old, so this repo has gone quiet with edits stranded in the tree. SCOPE NOTE - do not touch the two untracked migrations in this repo: supabase/migrations/0018_drop_photos_public_listing.sql and 0019_orders_cattery_fk_restrict.sql are each already owned by their own blocked-on-user queue items (canonical-audit-2026-07-10-cattery-photos-bucket-listing and canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied). Applying a migration is Kane's call and is not this item's job; this item covers the three DOC files only. DO: read the diff for CLAUDE.md, PROJECT_SPEC.md and docs/DATA-MODEL.md, and commit what is accurate or revert what is not. Watch for one trap: if the DATA-MODEL.md diff documents the schema changes those two unapplied migrations WOULD make, then committing it makes the doc claim a prod state that does not exist - in that case leave DATA-MODEL.md alone, say so, and let it land with the migration it belongs to.",
       "result_path": null,
-      "lastWorkedAt": "2026-07-26T00:35Z",
+      "lastWorkedAt": "2026-07-26T09:30Z",
       "lastAttemptAt": null,
       "impact": 2,
       "confidence": 5,
       "notes": "auto_safe=false: DATA-MODEL.md may describe post-migration schema, in which case committing it early makes the doc lie about prod. Migrations 0018/0019 deliberately excluded - owned by existing blocked-on-user items.",
-      "drainNote": "queue-drain-hourly 2026-07-26T00:35Z: absorbed working-tree-2026-07-23-cattery-untracked-migrations, closing bar-raise-2026-07-24-cattery-queue-dupe-worktree. This is now the single item for the whole Cattery tree. Still auto_safe=false: draining it means reading real source and migration diffs and deciding commit-or-revert per file, which needs an attended pass."
+      "drainNote": "queue-drain-hourly 2026-07-26T09:30Z: re-verified READ-ONLY, item HOLDS but its evidence has moved. X:\\YesAndCattery HEAD is now b875dac (2026-07-26), not the 5-day-old 4aed8c1, so the repo is no longer quiet. The dirty set changed too: CLAUDE.md is now clean, while README.md and test/money.test.js are newly modified. Still dirty and still unshipped: PROJECT_SPEC.md, README.md, docs/DATA-MODEL.md, test/money.test.js, plus the same four untracked supabase/migrations the item says not to touch. A modified test file is the new part and deserves a look before anything is committed."
     },
     {
       "id": "working-tree-2026-07-17-queue-duplicate-stale-tree-items",
@@ -3177,11 +3177,12 @@
       "title": "Stale working tree in Agents: THREE uncommitted drift-fix edits (docs/ARCHITECTURE.md 2d, scripts/check-readiness.ps1 1d, docs/DESIGN.md same-day) - the audit loop applies fixes but nothing ships them",
       "prompt": "Working-tree scan, refreshed 2026-07-25. X:\\YesAndAgents has two modified-uncommitted files, both of them prior nightly drift-auto-fix output that no routine ever commits: docs/ARCHITECTURE.md (setup-token line, 2026-07-23 pass, 2 days) and scripts/check-readiness.ps1 (dead pre-turn-on date text retired, 2026-07-24 pass, 1 day). HEAD is cc2ebe2 (2026-07-23); no code has shipped since. Both diffs were re-verified accurate by the 2026-07-25 canonical audit and are recorded verbatim in docs/drift-fixes-2026-07-23.md and docs/drift-fixes-2026-07-24.md. DO: read the git diff for both files, confirm they still describe reality, then ship with cd X:\\YesAndAgents then .\\scripts\\release.ps1 -Message '<concise>' (commit + push + dashboard JSON, no deploy, NO Discord). Agents release.ps1 is stderr-fragile under PowerShell: if it aborts on wrapped git stderr, finish the commit/push from Bash. auto_safe=false: doc and script content wants an eyeball before it ships. NOTE the recurrence - this item's evidence has now gone stale two audits running because new drift-fix output keeps landing on top of it. If the drain keeps missing it, the real fix is upstream: either let the audit commit its own doc-only edits, or give the drain a standing sweep for repos dirty solely with prior drift-fix output.",
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-07-26T09:30Z",
       "lastAttemptAt": null,
       "impact": 2,
       "confidence": 5,
-      "notes": "No stash entries. Re-filed after the 2026-07-20 queue revert incident dropped the 07-19 tracker; the underlying stale edit is still live in the tree. 2026-07-25: second consecutive audit at which this item's evidence was wrong on arrival; retitled and re-scoped to both files plus the explicit release.ps1 shipping path."
+      "notes": "No stash entries. Re-filed after the 2026-07-20 queue revert incident dropped the 07-19 tracker; the underlying stale edit is still live in the tree. 2026-07-25: second consecutive audit at which this item's evidence was wrong on arrival; retitled and re-scoped to both files plus the explicit release.ps1 shipping path.",
+      "drainNote": "queue-drain-hourly 2026-07-26T09:30Z: re-verified READ-ONLY, unchanged and now older. X:\\YesAndAgents HEAD is still cc2ebe2 (2026-07-23) and the tree still carries three modified files - docs/ARCHITECTURE.md, docs/DESIGN.md, scripts/check-readiness.ps1. Nothing has shipped in three days; the stranded drift-fix output the item describes is still stranded."
     },
     {
       "id": "canonical-audit-2026-07-20-cattery-projectspec-stale-sibling-name",
@@ -3268,27 +3269,6 @@
       "source": "bar-raise-yac 2026-07-20 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-20.md",
       "prompt": "Yes& Chains [MED, bar-raise finding sync-01]: a stale device can delete bag/disc/collection rows it never loaded. Rounds already use an id-keyed union-merge-with-tombstones, but bags/discs/collection (src/cloud.ts:855) do not, so a device that synced before new rows existed overwrites them away on its next push. Fix: give bags/discs/collection the same id-keyed union-merge-with-tombstones scheme rounds use so deletions are explicit tombstones, not implicit by omission. Ships via X:\\YesAndChains\\scripts\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
       "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-20. Finding open since 2026-07-04 (13 runs); its prior blocked-on-user queue item is gone, so re-enqueued to restore the handoff."
-    },
-    {
-      "id": "working-tree-2026-07-21-rising-stale-gdd",
-      "added": "2026-07-21",
-      "project": "rising",
-      "kind": "hygiene",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
-      "source": "working-tree-scan-nightly 2026-07-21",
-      "severity": "low",
-      "evidence": "git status --porcelain in X:\\BrackishRising shows ' M docs/GDD.html'. HEAD is 549e0d4 (2026-07-13), which is also the last commit to touch GDD.html; the uncommitted edit (2 insertions, 2 deletions) has sat since then - 8 days, just past the 7-day line.",
-      "title": "Stale working tree in Rising: docs/GDD.html uncommitted since 2026-07-13 (8 days)",
-      "prompt": "Working-tree scan 2026-07-21: X:\\BrackishRising has docs/GDD.html modified and uncommitted, last committed at HEAD 549e0d4 (2026-07-13, 8 days ago). It is a small 4-line edit (2 ins / 2 del). DO: read `git diff docs/GDD.html`; if it is a real GDD change, commit it (BR ships via its release script - do NOT commit a dirty canonical doc mid-flight without reading it), otherwise revert. auto_safe=false: GDD.html is the canonical design doc, its content needs an eyeball before committing.",
-      "result_path": null,
-      "lastWorkedAt": null,
-      "lastAttemptAt": null,
-      "impact": 2,
-      "confidence": 5,
-      "notes": "No stash entries in BrackishRising. Small in-progress GDD tweak."
     },
     {
       "id": "canonical-audit-2026-07-22-agents-changelog-fold",
@@ -5799,23 +5779,6 @@
       "action": "Trim the list to the authored level scene. Handler files are never auto-edited, so this needs a deliberate pass. The same three items were corrected in the GDD Best Practices tab by the 2026-07-25 drift pass."
     },
     {
-      "id": "working-tree-2026-07-25-rising-drift-fix-uncommitted",
-      "added": "2026-07-25",
-      "project": "rising",
-      "kind": "working-tree",
-      "auto_safe": false,
-      "priority": "P3",
-      "status": "pending",
-      "attempts": 0,
-      "source": "audit-rising-nightly 2026-07-25 / docs/drift-fixes-2026-07-25.md",
-      "severity": "low",
-      "impact": 2,
-      "confidence": 5,
-      "title": "2026-07-25 drift-fix pass is uncommitted in the Rising working tree (5 files)",
-      "evidence": "The nightly audit routine is forbidden from running release.ps1, so the nine drift fixes it applied sit unstaged: docs/GDD.html (7 text edits in the Numbers and Best Practices tabs), source/ui/hud/build_grid.gd (two player-visible tooltip strings), source/enemies/lunger.gd, source/enemies/wrecker.gd and source/units/unit.gd (stale numeric comments). All are verified correct and both preship gates pass unchanged. Prior audits have twice found drift fixes stranded in this tree for days.",
-      "action": "Let these ride along with the next release rather than shipping them as their own bump. Comment and string-literal only; no cost dictionary, stat value or control flow touched."
-    },
-    {
       "id": "canonical-audit-2026-07-25-chains-claudemd-flag-gating",
       "added": "2026-07-25",
       "project": "chains",
@@ -6064,9 +6027,9 @@
       "result_path": "X:\\YesAndCattery\\docs\\CANONICAL_AUDIT-2026-07-25.md",
       "source": "audit-cattery-nightly 2026-07-25",
       "severity": "low",
-      "evidence": "CLAUDE.md:55-56 lists Phase 3 as 'health-guarantee records, disputes, advanced search and matching'; PROJECT_SPEC.md:71-72 puts 'advanced search & sort' in Phase 2 shipped and Phase 3 as 'health-guarantee records, dispute handling'. Separately, PROJECT_SPEC.md:114 names views 'browse' and 'find' which do not exist as view functions in public/app.js, and omits ten that do. Actual set is 25 view* functions: About Account Admin Apply Breed Breeds Catteries Cattery Contact Dashboard Escrow Faq Favorites Guide Home How Inbox Inquiry Kittens Learn Manage Privacy Standard Team Terms.",
-      "title": "Cattery Phase-3 scope disagrees between handler and spec; PROJECT_SPEC views list is stale",
-      "prompt": "Canonical audit 2026-07-25 (X:\\YesAndCattery). Two small doc-alignment items, grouped.\n\n1. Phase-3 scope disagrees between the two canonical docs. CLAUDE.md:55-56 lists Phase 3 as 'health-guarantee records, disputes, advanced search and matching'. PROJECT_SPEC.md:71-72 puts 'advanced search & sort' in Phase 2 as shipped, and scopes Phase 3 to 'health-guarantee records, dispute handling'. Per the spec's own rule (if code disagrees, trust the code), advanced search shipped in Phase 2, so the handler's Phase-3 line is the stale one. Drop 'advanced search and matching' from the CLAUDE.md Phase-3 bullet, or reword it to whatever matching work is genuinely still ahead.\n\n2. The views list at PROJECT_SPEC.md:114 no longer matches public/app.js. It names 'browse' and 'find', neither of which exists as a view function, and omits ten that do (Home, Favorites, Breed, About, Guide, Learn, How, Privacy, Terms, Standard). The real set is 25 view* functions: About Account Admin Apply Breed Breeds Catteries Cattery Contact Dashboard Escrow Faq Favorites Guide Home How Inbox Inquiry Kittens Learn Manage Privacy Standard Team Terms. Refresh the parenthetical to match, or replace the enumeration with a shorter description so it stops needing maintenance every time a view lands.\n\nNot auto-applied: item 1 touches CLAUDE.md, which drift-auto-fix prohibits editing.",
+      "evidence": "CLAUDE.md:55-56 lists Phase 3 as 'health-guarantee records, disputes, advanced search and matching'; PROJECT_SPEC.md:71-72 puts 'advanced search & sort' in Phase 2 shipped and Phase 3 as 'health-guarantee records, dispute handling'. The PROJECT_SPEC views-list half of this item was auto-fixed by audit-cattery-nightly on 2026-07-26 (spec now enumerates the real 25 view* functions); only the CLAUDE.md Phase-3 line remains, and it is a handler file drift-auto-fix may not edit.",
+      "title": "Cattery CLAUDE.md Phase-3 scope disagrees with PROJECT_SPEC (views half fixed 2026-07-26)",
+      "prompt": "Canonical audit follow-up (X:\\YesAndCattery). Remaining half of the 2026-07-25 grouped item.\n\nCLAUDE.md:55-56 lists Phase 3 as 'health-guarantee records, disputes, advanced search and matching'. PROJECT_SPEC.md:71-72 puts 'advanced search & sort' in Phase 2 as shipped, and scopes Phase 3 to 'health-guarantee records, dispute handling'. Per the spec's own rule (if code disagrees, trust the code), advanced search shipped in Phase 2, so the handler's Phase-3 line is the stale one. Drop 'advanced search and matching' from the CLAUDE.md Phase-3 bullet, or reword it to whatever matching work is genuinely still ahead.\n\nConfirmed 2026-07-26: Phase 3 itself is genuinely unstarted. Migration 0014 is per-kitten vaccination/microchip badges and 0004's health_guarantee is a cattery screening text field; neither is the Phase-3 per-sale guarantee-record + dispute system.\n\nThe PROJECT_SPEC.md:114 views-list half is DONE (auto-fixed 2026-07-26). Do not redo it.\n\nNot auto-applied: CLAUDE.md is a handler file, which drift-auto-fix prohibits editing.",
       "blocked_reason": null
     },
     {
@@ -7418,8 +7381,26 @@
       "confidence": "high",
       "drainNote": null,
       "tensions_with": []
+    },
+    {
+      "id": "working-tree-2026-07-26-budget-stranded-security-doc-fixes",
+      "added": "2026-07-26",
+      "project": "budget",
+      "kind": "structural",
+      "auto_safe": false,
+      "priority": "P1",
+      "severity": "high",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "working-tree-scan-nightly 2026-07-26",
+      "finding_id": "wts-2026-07-26-01",
+      "title": "Six uncommitted Budget edits strand a correction to the published security policy",
+      "detail": "X:\\YesAndBudget has six files modified and uncommitted, none of them touched by a commit since 2026-07-16 and the oldest not since 2026-07-01: .github/workflows/security.yml, SECURITY.md, docs/DESIGN.md, docs/SECURITY_POLICY.md, scripts/README.md, scripts/release.ps1 (42 insertions, 15 deletions). No stash entries. The tree has been dirty across at least the last two nightly scans.\n\nWhy this is P1 rather than the usual P2 for a stale tree: docs/SECURITY_POLICY.md says of itself that it is mirrored at https://yesandeverything.com/projects/budget/security and that the mirror is canonical. The committed-and-published version of section 4 still reads 'Application-layer encryption is not implemented today; if added (see Wave 6 SQLCipher plan)...'. The uncommitted correction says the SQLCipher capability (Wave 6, D-008) is in fact implemented and tested but not engaged on this install, so nothing is encrypting the database file today and a migration command engages it. Both halves of that correction matter and neither is public: the published text understates what shipped and leaves a reader unable to tell that their own database is currently unencrypted. SECURITY.md and SECURITY_POLICY.md also drop the stale 'D-001 through D-011' decision range in favour of pointing at docs/DECISIONS.md as a whole, and security.yml's header comment is corrected from two jobs to three (audit, typecheck, tests) with an explicit note that the web package's tests do not run in CI.\n\nAction: review the six diffs, commit them, and ship through scripts\release.ps1 so the yesandeverything.com security mirror picks up the corrected text. Per the BR/YaB release note, finish the commit through Bash if PowerShell-wrapped git stderr aborts release.ps1. If any edit is judged wrong, revert that file explicitly rather than leaving it sitting."
     }
   ],
-  "last_drain": "2026-07-26T08:30Z",
-  "updated": "2026-07-26T08:46Z"
+  "last_drain": "2026-07-26T09:30Z",
+  "updated": "2026-07-26T09:39Z"
 }
