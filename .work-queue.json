@@ -1057,7 +1057,10 @@
       "notes": "2026-07-14T21:41Z queue-drain-hourly: created as the bounded, agent-actionable split of the P1 strategic finding hbh-velocity-off-critical-path-mission-layer-2026-07-10, which every drain cycle since 2026-07-12 recommended splitting off but never did. Regression re-confirmed read-only this run at HBH HEAD ca762fd (v0.99.40): auto_pause.gd guard on horde_day_announced present; wave_director.gd declares only all_waves_cleared (L7). auto_safe:false + needs release.ps1, so still out of this task's no-publish scope - parked for an HBH session, but now independently grabbable instead of buried in the strategic parent. | 2026-07-17 bar-raise-hordes: scope WIDENED from the horde-day slice to the whole auto_pause subsystem and raised P2->P1/HIGH. Adopted finding_id reliability-01 (was strategic-kill-this-02-slice-autopause) so the bar-raise dedupe resolves to this item. Root cause found: game_clock is never read by world3d.\n2026-07-24T23:40Z queue-drain-hourly: FIRST verification (attempts 0 -> 1, kept pending). Read-only re-check at HBH HEAD 1df5d93: STILL LIVE. source/world3d/wave_director.gd:7 still declares only all_waves_cleared (no horde_day_announced), and connect_wave_director / connect_command_post at auto_pause.gd:85,95 still have zero callers outside auto_pause.gd itself. Whole-subsystem scope from 2026-07-17 stands. Not auto-drainable: gameplay wiring + GDD update + release.",
       "title": "Auto-pause is dead end to end: wire the whole subsystem, not just the horde-day signal",
       "evidence": "Verified read-only at HEAD 1752caa on 2026-07-17. (1) auto_pause.gd:85 connect_wave_director and :95 connect_command_post have ZERO callers anywhere in source/ (auto_pause is referenced nowhere outside its own file). (2) source/world3d/wave_director.gd:7 declares only all_waves_cleared, never horde_day_announced, so the auto_pause.gd:88 has_signal guard fails closed. (3) The enemy_vision loop queries group 'enemies' via global.get_cached_nodes_in_group with NO add_to_group registrar anywhere in source/. (4) auto_pause.gd:114 types _command_post.global_position as Vector2 in a 3D world, so it will hard-error the day it is wired. (5) ROOT CAUSE: auto_pause._try_pause (auto_pause.gd:167-174) calls _game_clock.set_paused(true), but grep shows source/world3d/ never reads game_clock at all - world_3d.gd:906 _toggle_pause keeps its own local _paused bool. So even wiring the connects and the signal would leave auto-pause a no-op. Correcting the 2026-07-15 report: there is NO connect_economy function; the economy hooks DO wire in _ready via /root/economy and economy.gd emits building_destroyed (:762) and resource_shortfall (:319), so 2 of 4 toggles fire, not 0. The two dead ones are horde_day (defaults TRUE at options.gd:61) and enemy_vision. building_destroyed is connected but its emitter economy.record_building_destroyed (:748) has zero callers, so in practice only resource_shortfall ever fires.",
-      "lastAttemptAt": "2026-07-24T23:40Z"
+      "lastAttemptAt": "2026-07-24T23:40Z",
+      "covers_finding_ids": [
+        "architecture-08"
+      ]
     },
     {
       "id": "canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied",
@@ -2145,7 +2148,10 @@
       "title": "Add an autosave and a save-or-confirm step: _on_pause_menu (world_3d.gd:932) and _on_pause_quit (:936) discard the whole run with no save and no promp",
       "evidence": "Add an autosave and a save-or-confirm step: _on_pause_menu (world_3d.gd:932) and _on_pause_quit (:936) discard the whole run with no save and no prompt, and options.gd:58 autosave_freq is persisted and shown in settings with no consumer.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-17 finding reliability-03 (MED, P2, lens reliability): Add an autosave and a save-or-confirm step: _on_pause_menu (world_3d.gd:932) and _on_pause_quit (:936) discard the whole run with no save and no prompt, and options.gd:58 autosave_freq is persisted and shown in settings with no consumer. See docs/BAR_RAISE-2026-07-17.md for full evidence. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump + changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-17."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
+      "covers_finding_ids": [
+        "reliability-09"
+      ]
     },
     {
       "id": "bar-raise-2026-07-17-hordes-work-queue-hygiene-01",
@@ -2300,7 +2306,10 @@
       "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
       "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live but the COUNTS IN THIS ITEM ARE STALE -- do not chase the original numbers. docs/GDD.html now has Midjourney x2 (v0.37.5 'adopted from the Midjourney pack' + the v0.34.18 entry that documents the earlier sweep itself) and Claude x1 (v0.44.9 'personal Claude stack'), not x5/x4. The verbatim memory-key dump IS still present at the v0.73.3 entry (~line 4799, ~21 snake_case memory slugs inline). scripts/check_gdd_voice.py still has ZERO patterns for midjourney/claude/anthropic/copilot/gpt -- the zero-tolerance half of this finding is untouched and is the part that has real forward value.",
       "lastAttemptAt": "2026-07-26T10:30Z",
-      "lastNoticedAt": "2026-07-26T10:30:00Z"
+      "lastNoticedAt": "2026-07-26T10:30:00Z",
+      "covers_finding_ids": [
+        "solo-dev-voice-portfolio-02"
+      ]
     },
     {
       "id": "bar-raise-2026-07-17-hordes-security-02",
@@ -4100,7 +4109,10 @@
       "evidence": "Add a HUD toast and a reason string to the five silent bail paths (_begin_build, _train_unit, _do_research, unit_controller.train, placement_3d._afford); the settings screen already exposes a toast duration for a system that does not exist.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding playability-07 (MED, lens playability): Add a HUD toast and a reason string to the five silent bail paths (_begin_build, _train_unit, _do_research, unit_controller.train, placement_3d._afford); the settings screen already exposes a toast duration for a system that does not exist. See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "covers_finding_ids": [
+        "solo-tool-ux-03"
+      ]
     },
     {
       "id": "bar-raise-2026-07-24-hordes-observability-02",
@@ -4620,7 +4632,10 @@
       "evidence": "Exempt the last full fan-out report from retention, or stop citing it: all 30 dated items and the previous report point at docs/BAR_RAISE-2026-07-17.md, which retention deleted and gitignore keeps out of history.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-24 finding skill-chain-handoff-integrity-06 (MED, lens skill-chain-handoff-integrity): Exempt the last full fan-out report from retention, or stop citing it: all 30 dated items and the previous report point at docs/BAR_RAISE-2026-07-17.md, which retention deleted and gitignore keeps out of history. See docs/BAR_RAISE-2026-07-24.md for the full evidence. Read-only verify before changing anything.",
       "release_note": "HBH hard rules apply: update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through the project release script, which needs an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out)."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-24 (full 35-lens fan-out).",
+      "covers_finding_ids": [
+        "work-queue-hygiene-04"
+      ]
     },
     {
       "id": "bar-raise-2026-07-24-hordes-incident-runbook-currency-03",
@@ -5686,7 +5701,10 @@
       "title": "Three behaviour changes shipped 2026-07-24 self-stamped v0.99.41 with no version bump and no changelog entry",
       "evidence": "Commits de46692 and 63c4534 (both 2026-07-24, both titled 'feat(htbh): v0.99.40 - GDD + code update') landed three substantive changes whose own comments stamp them v0.99.41 at four sites (debug_flags.gd:10, economy.gd:18, :20, :34). project.godot config/version is still 0.99.40, the GDD version pill (GDD.html:1382) is still v0.99.40, the newest GDD changelog entry is v0.99.40 dated 2026-07-10, and grep for '0.99.41' across docs/GDD.html returns zero hits. The only GDD edit in the whole commit range was the date pill at line 1383 moving 2026-07-11 to 2026-07-24, so the doc was republished advertising 2026-07-24 currency while documenting nothing that landed that day. Trips the CLAUDE.md single hard rule. The three unrecorded changes: (a) economy.gd DEBUG_INFINITE_RESOURCES went from 'const = true' to a runtime var defaulting false and resolved from the new debug_flags.infinite_resources export, so every build before this shipped in dev mode with 10000 on every stockpile, get_cap() returning INF, the add() upper clamp short-circuited and research gates bypassed; live starting stockpiles now come from _DEFAULT_AMOUNTS_PLAYTEST (Provisions 2000, Biomass/Aggregate/Alloy/Volatiles 50 each, Workers/Power 10000). (b) world_3d.gd gated F5 and F9 on 'not _game_over' and added _clear_end_state() called from _load_run. (c) git-guard.ps1 Confirm-GitIntact no longer clobbers $LASTEXITCODE, which had made a failed push read as success at push-to-github.ps1, publish-gdd.ps1, write-dashboard-status.ps1 and sync-erik-branch.ps1.",
       "prompt": "HBH doc drift, HIGH severity (canonical-audit 2026-07-25). Three behaviour changes shipped on 2026-07-24 without a version bump or a changelog entry, and the code comments already call them v0.99.41. Bring the canonical layer up to the code: bump project.godot config/version and the GDD version pill (GDD.html:1382, grep for meta-pill, line numbers drift) to 0.99.41, and write one changelog entry at the top of the changelog footer covering all three. The entry must lead with the economy change, which is the significant one: DEBUG_INFINITE_RESOURCES was a const set true, so every build shipped in dev mode with 10000 on every stockpile, no upper cap and research gates bypassed; it is now a runtime var defaulting off, driven by the new debug_flags.infinite_resources export, so a shipped build runs the real economy from _DEFAULT_AMOUNTS_PLAYTEST. Also cover the save gating (F5 and F9 now require a live run, _clear_end_state added) and the git-guard exit-code fix (Confirm-GitIntact preserved $LASTEXITCODE, so failed pushes had been reading as success at four call sites). CO-LAND in the same pill bump, since all of these cost one bump between them: the three carried GDD edits owned by hbh-gdd-settings-backbone-stale-2026-07-17 (13.5 backbone paths, world3d 10 -> 11 registered classes, path-extends phrasing), plus a one-line note in the research-tab DEBUG bypass prose (GDD.html:3094 and the gating description at :5094) that the toggle is now debug_flags.infinite_resources and defaults off. Do NOT rewrite the dev-economy mentions at GDD.html:5094, :5271 and :5433 - those sit inside tab-changelog (section opens 4621) and are period record, handled the same way as the retired lore framing at :2576. FUSE-truncation-sensitive: Python atomic write with read-back, assert the </html> tail survives on the GDD, solo-dev voice (no em dashes, no AI vocabulary). Ship via X:/HereBeHordes/scripts/release.ps1.",
-      "notes": "2026-07-25 canonical-audit-hordes: raised on the first HEAD move in six passes. The previous five nightlies ran against a frozen 1752caa. Structural for the nightly because it needs a version bump and a release script, both of which the nightly is barred from."
+      "notes": "2026-07-25 canonical-audit-hordes: raised on the first HEAD move in six passes. The previous five nightlies ran against a frozen 1752caa. Structural for the nightly because it needs a version bump and a release script, both of which the nightly is barred from.",
+      "covers_finding_ids": [
+        "version-pill-drift-01"
+      ]
     },
     {
       "added": "2026-07-25",
@@ -6187,7 +6205,7 @@
       "added": "2026-07-25",
       "project": "yab",
       "kind": "bar-raise-finding",
-      "finding_id": "data-integrity-03",
+      "finding_id": "data-integrity-06",
       "auto_safe": false,
       "priority": "P1",
       "status": "pending",
@@ -6384,7 +6402,10 @@
       "evidence": "world_3d.gd:40 declares its own _paused, gated :324, toggled :926-936, and never touches game_clock; auto_pause.gd:167-174 _try_pause calls only _game_clock.set_paused(true); the resource-shortfall path is live end to end (economy.gd:332 emits, auto_pause.gd:78-79 connects, :139-142 fires) and the toggle ships at settings.gd:923.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-25 finding architecture-06 (HIGH, P1, lens architecture): Pause is implemented twice with no link between the two, so an enabled auto-pause stops game_clock (economy drain, research, noise_field) while world_3d keeps ticking waves, production, Terror and units. Make world_3d._toggle_pause delegate to game_clock.set_paused and gate world_3d._process on game_clock.paused so there is one pause authority. Evidence: world_3d.gd:40 declares its own _paused, gated :324, toggled :926-936, and never touches game_clock; auto_pause.gd:167-174 _try_pause calls only _game_clock.set_paused(true); the resource-shortfall path is live end to end (economy.gd:332 emits, auto_pause.gd:78-79 connects, :139-142 fires) and the toggle ships at settings.gd:923. See docs/BAR_RAISE-2026-07-25.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-25. This run capped auto-enqueue at the top 10 of 23 uncovered findings because the HBH slice grew 39 to 110 in one day with 104 never attempted; the 13 held ids are listed in the report under Auto-enqueued."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-25. This run capped auto-enqueue at the top 10 of 23 uncovered findings because the HBH slice grew 39 to 110 in one day with 104 never attempted; the 13 held ids are listed in the report under Auto-enqueued.",
+      "covers_finding_ids": [
+        "reliability-01"
+      ]
     },
     {
       "id": "bar-raise-2026-07-25-hordes-reliability-02c",
@@ -7434,8 +7455,207 @@
       "added": "2026-07-26",
       "source": "docs/CANONICAL_AUDIT-2026-07-26.md",
       "notes": "Roughly 150 KB of dead weight, and it is Kane's own Patreon art sitting on a public path with nothing linking to it. Now covered by the robots.txt /assets/globe/ line landed in the same drift pass, so the exposure is bounded; this is cleanup, not a leak."
+    },
+    {
+      "id": "bar-raise-2026-07-26-rising-observability-05",
+      "added": "2026-07-26",
+      "project": "rising",
+      "kind": "bar-raise-finding",
+      "finding_id": "observability-05",
+      "auto_safe": false,
+      "priority": "P1",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-rising 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 4,
+      "confidence": 5,
+      "tensions_with": [],
+      "evidence": "status/data/Rising.json audit reads latestReportPath docs/CANONICAL_AUDIT-2026-07-25.md, latestReportAt 2026-07-25T06:30:25Z, findings high 0 / medium 0 / low 0. That report file no longer exists on disk (retention deleted it when the newer one was written). The actual newest audit, docs/CANONICAL_AUDIT-2026-07-26.md (22,612 bytes, written 01:35, committed as d2e4867), records two HIGH findings: the Numbers tab documents a per-second Sonic Pressure decay ledger that economy.gd:381 sets to 0.0, and the SP reduction table names three Keepers absent from the 80-card catalog in the same document. Chains.json advanced to 2026-07-26T07:03:23Z with high 1 / medium 4 / low 4 and Apothecary.json to 2026-07-26T07:24:08Z, both written this morning, so the lag is BR-specific rather than a portfolio-wide convention. The four new audit findings did reach the work queue as canonical-audit-2026-07-26-rising-*, so the audit chain itself ran; only the dashboard write did not.",
+      "prompt": "The Rising.json audit block did not advance when the 2026-07-26 nightly audit ran. It still points at docs/CANONICAL_AUDIT-2026-07-25.md, a file the retention policy has since deleted, and reports findings 0/0/0 on a day the audit found two HIGH items. Chains.json and Apothecary.json both refreshed their audit blocks this morning, so the failure is specific to BR. Two parts: (1) refresh status/data/Rising.json audit to point at docs/CANONICAL_AUDIT-2026-07-26.md with its real timestamp and finding counts (2 high plus the medium-high and medium rows the report grades), using the atomic write plus JSON-reparse readback, mutating only the audit block; (2) find why the write step did not run for BR when it ran for the other two projects, checking scripts/write-dashboard-status.ps1 and how audit-rising-nightly invokes it. Related but separate: bar-raise finding observability-02 covers write-dashboard-status.ps1:165-172 hardcoding the counts to zero rather than parsing the report, which is why refreshing the block by hand will not stay fixed on its own."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-architecture-04",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "finding_id": "architecture-04",
+      "title": "Route world3d spends through economy.charge()/can_afford(), power through register_power_supply(), and deaths through the record_* hooks, deleting whatever stays unreachable after that pass.",
+      "evidence": "Zero external callers at HEAD 0d4f2ae for economy.gd:738, :761, :779, :786, :543, :114-138, :390-411, :431-473, :489, :525, :882; world3d spends through raw economy.add (world_3d.gd:426-429, :461-464, :647-650; placement_3d.gd:58,83; unit_controller.gd:77-80) leaving _power_supply at 0 so is_in_brownout() can never be true. Named missing from the queue by skill-chain-handoff-integrity-07 on 2026-07-25 and still absent on 2026-07-26.",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding architecture-04 (MEDIUM, P2, lens architecture): [CHRONIC x9] Most of the economy autoload's public surface has no live consumer because the 3D stack mutates the pool directly, so brownout, attrition bursts, wave relief and mission stat counters are permanently inert. Route world3d spends through economy.charge()/can_afford(), power through register_power_supply(), and deaths through the record_* hooks, deleting whatever stays unreachable after that pass. Evidence: Zero external callers at HEAD 0d4f2ae for economy.gd:738, :761, :779, :786, :543, :114-138, :390-411, :431-473, :489, :525, :882; world3d spends through raw economy.add (world_3d.gd:426-429, :461-464, :647-650; placement_3d.gd:58,83; unit_controller.gd:77-80) leaving _power_supply at 0 so is_in_brownout() can never be true. Named missing from the queue by skill-chain-handoff-integrity-07 on 2026-07-25 and still absent on 2026-07-26. See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04.",
+      "covers_finding_ids": [
+        "playability-11"
+      ]
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-work-queue-hygiene-02",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "finding_id": "work-queue-hygiene-02",
+      "title": "Collapse the five R3D-04 items into the P1 parent with the three 2026-07-24 restatements demoted to explicit blocked-by children.",
+      "evidence": "The R3D-04 cluster: hbh-velocity-off-critical-path-mission-layer-2026-07-10 (P1, blocked-on-user, attempts 2), bar-raise-2026-07-17-hordes-playability-01 (P2, pending), plus the three 2026-07-24 arrivals (scope-discipline-02, strategic-kill-this-05, strategic-kill-this-06); none of the four pending ones has been attempted and none carries a blocked-by pointer. Named missing from the queue by skill-chain-handoff-integrity-07 on 2026-07-25 and still absent.",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding work-queue-hygiene-02 (MEDIUM, P2, lens work-queue-hygiene): [CHRONIC x9] The single mission-data-layer problem is spread across five live queue items at two priorities with no blocked-by relationship, one of which is a P1 already flipped to blocked-on-user while four children sit pending behind it. Collapse the five R3D-04 items into the P1 parent with the three 2026-07-24 restatements demoted to explicit blocked-by children. Evidence: The R3D-04 cluster: hbh-velocity-off-critical-path-mission-layer-2026-07-10 (P1, blocked-on-user, attempts 2), bar-raise-2026-07-17-hordes-playability-01 (P2, pending), plus the three 2026-07-24 arrivals (scope-discipline-02, strategic-kill-this-05, strategic-kill-this-06); none of the four pending ones has been attempted and none carries a blocked-by pointer. Named missing from the queue by skill-chain-handoff-integrity-07 on 2026-07-25 and still absent. See docs/BAR_RAISE-2026-07-26.md for the full report. This item edits X:\\YesAndEverything\\.work-queue.json only, so no HBH release is involved. Edit the queue with the byte-identical Python round-trip (indent 2, ensure_ascii False, trailing newline) then tmp plus os.replace, never PowerShell ConvertTo-Json.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-observability-01",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "finding_id": "observability-01",
+      "title": "Add a debug_flags-gated 1 Hz sampler appending the FPS and alive-count pair already computed at world_3d.gd:521-522 plus Performance.TIME_PROCESS to a per-run CSV under user://.",
+      "evidence": "world_3d.gd:521-522 formats Engine.get_frames_per_second() and _enemy_field.alive_count() into the HUD status string and discards both; a repo-wide grep for Performance. hits only the two perf harnesses; no source/ file writes any per-run sample. The prior queue item hbh-observability-frame-time-logger-2026-07-11 was age-archived on 2026-07-25 hours after being triaged Keep, which is why this finding has no live item.",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding observability-01 (MEDIUM, P2, lens observability): [CHRONIC x14] The real game still captures FPS and alive-count once a frame purely for a HUD string and persists nothing, so every perf claim in OPTIMIZATION_LOG.md comes from standalone field harnesses rather than a played run. Add a debug_flags-gated 1 Hz sampler appending the FPS and alive-count pair already computed at world_3d.gd:521-522 plus Performance.TIME_PROCESS to a per-run CSV under user://. Evidence: world_3d.gd:521-522 formats Engine.get_frames_per_second() and _enemy_field.alive_count() into the HUD status string and discards both; a repo-wide grep for Performance. hits only the two perf harnesses; no source/ file writes any per-run sample. The prior queue item hbh-observability-frame-time-logger-2026-07-11 was age-archived on 2026-07-25 hours after being triaged Keep, which is why this finding has no live item. See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-save-format-stability-03",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "finding_id": "save-format-stability-03",
+      "title": "Bump SAVE_VERSION to 2, restore saved resource amounts by writing _amounts directly or via a clamp-exempt setter, and push_warning whenever a loaded amount is reduced.",
+      "evidence": "economy.gd:38 var DEBUG_INFINITE_RESOURCES = false (was const true); :256 DEFAULT_AMOUNTS now _DEFAULT_AMOUNTS_PLAYTEST at :241-251; :321-325 applies the get_cap clamp on every add; :359-386 get_cap derives from _warehouses.size() and /root/research bonuses, and :390 register_warehouse has zero live call sites; world_3d.gd:838-841 _set_amt restores saved amounts through economy.add so the clamp runs on load; :815-825 restores 7 absolute amounts; SAVE_VERSION is still 1 at :683.",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding save-format-stability-03 (MEDIUM, P2, lens save-format-stability): de46692 turned a previously inert cap clamp live, so saved absolute resource amounts now load through economy.add and get silently truncated, and any pre-de46692 save carrying the 10000-everything debug stockpiles drops to 50 per stockpile with no SAVE_VERSION bump and no warning. Bump SAVE_VERSION to 2, restore saved resource amounts by writing _amounts directly or via a clamp-exempt setter, and push_warning whenever a loaded amount is reduced. Evidence: economy.gd:38 var DEBUG_INFINITE_RESOURCES = false (was const true); :256 DEFAULT_AMOUNTS now _DEFAULT_AMOUNTS_PLAYTEST at :241-251; :321-325 applies the get_cap clamp on every add; :359-386 get_cap derives from _warehouses.size() and /root/research bonuses, and :390 register_warehouse has zero live call sites; world_3d.gd:838-841 _set_amt restores saved amounts through economy.add so the clamp runs on load; :815-825 restores 7 absolute amounts; SAVE_VERSION is still 1 at :683. See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-work-queue-hygiene-06",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "finding_id": "work-queue-hygiene-06",
+      "title": "Make the age-archive skip any item whose triagedAt is within the retention window with a Keep verdict, and restore hbh-observability-frame-time-logger-2026-07-11 or fold it into a live item by name.",
+      "evidence": "hbh-observability-frame-time-logger-2026-07-11 in .work-queue-archive.json has status pending, attempts 0, triagedAt 2026-07-25, triageVerdict 'Keep - MED bar-raise finding, chronic and still unaddressed', yet archivedAt 2026-07-25T05:38Z with archiveReason stale-no-action-14d (commit c121f6d); its sibling hbh-gdd-world3d-classname-count-2026-07-11 WAS genuinely folded, which makes the loss harder to notice.",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding work-queue-hygiene-06 (MEDIUM, P2, lens work-queue-hygiene): The age-over-14-days archive rule silently removed an HBH item hours after the same day's triage pass explicitly stamped it Keep, and unlike its sibling it was folded into nothing, so the frame-time telemetry gap was tracked in no live item. Make the age-archive skip any item whose triagedAt is within the retention window with a Keep verdict, and restore hbh-observability-frame-time-logger-2026-07-11 or fold it into a live item by name. Evidence: hbh-observability-frame-time-logger-2026-07-11 in .work-queue-archive.json has status pending, attempts 0, triagedAt 2026-07-25, triageVerdict 'Keep - MED bar-raise finding, chronic and still unaddressed', yet archivedAt 2026-07-25T05:38Z with archiveReason stale-no-action-14d (commit c121f6d); its sibling hbh-gdd-world3d-classname-count-2026-07-11 WAS genuinely folded, which makes the loss harder to notice. See docs/BAR_RAISE-2026-07-26.md for the full report. This item edits X:\\YesAndEverything\\.work-queue.json only, so no HBH release is involved. Edit the queue with the byte-identical Python round-trip (indent 2, ensure_ascii False, trailing newline) then tmp plus os.replace, never PowerShell ConvertTo-Json.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-version-pill-drift-02",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "finding_id": "version-pill-drift-02",
+      "title": "Gate the date-pill stamp in release.ps1 on the version pill differing from project.godot's pre-sync config/version, and fail the release when a tracked source file changed but the pill did not.",
+      "evidence": "release.ps1:61 calls sync_gdd_date_pill.py unconditionally on every release, and sync_gdd_date_pill.py:6-9 justifies the stamp on the invariant that every release writes a changelog entry; nothing in release.ps1 enforces that invariant, since Step 0 (:20-55) only propagates the pill downward into project.godot and warns-and-continues when it is missing; docs/GDD.html:1383 reads 2026-07-24 while the newest changelog entry at :4627 is v0.99.40 (2026-07-10).",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding version-pill-drift-02 (MEDIUM, P2, lens version-pill-drift): The release path stamps the GDD date pill forward unconditionally with no check that the version pill or changelog moved, so the document advertises 2026-07-24 currency over content whose newest entry is 2026-07-10. Gate the date-pill stamp in release.ps1 on the version pill differing from project.godot's pre-sync config/version, and fail the release when a tracked source file changed but the pill did not. Evidence: release.ps1:61 calls sync_gdd_date_pill.py unconditionally on every release, and sync_gdd_date_pill.py:6-9 justifies the stamp on the invariant that every release writes a changelog entry; nothing in release.ps1 enforces that invariant, since Step 0 (:20-55) only propagates the pill downward into project.godot and warns-and-continues when it is missing; docs/GDD.html:1383 reads 2026-07-24 while the newest changelog entry at :4627 is v0.99.40 (2026-07-10). See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-per-project-ps1-stack-07",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 4,
+      "finding_id": "per-project-ps1-stack-07",
+      "title": "Add the Invoke-Git wrapper from X:\\YesAndEverything\\scripts\\git-guard.ps1:55-64 to HBH's git-guard.ps1 and route the git writes in the four scripts through it.",
+      "evidence": "git-guard.ps1 (77 lines) exports only Assert-GitSafe and Confirm-GitIntact; grep -rn Invoke-Git scripts/ returns zero hits; X:\\YesAndEverything\\scripts\\git-guard.ps1:55-64 defines the wrapper and collect-usage.ps1:956/960/965 uses it; HBH instead relies on push-to-github.ps1:12, publish-gdd.ps1:23 and sync-erik-branch.ps1:16 each hand-setting Continue, and write-dashboard-status.ps1 sets Stop at :12 then flips to Continue mid-try at :247.",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding per-project-ps1-stack-07 (MEDIUM, P2, lens per-project-ps1-stack): HBH's git-guard.ps1 has no Invoke-Git wrapper, so the PowerShell 5.1 native-stderr-to-ErrorRecord hazard is defended per-script by a hand-set $ErrorActionPreference any newly written git-touching script can omit. Add the Invoke-Git wrapper from X:\\YesAndEverything\\scripts\\git-guard.ps1:55-64 to HBH's git-guard.ps1 and route the git writes in the four scripts through it. Evidence: git-guard.ps1 (77 lines) exports only Assert-GitSafe and Confirm-GitIntact; grep -rn Invoke-Git scripts/ returns zero hits; X:\\YesAndEverything\\scripts\\git-guard.ps1:55-64 defines the wrapper and collect-usage.ps1:956/960/965 uses it; HBH instead relies on push-to-github.ps1:12, publish-gdd.ps1:23 and sync-erik-branch.ps1:16 each hand-setting Continue, and write-dashboard-status.ps1 sets Stop at :12 then flips to Continue mid-try at :247. See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-solo-tool-ux-02",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 4,
+      "finding_id": "solo-tool-ux-02",
+      "title": "Point the debug_flags autoload at source/autoloads/debug_flags.tscn in project.godot so the exports are settable in the inspector, or delete the orphan scene and correct the two comments.",
+      "evidence": "project.godot:22 autoloads debug_flags.gd (the script, not a scene); source/autoloads/debug_flags.tscn exists but is referenced by nothing (grep for the filename and its uid matches only the file's own line 1); debug_flags.gd:3-4 and :14 both claim editor-flippable exports. Commit de46692.",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding solo-tool-ux-02 (MEDIUM, P2, lens solo-tool-ux): The infinite_resources solo-dev affordance is documented as editor-flippable, but the autoload is registered as a bare script with an orphan debug_flags.tscn nothing loads, so every balance-testing toggle is a source edit that trips the commit-per-patch and GDD-update rules. Point the debug_flags autoload at source/autoloads/debug_flags.tscn in project.godot so the exports are settable in the inspector, or delete the orphan scene and correct the two comments. Evidence: project.godot:22 autoloads debug_flags.gd (the script, not a scene); source/autoloads/debug_flags.tscn exists but is referenced by nothing (grep for the filename and its uid matches only the file's own line 1); debug_flags.gd:3-4 and :14 both claim editor-flippable exports. Commit de46692. See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
+    },
+    {
+      "id": "bar-raise-2026-07-26-hordes-version-pill-drift-03",
+      "added": "2026-07-26",
+      "project": "hordes",
+      "kind": "bar-raise-finding",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "bar-raise-hordes 2026-07-26 / docs/BAR_RAISE-2026-07-26.md",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 4,
+      "finding_id": "version-pill-drift-03",
+      "title": "Append the short commit SHA to the composed commit message at push-to-github.ps1:178 and make discord-notify.ps1 abort with a warning when the extracted changelog entry is older than the release date.",
+      "evidence": "push-to-github.ps1:135 reads the pill and :178 composes the title, so git log --oneline --all | grep -c v0.99.40 returns 5, with de46692 and 63c4534 carrying the same title as three 2026-07-11 commits; discord-notify.ps1:66 pulls the same pill and :75 extracts the changelog block keyed on it; write-dashboard-status.ps1:36 sources Hordes.json's version from the same regex.",
+      "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-26 finding version-pill-drift-03 (MEDIUM, P2, lens version-pill-drift): Commit titles, the Discord release announcement and the dashboard status JSON are all derived from the GDD pill with no distinct release identity, so an un-bumped pill produces duplicate release records and re-posts a fourteen-day-old changelog entry as new. Append the short commit SHA to the composed commit message at push-to-github.ps1:178 and make discord-notify.ps1 abort with a warning when the extracted changelog entry is older than the release date. Evidence: push-to-github.ps1:135 reads the pill and :178 composes the title, so git log --oneline --all | grep -c v0.99.40 returns 5, with de46692 and 63c4534 carrying the same title as three 2026-07-11 commits; discord-notify.ps1:66 pulls the same pill and :75 extracts the changelog block keyed on it; write-dashboard-status.ps1:36 sources Hordes.json's version from the same regex. See docs/BAR_RAISE-2026-07-26.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
+      "notes": "Enqueued by bar-raise-hordes 2026-07-26 (carry-forward pass, enqueue reconciliation). Uncovered on an exact finding_id key; a suffix match had masked this because scale-architecture-04 ends with -architecture-04."
     }
   ],
-  "last_drain": "2026-07-26T10:30Z",
-  "updated": "2026-07-26T10:39Z"
+  "last_drain": "2026-07-26T11:30Z",
+  "updated": "2026-07-26T11:36Z"
 }
