@@ -1,6 +1,6 @@
 ---
 name: handler-audit
-description: Audit the six project-level CLAUDE.md handler files (HBH, YaC, Scheduler, YaE, Apothecary, Budget) against the current state of each project to surface stale paths, stale version pills, stale email or URL references, stale convention claims, and cross-handler inconsistency. Use whenever the user says "audit the handlers", "check CLAUDE.md drift", "verify the handler files", "audit my CLAUDE.md", "are the handlers still accurate", "do the handler files match reality", "sweep the CLAUDE.md files", or any request to validate that what the per-project handler primers claim still matches the project they describe. The skill walks all six handlers, harvests every concrete claim, verifies each against the project, and writes a dated findings report to X:\YesAndEverything\docs\. Report-only by default; auto-fixes safe items only when the user says "fix as you go".
+description: Audit the eleven project-level CLAUDE.md handler files (Hordes, Chains, Scheduler, Everything, Apothecary, Budget, Agents, Ring, Cattery, Skylight, Gnosis) against the current state of each project to surface stale paths, stale version pills, stale email or URL references, stale convention claims, and cross-handler inconsistency. Use whenever the user says "audit the handlers", "check CLAUDE.md drift", "verify the handler files", "audit my CLAUDE.md", "are the handlers still accurate", "do the handler files match reality", "sweep the CLAUDE.md files", or any request to validate that what the per-project handler primers claim still matches the project they describe. The skill walks every handler, harvests each concrete claim, verifies it against the project, and writes a dated findings report to X:\YesAndEverything\docs\. Report-only by default; auto-fixes safe items only when the user says "fix as you go".
 ---
 
 ## Step 0: Load project context (schema v1)
@@ -17,11 +17,11 @@ If the file is missing or its `schema_version` is unsupported, fall back to read
 
 # Handler audit (CLAUDE.md drift sweep)
 
-Audit the six project-level CLAUDE.md handler files against the current state of each project they describe. Surface stale paths, stale version pills, stale email/URL references, stale convention claims, and cross-handler inconsistency. Optionally apply low-risk text fixes.
+Audit the eleven project-level CLAUDE.md handler files against the current state of each project they describe. Surface stale paths, stale version pills, stale email/URL references, stale convention claims, and cross-handler inconsistency. Optionally apply low-risk text fixes.
 
 ## Why this exists
 
-The six CLAUDE.md handlers (HBH, YaC, Scheduler, YaE, Apothecary, Budget) are the first thing every new Claude session reads for each project. Each one is a primer: "this is what this repo is, this is what to watch for, these are the conventions." When a handler drifts from reality, it actively teaches the wrong thing for the rest of the session. The drift is usually small (a renamed file, an old email, a version pill that didn't get bumped) but the cost is high because the handler runs at the top of every conversation.
+The CLAUDE.md handlers are the first thing every new Claude session reads for each project. Each one is a primer: "this is what this repo is, this is what to watch for, these are the conventions." When a handler drifts from reality, it actively teaches the wrong thing for the rest of the session. The drift is usually small (a renamed file, an old email, a version pill that didn't get bumped) but the cost is high because the handler runs at the top of every conversation.
 
 `canonical-doc-handler-init` creates these files; nothing currently re-audits them. This skill closes that gap.
 
@@ -36,11 +36,11 @@ Trigger on requests like:
 - "Sweep the CLAUDE.md files"
 - "Do the handler files match reality"
 
-Also trigger proactively after big cross-project shifts (e.g., DNS migration, sender-email change, monorepo restructure) where any of the six handlers might now describe yesterday's truth.
+Also trigger proactively after big cross-project shifts (e.g., DNS migration, sender-email change, monorepo restructure) where any handler might now describe yesterday's truth.
 
-## The six handler paths
+## The eleven handler paths
 
-The audit is hard-coded to these six files. Don't expand scope without asking.
+These are the default targets, matching what the `handler-audit-nightly` routine sweeps. Verify each path exists before reading it — the portfolio grows, and repos get renamed. If the routine's list and this table disagree, the routine wins and this table needs updating.
 
 | Handler | Project |
 |---|---|
@@ -50,12 +50,19 @@ The audit is hard-coded to these six files. Don't expand scope without asking.
 | `X:\YesAndEverything\CLAUDE.md` | YesAndEverything (umbrella static site) |
 | `X:\YesAndApothecary\CLAUDE.md` | YesAndApothecary (Celtic apothecary label designer) |
 | `X:\YesAndBudget\CLAUDE.md` | Yes& Budget (local-first personal budget tool) |
+| `X:\YesAndAgents\CLAUDE.md` | Yes& Agents (local Node service; ships commit+push, no deploy, no Discord) |
+| `X:\YesAndRing\CLAUDE.md` | Yes& Ring (TICA show-point tracker PWA on a Cloudflare Worker) |
+| `X:\YesAndCattery\CLAUDE.md` | Yes& Cattery (Supabase two-sided breeder marketplace; RLS is the security boundary) |
+| `X:\YesAndSkylight\CLAUDE.md` | Yes& Skylight (PRIVATE Worker; additive/low-risk changes only) |
+| `X:\YesAndGnosis\CLAUDE.md` | Yes& Gnosis (Elder Domain world vault + DM-gated campaign wiki) |
+
+`X:\BrackishRising\CLAUDE.md` also exists and is a legitimate ad-hoc target, but the nightly routine does not sweep it; audit it only when asked.
 
 ## How to run an audit
 
 Run all phases in order. Each phase produces evidence the next phase consumes.
 
-### Phase 1 — Read all six handlers and extract claims
+### Phase 1 — Read every handler and extract claims
 
 For each CLAUDE.md, harvest every concrete claim into a working table. The categories to capture:
 
@@ -86,6 +93,7 @@ Walk every harvested claim. For each, decide if it still holds.
 | YaE | No formal pill — check recent commit messages for the latest sub-project version |
 | Apothecary | Three must agree: `PROJECT_SPEC.md` `Version pill: **vX.Y.Z**`, first `## vX.Y.Z` heading in `CHANGELOG.md`, and the `<span class="version-pill">` in `index.html`. `scripts/check-version-pill.ps1` enforces it |
 | Budget | `CHANGELOG.md` first `## [vX.Y.Z]` heading; semver, bumped in lockstep with releases not per-commit |
+| Everything else | Check the project's own canonical doc first (`PROJECT_SPEC.md` / `DESIGN.md` / `CONTEXT.md`), then `CHANGELOG.md`, then the project's `status/data/<project>.json` entry under YaE |
 
 **Email claims.** Check the project's actual sender configuration (Supabase auth settings, Resend SMTP, feedback inbox docs). YaC notably moved feedback from `chains@yesandeverything.com` to `kane@yesandeverything.com` per v0.25.2 — that's an exemplar of the email drift pattern.
 
@@ -103,10 +111,10 @@ Some things are described in more than one handler. They MUST agree.
 |---|---|
 | `hordes/index.html` publish flow (base64 injection) | HBH + YaE |
 | `auth@yesandeverything.com` sender on YaE umbrella | YaC + YaE |
-| Personal settings doc location | All six implicitly through the memory layer |
-| DNS state for `yesandeverything.com` (Cloudflare vs. Squarespace) | YaC + YaE |
+| Personal settings doc location | All handlers implicitly through the memory layer |
 | Git index.lock FUSE quirk | HBH + Scheduler |
-| Release-script flow (`scripts/release.ps1`) | HBH + YaC |
+| Release-script flow (`scripts/release.ps1`) | Every repo that ships one |
+| Worker + custom-domain claims | Ring, Cattery, Skylight, Gnosis vs. their `wrangler.jsonc` / `wrangler.toml` |
 
 For each, read both handlers' descriptions side by side. If the descriptions contradict (e.g., HBH says "publish-gdd.ps1 injects into hordes/index.html" but YaE says "gdd.html is copied into hordes/"), that's a high-severity finding even if neither standalone claim is wrong about its own project.
 
@@ -121,7 +129,7 @@ Structure:
 
 ## TL;DR
 
-[1-3 sentences about overall handler health. State whether the six handlers are mostly aligned or have significant drift, and call out the worst category if there is one.]
+[1-3 sentences about overall handler health. State whether the handlers are mostly aligned or have significant drift, and call out the worst category if there is one.]
 
 ## HIGH severity (handler is teaching the wrong thing)
 
@@ -144,7 +152,7 @@ Structure:
 [Numbered list, sorted by severity. For each: which handler, what to change, exact diff if low-risk.]
 ```
 
-Sort findings by severity. Within a severity tier, sort by handler (HBH, YaC, Scheduler, YaE) for predictable scanning.
+Sort findings by severity. Within a severity tier, sort by handler in the order of the path table above, for predictable scanning.
 
 ### Phase 5 — Apply low-risk fixes (only if asked)
 
@@ -170,7 +178,7 @@ For each numbered item under `## Recommended actions`:
    {
      "id": "handler-<project>-<short-slug>",
      "added": "YYYY-MM-DD",
-     "project": "<htbh|yac|scheduler|yae|apothecary|yab>",
+     "project": "<hordes|chains|scheduler|everything|apothecary|budget|agents|ring|cattery|skylight|gnosis>",
      "kind": "handler-drift",
      "auto_safe": true | false,
      "priority": "P0" | "P1" | "P2" | "P3",
@@ -202,21 +210,20 @@ After enqueueing, list every item added (id + handler + auto_safe) at the bottom
 
 This is the highest-value consistency check in the audit. The HBH CLAUDE.md and the YaE CLAUDE.md both describe the same file from different angles. The rule (per memory `publish_gdd_routing` and the YaE CLAUDE.md): the publish script injects a new base64 payload into the existing `hordes/index.html`; it does NOT copy `gdd.html` into `hordes/`. If either handler's description drifts toward "copy" instead of "inject", flag HIGH severity — that mismatch directly causes the regex bug pattern logged in memory `publish_gdd_regex_bug_lesson`.
 
-### Email drift between YaC and YaE
-
-YaC uses `auth@yesandeverything.com` for magic-link auth (Resend SMTP), and historically used `chains@yesandeverything.com` for feedback. Per v0.25.2 the feedback inbox moved. If the YaC CLAUDE.md still says `chains@yesandeverything.com` for feedback, that's HIGH severity — Claude will quote the wrong address in user-facing copy.
-
-### DNS state for yesandeverything.com
-
-Both YaC and YaE CLAUDE.md mention DNS state. Per the dated note in both ("registrar transfer from Squarespace pending 5-7 days from 2026-05-06"), this is a time-bound claim. After the transfer window closes (~2026-05-13), the claim is stale by definition even if no one updated either handler. Flag MEDIUM and recommend a refresh.
-
 ### Version pill cross-check on YaC
 
-YaC's CLAUDE.md says "Pre-1.0, currently at v0.25.2 (2026-05-13)". The actual canonical pill lives in `CONTEXT.md`. If `CONTEXT.md` has moved past 0.25.2, the handler is lagging. This is the most-frequent drift pattern across the six handlers because the version moves often and the handler doesn't auto-bump.
+YaC's CLAUDE.md carries a "Pre-1.0, currently at vX.Y.Z" line. The actual canonical pill lives in `CONTEXT.md`. If `CONTEXT.md` has moved past the handler's number, the handler is lagging. This is the most-frequent drift pattern across the handlers because the version moves often and the handler doesn't auto-bump.
+
+### Previously seen, now clean
+
+Two long-standing special cases have resolved. Don't re-litigate them; only flag if they reappear.
+
+- **`chains@yesandeverything.com` feedback address.** YaC moved its feedback inbox off `chains@` to `kane@yesandeverything.com` at v0.25.2. No handler carries the old address today. (`auth@yesandeverything.com` is still the live magic-link sender — that one is correct, not drift.)
+- **Squarespace registrar transfer.** The `yesandeverything.com` registrar move to Cloudflare completed in May 2026, and both the YaC and YaE handlers say so. The old "transfer pending 5-7 days" phrasing is gone.
 
 ## What not to do
 
-- Don't audit other CLAUDE.md files outside the six named paths. The user can run this skill again with a different scope, but the default is the six handlers only.
+- Default scope is the handler table above. Auditing a handler outside it (Brackish Rising, or a newly added project) is fine when the user or the calling routine names it — just say in the report which set you covered, and add the new project to the table if it has joined the nightly sweep.
 - Don't refactor the handlers. The skill checks alignment; it doesn't redesign the primer structure.
 - Don't flag every cosmetic phrasing inconsistency. Group small wording drift under a single LOW bullet.
 - Don't leave the user with a wall of text. The TL;DR has to be short. Findings can be long; the summary cannot.
