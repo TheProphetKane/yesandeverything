@@ -72,7 +72,7 @@ async function main() {
 
   const lookupHerb = makeLookup(herbDB, aliasMap);
 
-  // Saved-state migration + backfill lives in src/util/migrate.js (v1.0.4)
+  // Saved-state migration + backfill lives in src/util/migrate.js (v1.1.0)
   // so boot restore, saved-label recall, and test-migration.mjs all run the
   // same shipped code. normalizeState upgrades any prior schema in place.
   const migrateCtx = {
@@ -88,7 +88,7 @@ async function main() {
   mountShopName(document.querySelector('[data-shop-name]'), state);
 
   const savedMount = document.querySelector('[data-saved-labels]');
-  // v1.0.4: recalled snapshots run through the same normalizeState as boot,
+  // v1.1.0: recalled snapshots run through the same normalizeState as boot,
   // so a label saved before v0.9 (no state.layout) no longer loads blank.
   if (savedMount) mountSavedLabels(savedMount, state, (snap) => normalizeState(snap, migrateCtx));
 
@@ -103,7 +103,7 @@ async function main() {
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
     // v0.14: illustration library + auto-match table for the picker UI.
     illustrations, herbAutoMatch, herbCategoryFallback,
-    // v1.0.4: PNG export handler, forwarded per the cache-bust contract.
+    // v1.1.0: PNG export handler, forwarded per the cache-bust contract.
     exportPng,
     onReset: () => {
       clearState();

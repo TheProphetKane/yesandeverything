@@ -98,7 +98,7 @@
 
     <footer class="app-footer">
       <a href="https://github.com/TheProphetKane/yesandapothecary" rel="noopener" target="_blank">source</a>
-      <span class="version-pill">v1.1.2</span>
+      <span class="version-pill">v1.1.3</span>
       <p class="footer-disclaimer">Decorative labels for the shelf. The herb notes are folklore and general reference, not medical advice; check with a professional before ingesting anything.</p>
     </footer>
   </div>
@@ -107,10 +107,14 @@
 
   <script type="module">
     // v0.8.0 cache-bust: release.ps1 stamps a fresh BUILD value on every push.
-    // Both the entry script and all its dynamic imports carry the build as a
-    // ?v= query, so Cloudflare's edge cache can't ever serve a stale module
-    // graph after a deploy, the URLs change with every release.
-    window.__APOTHECARY_BUILD = "20260711155944";
+    // The entry script and every module main.js imports dynamically carry the
+    // build as a ?v= query, so a deploy changes those URLs and the edge cache
+    // can't hand back a stale copy of them.
+    // Coverage is partial as of 2026-07-27: modules reached only by a static
+    // import (util/autofit.js, util/print.js, util/saved-labels.js) are still
+    // fetched at bare URLs and are NOT cache-busted. Don't read this block as a
+    // whole-graph guarantee until those three are routed through ?v= too.
+    window.__APOTHECARY_BUILD = "20260727095747";
     await import("./src/main.js?v=" + window.__APOTHECARY_BUILD);
   </script>
 </body>
