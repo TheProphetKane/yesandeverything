@@ -41,16 +41,16 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-26.md",
-        "latestReportAt": "2026-07-26T07:45:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-27.md",
+        "latestReportAt": "2026-07-27T07:50:00Z",
         "verdict": "in-progress",
-        "topFinding": "The nightly audit fired, found the most serious drift it has found in weeks, and the dashboard never heard about it. docs/CANONICAL_AUDIT-2026-07-26.md landed at 01:35 with two HIGH findings (the Numbers tab documents a per-second Sonic Pressure decay ledger that economy.gd:381 sets to 0.0, and the SP reduction table names three Keepers absent from the 80-card catalog in the same document), the drift pass applied 20 GDD edits, and both committed as d2e4867. Rising.json audit still reads latestReportPath docs/CANONICAL_AUDIT-2026-07-25.md with findings 0/0/0 at a 2026-07-25 timestamp, and that path no longer resolves because retention deleted the 07-25 report. Chains.json and Apothecary.json both advanced to 2026-07-26 this morning, so the last mile of the audit loop is broken for BR specifically; the four audit findings did reach the work queue, so only the dashboard write failed. Everything else in the window is strong: v0.59.48 landed a stranded doc pass with two of its own claims corrected rather than published, v0.59.49 put units on an authored hp_bar.tscn with a live Settings toggle and 630 tests without moving a single ratchet counter, the tree is clean for the first time in three runs, and all five preship gates match baseline exactly. Health is flat at 83 (unrounded 83.5 to 83.4). Both hard rules pass, no BLOCK.",
+        "topFinding": "Last run flagged that the dashboard audit block did not advance for BR when it advanced for Chains and Apothecary. This run found why, and the answer is structural rather than a missed write. BR's audit block is only ever written by scripts/write-dashboard-status.ps1, which runs from the release path. The YaE git history for status/data/Rising.json shows the last non-bar-raise write was 4144ce0 at the v0.59.49 release on 2026-07-25T15:12, and there has been no release since. Meanwhile audit-rising-nightly fired on 07-26 and again on 07-27, so the block is now two audits stale and still names docs/CANONICAL_AUDIT-2026-07-25.md, a file the retention policy deleted two days ago, with findings 0/0/0 on a window where the audits found three HIGH items. Chains.json and Apothecary.json both advanced this morning because their audit tasks write their own status JSON; BR's does not. The same wiring freezes workQueueDepth at 30 against 41 live BR queue items and itemsLeft.open at 34. This is not a flaky write, it is the block being hung off the wrong trigger, and a project that ships in bursts will show a stale audit row for every quiet day. Everything the audit chain itself owns worked: today's run produced docs/CANONICAL_AUDIT-2026-07-27.md, the drift pass applied 8 GDD edits, both committed as caa50ef, and six new items reached the queue. Health is flat at 83. Both hard rules pass, no BLOCK.",
         "actionsOpen": 22,
-        "actionsClosed": 1,
+        "actionsClosed": 0,
         "actions": [
             {
                 "severity": "MED",
-                "title": "Refresh the Rising.json audit block against docs/CANONICAL_AUDIT-2026-07-26.md and find why the dashboard write did not run for BR when it ran for Chains and Apothecary.",
+                "title": "Move the Rising.json audit-block write out of the release path and into audit-rising-nightly, and backfill the block against docs/CANONICAL_AUDIT-2026-07-27.md.",
                 "lens": "observability",
                 "priority": 20,
                 "id": "observability-05"
@@ -64,7 +64,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Refresh docs/ARCHITECTURE.md to v0.59.49: correct the line counts, fix the class_name inventory to 20 and drop the non-existent CommandPost, add the ground TileMapLayer, authored unit scenes and HP bar, resolve the Scout base contradiction.",
+                "title": "Refresh docs/ARCHITECTURE.md to v0.59.49: correct the line counts, fix the class_name inventory to 20, drop CommandPost, correct the path-extends count from three to zero, add the ground TileMapLayer, authored unit scenes and HP bar, resolve the Scout base contradiction.",
                 "lens": "maintainability",
                 "priority": 15,
                 "id": "maintainability-02"
@@ -78,14 +78,14 @@
             },
             {
                 "severity": "MED",
-                "title": "Fold docs/SPINE-INTEGRATION.md into docs/SPINE_INTEGRATION.md or SPINE_SETUP_NOTES.md, delete the hyphen file, and mark which survivor is authoritative for pipeline and which for authoring.",
+                "title": "Fold docs/SPINE-INTEGRATION.md into docs/SPINE_INTEGRATION.md or SPINE_SETUP_NOTES.md, delete the hyphen file, and mark which survivor is authoritative for what.",
                 "lens": "maintainability",
                 "priority": 15,
                 "id": "maintainability-04"
             },
             {
                 "severity": "MED",
-                "title": "Apply the 2>&1 stderr guard to the bare git calls in push-to-github.ps1 and publish-gdd.ps1, mirroring write-dashboard-status.ps1:237.",
+                "title": "Apply the stderr guard to the bare git calls in push-to-github.ps1 and publish-gdd.ps1, mirroring write-dashboard-status.ps1:237.",
                 "lens": "solo-tool-ux",
                 "priority": 15,
                 "id": "solo-tool-ux-01"
@@ -106,7 +106,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Capture one peak-wave day-28 frame profile on the current build and log FPS plus top costs in docs/OPTIMIZATION_LOG.md; account for the four per-unit child nodes including the PointLight2D, the Spine skeletons and the ground TileMapLayer.",
+                "title": "Capture one peak-wave day-28 frame profile on the current build and log FPS plus top costs in docs/OPTIMIZATION_LOG.md.",
                 "lens": "performance",
                 "priority": 15,
                 "id": "performance-01"
@@ -206,7 +206,7 @@
         "deferred": [
             {
                 "severity": "MED",
-                "title": "Declare M1 closed and pull one M2 row (Leviathan boss or hatchery clear-to-expand) into active work; this run's evidence puts M1 at four of six deliverables landed, so the close is a smaller lift than the dashboard implies.",
+                "title": "Declare M1 closed and pull one M2 row (Leviathan boss or hatchery clear-to-expand) into active work; M1 stands at four of six deliverables landed and the last two windows shipped no code.",
                 "lens": "strategic-kill-this",
                 "reason": "blocked on Nick M2 scope-lock decision"
             },
@@ -218,9 +218,9 @@
             },
             {
                 "severity": "LOW",
-                "title": "Decide the git-LFS migration and the pack-history rewrite; 5.4 MB of Spine DLLs now committed deepen the bloat, and an attended git gc could consolidate meanwhile.",
+                "title": "Decide the git-LFS migration and the pack-history rewrite; 5.4 MB of Spine DLLs deepen a 425 MB pack, and an attended git gc could consolidate meanwhile.",
                 "lens": "cost-economics",
-                "reason": "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE; cost vs reliability tension runsSeen 24, promote via adr-promoter"
+                "reason": "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE; cost vs reliability tension runsSeen 27, promote via adr-promoter"
             },
             {
                 "severity": "LOW",
@@ -236,15 +236,15 @@
             "security": 94,
             "performance": 85,
             "data-integrity": 84,
-            "maintainability": 79,
+            "maintainability": 78,
             "solo-tool-ux": 87,
             "cost-economics": 78,
             "dependency": 85,
-            "observability": 64,
-            "strategic-kill-this": 85,
+            "observability": 62,
+            "strategic-kill-this": 84,
             "compliance-data-steward": 76,
             "game-design": 83,
-            "orchestration": 85,
+            "orchestration": 86,
             "release-pipeline": 88,
             "public-voice": 86
         },
@@ -253,154 +253,154 @@
                 "id": "observability-05",
                 "severity": "medium",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-26"
             },
             {
                 "id": "observability-03",
                 "severity": "medium",
                 "priority": 20,
-                "runsOpen": 3,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-24"
             },
             {
                 "id": "maintainability-02",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "maintainability-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "maintainability-04",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "solo-tool-ux-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "architecture-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "compliance-data-steward-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "performance-01",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 25,
+                "runsOpen": 26,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "reliability-02",
                 "severity": "medium",
                 "priority": 15,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "data-integrity-02",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "solo-tool-ux-04",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "orchestration-03",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "game-design-02",
                 "severity": "medium",
                 "priority": 12,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "compliance-data-steward-03",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "public-voice-01",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "game-design-04",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 15,
+                "runsOpen": 16,
                 "firstSeen": "2026-07-11"
             },
             {
                 "id": "game-design-03",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "maintainability-03",
                 "severity": "medium",
                 "priority": 10,
-                "runsOpen": 25,
+                "runsOpen": 26,
                 "firstSeen": "2026-06-29"
             },
             {
                 "id": "data-integrity-03",
                 "severity": "medium",
                 "priority": 9,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "performance-04",
                 "severity": "medium",
                 "priority": 8,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             },
             {
                 "id": "observability-02",
                 "severity": "medium",
                 "priority": 8,
-                "runsOpen": 16,
+                "runsOpen": 17,
                 "firstSeen": "2026-07-10"
             }
         ],
@@ -410,35 +410,35 @@
                     "cost-economics",
                     "reliability"
                 ],
-                "runsSeen": 26
+                "runsSeen": 27
             },
             {
                 "lenses": [
                     "performance",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 25
+                "runsSeen": 26
             },
             {
                 "lenses": [
                     "strategic-kill-this",
                     "maintainability"
                 ],
-                "runsSeen": 23
+                "runsSeen": 24
             },
             {
                 "lenses": [
                     "reliability",
                     "maintainability"
                 ],
-                "runsSeen": 20
+                "runsSeen": 21
             },
             {
                 "lenses": [
                     "solo-tool-ux",
                     "reliability"
                 ],
-                "runsSeen": 15
+                "runsSeen": 16
             }
         ]
     },
