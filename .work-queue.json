@@ -8482,8 +8482,75 @@
       "prompt": "In X:\\YesAndBudget, stop the non-barRaise half of Budget.json going stale between releases.\n\n(1) Reproduce: read X:\\YesAndEverything\\status\\data\\Budget.json and compare audit.latestReportPath against `ls X:\\YesAndBudget\\docs\\CANONICAL_AUDIT-*.md`, audit.findings against the newest audit report TL;DR, workTreeClean against `git -C X:\\YesAndBudget status --porcelain`, and workQueueDepth against the Budget rows in X:\\YesAndEverything\\.work-queue.json. Confirm all four before changing anything.\n\n(2) The root cause is ownership, not any single wrong value: scripts/write-dashboard-status.ps1 owns these fields and only runs on release. Give audit-budget-nightly a dashboard-refresh step that rewrites audit.*, workTreeClean and workQueueDepth from live state each night, the same way the bar-raise block already refreshes daily. Reuse the atomic-write helper at write-dashboard-status.ps1:222-245 and preserve every field it does not own, including the whole barRaise block (see v0.14.11 for what cherry-picking cost).\n\n(3) Retention interacts with this: the pointer names a file the retention policy deletes. Either have the nightly step write the pointer to whatever newest report is actually on disk, or accept that the pointer can name a deleted file and say so in the field. Pick one and write the choice down.\n\n(4) The long-standing finding orchestration-audit-loop-integrity-03 covers the audit-pointer half only. Close it out as part of this if the fix lands.",
       "notes": "Widened from the pointer-only finding: the same release-only ownership makes three more fields stale.",
       "promptBackfilledAt": null
+    },
+    {
+      "id": "bar-raise-2026-07-27-yae-yae-project-page-milestone-not-live-stamped",
+      "added": "2026-07-27",
+      "project": "everything",
+      "kind": "bar-raise-finding",
+      "finding_id": "yae-project-page-milestone-not-live-stamped",
+      "auto_safe": false,
+      "priority": "P1",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "bar-raise-everything 2026-07-27 (docs/BAR_RAISE-2026-07-27.md)",
+      "severity": "high",
+      "impact": 4,
+      "confidence": 5,
+      "evidence": "scripts/update-project-pages.mjs:110 stamps milestone:<id> into any page carrying the marker, but only projects/here-be-hordes/index.html has one; the other eight project pages carry a bare live:version marker only. Live: https://yesandeverything.com/projects/budget/ serves the pill 'M0-M5 shipped' and the line 'M6 - Budgets + goals expansion - in progress' while status/data/Budget.json records milestone M6 as done with completion.pct 100 anchored 2026-06-25. https://yesandeverything.com/projects/cattery/ serves 'Phase one is listings plus messaging - no payments in the loop' while status/data/Cattery.json records 'Phase 2 built (escrow payments, reviews, waitlists, admin tiers); launch-readiness next' at v0.25.1 and 84%. Version pills on both pages are correct, because those are stamped.",
+      "tensions_with": [
+        "solo-tool-ux"
+      ],
+      "prompt": "YaE HIGH (bar-raise-everything 2026-07-27): eight of the nine project pages carry hand-written status prose that no stamping step ever refreshes, and two of them misdescribe their project on the live public site right now.\n\nROOT CAUSE: scripts/update-project-pages.mjs supports two markers per page (see its header comment lines 6-10): <!--live:version:Proj-->...<!--/live--> and <!--live:milestone:Proj-->...<!--/live-->. All nine project pages carry the version marker. Only projects/here-be-hordes/index.html carries the milestone marker. So version is refreshed on every deploy and milestone prose is frozen at whatever was typed by hand.\n\nPROVEN LIVE DRIFT (two pages, re-fetch before you start to confirm they are still wrong):\n  - projects/budget/index.html:242 pill reads 'M0&ndash;M5 shipped' and :307 reads 'M5 shipped (binary-PDF deferred); M6 budgets + goals in progress'. status/data/Budget.json says milestone M6 'Budgets + goals' status=done, completion.pct=100, anchored 2026-06-25. The page is a month behind and understates a finished project.\n  - projects/cattery/index.html reads 'Phase one is listings plus messaging - no payments in the loop'. status/data/Cattery.json says 'Phase 2 built (escrow payments, reviews, waitlists, admin tiers); launch-readiness next' at v0.25.1 / 84%. The page says payments do not exist; the project says escrow payments shipped.\n\nORDER:\n  (1) Read projects/here-be-hordes/index.html and copy its milestone-marker shape exactly. It wraps ONLY the short status clause ('The current milestone is M4, Pre-Production Lock'), leaving the rest of the prose hand-written. That is the pattern; do not template the whole paragraph.\n  (2) For each of the eight pages (apothecary, brackish-rising, budget, cattery, chains, gnosis, ring, scheduler), identify the one clause that states current status and wrap it in <!--live:milestone:<Proj>-->...<!--/live--> using the SAME project id the status JSON filename uses (Rising not brackish-rising, Hordes not here-be-hordes; see the SLUGS / PUBLIC_COPY maps in scripts/update-project-pages.mjs:25 and :41).\n  (3) Fix the Budget and Cattery prose in the same pass so the pre-stamp committed text is not itself wrong.\n  (4) Run `node scripts/update-project-pages.mjs` locally and diff. Every one of the nine pages should now show a milestone substitution, not just Hordes.\n  (5) FUSE: write these files with the Python atomic-write-with-readback pattern (X:\\YesAndChains\\tools\\safe_write.py), tail-check each one ends with </html>, then release via scripts/release.ps1.\n  (6) Verify live: fetch /projects/budget/ and /projects/cattery/ and confirm the milestone text now matches the status JSON. A local diff is not verification; the stamping runs in the Pages workflow.\n\nNOT IN SCOPE: do not port Budget or Scheduler onto the current page template in this item. That is a separate queued item and it is blocked behind the template regaining its h2 headings."
+    },
+    {
+      "id": "bar-raise-2026-07-27-yae-yae-subpage-no-skip-link-or-main-landmark",
+      "added": "2026-07-27",
+      "project": "everything",
+      "kind": "bar-raise-finding",
+      "finding_id": "yae-subpage-no-skip-link-or-main-landmark",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "bar-raise-everything 2026-07-27 (docs/BAR_RAISE-2026-07-27.md)",
+      "severity": "medium",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": "index.html:1584 carries <a href=\"#main\" class=\"skip\">Skip to content</a> with its CSS at :193-206 and id=\"main\" on the landmark. A grep for 'skip' across the 18 sub-pages, status/index.html and 404.html returns zero. status/index.html and 404.html also have no <main> element at all, so there is nothing to skip to. The same pattern is shipped in Ring at X:\\YesAndRing\\public\\index.html:51 with CSS at public/styles.css:134-139.",
+      "tensions_with": [
+        "visual-reuse"
+      ],
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-27): the homepage ships a keyboard skip link and a main landmark. No other page on the site has either, and two pages have no <main> element at all.\n\nMEASURED: index.html has .skip CSS at :193-206 (position:fixed; left:12px; top:-60px; revealed by .skip:focus at :206) and the anchor at :1584 targeting id=\"main\". Across all 9 projects/*/index.html, all 9 projects/*/design.html, status/index.html and 404.html, a grep for 'skip' returns 0 hits. status/index.html and 404.html additionally have zero <main> elements.\n\nTWO SOURCES TO COPY FROM (both already shipped, both framework-free):\n  - X:\\YesAndEverything\\index.html:193-206 plus :1584 - the in-repo version, already matching this site's tokens and dark palette. Prefer this one.\n  - X:\\YesAndRing\\public\\index.html:51 plus public/styles.css:134-139 - the portfolio sibling, if a second reference for the focus-reveal transition is useful.\n\nORDER:\n  (1) FIRST add a <main> landmark to status/index.html and 404.html with id=\"main\", wrapping the existing primary content. Without the target the link is worse than nothing.\n  (2) Add id=\"main\" to the existing <main> on the 18 sub-pages that already have one.\n  (3) Add the .skip CSS block and the anchor as the first child of <body> on all 20 pages. Keep the homepage's token names (var(--accent) etc) so it inherits each page's palette; do NOT introduce warm beige/amber/brown values.\n  (4) Keyboard-verify at least three pages: load, press Tab once, confirm the link becomes visible and Enter jumps focus past the header.\n  (5) FUSE: atomic write plus readback per page, tail-check </html>, then release via scripts/release.ps1.\n\nPAIRS WELL WITH: the queued :focus-visible / prefers-reduced-motion propagation item and the h2-headings item. All three touch the same 20 files, so doing them in one sweep costs far less than three passes. Sequencing note: the h2 item must land before Budget and Scheduler are ported onto the current template."
+    },
+    {
+      "id": "bar-raise-2026-07-27-yae-yae-entity-emdash-evades-voice-check",
+      "added": "2026-07-27",
+      "project": "everything",
+      "kind": "bar-raise-finding",
+      "finding_id": "yae-entity-emdash-evades-voice-check",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "result_path": null,
+      "lastWorkedAt": null,
+      "lastAttemptAt": null,
+      "source": "bar-raise-everything 2026-07-27 (docs/BAR_RAISE-2026-07-27.md)",
+      "severity": "medium",
+      "impact": 2,
+      "confidence": 5,
+      "evidence": "terms/index.html:6 titles the page 'Consultation Terms &mdash; yesandeverything.com'; budget/index.html:6 reads 'YesAndBudget &mdash; launcher'; projects/budget/index.html:242 and :307 carry 'M0&ndash;M5'. A grep for the literal em dash character across every YaE-owned page returns zero hits, which is why all four survived a no-em-dash rule.",
+      "tensions_with": [],
+      "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-27): four em and en dashes ship on public pages as HTML entities, so every existing voice check misses them. The rule is not being broken by accident, it is being broken invisibly.\n\nTHE FOUR:\n  - terms/index.html:6   <title>Consultation Terms &mdash; yesandeverything.com</title>\n  - budget/index.html:6  <title>YesAndBudget &mdash; launcher</title>\n  - projects/budget/index.html:242  <span class=\"pill\">M0&ndash;M5 shipped</span>\n  - projects/budget/index.html:307  'MVP (M0&ndash;M4) shipped May 2026'\n\nWHY IT SURVIVED: `grep -c $'\\u2014' <file>` returns 0 on all four, because the character is never in the source. Only a search for the entity forms finds them.\n\nORDER:\n  (1) Replace the two title dashes with a hyphen or a rewording. '404 - yesandeverything' at 404.html:6 is the shape the rest of the site already uses, so match it.\n  (2) Replace the two &ndash; range dashes with a plain hyphen ('M0-M5 shipped').\n  (3) CONFIRM WITH KANE BEFORE TOUCHING terms/index.html. It is the legal page and its wording is deliberate; the title is almost certainly safe to change but a legal surface does not get edited unattended.\n  (4) Extend whatever voice check exists (solo-dev-voice-audit and any grep in the release scripts) to match &mdash;, &ndash;, &#8212; and &#8211; alongside the literal characters, otherwise this recurs silently.\n  (5) FUSE: atomic write plus readback, tail-check </html>, release via scripts/release.ps1.\n\nNOTE: projects/budget/index.html also carries stale milestone prose and is queued separately for the live:milestone marker work. If both items run in the same session, do them in one edit of that file."
     }
   ],
   "last_drain": "2026-07-27T08:35Z",
-  "updated": "2026-07-27T11:39Z"
+  "updated": "2026-07-27T12:07Z"
 }
