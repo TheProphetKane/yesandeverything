@@ -8549,8 +8549,26 @@
       "evidence": "terms/index.html:6 titles the page 'Consultation Terms &mdash; yesandeverything.com'; budget/index.html:6 reads 'YesAndBudget &mdash; launcher'; projects/budget/index.html:242 and :307 carry 'M0&ndash;M5'. A grep for the literal em dash character across every YaE-owned page returns zero hits, which is why all four survived a no-em-dash rule.",
       "tensions_with": [],
       "prompt": "YaE MEDIUM (bar-raise-everything 2026-07-27): four em and en dashes ship on public pages as HTML entities, so every existing voice check misses them. The rule is not being broken by accident, it is being broken invisibly.\n\nTHE FOUR:\n  - terms/index.html:6   <title>Consultation Terms &mdash; yesandeverything.com</title>\n  - budget/index.html:6  <title>YesAndBudget &mdash; launcher</title>\n  - projects/budget/index.html:242  <span class=\"pill\">M0&ndash;M5 shipped</span>\n  - projects/budget/index.html:307  'MVP (M0&ndash;M4) shipped May 2026'\n\nWHY IT SURVIVED: `grep -c $'\\u2014' <file>` returns 0 on all four, because the character is never in the source. Only a search for the entity forms finds them.\n\nORDER:\n  (1) Replace the two title dashes with a hyphen or a rewording. '404 - yesandeverything' at 404.html:6 is the shape the rest of the site already uses, so match it.\n  (2) Replace the two &ndash; range dashes with a plain hyphen ('M0-M5 shipped').\n  (3) CONFIRM WITH KANE BEFORE TOUCHING terms/index.html. It is the legal page and its wording is deliberate; the title is almost certainly safe to change but a legal surface does not get edited unattended.\n  (4) Extend whatever voice check exists (solo-dev-voice-audit and any grep in the release scripts) to match &mdash;, &ndash;, &#8212; and &#8211; alongside the literal characters, otherwise this recurs silently.\n  (5) FUSE: atomic write plus readback, tail-check </html>, release via scripts/release.ps1.\n\nNOTE: projects/budget/index.html also carries stale milestone prose and is queued separately for the live:milestone marker work. If both items run in the same session, do them in one edit of that file."
+    },
+    {
+      "id": "infra-release-stderr-wrap-harden-01",
+      "added": "2026-07-27",
+      "project": "cross",
+      "kind": "infra",
+      "finding_id": "release-stderr-wrap",
+      "auto_safe": false,
+      "priority": "P1",
+      "status": "pending",
+      "attempts": 0,
+      "source": "orchestrator 2026-07-27 (stranded-work push sweep)",
+      "severity": "high",
+      "impact": "Routines complete work but release.ps1 aborts on the PS5.1 git stderr-wrap, stranding completed work uncommitted/unpushed across repos (found real stranded work in 8 repos on 2026-07-27).",
+      "confidence": "high",
+      "title": "Harden every push-to-github.ps1 against the PS5.1 git stderr-wrap (Invoke-Git guard)",
+      "prompt": "Harden every project's scripts/push-to-github.ps1 (and any release.ps1 that calls git directly) against the PowerShell 5.1 stderr-wrap: git writes benign 'LF will be replaced by CRLF' and 'To https://...' lines to stderr, which PS 5.1 under $ErrorActionPreference='Stop' promotes to a terminating NativeCommandError, aborting the release AFTER committing but BEFORE the push completes and stranding completed work in the working tree. Apply the git-guard.ps1 Invoke-Git wrapper already used by YesAndBudget (relax EAP to Continue around each git call, check $LASTEXITCODE instead of trapping stderr; see memory yab-dashboard-push-warn-false-alarm). Repos to verify/fix: YesAndEverything, YesAndChains, HereBeHordes, BrackishRising, YesAndRing, YesAndCattery, YesAndGnosis, YesAndScheduler, YesAndAgents, YesAndApothecary (Budget already has it). For each: adapt git-guard.ps1, route git add/commit/push through Invoke-Git, then TEST with a trivial doc change through release.ps1 end-to-end and confirm the push lands (git log --oneline @{u}..HEAD empty) with NO Bash fallback. Removes the need for the ship-and-verify Bash workaround now baked into the burndown/drain routines.",
+      "notes": "Root cause of the 2026-07-27 mass-stranding incident. Routine-level ship-and-verify gate is the interim mitigation; this is the real fix."
     }
   ],
   "last_drain": "2026-07-27T15:30Z",
-  "updated": "2026-07-27T15:36Z"
+  "updated": "2026-07-27T15:55Z"
 }
