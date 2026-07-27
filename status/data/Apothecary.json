@@ -1,311 +1,259 @@
 {
-    "project":  "Apothecary",
-    "displayName":  "Yes\u0026 Apothecary",
-    "version":  "1.1.3",
-    "lastReleaseAt":  "2026-07-27T09:57:48-05:00",
-    "lastReleaseMessage":  "correct discord-notify header paths and bot names, add the four domain lens tags, ship stranded doc fixes",
-    "milestone":  {
-                      "id":  "v1.0",
-                      "label":  "v1.0 - core label designer complete",
-                      "status":  "done"
-                  },
-    "completion":  {
-                       "pct":  100,
-                       "anchored":  "2026-06-23"
-                   },
-    "itemsLeft":  {
-                      "open":  10,
-                      "queue":  10,
-                      "backlog":  0,
-                      "gates":  0,
-                      "items":  [
-
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandapothecary",
-    "workTreeClean":  true,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-07-27.md",
-                  "latestReportAt":  "2026-07-27T07:28:26Z",
-                  "findings":  {
-                                   "high":  0,
-                                   "medium":  0,
-                                   "low":  1
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-07-27.md",
-                     "latestReportAt":  "2026-07-27T11:40:00Z",
-                     "verdict":  "working",
-                     "topFinding":  "Full pass: the skip gate did not hold because the working tree went from two modified files to five and one is a deployed runtime file. The overnight audit ran the app and captured the network, and found the v0.8.0 cache-bust contract half-broken. Three modules reached only by a static import (src/util/autofit.js, src/util/print.js, src/util/saved-labels.js) are fetched at bare URLs no release ever changes, and three more (src/state.js, src/util/persist.js, data/label-templates.js) are fetched and instantiated twice per load. Re-verified against source this run: six static import statements at render.js:17-18, state.js:18, editor.js:10, migrate.js:12, and util/saved-labels.js:3. The sharp edge is saved-labels.js against saved-labels-ui.js, a tightly coupled pair where the UI half is versioned and the logic half is not, so the next release touching the logic can ship a fresh caller against a cached callee. PROJECT_SPEC.md records the contract nowhere while four source files cite it. Nothing is broken live, the deployed graph is self-consistent, and the drift chain fixed the over-claiming comment at index.html:109-116 the same night. Health holds at 83: architecture and reliability took the hit, the audit loop and queue gained back about the same by having their best day of the series. Two tensions are now past the ADR threshold, the release-trigger question at runsSeen 4 and the icon vestige at 3.",
-                     "actionsOpen":  6,
-                     "actionsClosed":  0,
-                     "health":  83,
-                     "lensScores":  {
-                                        "architecture":  88,
-                                        "reliability":  88,
-                                        "security":  94,
-                                        "performance":  90,
-                                        "data-integrity":  88,
-                                        "maintainability":  89,
-                                        "solo-tool-ux":  90,
-                                        "cost-economics":  87,
-                                        "dependency":  95,
-                                        "observability":  89,
-                                        "strategic-kill-this":  88,
-                                        "compliance-data-steward":  90,
-                                        "generative-art-schema-driven-correctness":  85,
-                                        "generative-art-print-fidelity":  90,
-                                        "generative-art-palette-discipline":  73,
-                                        "orchestration-skill-suite-health":  68,
-                                        "orchestration-work-queue-hygiene":  65,
-                                        "orchestration-audit-loop-integrity":  76,
-                                        "orchestration-fuse-truncation-defense":  84,
-                                        "orchestration-incident-runbook-currency":  82,
-                                        "orchestration-scheduled-task-firing-state":  90,
-                                        "orchestration-skill-trigger-collisions":  60,
-                                        "orchestration-skill-chain-handoff-integrity":  57,
-                                        "release-pipeline-per-project-ps1-stack":  88,
-                                        "release-pipeline-discord-notify-wiring":  80,
-                                        "release-pipeline-version-pill-drift":  95,
-                                        "release-pipeline-gate-page-publish":  86,
-                                        "public-voice-solo-dev-voice":  78,
-                                        "public-voice-ai-tell-concealment":  76,
-                                        "public-voice-brand-consistency":  84
-                                    },
-                     "actions":  [
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Measure the longest descFull (317 chars) on the smallest back card, then either raise descFullMaxChars in PROJECT_SPEC.md:43 and data/label-templates.js:70 or trim the 43 over-cap records; make editor.js:693 word-boundary aware with an ellipsis either way.",
-                                         "lens":  "data-integrity",
-                                         "priority":  20,
-                                         "id":  "descfull-cap-truncates-midword"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add the four lens tags (generative-art, orchestration, release-pipeline, public-voice) to .project-context.json alongside the descriptive ones so the context file and the status JSON agree on the review surface.",
-                                         "lens":  "maintainability",
-                                         "priority":  20,
-                                         "id":  "context-tags-no-domain-lens-match"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Route src/util/saved-labels.js through the ctx dynamic-import path so the cache-bust contract covers the one coupled pair that can skew, then record the contract in PROJECT_SPEC.md section 3 with the static-import exceptions named.",
-                                         "lens":  "architecture",
-                                         "priority":  15,
-                                         "id":  "cache-bust-contract-holed-and-undocumented"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Run scripts/release.ps1 to ship the five stranded doc and comment fixes; clears the mirror divergence on index.html and src/main.js in one bump.",
-                                         "lens":  "orchestration-skill-chain-handoff-integrity",
-                                         "priority":  15,
-                                         "id":  "stranded-tree-grew-to-two-files"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Extend test-data-integrity.mjs to assert the herb-record key union, the six documented character caps, and that every src/ module reachable from main.js is reachable with the build query.",
-                                         "lens":  "data-integrity",
-                                         "priority":  15,
-                                         "id":  "spec-4.1-herb-record-keys-hand-maintained-not-checked"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Rewrite the scripts/discord-notify.ps1:6-7,15 header to name X:\\.secrets\\YesAndApothecary\\scripts\\.discord_webhook.txt and the current bot names, matching line 39.",
-                                         "lens":  "release-pipeline-discord-notify-wiring",
-                                         "priority":  15,
-                                         "id":  "discord-notify-header-stale-path-and-names"
-                                     }
-                                 ],
-                     "deferred":  [
-                                      {
-                                          "severity":  "medium",
-                                          "title":  "adr-promoter is invoked by nothing; two tensions are now past the promote threshold (release trigger at runsSeen 4, icon vestige at 3) with no lock written",
-                                          "lens":  "orchestration-audit-loop-integrity",
-                                          "reason":  "lives in .claude/skills + YaE, outside this repo"
-                                      },
-                                      {
-                                          "severity":  "low",
-                                          "title":  "Today\u0027s drift pass reclassified its own README never-auto-apply safety entry unattended; the edit was correct and documented, the precedent is the part to lock",
-                                          "lens":  "orchestration-skill-chain-handoff-integrity",
-                                          "reason":  "skill-side rule, outside this repo"
-                                      },
-                                      {
-                                          "severity":  "low",
-                                          "title":  "skill-trigger collisions and skill-chain handoff gaps across the skill suite",
-                                          "lens":  "orchestration-skill-trigger-collisions",
-                                          "reason":  "cross-project skill suite, outside this repo"
-                                      },
-                                      {
-                                          "severity":  "low",
-                                          "title":  "orchestrator documents .project-context.json tags as the Wave 4 source but runs fall back to the status JSON tags; nothing detects the divergence",
-                                          "lens":  "orchestration-skill-suite-health",
-                                          "reason":  "skill-side half; the in-repo half is tracked as an open action"
-                                      },
-                                      {
-                                          "severity":  "low",
-                                          "title":  "The .claude/scheduled-tasks/bar-raise-yaa/ folder still holds a SKILL.md for this project with no registry entry; re-confirmed this run that it cannot double-fire",
-                                          "lens":  "orchestration-scheduled-task-firing-state",
-                                          "reason":  "lives outside this repo, awaiting app-closed cleanup"
-                                      }
-                                  ],
-                     "openFindings":  [
-                                          {
-                                              "id":  "descfull-cap-truncates-midword",
-                                              "severity":  "medium",
-                                              "lens":  "data-integrity",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-26",
-                                              "title":  "43 of 199 herb records exceed the documented descFull 260-char cap and editor.js:693 hard-slices them, so about a fifth of the catalog renders a back label ending mid-word"
-                                          },
-                                          {
-                                              "id":  "context-tags-no-domain-lens-match",
-                                              "severity":  "medium",
-                                              "lens":  "maintainability",
-                                              "priority":  20,
-                                              "runsOpen":  4,
-                                              "firstSeen":  "2026-07-24",
-                                              "title":  ".project-context.json tags match no domain-lens folder; today\u0027s drift pass edited the same file and left the tags block alone"
-                                          },
-                                          {
-                                              "id":  "cache-bust-contract-holed-and-undocumented",
-                                              "severity":  "medium",
-                                              "lens":  "architecture",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-07-27",
-                                              "title":  "Six static imports bypass the ?v= build stamp: three modules never cache-busted, three double-instantiated, and PROJECT_SPEC.md records the contract nowhere while four source files cite it"
-                                          },
-                                          {
-                                              "id":  "stranded-tree-grew-to-two-files",
-                                              "severity":  "medium",
-                                              "lens":  "orchestration-skill-chain-handoff-integrity",
-                                              "priority":  15,
-                                              "runsOpen":  4,
-                                              "firstSeen":  "2026-07-24",
-                                              "title":  "Stranded tree at five files, up from two; the deploy mirror now diverges on index.html as well as src/main.js, which is at day 13"
-                                          },
-                                          {
-                                              "id":  "spec-4.1-herb-record-keys-hand-maintained-not-checked",
-                                              "severity":  "medium",
-                                              "lens":  "data-integrity",
-                                              "priority":  15,
-                                              "runsOpen":  3,
-                                              "firstSeen":  "2026-07-25",
-                                              "title":  "PROJECT_SPEC.md is hand-maintained against the code and has drifted four times in four days (icon, blend, character caps, cache-bust contract); no test asserts any of it"
-                                          },
-                                          {
-                                              "id":  "discord-notify-header-stale-path-and-names",
-                                              "severity":  "medium",
-                                              "lens":  "release-pipeline-discord-notify-wiring",
-                                              "priority":  15,
-                                              "runsOpen":  10,
-                                              "firstSeen":  "2026-07-17",
-                                              "title":  "discord-notify.ps1 header names the dead in-repo webhook path and two retired webhook names, contradicting its own line 39"
-                                          },
-                                          {
-                                              "id":  "dashboard-audit-findings-counts-frozen",
-                                              "severity":  "low",
-                                              "lens":  "observability",
-                                              "priority":  10,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-26",
-                                              "title":  "write-dashboard-status.ps1:171 carries audit.findings forward off the previous JSON; second consecutive run where the published severity mix contradicts the report it points at"
-                                          },
-                                          {
-                                              "id":  "handler-missing-migrate-js-row",
-                                              "severity":  "low",
-                                              "lens":  "maintainability",
-                                              "priority":  10,
-                                              "runsOpen":  10,
-                                              "firstSeen":  "2026-07-17",
-                                              "title":  "CLAUDE.md file-layout table omits src/util/migrate.js and all three root test suites; the README half closed today"
-                                          },
-                                          {
-                                              "id":  "discord-webhook-example-orphaned",
-                                              "severity":  "low",
-                                              "lens":  "release-pipeline-discord-notify-wiring",
-                                              "priority":  5,
-                                              "runsOpen":  10,
-                                              "firstSeen":  "2026-07-17",
-                                              "title":  "scripts/.discord_webhook.txt.example still tracked but referenced by nothing after 4dd1546"
-                                          },
-                                          {
-                                              "id":  "project-spec-em-dashes-line-336",
-                                              "severity":  "low",
-                                              "lens":  "public-voice-solo-dev-voice",
-                                              "priority":  10,
-                                              "runsOpen":  3,
-                                              "firstSeen":  "2026-07-25",
-                                              "title":  "PROJECT_SPEC.md:336 carries two em dashes in a file listed in voice_scope and public_artifact_globs"
-                                          }
-                                      ],
-                     "tensionsOpen":  [
-                                          {
-                                              "id":  "doc-fix-velocity-vs-release-discipline",
-                                              "lenses":  [
-                                                             "orchestration-audit-loop-integrity",
-                                                             "orchestration-skill-chain-handoff-integrity"
-                                                         ],
-                                              "title":  "The audit chain applies correct fixes but is forbidden from releasing them and no task owns the trigger, so correct edits accumulate uncommitted. Now five stranded files, main.js at day 13, and the deploy mirror diverges on a runtime file. At runsSeen 4 this is a decision nobody has made; it belongs in adr-promoter as an explicit lock either way.",
-                                              "runsSeen":  4
-                                          },
-                                          {
-                                              "id":  "cache-bust-completeness-vs-source-graph-simplicity",
-                                              "lenses":  [
-                                                             "architecture",
-                                                             "release-pipeline-per-project-ps1-stack"
-                                                         ],
-                                              "title":  "Routing the three static-import modules through ctx matches the documented pattern but adds indirection to call sites that read plainly; stamping ?v= into static specifiers from release.ps1 keeps source clean but puts a source rewrite in the release path. Resolution: take the ctx route for saved-labels.js alone, the one pair with a real skew hazard, leave autofit.js and print.js static with a note, and add a graph check to the test suite so the decision is enforced rather than remembered.",
-                                              "runsSeen":  1
-                                          },
-                                          {
-                                              "id":  "cap-enforcement-vs-catalog-content",
-                                              "lenses":  [
-                                                             "data-integrity",
-                                                             "generative-art-print-fidelity"
-                                                         ],
-                                              "title":  "Word-aware truncation fixes rendering everywhere but ratifies 43 records that violate a documented constraint; raising the cap to 320 honors the content only if the back card holds it at the smallest size, which nobody has measured; trimming honors the constraint but edits deliberate prose. Resolution: measure the 317-char record on the smallest template first, then pick, and make truncation word-aware regardless as a floor.",
-                                              "runsSeen":  2
-                                          },
-                                          {
-                                              "id":  "vestigial-icon-strip-vs-saved-state-roundtrip",
-                                              "lenses":  [
-                                                             "maintainability",
-                                                             "data-integrity"
-                                                         ],
-                                              "title":  "Stripping the vestigial icon field removes dead surface but migrate.js:181 backfills it so pre-v1.1 saved labels load. Resolution: stop writing icon and delete it from the 60 records, keep normalizeState tolerant of it on read. At runsSeen 3 this joins the release tension as something to lock via adr-promoter.",
-                                              "runsSeen":  3
-                                          }
-                                      ]
-                 },
-    "metrics":  [
-                    {
-                        "k":  "herbs",
-                        "v":  "199"
-                    },
-                    {
-                        "k":  "illustrations",
-                        "v":  "75"
-                    },
-                    {
-                        "k":  "art keywords",
-                        "v":  "75"
-                    }
-                ],
-    "workQueueDepth":  10,
-    "stale":  false,
-    "tags":  [
-                 "generative-art",
-                 "orchestration",
-                 "release-pipeline",
-                 "public-voice"
-             ]
+  "project": "Apothecary",
+  "displayName": "Yes& Apothecary",
+  "version": "1.1.3",
+  "lastReleaseAt": "2026-07-27T09:57:48-05:00",
+  "lastReleaseMessage": "correct discord-notify header paths and bot names, add the four domain lens tags, ship stranded doc fixes",
+  "milestone": {
+    "id": "v1.0",
+    "label": "v1.0 - core label designer complete",
+    "status": "done"
+  },
+  "completion": {
+    "pct": 100,
+    "anchored": "2026-06-23"
+  },
+  "itemsLeft": {
+    "open": 10,
+    "queue": 10,
+    "backlog": 0,
+    "gates": 0,
+    "items": []
+  },
+  "backlog": {
+    "count": 0,
+    "items": []
+  },
+  "repoUrl": "https://github.com/TheProphetKane/yesandapothecary",
+  "workTreeClean": true,
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-07-27.md",
+    "latestReportAt": "2026-07-27T07:28:26Z",
+    "findings": {
+      "high": 0,
+      "medium": 0,
+      "low": 1
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-07-27.md",
+    "latestReportAt": "2026-07-27T11:40:00Z",
+    "verdict": "working",
+    "topFinding": "Full pass: the skip gate did not hold because the working tree went from two modified files to five and one is a deployed runtime file. The overnight audit ran the app and captured the network, and found the v0.8.0 cache-bust contract half-broken. Three modules reached only by a static import (src/util/autofit.js, src/util/print.js, src/util/saved-labels.js) are fetched at bare URLs no release ever changes, and three more (src/state.js, src/util/persist.js, data/label-templates.js) are fetched and instantiated twice per load. Re-verified against source this run: six static import statements at render.js:17-18, state.js:18, editor.js:10, migrate.js:12, and util/saved-labels.js:3. The sharp edge is saved-labels.js against saved-labels-ui.js, a tightly coupled pair where the UI half is versioned and the logic half is not, so the next release touching the logic can ship a fresh caller against a cached callee. PROJECT_SPEC.md records the contract nowhere while four source files cite it. Nothing is broken live, the deployed graph is self-consistent, and the drift chain fixed the over-claiming comment at index.html:109-116 the same night. Health holds at 83: architecture and reliability took the hit, the audit loop and queue gained back about the same by having their best day of the series. Two tensions are now past the ADR threshold, the release-trigger question at runsSeen 4 and the icon vestige at 3.",
+    "actionsOpen": 3,
+    "actionsClosed": 3,
+    "health": 83,
+    "lensScores": {
+      "architecture": 88,
+      "reliability": 88,
+      "security": 94,
+      "performance": 90,
+      "data-integrity": 88,
+      "maintainability": 89,
+      "solo-tool-ux": 90,
+      "cost-economics": 87,
+      "dependency": 95,
+      "observability": 89,
+      "strategic-kill-this": 88,
+      "compliance-data-steward": 90,
+      "generative-art-schema-driven-correctness": 85,
+      "generative-art-print-fidelity": 90,
+      "generative-art-palette-discipline": 73,
+      "orchestration-skill-suite-health": 68,
+      "orchestration-work-queue-hygiene": 65,
+      "orchestration-audit-loop-integrity": 76,
+      "orchestration-fuse-truncation-defense": 84,
+      "orchestration-incident-runbook-currency": 82,
+      "orchestration-scheduled-task-firing-state": 90,
+      "orchestration-skill-trigger-collisions": 60,
+      "orchestration-skill-chain-handoff-integrity": 57,
+      "release-pipeline-per-project-ps1-stack": 88,
+      "release-pipeline-discord-notify-wiring": 80,
+      "release-pipeline-version-pill-drift": 95,
+      "release-pipeline-gate-page-publish": 86,
+      "public-voice-solo-dev-voice": 78,
+      "public-voice-ai-tell-concealment": 76,
+      "public-voice-brand-consistency": 84
+    },
+    "actions": [
+      {
+        "severity": "MED",
+        "title": "Measure the longest descFull (317 chars) on the smallest back card, then either raise descFullMaxChars in PROJECT_SPEC.md:43 and data/label-templates.js:70 or trim the 43 over-cap records; make editor.js:693 word-boundary aware with an ellipsis either way.",
+        "lens": "data-integrity",
+        "priority": 20,
+        "id": "descfull-cap-truncates-midword"
+      },
+      {
+        "severity": "MED",
+        "title": "Route src/util/saved-labels.js through the ctx dynamic-import path so the cache-bust contract covers the one coupled pair that can skew, then record the contract in PROJECT_SPEC.md section 3 with the static-import exceptions named.",
+        "lens": "architecture",
+        "priority": 15,
+        "id": "cache-bust-contract-holed-and-undocumented"
+      },
+      {
+        "severity": "MED",
+        "title": "Extend test-data-integrity.mjs to assert the herb-record key union, the six documented character caps, and that every src/ module reachable from main.js is reachable with the build query.",
+        "lens": "data-integrity",
+        "priority": 15,
+        "id": "spec-4.1-herb-record-keys-hand-maintained-not-checked"
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "medium",
+        "title": "adr-promoter is invoked by nothing; two tensions are now past the promote threshold (release trigger at runsSeen 4, icon vestige at 3) with no lock written",
+        "lens": "orchestration-audit-loop-integrity",
+        "reason": "lives in .claude/skills + YaE, outside this repo"
+      },
+      {
+        "severity": "low",
+        "title": "Today's drift pass reclassified its own README never-auto-apply safety entry unattended; the edit was correct and documented, the precedent is the part to lock",
+        "lens": "orchestration-skill-chain-handoff-integrity",
+        "reason": "skill-side rule, outside this repo"
+      },
+      {
+        "severity": "low",
+        "title": "skill-trigger collisions and skill-chain handoff gaps across the skill suite",
+        "lens": "orchestration-skill-trigger-collisions",
+        "reason": "cross-project skill suite, outside this repo"
+      },
+      {
+        "severity": "low",
+        "title": "orchestrator documents .project-context.json tags as the Wave 4 source but runs fall back to the status JSON tags; nothing detects the divergence",
+        "lens": "orchestration-skill-suite-health",
+        "reason": "skill-side half; the in-repo half is tracked as an open action"
+      },
+      {
+        "severity": "low",
+        "title": "The .claude/scheduled-tasks/bar-raise-yaa/ folder still holds a SKILL.md for this project with no registry entry; re-confirmed this run that it cannot double-fire",
+        "lens": "orchestration-scheduled-task-firing-state",
+        "reason": "lives outside this repo, awaiting app-closed cleanup"
+      }
+    ],
+    "openFindings": [
+      {
+        "id": "descfull-cap-truncates-midword",
+        "severity": "medium",
+        "lens": "data-integrity",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-26",
+        "title": "43 of 199 herb records exceed the documented descFull 260-char cap and editor.js:693 hard-slices them, so about a fifth of the catalog renders a back label ending mid-word"
+      },
+      {
+        "id": "cache-bust-contract-holed-and-undocumented",
+        "severity": "medium",
+        "lens": "architecture",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-27",
+        "title": "Six static imports bypass the ?v= build stamp: three modules never cache-busted, three double-instantiated, and PROJECT_SPEC.md records the contract nowhere while four source files cite it"
+      },
+      {
+        "id": "spec-4.1-herb-record-keys-hand-maintained-not-checked",
+        "severity": "medium",
+        "lens": "data-integrity",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-25",
+        "title": "PROJECT_SPEC.md is hand-maintained against the code and has drifted four times in four days (icon, blend, character caps, cache-bust contract); no test asserts any of it"
+      },
+      {
+        "id": "dashboard-audit-findings-counts-frozen",
+        "severity": "low",
+        "lens": "observability",
+        "priority": 10,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-26",
+        "title": "write-dashboard-status.ps1:171 carries audit.findings forward off the previous JSON; second consecutive run where the published severity mix contradicts the report it points at"
+      },
+      {
+        "id": "handler-missing-migrate-js-row",
+        "severity": "low",
+        "lens": "maintainability",
+        "priority": 10,
+        "runsOpen": 10,
+        "firstSeen": "2026-07-17",
+        "title": "CLAUDE.md file-layout table omits src/util/migrate.js and all three root test suites; the README half closed today"
+      },
+      {
+        "id": "discord-webhook-example-orphaned",
+        "severity": "low",
+        "lens": "release-pipeline-discord-notify-wiring",
+        "priority": 5,
+        "runsOpen": 10,
+        "firstSeen": "2026-07-17",
+        "title": "scripts/.discord_webhook.txt.example still tracked but referenced by nothing after 4dd1546"
+      },
+      {
+        "id": "project-spec-em-dashes-line-336",
+        "severity": "low",
+        "lens": "public-voice-solo-dev-voice",
+        "priority": 10,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-25",
+        "title": "PROJECT_SPEC.md:336 carries two em dashes in a file listed in voice_scope and public_artifact_globs"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "id": "doc-fix-velocity-vs-release-discipline",
+        "lenses": [
+          "orchestration-audit-loop-integrity",
+          "orchestration-skill-chain-handoff-integrity"
+        ],
+        "title": "The audit chain applies correct fixes but is forbidden from releasing them and no task owns the trigger, so correct edits accumulate uncommitted. Now five stranded files, main.js at day 13, and the deploy mirror diverges on a runtime file. At runsSeen 4 this is a decision nobody has made; it belongs in adr-promoter as an explicit lock either way.",
+        "runsSeen": 4
+      },
+      {
+        "id": "cache-bust-completeness-vs-source-graph-simplicity",
+        "lenses": [
+          "architecture",
+          "release-pipeline-per-project-ps1-stack"
+        ],
+        "title": "Routing the three static-import modules through ctx matches the documented pattern but adds indirection to call sites that read plainly; stamping ?v= into static specifiers from release.ps1 keeps source clean but puts a source rewrite in the release path. Resolution: take the ctx route for saved-labels.js alone, the one pair with a real skew hazard, leave autofit.js and print.js static with a note, and add a graph check to the test suite so the decision is enforced rather than remembered.",
+        "runsSeen": 1
+      },
+      {
+        "id": "cap-enforcement-vs-catalog-content",
+        "lenses": [
+          "data-integrity",
+          "generative-art-print-fidelity"
+        ],
+        "title": "Word-aware truncation fixes rendering everywhere but ratifies 43 records that violate a documented constraint; raising the cap to 320 honors the content only if the back card holds it at the smallest size, which nobody has measured; trimming honors the constraint but edits deliberate prose. Resolution: measure the 317-char record on the smallest template first, then pick, and make truncation word-aware regardless as a floor.",
+        "runsSeen": 2
+      },
+      {
+        "id": "vestigial-icon-strip-vs-saved-state-roundtrip",
+        "lenses": [
+          "maintainability",
+          "data-integrity"
+        ],
+        "title": "Stripping the vestigial icon field removes dead surface but migrate.js:181 backfills it so pre-v1.1 saved labels load. Resolution: stop writing icon and delete it from the 60 records, keep normalizeState tolerant of it on read. At runsSeen 3 this joins the release tension as something to lock via adr-promoter.",
+        "runsSeen": 3
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "herbs",
+      "v": "199"
+    },
+    {
+      "k": "illustrations",
+      "v": "75"
+    },
+    {
+      "k": "art keywords",
+      "v": "75"
+    }
+  ],
+  "workQueueDepth": 10,
+  "stale": false,
+  "tags": [
+    "generative-art",
+    "orchestration",
+    "release-pipeline",
+    "public-voice"
+  ]
 }
