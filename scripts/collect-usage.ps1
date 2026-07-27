@@ -969,6 +969,7 @@ try {
     $bundle = [ordered]@{}
     foreach ($sf in (Get-ChildItem -Path $statusDir -Filter *.json -File)) {
       if ($sf.Name -eq "constellation.json") { continue }   # rollup, not a project card
+      if ($sf.Name -eq "backlog-trend.json") { continue }   # daily backlog-governor trend ledger, not a project
       $sid = [System.IO.Path]::GetFileNameWithoutExtension($sf.Name)
       # UTF-8 read (see queue note above): Get-Content -Raw would cp1252-mojibake any
       # em-dash / smart punctuation in a status field before it reaches the KV bundle.
