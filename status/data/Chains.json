@@ -53,27 +53,13 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-26.md",
-        "latestReportAt": "2026-07-26T13:05:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-27.md",
+        "latestReportAt": "2026-07-27T11:19:55Z",
         "verdict": "needs-attention",
-        "topFinding": "No code moved since the 2026-07-25 pass: HEAD is still 77efb38 / 0.58.3 with zero commits, so the money-path finding set is unchanged and unrepaired and was re-verified present in current source rather than assumed. security-01 (any signed-in user can PATCH their own profiles row and self-grant Pro or superadmin), compliance-03 (account deletion never cancels the Stripe subscription) and auth-01 (billing identity from an unverified body.userId, now open 21 runs) all still read exactly as they did yesterday. What moved is the publish path, and it moved the wrong way by standing still: the dashboard version has been stuck at 0.57.0 for two days across roughly five scheduled passes over the same file while canonical is 0.58.3, and the Discord release notification has not landed for four releases going back to 2026-07-07. Today's canonical audit then found the one public document nobody was sweeping: README.md is 24 releases stale, lists three shipped features as designed-but-not-built, and never mentions that the app has taken real money since 0.54.0. That is the third instance this week of the same class of problem, which is that YaC's outward-facing surfaces are updated by unchecked best-effort steps while its code gates are strict.",
-        "actionsOpen": 97,
-        "actionsClosed": 0,
+        "topFinding": "Application code has not moved in three days: `git diff 77efb38..HEAD` over src, worker, scripts, supabase, tools, index.html and package.json returns empty, so every code-facing finding was re-verified against current source rather than carried on faith and every one still reads the same. profiles_update_own at supabase/migrations/0001_init.sql:190 still has no WITH CHECK, the six billing call sites still take identity from body.userId, worker/wrangler.toml still has no observability block, and delete_my_account still drops the profile without cancelling Stripe. What moved is the paperwork, and for the first time in three passes it moved the right way: commit 7c4f298 committed the five canonical-doc fixes the 07-25 and 07-26 nightly passes had left stranded in a dirty tree, repaired .project-context.json's four wrong fields, and pushed the dashboard off its stuck 0.57.0 reading onto the real 0.58.3. The one publish surface still broken got sharper instead of better: scripts/.discord_last_posted.txt reads v0.57.0 with an mtime of 2026-07-07, and that marker is written only on discord-notify.ps1's success path, so no release post has landed in twenty days across five releases. Nobody noticed because the script's catch block ends with exit 0, so release.ps1:436 records a clean run either way. That is the same shape as the dashboard drift that just resolved, and it is the shape this project repeats: the code gates fail loudly, the outward-facing steps fail silently. Today's canonical audit added the root cause: the CLAUDE.md routing table omits exactly the three canonical-layer docs that have drifted, README.md, docs/KNOWN_ISSUES.md and .project-context.json, three for three in both directions.",
+        "actionsOpen": 98,
+        "actionsClosed": 1,
         "actions": [
-            {
-                "severity": "HIGH",
-                "priority": 20,
-                "id": "readme-01",
-                "lens": "brand-consistency",
-                "title": "Rewrite README.md against 0.58.3, drop the three shipped features from the designed-but-not-built list, state the Pro paywall, and add README to the CLAUDE.md routing table."
-            },
-            {
-                "severity": "MED",
-                "priority": 15,
-                "id": "audit-loop-integrity-03",
-                "lens": "audit-loop-integrity",
-                "title": "Make the bar-raise skip gate ignore markdown-only working-tree churn so doc fixes stop forcing a full re-derivation against unchanged code."
-            },
             {
                 "severity": "HIGH",
                 "title": "Add a WITH CHECK to `profiles_update_own` and revoke UPDATE on the subscription, comped and role columns from the authenticated role.",
@@ -109,6 +95,13 @@
                 "title": "Copy YaE's `git-guard.ps1` over the Chains copy and reorder `Assert-GitOk \"push\"` before `Confirm-GitIntact`.",
                 "lens": "per-project-ps1-stack",
                 "priority": 25
+            },
+            {
+                "severity": "HIGH",
+                "priority": 20,
+                "id": "readme-01",
+                "lens": "brand-consistency",
+                "title": "Rewrite README.md against 0.58.3, drop the three shipped features from the designed-but-not-built list, state the Pro paywall, and add README to the CLAUDE.md routing table."
             },
             {
                 "severity": "HIGH",
@@ -148,7 +141,7 @@
             },
             {
                 "severity": "HIGH",
-                "title": "Add a post-release assertion on `.discord_last_posted.txt` versus BUILD_VERSION, and re-run the notify for 0.58.0 through 0.58.3.",
+                "title": "Add a post-release assertion on `.discord_last_posted.txt` versus BUILD_VERSION, stop `discord-notify.ps1` exiting 0 on a failed POST, and re-run the notify for 0.58.0 through 0.58.3.",
                 "lens": "discord-notify-wiring",
                 "priority": 20
             },
@@ -291,10 +284,18 @@
                 "priority": 16
             },
             {
-                "severity": "HIGH",
-                "title": "Re-run `write-dashboard-status.ps1` to republish 0.58.3, and promote the release status write to a read-back check that fails loudly.",
-                "lens": "version-pill-drift",
-                "priority": 15
+                "severity": "MED",
+                "priority": 16,
+                "id": "audit-loop-integrity-04",
+                "lens": "audit-loop-integrity",
+                "title": "Widen the `CLAUDE.md` routing table to `README.md`, `docs/KNOWN_ISSUES.md` and `.project-context.json`; the three docs it omits are the three that drifted."
+            },
+            {
+                "severity": "MED",
+                "priority": 15,
+                "id": "audit-loop-integrity-03",
+                "lens": "audit-loop-integrity",
+                "title": "Make the bar-raise skip gate ignore markdown-only working-tree churn so doc fixes stop forcing a full re-derivation against unchanged code."
             },
             {
                 "severity": "MED",
@@ -538,6 +539,19 @@
             },
             {
                 "severity": "MED",
+                "priority": 15,
+                "id": "known-issues-01",
+                "lens": "audit-loop-integrity",
+                "title": "Decide whether `docs/KNOWN_ISSUES.md`'s append-only policy is live: backfill the 0.52.1, 0.57.0 and 0.58.x defects, or tombstone the file explicitly."
+            },
+            {
+                "severity": "MED",
+                "title": "Promote the release status write in `write-dashboard-status.ps1` to a read-back check that fails loudly, so a dropped dashboard write stops going unnoticed for days.",
+                "lens": "version-pill-drift",
+                "priority": 12
+            },
+            {
+                "severity": "MED",
                 "title": "Wrap the four `Sync-*Version` WriteAllText calls in the proven write-verify-retry loop.",
                 "lens": "fuse-truncation-defense",
                 "priority": 12
@@ -580,7 +594,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Fix the `hazard_catalog` path in `.project-context.json` and the architecture template, and add Stripe hazards to the catalog.",
+                "title": "Fix the `hazard_catalog` path in the bar-raise architecture template and add Stripe hazards to the YaC hazard catalog.",
                 "lens": "skill-suite-health",
                 "priority": 12
             },
@@ -612,12 +626,6 @@
                 "severity": "MED",
                 "title": "Backfill the 0.58.x money-path incidents into `docs/KNOWN_ISSUES.md` and re-attach it to the release path.",
                 "lens": "incident-runbook-currency",
-                "priority": 10
-            },
-            {
-                "severity": "MED",
-                "title": "Rewrite `.project-context.json`'s `scheduled_tasks` to the four real task ids and cadences.",
-                "lens": "scheduled-task-firing-state",
                 "priority": 10
             },
             {
@@ -739,17 +747,17 @@
             "install-and-offline": 72,
             "sync": 66,
             "dataset-size": 72,
-            "skill-suite-health": 70,
+            "skill-suite-health": 73,
             "work-queue-hygiene": 88,
             "audit-loop-integrity": 85,
             "fuse-truncation-defense": 80,
             "incident-runbook-currency": 68,
-            "scheduled-task-firing-state": 84,
+            "scheduled-task-firing-state": 86,
             "skill-trigger-collisions": 62,
             "skill-chain-handoff-integrity": 72,
             "per-project-ps1-stack": 70,
-            "discord-notify-wiring": 60,
-            "version-pill-drift": 74,
+            "discord-notify-wiring": 56,
+            "version-pill-drift": 82,
             "gate-page-publish": 70,
             "solo-dev-voice-portfolio": 64,
             "ai-tell-concealment-currency": 74,
@@ -760,239 +768,253 @@
                 "id": "architecture-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "auth-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 21,
+                "runsOpen": 22,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 24,
+                "runsOpen": 25,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 24,
+                "runsOpen": 25,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "per-project-ps1-stack-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "security-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "compliance-04",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "cost-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 24,
+                "runsOpen": 25,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 24,
+                "runsOpen": 25,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dataset-size-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dependency-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "discord-notify-wiring-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "incident-runbook-currency-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "install-offline-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 21,
+                "runsOpen": 22,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "kv-data-shape-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "maintainability-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "reliability-04",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-chain-handoff-integrity-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-suite-health-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "solo-dev-voice-portfolio-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-02",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "observability-10",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "per-project-ps1-stack-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "reliability-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "security-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-suite-health-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-01",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 21,
+                "runsOpen": 22,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 24,
+                "runsOpen": 25,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "version-pill-drift-01",
                 "severity": "HIGH",
                 "priority": 15,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 10,
-                "runsOpen": 24,
+                "runsOpen": 25,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "readme-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-26"
             },
             {
                 "id": "audit-loop-integrity-03",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-26"
+            },
+            {
+                "id": "audit-loop-integrity-04",
+                "severity": "MED",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-27"
+            },
+            {
+                "id": "known-issues-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-27"
             }
         ],
         "tensionsOpen": [
@@ -1001,49 +1023,56 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 26
+                "runsSeen": 27
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 23
+                "runsSeen": 24
             },
             {
                 "lenses": [
                     "data-integrity",
                     "cost-economics"
                 ],
-                "runsSeen": 20
+                "runsSeen": 21
             },
             {
                 "lenses": [
                     "security",
                     "data-integrity"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
             },
             {
                 "lenses": [
                     "install-and-offline",
                     "dependency"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
             },
             {
                 "lenses": [
                     "solo-dev-voice-portfolio",
                     "ai-tell-concealment-currency"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
             },
             {
                 "lenses": [
                     "strategic-kill-this",
                     "cost-economics"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
+            },
+            {
+                "lenses": [
+                    "audit-loop-integrity",
+                    "gate-page-publish"
+                ],
+                "runsSeen": 1
             }
         ]
     },
