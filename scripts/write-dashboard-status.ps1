@@ -16,7 +16,7 @@ if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Fo
 $JsonPath = Join-Path $DataDir "Everything.json"
 
 $ctx = $null
-try { $ctx = Get-Content -Raw (Join-Path $RepoRoot ".project-context.json") | ConvertFrom-Json } catch { $ctx = $null }
+try { $ctx = Get-Content -Raw -Encoding utf8 (Join-Path $RepoRoot ".project-context.json") | ConvertFrom-Json } catch { $ctx = $null }
 
 $headRaw = (& git -C $RepoRoot log -1 --pretty="%h|%cI|%s" 2>$null)
 $head = @("", "", "")
@@ -24,7 +24,7 @@ if ($headRaw) { $head = $headRaw -split "\|", 3 }
 
 $existing = $null
 if (Test-Path $JsonPath) {
-  try { $existing = Get-Content -Raw $JsonPath | ConvertFrom-Json } catch { $existing = $null }
+  try { $existing = Get-Content -Raw -Encoding utf8 $JsonPath | ConvertFrom-Json } catch { $existing = $null }
 }
 
 $msg = $head[2]
@@ -51,7 +51,7 @@ $json = ($payload | ConvertTo-Json -Depth 6) -replace "`r`n", "`n"
 if (-not $json.EndsWith("`n")) { $json += "`n" }
 $tmp = "$JsonPath.tmp"
 [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
-$null = (Get-Content -Raw $tmp | ConvertFrom-Json)   # parse before replacing the live file
+$null = (Get-Content -Raw -Encoding utf8 $tmp | ConvertFrom-Json)   # parse before replacing the live file
 Move-Item -Force $tmp $JsonPath
 $back = [System.IO.File]::ReadAllText($JsonPath)
 if ($back.Contains([char]0)) { throw "NUL bytes in $JsonPath after write" }

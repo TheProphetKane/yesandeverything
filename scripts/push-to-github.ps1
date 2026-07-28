@@ -4,6 +4,15 @@
 # ~30 seconds of push landing.
 #
 # No confirmation prompts (per use_release_scripts memory).
+#
+# -Path scopes the staging to explicit pathspecs. Without it the script stages
+# everything, which sweeps whatever another session left staged into this
+# commit. Pass -Path when you are shipping a targeted edit:
+#   .\scripts\push-to-github.ps1 -Path status/data/Ring.json
+
+param(
+    [string[]]$Path = @()
+)
 
 $ErrorActionPreference = "Stop"
 $here = $PSScriptRoot
@@ -88,11 +97,19 @@ Write-Host "Repo status:" -ForegroundColor Cyan
 git status --short
 Write-Host ""
 
-# Stage everything. .gitignore handles secrets / build artifacts.
-git add -A
-Assert-GitOk "add"
-
-$staged = git diff --cached --name-only
+# Stage. With -Path only those pathspecs go in, so a targeted edit cannot
+# sweep another session's staged work. Without it, stage everything and let
+# .gitignore handle secrets / build artifacts.
+if ($Path.Count -gt 0) {
+    Write-Host "Scoped staging to: $($Path -join ', ')" -ForegroundColor Cyan
+    git add -- @Path
+    Assert-GitOk "add"
+    $staged = git diff --cached --name-only -- @Path
+} else {
+    git add -A
+    Assert-GitOk "add"
+    $staged = git diff --cached --name-only
+}
 if ([string]::IsNullOrWhiteSpace($staged)) {
     Write-Host "Nothing to commit." -ForegroundColor Yellow
     # Still push in case local commits are ahead of origin.
@@ -115,7 +132,12 @@ if ($projectDirs.Count -eq 1) {
 }
 
 Write-Host "Committing: $summary" -ForegroundColor Cyan
-git commit -m $summary
+if ($Path.Count -gt 0) {
+    # Pathspec-scoped commit: anything another session staged stays staged.
+    git commit -m $summary -- @Path
+} else {
+    git commit -m $summary
+}
 Assert-GitOk "commit"
 
 Write-Host ""
