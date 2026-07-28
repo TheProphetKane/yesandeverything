@@ -110,6 +110,29 @@ if ($Path.Count -gt 0) {
     Assert-GitOk "add"
     $staged = git diff --cached --name-only
 }
+# Secret-shape gate on what is actually staged. .gitignore only helps for files
+# git is not already tracking, and this repo is public with Pages serving the
+# raw tree, so a staged secret is live the moment the push lands.
+$secretShapes = @(
+    '\.pem$', '\.key$', '\.p12$', '\.pfx$', '\.ppk$',
+    '(^|/)\.env($|\.)', '(^|/)id_rsa$', '(^|/)id_ed25519$',
+    'secret', 'credential', 'webhook', 'cloudflare-token', 'oauth'
+)
+$suspect = @($staged -split "`n" | Where-Object { $_ } | ForEach-Object { $_.Trim() } | Where-Object {
+    $f = $_
+    if ($f -match '\.example$' -or $f -match '(?i)SECURITY') { return $false }
+    foreach ($shape in $secretShapes) { if ($f -match "(?i)$shape") { return $true } }
+    return $false
+})
+if ($suspect.Count -gt 0) {
+    Write-Host "INTEGRITY FAIL: staged files look secret-shaped. This repo is PUBLIC." -ForegroundColor Red
+    $suspect | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
+    Write-Host "Secrets belong in X:\.secrets. Unstage these, or add an ignore rule." -ForegroundColor Yellow
+    Write-Host "To override deliberately: `$env:YAE_ALLOW_SECRET_SHAPE = '1'" -ForegroundColor DarkGray
+    if ($env:YAE_ALLOW_SECRET_SHAPE -ne "1") { exit 1 }
+    Write-Host "YAE_ALLOW_SECRET_SHAPE=1 set; continuing." -ForegroundColor DarkYellow
+}
+
 if ([string]::IsNullOrWhiteSpace($staged)) {
     Write-Host "Nothing to commit." -ForegroundColor Yellow
     # Still push in case local commits are ahead of origin.

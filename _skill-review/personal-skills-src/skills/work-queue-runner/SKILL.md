@@ -23,12 +23,12 @@ Multiple drain instances (scheduled `regular-queue-drain`, `queue-drain-4h`, `lo
 
 ```powershell
 # append an item
-pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op add  -Json '<item-json>'
+powershell -File X:\YesAndEverything\scripts\queue-edit.ps1 -Op add  -Json '<item-json>'
 # flip status / bump attempts / set result_path
-pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op set  -Id <id> -Status in-progress -IncAttempts
-pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op set  -Id <id> -Status done -ResultPath <path>
+powershell -File X:\YesAndEverything\scripts\queue-edit.ps1 -Op set  -Id <id> -Status in-progress -IncAttempts
+powershell -File X:\YesAndEverything\scripts\queue-edit.ps1 -Op set  -Id <id> -Status done -ResultPath <path>
 # drop a superseded item
-pwsh X:\YesAndEverything\scripts\queue-edit.ps1 -Op drop -Id <id>
+powershell -File X:\YesAndEverything\scripts\queue-edit.ps1 -Op drop -Id <id>
 ```
 
 Reading for status/selection (mode D, and the read in modes A/B/C) can use `-Op get` or a plain read; only the WRITE must hold the lock. Hold the lock only for the file mutation, never across a running prompt. The Agents `server.mjs` `/queue` endpoint honors the same lock. The helper is dot-sourceable (`Invoke-QueueMutation { param($q) ...; $q }`) for compound edits.

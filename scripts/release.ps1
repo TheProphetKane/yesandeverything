@@ -35,6 +35,15 @@ try {
         Write-Host "WARN: YaE status write failed ($_). Dashboard card may be stale." -ForegroundColor Yellow
     }
 
+    # Step 2 is itself a writer, so re-run the guard over its output. Checking
+    # only before the write let a corrupt JSON written in Step 2 sail into the
+    # Step 3 push and onto the live dashboard.
+    & (Join-Path $here "check-status-json.ps1")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: the Step 2 status write produced corrupt JSON." -ForegroundColor Red
+        exit 1
+    }
+
     Write-Host ""
     Write-Host "==== Step 3/4: push YaE to GitHub ====" -ForegroundColor Magenta
     & (Join-Path $here "push-to-github.ps1")
