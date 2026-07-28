@@ -102,18 +102,18 @@ Write-Host ""
 # .gitignore handle secrets / build artifacts.
 if ($Path.Count -gt 0) {
     Write-Host "Scoped staging to: $($Path -join ', ')" -ForegroundColor Cyan
-    git add -- @Path
+    Invoke-Git add -- @Path
     Assert-GitOk "add"
     $staged = git diff --cached --name-only -- @Path
 } else {
-    git add -A
+    Invoke-Git add -A
     Assert-GitOk "add"
     $staged = git diff --cached --name-only
 }
 if ([string]::IsNullOrWhiteSpace($staged)) {
     Write-Host "Nothing to commit." -ForegroundColor Yellow
     # Still push in case local commits are ahead of origin.
-    git push origin main
+    Invoke-Git push origin main
     exit 0
 }
 
@@ -134,15 +134,15 @@ if ($projectDirs.Count -eq 1) {
 Write-Host "Committing: $summary" -ForegroundColor Cyan
 if ($Path.Count -gt 0) {
     # Pathspec-scoped commit: anything another session staged stays staged.
-    git commit -m $summary -- @Path
+    Invoke-Git commit -m $summary -- @Path
 } else {
-    git commit -m $summary
+    Invoke-Git commit -m $summary
 }
 Assert-GitOk "commit"
 
 Write-Host ""
 Write-Host "Pushing to origin/main..." -ForegroundColor Cyan
-git push origin main
+Invoke-Git push origin main
 Assert-GitOk "push"
 
 Write-Host ""
