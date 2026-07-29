@@ -8905,8 +8905,26 @@
       "created": "2026-07-28",
       "added": "2026-07-28T00:00Z",
       "drainNote": "added-backfilled by queue-drain-hourly 2026-07-28 (bar-raise emitted item without added timestamp)"
+    },
+    {
+      "id": "infra-deploy-guardrails-buildbased-frontends-01",
+      "added": "2026-07-28",
+      "project": "cross",
+      "kind": "infra",
+      "finding_id": "deploy-guardrails-remainder",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "orchestrator 2026-07-28 (Gnosis outage lessons sweep)",
+      "severity": "medium",
+      "impact": "The Gnosis empty-build-shipped-404 lessons were applied to Gnosis, the template, and the frontend-worker projects (Ring/Cattery/Architecture/Skylight). The build-based frontends that deploy via a separate path are not yet covered.",
+      "confidence": "high",
+      "title": "Extend build-artifact guard + hard-fail live check to the remaining build-based frontends (Chains Pages, Scheduler apps/web, YaE/Apothecary Pages)",
+      "prompt": "Apply the Gnosis 2026-07-28 deploy-safety lessons to the build-based frontends not yet covered. For each: (a) if it builds, add an artifact guard that refuses to publish an empty/broken build (assert the entry file exists + a sane file count), and prefer build-to-staging-then-atomic-swap if multiple sessions can build it; (b) add a post-deploy/publish HARD-FAIL live check that GETs the known live URL, retries for edge propagation, and throws on a non-200 (never WARN-and-continue). Targets: Chains (Pages static site + any built CSS/JS; find its live URL, note chains.yesandeverything.com did NOT resolve so confirm the real URL), Scheduler apps/web frontend (scheduler.yesandeverything.com is 200; find how apps/web deploys), and the YaE + Apothecary GitHub-Pages deploys (Pages is async after push, so the live check must poll for ~60-90s before failing). EXCLUDE the API code-workers scheduler-api and caddy-api: they have no ASSETS build (can't ship empty) and their wrangler exit-code check already covers the real failure mode. Reference implementations: X:\\YesAndGnosis\\web\build.mjs (publishDist stage-then-swap) and the hard-fail Test-Live pattern now in X:\\_NewProjectTemplate\\scripts\release.ps1.",
+      "notes": "Frontend-worker projects (Ring/Cattery/Architecture/Skylight/Gnosis) + the template are DONE. This is the build-based-frontend remainder."
     }
   ],
   "last_drain": "2026-07-28T23:45Z",
-  "updated": "2026-07-29T00:36Z"
+  "updated": "2026-07-29T02:13Z"
 }
