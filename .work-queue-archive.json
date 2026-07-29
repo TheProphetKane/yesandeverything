@@ -10108,9 +10108,35 @@
       "archivedAt": "2026-07-28T10:30Z",
       "archiveReason": "completed-verified-by-audit",
       "resolution": "Verified done by docs/CANONICAL_AUDIT-2026-07-28.md (Finding 4): commit 8012d13 repointed the 27 Titanoros pointers and resolved Merchant's Cross; 0 non-resolving pointers this run."
+    },
+    {
+      "id": "hbh-undocumented-v09941-release-2026-07-25",
+      "added": "2026-07-25",
+      "project": "hordes",
+      "kind": "canonical-audit-finding",
+      "auto_safe": false,
+      "priority": "P1",
+      "status": "done",
+      "attempts": 0,
+      "source": "canonical-audit-hordes 2026-07-25 / docs/CANONICAL_AUDIT-2026-07-25.md",
+      "severity": "high",
+      "impact": 4,
+      "confidence": 5,
+      "finding_id": "undocumented-v09941-release-01",
+      "title": "Three behaviour changes shipped 2026-07-24 self-stamped v0.99.41 with no version bump and no changelog entry",
+      "evidence": "Commits de46692 and 63c4534 (both 2026-07-24, both titled 'feat(htbh): v0.99.40 - GDD + code update') landed three substantive changes whose own comments stamp them v0.99.41 at four sites (debug_flags.gd:10, economy.gd:18, :20, :34). project.godot config/version is still 0.99.40, the GDD version pill (GDD.html:1382) is still v0.99.40, the newest GDD changelog entry is v0.99.40 dated 2026-07-10, and grep for '0.99.41' across docs/GDD.html returns zero hits. The only GDD edit in the whole commit range was the date pill at line 1383 moving 2026-07-11 to 2026-07-24, so the doc was republished advertising 2026-07-24 currency while documenting nothing that landed that day. Trips the CLAUDE.md single hard rule. The three unrecorded changes: (a) economy.gd DEBUG_INFINITE_RESOURCES went from 'const = true' to a runtime var defaulting false and resolved from the new debug_flags.infinite_resources export, so every build before this shipped in dev mode with 10000 on every stockpile, get_cap() returning INF, the add() upper clamp short-circuited and research gates bypassed; live starting stockpiles now come from _DEFAULT_AMOUNTS_PLAYTEST (Provisions 2000, Biomass/Aggregate/Alloy/Volatiles 50 each, Workers/Power 10000). (b) world_3d.gd gated F5 and F9 on 'not _game_over' and added _clear_end_state() called from _load_run. (c) git-guard.ps1 Confirm-GitIntact no longer clobbers $LASTEXITCODE, which had made a failed push read as success at push-to-github.ps1, publish-gdd.ps1, write-dashboard-status.ps1 and sync-erik-branch.ps1.",
+      "prompt": "HBH doc drift, HIGH severity (canonical-audit 2026-07-25). Three behaviour changes shipped on 2026-07-24 without a version bump or a changelog entry, and the code comments already call them v0.99.41. Bring the canonical layer up to the code: bump project.godot config/version and the GDD version pill (GDD.html:1382, grep for meta-pill, line numbers drift) to 0.99.41, and write one changelog entry at the top of the changelog footer covering all three. The entry must lead with the economy change, which is the significant one: DEBUG_INFINITE_RESOURCES was a const set true, so every build shipped in dev mode with 10000 on every stockpile, no upper cap and research gates bypassed; it is now a runtime var defaulting off, driven by the new debug_flags.infinite_resources export, so a shipped build runs the real economy from _DEFAULT_AMOUNTS_PLAYTEST. Also cover the save gating (F5 and F9 now require a live run, _clear_end_state added) and the git-guard exit-code fix (Confirm-GitIntact preserved $LASTEXITCODE, so failed pushes had been reading as success at four call sites). CO-LAND in the same pill bump, since all of these cost one bump between them: the three carried GDD edits owned by hbh-gdd-settings-backbone-stale-2026-07-17 (13.5 backbone paths, world3d 10 -> 11 registered classes, path-extends phrasing), plus a one-line note in the research-tab DEBUG bypass prose (GDD.html:3094 and the gating description at :5094) that the toggle is now debug_flags.infinite_resources and defaults off. Do NOT rewrite the dev-economy mentions at GDD.html:5094, :5271 and :5433 - those sit inside tab-changelog (section opens 4621) and are period record, handled the same way as the retired lore framing at :2576. FUSE-truncation-sensitive: Python atomic write with read-back, assert the </html> tail survives on the GDD, solo-dev voice (no em dashes, no AI vocabulary). Ship via X:/HereBeHordes/scripts/release.ps1.",
+      "notes": "2026-07-25 canonical-audit-hordes: raised on the first HEAD move in six passes. The previous five nightlies ran against a frozen 1752caa. Structural for the nightly because it needs a version bump and a release script, both of which the nightly is barred from. CLOSED 2026-07-29 by the nightly canonical audit: commit 3487e94 shipped v0.99.41 and version lockstep is restored across project.godot, the GDD pill and git HEAD. The content half of this item, the missing changelog coverage for the economy retirement plus the save gating and the git-guard fix, carries forward as hbh-v09941-changelog-wrong-change-2026-07-29.",
+      "covers_finding_ids": [
+        "version-pill-drift-01"
+      ],
+      "closed": "2026-07-29",
+      "closed_by": "canonical-audit-hordes 2026-07-29 / docs/CANONICAL_AUDIT-2026-07-29.md",
+      "archivedAt": "2026-07-29T06:30Z",
+      "archiveReason": "terminal-status-prune"
     }
   ],
-  "last_append": "2026-07-28T10:30Z",
-  "archived": 524,
-  "lastArchivedAt": "2026-07-28T10:30Z"
+  "last_append": "2026-07-29T06:30Z",
+  "archived": 525,
+  "lastArchivedAt": "2026-07-29T06:30Z"
 }
