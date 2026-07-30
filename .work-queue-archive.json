@@ -10428,9 +10428,32 @@
       "resolution": "Applied 2026-07-30T10:10Z by loop-tick-hourly (tick 1363), R5 drain. Verified the audit's three claims live before acting: wrangler.jsonc:45 = \"4526946\" (confirmed), commit c2eb8e2 dated 2026-07-26 (confirmed; the audit said 2026-07-27 -- off by one day, the commit is 21:06 local on the 26th, which is 2026-07-27 UTC, so both readings are right in their own frame), README.md realigned (confirmed at lines 67 and 75-76). The target row was ALREADY status=completed when this drain ran, so the only work left was the missing resolution note, which is now written. No repo file touched, no release run, queue-only edit through scripts/queue_write.py under the shared lock.",
       "archivedReason": "terminal-status-prune",
       "archivedAt": "2026-07-30T10:30Z"
+    },
+    {
+      "id": "handler-audit-2026-07-30-yae-statusjson-carveout-incomplete",
+      "project": "everything",
+      "kind": "handler-audit-finding",
+      "priority": "P3",
+      "severity": "medium",
+      "impact": 2,
+      "confidence": 5,
+      "auto_safe": true,
+      "status": "completed",
+      "attempts": 1,
+      "added": "2026-07-30",
+      "result_path": "CLAUDE.md",
+      "lastWorkedAt": "2026-07-30T10:35Z",
+      "lastAttemptAt": "2026-07-30T10:35Z",
+      "source": "handler-audit 2026-07-30 (docs/HANDLER_AUDIT-2026-07-30.md, MEDIUM 9)",
+      "title": "YaE CLAUDE.md's 'not every tracked JSON gets a card' carve-out names three files but status/data holds a fourth card-less file, backlog-trend.json",
+      "evidence": "X:\\YesAndEverything\\CLAUDE.md line 42 (status/ row) exempts Everything.json, Skylight.json, and constellation.json from orphaned-data findings. status/data/ also contains backlog-trend.json, which no entry in the PROJECTS array in status/index.html reads, so audits will keep re-flagging it as an orphaned data file the carve-out was written to prevent.",
+      "prompt": "cd X:\\YesAndEverything first. CLAUDE.md's 'Files at a glance' table, status/ row (line 42), carries the 'Not every tracked JSON gets a card - this is deliberate, not drift' carve-out and names Everything.json, Skylight.json, and constellation.json. Confirm first what consumes status/data/backlog-trend.json (grep status/index.html, scripts/update-project-pages.mjs, dashboard/, and dashboard-api/worker.js): if it is read by its own code path like constellation.json is, add it to the carve-out sentence with a one-clause note of what reads it; if genuinely nothing reads it, say so instead and leave a pointer rather than silently blessing it. Update the count wording ('these three') to match. Ship through scripts/release.ps1, and scope the commit so it does not sweep another session's staged status JSONs.",
+      "resolution": "Investigated per the prompt: status/data/backlog-trend.json is written by the backlog-burndown-daily scheduled task and has NO reader - not status/index.html PROJECTS, not scripts/update-project-pages.mjs, not dashboard/, not dashboard-api/worker.js. Only code mention is scripts/collect-usage.ps1:972, which explicitly SKIPS it. So it was added to the carve-out (these three -> these four) with an explicit caveat rather than a silent blessing: the line now records that it is write-only today and that deleting it or wiring a reader is the real call once the burndown work settles. Doc-only change to CLAUDE.md; no web-published surface touched, so scripts/release.ps1 was deliberately not run (out of scope for the unattended drain, and a handler-file edit publishes nothing). Committed + pushed with an explicit pathspec.",
+      "archivedAt": "2026-07-30T11:30Z",
+      "archiveReason": "terminal-status-pruned"
     }
   ],
-  "last_append": "2026-07-30T10:30Z",
-  "archived": 537,
-  "lastArchivedAt": "2026-07-30T10:30Z"
+  "last_append": "2026-07-30T11:30Z",
+  "archived": 538,
+  "lastArchivedAt": "2026-07-30T11:30Z"
 }
