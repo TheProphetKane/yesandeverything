@@ -53,7 +53,7 @@
       "finding_id": "finance-product-categorization-tail-01",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 1,
       "result_path": null,
       "lastWorkedAt": null,
@@ -68,7 +68,9 @@
         "solo-tool-ux"
       ],
       "prompt": "YaB HIGH (bar-raise 2026-07-16, CHRONIC runsOpen 7): merchants whose descriptors carry a per-order token normalize to a unique string per transaction, so the categorization tail never shrinks for them. merchant.ts:14 strips `/\\*+\\d+/g`, which requires digits immediately after the asterisk. Executed against the shipped normalizer: 'AMZN Mktp US*2X4RT8901' -> 'AMZN MKTP US X4RT8901' and 'AMZN Mktp US*9K7QQ1122' -> 'AMZN MKTP US K7QQ1122' - it eats only the leading digit and leaves the order token attached. Every such transaction becomes its own Categorize row and, with the default-on save-as-rule, writes an exact-string rule (server.ts:487 stores body.merchant verbatim) that can never match another transaction, growing the rules table without shrinking the tail. Same class: 'SQ *', 'TST*', 'PAYPAL *'. Fix: strip the full alphanumeric token after an aggregator prefix (and any trailing alphanumeric order-id run) in normalizeMerchant so 'AMZN MKTP US' collapses to one merchant and one rule. Ship via scripts/release.ps1.",
-      "notes": "2026-07-17T02:36Z queue-drain-hourly: FIRST verification (never-attempted). CONFIRMED REAL - core claim and conclusion both hold, with two wording corrections worth carrying into the fix. (1) merchant.ts:14 does ship /\\*+\\d+/g. Executed the shipped normalizer verbatim: 'AMZN Mktp US*2X4RT8901' -> 'AMZN MKTP US X4RT8901' and 'AMZN Mktp US*9K7QQ1122' -> 'AMZN MKTP US K7QQ1122'. Both match the finding exactly - the pattern eats only the leading digit and leaves the order token attached, so every such transaction is its own merchant. (2) server.ts:483-487 does store body.merchant verbatim as the rule pattern (is_regex=0, match_field='normalizedMerchant'), and save-as-rule IS default-on (Categorize.tsx:27 useState(true)). So the unbounded rules-table growth is real. CORRECTION A: the finding calls the result an 'exact-string rule'; rules-engine.ts:73-76 actually matches by SUBSTRING (haystack.toUpperCase().includes(rule.upperPattern)), not exact equality. The conclusion is unchanged - a pattern carrying a per-order token can never be a substring of a different order's descriptor - but a fix that assumes exact-match semantics would be wrong. CORRECTION B: the 'same class: SQ *, TST*, PAYPAL *' claim does NOT reproduce as stated. Executed: 'SQ *COFFEE BAR SEATTLE WA' -> 'SQ COFFEE BAR', 'PAYPAL *STEAM GAMES' -> 'PAYPAL STEAM GAMES' - both collapse cleanly and are NOT affected. 'TST* PIZZA PLACE 4471' -> 'TST PIZZA PLACE 4471' retains a store number (the /\\s+#\\d+/ pattern only strips it when written '#4471'), which is stable per store and so does not grow the tail per-transaction. The bug is specific to descriptors carrying a PER-ORDER token, not to aggregator prefixes generally - scoping the fix to 'any aggregator prefix' would over-collapse distinct merchants (every SQ * merchant would fold into one). Repo state: HEAD a962350 (moved since the 2026-07-16 note's ba2ae66), working tree CLEAN. NOT APPLIED: auto_safe:false and the prompt says ship via scripts/release.ps1 = publishing, which is out of this task's no-publish scope. Kept PENDING for an attended YaB session. Fix is now de-risked: strip a trailing per-order alphanumeric run (require it to look like an order id - mixed letters+digits, length >= 6) rather than blanket-stripping the token after any '*', keep substring semantics in mind, and add a normalizer unit test covering both the AMZN collapse and the SQ */PAYPAL * non-regression before shipping."
+      "notes": "2026-07-17T02:36Z queue-drain-hourly: FIRST verification (never-attempted). CONFIRMED REAL - core claim and conclusion both hold, with two wording corrections worth carrying into the fix. (1) merchant.ts:14 does ship /\\*+\\d+/g. Executed the shipped normalizer verbatim: 'AMZN Mktp US*2X4RT8901' -> 'AMZN MKTP US X4RT8901' and 'AMZN Mktp US*9K7QQ1122' -> 'AMZN MKTP US K7QQ1122'. Both match the finding exactly - the pattern eats only the leading digit and leaves the order token attached, so every such transaction is its own merchant. (2) server.ts:483-487 does store body.merchant verbatim as the rule pattern (is_regex=0, match_field='normalizedMerchant'), and save-as-rule IS default-on (Categorize.tsx:27 useState(true)). So the unbounded rules-table growth is real. CORRECTION A: the finding calls the result an 'exact-string rule'; rules-engine.ts:73-76 actually matches by SUBSTRING (haystack.toUpperCase().includes(rule.upperPattern)), not exact equality. The conclusion is unchanged - a pattern carrying a per-order token can never be a substring of a different order's descriptor - but a fix that assumes exact-match semantics would be wrong. CORRECTION B: the 'same class: SQ *, TST*, PAYPAL *' claim does NOT reproduce as stated. Executed: 'SQ *COFFEE BAR SEATTLE WA' -> 'SQ COFFEE BAR', 'PAYPAL *STEAM GAMES' -> 'PAYPAL STEAM GAMES' - both collapse cleanly and are NOT affected. 'TST* PIZZA PLACE 4471' -> 'TST PIZZA PLACE 4471' retains a store number (the /\\s+#\\d+/ pattern only strips it when written '#4471'), which is stable per store and so does not grow the tail per-transaction. The bug is specific to descriptors carrying a PER-ORDER token, not to aggregator prefixes generally - scoping the fix to 'any aggregator prefix' would over-collapse distinct merchants (every SQ * merchant would fold into one). Repo state: HEAD a962350 (moved since the 2026-07-16 note's ba2ae66), working tree CLEAN. NOT APPLIED: auto_safe:false and the prompt says ship via scripts/release.ps1 = publishing, which is out of this task's no-publish scope. Kept PENDING for an attended YaB session. Fix is now de-risked: strip a trailing per-order alphanumeric run (require it to look like an order id - mixed letters+digits, length >= 6) rather than blanket-stripping the token after any '*', keep substring semantics in mind, and add a normalizer unit test covering both the AMZN collapse and the SQ */PAYPAL * non-regression before shipping.",
+      "drainNote": "queue-drain-hourly 2026-07-30T02:36Z: severity-high + P1 at 14d with no action: guard forbids archive. Escalated pending -> blocked-on-user. Needs an attended Budget pass (product categorization tail).",
+      "lastNoticedAt": "2026-07-30T02:36Z"
     },
     {
       "id": "bar-raise-2026-07-16-yab-finance-product-dedupe-02",
@@ -78,7 +80,7 @@
       "finding_id": "finance-product-dedupe-02",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 1,
       "result_path": null,
       "lastWorkedAt": null,
@@ -93,7 +95,9 @@
         "maintainability"
       ],
       "prompt": "YaB HIGH (bar-raise 2026-07-16): the transactions natural key UNIQUE(account_id, posted_date, amount, raw_description) at db.ts:120 has no occurrence ordinal, so two legitimately distinct same-day charges at the same merchant for the same amount with an identical bank descriptor collide. Verified on the real driver. On the CSV path import-pipeline.ts:119-125 catches SQLITE_CONSTRAINT_UNIQUE and does `duplicates++` with no insert, so the second genuine charge is silently dropped - real data loss. dedupe.test.ts:68-71 currently enshrines the drop as intended. The project's own stated policy at scripts/dedupe-scan.ts:12-15 disagrees ('flag for review, not automatic deletion'), and no locked decision covers it. Fix: add a per-(account_id, posted_date, amount, raw_description) occurrence ordinal assigned at insert, and flip dedupe.test.ts:68-71 to assert the twin survives while a re-import of the same file still fails soft. Ship via scripts/release.ps1.",
-      "notes": "2026-07-24T23:40Z queue-drain-hourly: FIRST verification (attempts 0 -> 1, kept pending). Read-only re-check at YaB HEAD 0dea79d: STILL LIVE and anchors exact. db.ts:120 still UNIQUE(account_id, posted_date, amount, raw_description) with no occurrence ordinal; import-pipeline.ts:119-122 still catches SQLITE_CONSTRAINT_UNIQUE and does duplicates++ with no insert; dedupe.test.ts:68-71 still asserts the twin throws. Not auto-drainable: schema change + test flip + release."
+      "notes": "2026-07-24T23:40Z queue-drain-hourly: FIRST verification (attempts 0 -> 1, kept pending). Read-only re-check at YaB HEAD 0dea79d: STILL LIVE and anchors exact. db.ts:120 still UNIQUE(account_id, posted_date, amount, raw_description) with no occurrence ordinal; import-pipeline.ts:119-122 still catches SQLITE_CONSTRAINT_UNIQUE and does duplicates++ with no insert; dedupe.test.ts:68-71 still asserts the twin throws. Not auto-drainable: schema change + test flip + release.",
+      "drainNote": "queue-drain-hourly 2026-07-30T02:36Z: severity-high + P1 at 14d with no action: guard forbids archive. Escalated pending -> blocked-on-user. Needs an attended Budget pass (product dedupe).",
+      "lastNoticedAt": "2026-07-30T02:36Z"
     },
     {
       "id": "bar-raise-2026-07-16-yab-finance-product-dedupe-04",
@@ -103,7 +107,7 @@
       "finding_id": "finance-product-dedupe-04",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -116,7 +120,9 @@
       "tensions_with": [
         "reliability"
       ],
-      "prompt": "YaB HIGH (bar-raise 2026-07-16): once data-integrity-02 is fixed, the routine Plaid pending-to-posted transition collides on the db.ts:120 natural key UNIQUE(account_id, posted_date, amount, raw_description) - Plaid issues a new transaction_id for the posted row while date/amount/name are unchanged, and the ON CONFLICT target only covers plaid_transaction_id. Verified on the real driver: the insert throws SQLITE_CONSTRAINT_UNIQUE inside the db.transaction at sync.ts:105-119, rolling back the whole sync page. sync.ts:60-71 also applies `added` (:66) before `removed` (:68), so the pending row is still present when its posted twin arrives in the same page. Fix: apply `removed` before `added` within each page and give the Plaid insert a natural-key conflict path that upgrades the pending row in place. Ship via scripts/release.ps1."
+      "prompt": "YaB HIGH (bar-raise 2026-07-16): once data-integrity-02 is fixed, the routine Plaid pending-to-posted transition collides on the db.ts:120 natural key UNIQUE(account_id, posted_date, amount, raw_description) - Plaid issues a new transaction_id for the posted row while date/amount/name are unchanged, and the ON CONFLICT target only covers plaid_transaction_id. Verified on the real driver: the insert throws SQLITE_CONSTRAINT_UNIQUE inside the db.transaction at sync.ts:105-119, rolling back the whole sync page. sync.ts:60-71 also applies `added` (:66) before `removed` (:68), so the pending row is still present when its posted twin arrives in the same page. Fix: apply `removed` before `added` within each page and give the Plaid insert a natural-key conflict path that upgrades the pending row in place. Ship via scripts/release.ps1.",
+      "drainNote": "queue-drain-hourly 2026-07-30T02:36Z: severity-high + P1 at 14d with no action: guard forbids archive. Escalated pending -> blocked-on-user. Needs an attended Budget pass (product dedupe).",
+      "lastNoticedAt": "2026-07-30T02:36Z"
     },
     {
       "id": "bar-raise-2026-07-10-yab-plaid-takeover-window",
@@ -1070,50 +1076,6 @@
       "prompt": "cd X:\\YesAndCattery. P0, live-verified 2026-07-16 and still open. Prod still has ON DELETE CASCADE on orders.cattery_id, so deleting a cattery silently destroys its order history. Migration 0019 was authored to fix it but was never applied, and both 0018 and 0019 are untracked in git. Re-verify the live constraint first (list_tables or a query against information_schema on the prod project) so you are not acting on a ten-day-old read. Then apply 0018 and 0019 to prod via supabase db push or the SQL editor, commit both migration files, and reconcile the false-green mark left on bar-raise-2026-07-08-cattery-orders-cascade-delete, which recorded this as fixed when only the file had been written. This is DDL against live prod plus committing untracked migrations, so it can only run in an attended greenlit session. Coordinate with canonical-audit-2026-07-10-cattery-photos-bucket-listing, which also needs 0018 applied, and do both in one push. UPDATE 2026-07-28: both migration files are now committed (9f7fdf6); only the prod apply is outstanding. Skip the commit step, do the supabase db push."
     },
     {
-      "id": "canonical-audit-2026-07-02-skylight-changelog-phantom",
-      "added": "2026-07-16",
-      "project": "skylight",
-      "kind": "canonical-audit-finding",
-      "auto_safe": false,
-      "priority": "P3",
-      "status": "pending",
-      "attempts": 0,
-      "source": "docs/CANONICAL_AUDIT-2026-07-16.md",
-      "title": ".project-context.json changelog_path points at a CHANGELOG.md that does not exist",
-      "detail": "X:\\YesAndSkylight\\.project-context.json sets \"changelog_path\": \"CHANGELOG.md\", but no CHANGELOG.md exists at the repo root and never has. Skylight tracks releases by version-lockstep (DESIGN.md header + package.json + src/version.ts, all 0.2.0) rather than a changelog file, so the pointer is a phantom. Low impact -- nothing reads it today -- but any tooling that trusts .project-context.json (YaE status/usage-attribution, bar-raise) would resolve a missing path. Fix is a judgment call between two options: (a) drop the changelog_path key entirely, matching the actual version-lockstep convention documented in DESIGN.md section 9 and CLAUDE.md \"Parity rules\"; or (b) create a real CHANGELOG.md and start maintaining it. Recommend (a) -- the lockstep convention is deliberate and documented, and a changelog nobody writes is worse than none. NOT auto-applied: .project-context.json is co-owned (YaE usage-attribution + bar-raise routines also write it) and this is a convention decision, not a text-alignment fix. BOOKKEEPING NOTE: this item is the long-carried audit finding S4. The CANONICAL_AUDIT reports of 2026-07-02 onward (through 07-15) each listed it as pending under exactly this queue id, but it was never actually written to the queue -- the id was cited without the enqueue landing. Verified absent from the queue on 2026-07-16 and enqueued then under the previously-cited id so the existing report references resolve.",
-      "severity": "low",
-      "impact": 1,
-      "confidence": 5,
-      "notes": "2026-07-16T audit-skylight-nightly: enqueued. Finding re-confirmed live at HEAD 74e0ac5 (tree clean): `ls CHANGELOG.md` -> No such file; .project-context.json changelog_path still \"CHANGELOG.md\". Created because a queue search this run found NO item with this id despite the 07-02..07-15 audit reports all citing it as pending -- the finding was real but untracked. Not auto-fixed (co-owned file + convention decision).\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
-      "lastNoticedAt": "2026-07-25T05:30:00Z",
-      "drainNote": "queue-drain-hourly 2026-07-26T00:35Z: RE-VERIFIED still live, read-only. X:\\YesAndSkylight\\.project-context.json still sets changelog_path to CHANGELOG.md and no CHANGELOG.md exists in the repo root (root holds CLAUDE.md, DESIGN.md, README.md, docs/, scripts/, src/, wrangler.jsonc, package.json, tsconfig.json). Fix is a one-line choice: repoint changelog_path at wherever the Skylight changelog actually lives, or create the file. Not drained here because it ends in a repo commit, which is outside the audit-and-queue-only scope of this routine.",
-      "lastAttemptAt": "2026-07-26T00:35Z",
-      "prompt": "SKYLIGHT LOW P3 (source: docs/CANONICAL_AUDIT-2026-07-16.md): .project-context.json changelog_path points at a CHANGELOG.md that does not exist\n\nX:\\YesAndSkylight\\.project-context.json sets \"changelog_path\": \"CHANGELOG.md\", but no CHANGELOG.md exists at the repo root and never has. Skylight tracks releases by version-lockstep (DESIGN.md header + package.json + src/version.ts, all 0.2.0) rather than a changelog file, so the pointer is a phantom. Low impact -- nothing reads it today -- but any tooling that trusts .project-context.json (YaE status/usage-attribution, bar-raise) would resolve a missing path. Fix is a judgment call between two options: (a) drop the changelog_path key entirely, matching the actual version-lockstep convention documented in DESIGN.md section 9 and CLAUDE.md \"Parity rules\"; or (b) create a real CHANGELOG.md and start maintaining it. Recommend (a) -- the lockstep convention is deliberate and documented, and a changelog nobody writes is worse than none. NOT auto-applied: .project-context.json is co-owned (YaE usage-attribution + bar-raise routines also write it) and this is a convention decision, not a text-alignment fix. BOOKKEEPING NOTE: this item is the long-carried audit finding S4. The CANONICAL_AUDIT reports of 2026-07-02 onward (through 07-15) each listed it as pending under exactly this queue id, but it was never actually written to the queue -- the id was cited without the enqueue landing. Verified absent from the queue on 2026-07-16 and enqueued then under the previously-cited id so the existing report references resolve.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z"
-    },
-    {
-      "id": "canonical-audit-2026-07-16-gnosis-catalog-ogl-provenance",
-      "title": "PROJECT_SPEC never records the item catalog open5e/OGL provenance",
-      "detail": "build.mjs:1178 records the catalog as \"open5e OGL data + curated gear\" and /catalog carries a plain-language attribution, but PROJECT_SPEC is silent on where the catalog comes from or under what license, despite section 2 carrying a copyright-conscious source table and section 6 locking the rulebook rule. This is the one place the project ships third-party content publicly. Needs Kane: record the OGL basis in section 3 (data model) or section 6 (locked decisions).",
-      "kind": "structural",
-      "project": "gnosis",
-      "severity": "low",
-      "impact": "canonical-doc-gap",
-      "confidence": "high",
-      "auto_safe": false,
-      "priority": "P3",
-      "status": "pending",
-      "attempts": 1,
-      "source": "docs/CANONICAL_AUDIT-2026-07-16.md",
-      "added": "2026-07-16",
-      "notes": "2026-07-24T17:37Z queue-drain-hourly: read-only re-verification. STILL VALID. grep -i 'open5e|OGL|SRD' over PROJECT_SPEC.md returns no provenance/licence statement (only an unrelated /catalog route mention at line 280). Recording the OGL basis is Kane's call (auto_safe:false).\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
-      "lastAttemptAt": "2026-07-24T17:37Z",
-      "triageVerdict": "Keep - finding re-verified against live code, still reproduces",
-      "triagedAt": "2026-07-24",
-      "prompt": "GNOSIS LOW P3 (source: docs/CANONICAL_AUDIT-2026-07-16.md): PROJECT_SPEC never records the item catalog open5e/OGL provenance\n\nbuild.mjs:1178 records the catalog as \"open5e OGL data + curated gear\" and /catalog carries a plain-language attribution, but PROJECT_SPEC is silent on where the catalog comes from or under what license, despite section 2 carrying a copyright-conscious source table and section 6 locking the rulebook rule. This is the one place the project ships third-party content publicly. Needs Kane: record the OGL basis in section 3 (data model) or section 6 (locked decisions).\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z"
-    },
-    {
       "id": "bar-raise-2026-07-16-ring-verdict-enum-stale",
       "added": "2026-07-16",
       "project": "ring",
@@ -1164,7 +1126,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)",
       "severity": "high",
@@ -1172,11 +1134,12 @@
       "confidence": 5,
       "title": "Release check only asserts the page gate and never the data path behind it",
       "detail": "The deploy check GETs a gated page and asserts 401. It passed on every deploy while the data path behind that gate was open, which is why the exposure survived. Add an anonymous assertion that the data path carries no gated identifiers, and that its export refuses anonymous callers. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.",
-      "drainNote": "2026-07-17T11:56Z queue-drain-hourly: re-verified READ-ONLY at Gnosis HEAD f099371 (was 5e5ab6d at file time). Finding HOLDS - the reported code path is unchanged and still reachable anonymously; web/worker.js was touched by 66d2aec since the report but not on this path. NOT DRAINED: closing it requires a deploy, which this task is scoped out of (audit-only, no release/publish) - so it needs an ATTENDED run. Detail deliberately omitted here: this queue is tracked in the public YaE repo; full evidence and fix stay in the gitignored Gnosis bar-raise doc named in `source`. attempts deliberately NOT incremented: the runner's gate 4 auto-blocks at attempts>=2, and 'blocked-on-user' currently has zero readers (grep of .claude/scheduled-tasks/ = writes only), so bumping would silently bury a live P1.",
+      "drainNote": "2026-07-17T11:56Z queue-drain-hourly: re-verified READ-ONLY at Gnosis HEAD f099371 (was 5e5ab6d at file time). Finding HOLDS - the reported code path is unchanged and still reachable anonymously; web/worker.js was touched by 66d2aec since the report but not on this path. NOT DRAINED: closing it requires a deploy, which this task is scoped out of (audit-only, no release/publish) - so it needs an ATTENDED run. Detail deliberately omitted here: this queue is tracked in the public YaE repo; full evidence and fix stay in the gitignored Gnosis bar-raise doc named in `source`. attempts deliberately NOT incremented: the runner's gate 4 auto-blocks at attempts>=2, and 'blocked-on-user' currently has zero readers (grep of .claude/scheduled-tasks/ = writes only), so bumping would silently bury a live P1. | queue-drain-hourly 2026-07-30T02:36Z: severity-high + P1 at 14d with no action: guard forbids archive. Escalated pending -> blocked-on-user. Re-verified live at Gnosis HEAD on 2026-07-17; release check still asserts only the page gate, not the data path.",
       "lastAttemptAt": "2026-07-17T11:56Z",
       "prompt": "GNOSIS HIGH P1 (source: bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)): Release check only asserts the page gate and never the data path behind it\n\nThe deploy check GETs a gated page and asserts 401. It passed on every deploy while the data path behind that gate was open, which is why the exposure survived. Add an anonymous assertion that the data path carries no gated identifiers, and that its export refuses anonymous callers. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
       "promptBackfilledAt": "2026-07-26T12:38Z",
-      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe."
+      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
+      "lastNoticedAt": "2026-07-30T02:36Z"
     },
     {
       "id": "bar-raise-2026-07-16-gnosis-uncapped-unauth-kv-writes",
@@ -1185,7 +1148,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)",
       "severity": "medium",
@@ -1195,70 +1158,9 @@
       "detail": "Three unauthenticated POST paths take free text with no length cap, unlike the one sibling path that caps at 120 chars, and the generated roster accepts the DM as an author so an anonymous caller can post as the DM. Cap field lengths, require the gate cookie for the privileged author, and defer a counting rate limiter until abuse appears. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.",
       "prompt": "GNOSIS MEDIUM P2 (source: bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)): Unauthenticated write paths have no length cap, no rate limit, and accept the privileged author name\n\nThree unauthenticated POST paths take free text with no length cap, unlike the one sibling path that caps at 120 chars, and the generated roster accepts the DM as an author so an anonymous caller can post as the DM. Cap field lengths, require the gate cookie for the privileged author, and defer a counting rate limiter until abuse appears. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
       "promptBackfilledAt": "2026-07-26T12:38Z",
-      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe."
-    },
-    {
-      "id": "bar-raise-2026-07-16-gnosis-kv-write-failures-swallowed",
-      "added": "2026-07-16",
-      "project": "gnosis",
-      "kind": "bar-raise-finding",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 0,
-      "source": "bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 4,
-      "title": "Worker swallows KV write failures and asserts status codes rather than payloads",
-      "detail": "Observability is enabled in the wrangler config, but the worker logs nothing structured and several try blocks swallow errors silently. Log KV write failures, and pair with the release payload assertion. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.",
-      "prompt": "GNOSIS MEDIUM P2 (source: bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)): Worker swallows KV write failures and asserts status codes rather than payloads\n\nObservability is enabled in the wrangler config, but the worker logs nothing structured and several try blocks swallow errors silently. Log KV write failures, and pair with the release payload assertion. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z",
-      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe."
-    },
-    {
-      "id": "bar-raise-2026-07-16-gnosis-answers-full-store-walk",
-      "added": "2026-07-16",
-      "project": "gnosis",
-      "kind": "bar-raise-finding",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 1,
-      "source": "bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 4,
-      "title": "Every public question-board load walks the entire answer store",
-      "detail": "The answers read path lists and parallel-gets every stored value (464 identifiers today) on every hit, uncached, and the public board calls it on load. Cost grows with every ingest. After the security fix scopes the store, serve the public board from a cached projection. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.",
-      "lastAttemptAt": "2026-07-24T17:37Z",
-      "notes": "2026-07-24T17:37Z queue-drain-hourly: read-only re-verification. STILL VALID, unchanged. web/worker.js loadAnswers() (line 135) still cursor-walks the whole `a:` prefix and parallel-gets every value, plus the legacy `answers` blob; called by /api/answers (line 318) and the export path (line 322). No caches.default / cacheTtl / cache-control anywhere in worker.js. Fix needs an attended pass (auto_safe:false).\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
-      "triageVerdict": "Keep - finding re-verified against live code, still reproduces",
-      "triagedAt": "2026-07-24",
-      "prompt": "GNOSIS MEDIUM P2 (source: bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)): Every public question-board load walks the entire answer store\n\nThe answers read path lists and parallel-gets every stored value (464 identifiers today) on every hit, uncached, and the public board calls it on load. Cost grows with every ingest. After the security fix scopes the store, serve the public board from a cached projection. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo and the exposure is still open.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z"
-    },
-    {
-      "id": "bar-raise-2026-07-16-gnosis-buildmjs-seven-esc-defs",
-      "added": "2026-07-16",
-      "project": "gnosis",
-      "kind": "bar-raise-finding",
-      "auto_safe": false,
-      "priority": "P2",
-      "status": "pending",
-      "attempts": 1,
-      "source": "bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)",
-      "severity": "medium",
-      "impact": 3,
-      "confidence": 4,
-      "title": "web/build.mjs defines esc() nine times, with three different escaping rules",
-      "detail": "web/build.mjs is now 6,337 lines (was 5,332 at the 2026-07-16 bar-raise) and defines esc() NINE times (was seven): lines 100, 1117, 1367, 2087, 2590, 3871, 4520, 4820, 5256. Three escaping rules in play - 100/1117/3871 escape the double quote, 1367/2590/5256 do not, and 2087/4520/4820 use a DOM textContent round-trip. The quote-less variants are safe only in text position. Hoist one esc into a shared client preamble and delete the rest. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo.",
-      "lastAttemptAt": "2026-07-24T17:37Z",
-      "notes": "2026-07-24T17:37Z queue-drain-hourly: read-only re-verification. STILL VALID and WORSENED - copies grew 7 -> 9 and the file grew 5,332 -> 6,337 lines since the finding was filed. Title/detail refreshed with current line numbers. Consolidation needs an attended pass (auto_safe:false).\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
-      "triageVerdict": "Keep - re-verified, drift is growing",
-      "triagedAt": "2026-07-24",
-      "prompt": "GNOSIS MEDIUM P2 (source: bar-raise-gnosis 2026-07-16 (X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md)): web/build.mjs defines esc() nine times, with three different escaping rules\n\nweb/build.mjs is now 6,337 lines (was 5,332 at the 2026-07-16 bar-raise) and defines esc() NINE times (was seven): lines 100, 1117, 1367, 2087, 2590, 3871, 4520, 4820, 5256. Three escaping rules in play - 100/1117/3871 escape the double quote, 1367/2590/5256 do not, and 2087/4520/4820 use a DOM textContent round-trip. The quote-less variants are safe only in text position. Hoist one esc into a shared client preamble and delete the rest. Full evidence and fix in X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-07-16.md (gitignored, local). Detail is kept out of this file: the work queue is tracked in the public YaE repo.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z"
+      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
+      "drainNote": "queue-drain-hourly 2026-07-30T02:36Z: Hit the 14d archive rule but held back under the active-dependency clause: this is a LIVE unauthenticated-write exposure on the Gnosis Worker (no length cap, no rate limit, accepts the privileged author name). Escalated pending -> blocked-on-user instead of archived. Needs an attended security pass.",
+      "lastNoticedAt": "2026-07-30T02:36Z"
     },
     {
       "id": "bar-raise-2026-07-16-cross-budget-openfindings-backfill",
@@ -1268,7 +1170,7 @@
       "finding_id": "orchestration-work-queue-hygiene-01-backfill",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -1278,7 +1180,9 @@
       "impact": 4,
       "confidence": 5,
       "title": "Backfill Budget openFindings that never reached the queue (63 of 86, live-verified 2026-07-16)",
-      "prompt": "Parts (1) and (2) of the work-queue-hygiene fix are shipped: the bar-raise auto-enqueue now dedupes against the live queue only, so from the next Budget run onward dropped findings self-heal. Part (3) is the historical backfill and was deliberately NOT auto-applied.\n\nLive-verified 2026-07-16: X:\\YesAndEverything\\status\\data\\Budget.json barRaise.openFindings holds 86 entries; only 23 resolve to a live .work-queue.json item. 63 exist solely as dashboard counters. (The originating finding said '3 of 31' -- that number is stale, the real gap is larger.)\n\nWhy this needs an attended session and not the hourly drain: the queue already carries ~72 pending items and the hourly drain is not denting it. Enqueuing 63 more unreviewed would nearly double the backlog and bury the P0/P1 tail, which is a queue-shape decision for Kane, not a bot. Some of the 63 are likely already fixed or obsolete and should be closed out of openFindings rather than queued.\n\nSuggested approach: triage the 63 against current Budget code FIRST, drop the dead ones from openFindings, then enqueue only what survives -- HIGH -> P1, MEDIUM -> P2. Note that once the next full Budget bar-raise runs with the fixed rule, it will enqueue these automatically, so doing nothing is also a valid choice; the value here is the triage pass, not the enqueue."
+      "prompt": "Parts (1) and (2) of the work-queue-hygiene fix are shipped: the bar-raise auto-enqueue now dedupes against the live queue only, so from the next Budget run onward dropped findings self-heal. Part (3) is the historical backfill and was deliberately NOT auto-applied.\n\nLive-verified 2026-07-16: X:\\YesAndEverything\\status\\data\\Budget.json barRaise.openFindings holds 86 entries; only 23 resolve to a live .work-queue.json item. 63 exist solely as dashboard counters. (The originating finding said '3 of 31' -- that number is stale, the real gap is larger.)\n\nWhy this needs an attended session and not the hourly drain: the queue already carries ~72 pending items and the hourly drain is not denting it. Enqueuing 63 more unreviewed would nearly double the backlog and bury the P0/P1 tail, which is a queue-shape decision for Kane, not a bot. Some of the 63 are likely already fixed or obsolete and should be closed out of openFindings rather than queued.\n\nSuggested approach: triage the 63 against current Budget code FIRST, drop the dead ones from openFindings, then enqueue only what survives -- HIGH -> P1, MEDIUM -> P2. Note that once the next full Budget bar-raise runs with the fixed rule, it will enqueue these automatically, so doing nothing is also a valid choice; the value here is the triage pass, not the enqueue.",
+      "drainNote": "queue-drain-hourly 2026-07-30T02:36Z: Hit the 14d archive rule but held back under the active-dependency clause: archiving this would strand 63 of 86 live-verified Budget openFindings that never reached the queue. Escalated pending -> blocked-on-user instead of archived. Needs an attended backfill pass.",
+      "lastNoticedAt": "2026-07-30T02:36Z"
     },
     {
       "id": "gnosis-release-62-proposed-dm-answers-2026-07-16",
@@ -8957,6 +8861,6 @@
       "updated": "2026-07-29T19:05Z"
     }
   ],
-  "last_drain": "2026-07-30T01:35Z",
-  "updated": "2026-07-30T01:35Z"
+  "last_drain": "2026-07-30T02:36Z",
+  "updated": "2026-07-30T02:37Z"
 }
