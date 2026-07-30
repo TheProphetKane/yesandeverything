@@ -10300,9 +10300,32 @@
       "resolution": "Applied and landed by audit-chains-nightly 2026-07-30 as commit 26dff85 (pushed, HEAD == origin/main). Each hunk re-verified first: X:\\.secrets\\YesAndChains\\.admin-token present (44 bytes), no .admin-token at the repo root, run-course-refresh.ps1:68 already resolves the central path. Doc/comment-only, no version bump, so release.ps1 was not run per the nightly task's constraints.",
       "archivedAt": "2026-07-30T07:36Z",
       "archiveReason": "terminal-status-prune"
+    },
+    {
+      "id": "canonical-audit-2026-07-28-ring-committed-tree-never-deployed",
+      "added": "2026-07-28",
+      "project": "ring",
+      "kind": "canonical-audit",
+      "finding_id": "committed-tree-never-deployed-voice-sweep-not-live",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "done",
+      "attempts": 0,
+      "severity": "medium",
+      "impact": 4,
+      "confidence": 5,
+      "title": "Ring repo is 24 days ahead of production: the voice sweep is committed but never deployed, so 86 user-visible em-dash strings are still live",
+      "evidence": "Production build stamp is window.__RING_BUILD = \"20260704123454\", matching X:\\YesAndEverything\\status\\data\\Ring.json lastReleaseAt 2026-07-04T12:34:54-05:00, and X:\\YesAndRing\\.wrangler\\tmp was last touched 2026-07-04 12:35. Commit 016e344 (2026-07-27) was a bare git commit, not a scripts\\release.ps1 run: no version bump, no wrangler deploy, no __RING_BUILD restamp, no dashboard write, no Discord post. Byte-compared the served files against the repo: index.html, styles.css and sw.js are identical, public/app.js DIFFERS. Live /app.js carries 113 em dashes against 0 in the repo, and 86 of the removed lines are non-comment user-visible strings (the fmtNum empty-value placeholder, the \"Cats I'm an agent for\" hint, the agent tag tooltip, the totals-mismatch warning chip, the \"Best of Breed - catch the leader\" target label, the pace insight line). src/index.js's 429 body is in the same state. No functional gap: src/index.js has changed only 3 lines since the release, and GET /api/state on production returns 401 unauthenticated, so the documented auth gate is genuinely live. Nothing signals the split, because the version pill reads v0.17.19 in the repo AND in production.",
+      "prompt": "cd X:\\YesAndRing first. SCOPE: X:\\YesAndRing only.\n\nRing's repo has been ahead of production since 2026-07-04. Commit 016e344 (2026-07-27) landed the smart-punctuation-to-ASCII voice sweep plus a corrected auth header comment, but it was a bare git commit, so nothing deployed. Production still serves __RING_BUILD=20260704123454 and public/app.js with 113 em dashes; 86 of those lines are user-visible strings (tooltips, hints, warning chips, target labels, the pace insight line). The whole point of the sweep was the user-visible surface, and no user has seen it.\n\nVerify first, then ship:\n  (1) Re-confirm the gap still reproduces: curl https://ring.yesandeverything.com/app.js and compare against public/app.js, and check window.__RING_BUILD in the served index.html. If the stamp has moved past 20260704123454 and the bytes match, close this item as resolved and record why.\n  (2) git status must be clean and HEAD must equal origin/main before releasing.\n  (3) Fold in canonical-audit-2026-07-25-ring-sw-precache-and-version while you are here: public/sw.js VERSION is still 'yar-v0.17.17' (two releases behind) and SHELL omits ./data/scoring.json while precaching seed.json. Those were deliberately left to land with a release, and this is that release.\n  (4) Ship via scripts\\release.ps1 per the portfolio standard. If the script aborts on PowerShell-wrapped git stderr, finish the commit/push through the Bash tool. Note release.ps1 also rewrites X:\\YesAndEverything\\status\\data\\Ring.json, which is a 24-day-old snapshot still reporting stale:false and linking a deleted audit report, so this release also clears most of canonical-audit-2026-07-27-ring-status-card-only-refreshes-on-release.\n  (5) After deploying, re-fetch /app.js and confirm 0 em dashes live.\n\nSolo-dev voice on anything committed. Do not touch the TICA data files under data/.",
+      "source": "canonical-audit-ring 2026-07-28 / X:\\YesAndRing\\docs\\CANONICAL_AUDIT-2026-07-28.md",
+      "notes": "Auto-enqueued by canonical-audit-ring 2026-07-28, finding 1. Supersedes the commit half of working-tree-2026-07-10-ring-stale-tree and working-tree-2026-07-27-ring-stranded-tree-bulk-punctuation-rewrite, both closed in the same pass. Not auto-applied: the audit-ring-nightly routine is explicitly forbidden from running release.ps1 or deploying. First run to check the live site against the repo rather than trusting the version pill, which is exactly why this was invisible to four prior audits. RESOLVED 2026-07-30 by canonical-audit-ring: v0.17.20 and v0.17.21 shipped 2026-07-28, production now serves __RING_BUILD = \"20260728082400\" and version pill v0.17.21, matching HEAD. Verified live this run, not inferred: GET / returned the new stamp and pill, GET /api/state returned 401, and the four repo version markers agree. The voice sweep from 016e344 has reached users.",
+      "lastWorkedAt": "2026-07-30T07:45Z",
+      "result_path": "X:\\YesAndRing\\docs\\CANONICAL_AUDIT-2026-07-30.md",
+      "archivedAt": "2026-07-30T08:30Z",
+      "archiveReason": "terminal-status-prune"
     }
   ],
-  "last_append": "2026-07-30T07:36Z",
-  "archived": 532,
-  "lastArchivedAt": "2026-07-30T07:36Z"
+  "last_append": "2026-07-30T08:30Z",
+  "archived": 533,
+  "lastArchivedAt": "2026-07-30T08:30Z"
 }
