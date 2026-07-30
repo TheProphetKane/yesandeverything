@@ -19,16 +19,16 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-28.md",
-    "latestReportAt": "2026-07-28T12:10:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-07-30.md",
+    "latestReportAt": "2026-07-30T13:05:00Z",
     "verdict": "working",
-    "topFinding": "Eighteen runs in, the two-surface exposure is not partially fixed, it is entirely unshipped. deploy-pages.yml was re-read line by line this run and contains no delete step at all, so the 2026-07-26 remedy that last run described as closing the smaller of two surfaces never landed: zero of two are closed, not one. All eight exposed URL classes answer 200 on both yesandeverything.com and raw.githubusercontent.com at byte-identical sizes, and gh repo view still reports isPrivate: false. The payload keeps growing: the served .work-queue.json went 1,071 KB to 1,118 KB and 420 to 444 items in one day, the archive went 1,050 KB to 1,121 KB, and the served queue now names Skylight 349 times against 317 yesterday. Third consecutive run closing zero findings. The corrected order is already in the queue: back the queue up outside this public repo, untrack both backup-bearing files, then re-fetch on Pages AND raw and confirm 404 on both.",
-    "actionsOpen": 28,
-    "actionsClosed": 4,
+    "topFinding": "Six findings closed this run, the first real movement in four runs, and every one of them landed in the release and guard layer rather than on a page. push-to-github.ps1 gained a -Path parameter with a pathspec-scoped add and commit, a staged-file secret-shape gate with an explicit override, and .gitignore gained a sixteen-pattern secret-shaped-filename block; release.ps1 now re-runs check-status-json.ps1 after its own Step 2 writer; collect-usage.ps1 caps the published queue payload at 60 rows. What did not move is the thing that has not moved in nineteen runs: deploy-pages.yml was re-read line by line again and still carries no delete step, so the served .work-queue.json answers 200 at 1,475,763 bytes on both yesandeverything.com and raw.githubusercontent.com, up from 1,118,496 two days ago, and the live queue went 444 to 600 items. Health is 75, up from 74, and the verdict holds at working: no hard rule is breached, both gates are intact, all five worker routes answer, and every public property returns 200. The next thing to do is unchanged and now cheaper than it was, because the pathspec plumbing the untrack step needed already exists.",
+    "actionsOpen": 29,
+    "actionsClosed": 6,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Back the queue up outside this public repo, then untrack both backup-bearing files plus the disposable artifacts, and verify by re-fetching all four URL classes on Pages AND raw; the deploy-artifact variant is both superseded and never shipped",
+        "title": "Back the queue up outside this public repo, then untrack both backup-bearing files plus the two tracked corrupt snapshots, and verify by re-fetching every URL class on Pages AND raw",
         "lens": "security",
         "priority": 20,
         "id": "yae-tracked-queue-artifacts-public"
@@ -56,10 +56,17 @@
       },
       {
         "severity": "HIGH",
-        "title": "Record the run measured token cost into the status JSON alongside actionsOpen and actionsClosed; two consecutive zero-closure runs make this the blocking input to the cadence question",
+        "title": "Record the run's measured token cost into the status JSON alongside actionsOpen and actionsClosed",
         "lens": "cost-economics",
         "priority": 16,
         "id": "yae-barraise-run-cost-unmeasured"
+      },
+      {
+        "severity": "MED",
+        "title": "Decide whether a private:true status JSON may be publicly fetchable, then either exclude Skylight from the Pages artifact and the worker aggregate or correct the note that claims it is not on a public surface",
+        "lens": "compliance-data-steward",
+        "priority": 15,
+        "id": "yae-private-status-json-publicly-fetchable"
       },
       {
         "severity": "MED",
@@ -77,7 +84,7 @@
       },
       {
         "severity": "MED",
-        "title": "Port Ring six-block accessibility CSS set into the 18 sub-pages, status and 404, and take the tabindex and aria-label upgrade to the homepage main landmark",
+        "title": "Port the Ring six-block accessibility CSS set into the 18 sub-pages, status and 404, and take the tabindex and aria-label upgrade to the homepage main landmark",
         "lens": "visual-reuse",
         "priority": 15,
         "id": "yae-ring-a11y-block-is-the-better-donor"
@@ -133,14 +140,14 @@
       },
       {
         "severity": "MED",
-        "title": "Validate project, priority, severity and status against enums in the queue-edit.ps1 add path, and normalize case so Chains and chains stop splitting one project work",
+        "title": "Validate project, priority, severity and status against enums in the queue-edit.ps1 add path and normalize case on write",
         "lens": "data-integrity",
         "priority": 15,
         "id": "yae-queue-no-enum-validation"
       },
       {
         "severity": "MED",
-        "title": "Dedupe the 108 duplicate archive ids and make the queue-edit.ps1 drop path archive rather than delete",
+        "title": "Dedupe the 109 duplicate archive ids and make the queue-edit.ps1 drop path archive rather than delete",
         "lens": "data-integrity",
         "priority": 15,
         "id": "yae-archive-not-clean-terminal-store"
@@ -161,10 +168,10 @@
       },
       {
         "severity": "MED",
-        "title": "Cap the items array in the published queue payload and render a count plus a link",
-        "lens": "cost-economics",
+        "title": "Pass a pathspec from release.ps1 into push-to-github.ps1 so the sanctioned release stops sweeping other projects' generated state",
+        "lens": "solo-tool-ux",
         "priority": 15,
-        "id": "yae-dashboard-queue-payload-uncapped"
+        "id": "yae-release-ps1-no-pathspec"
       },
       {
         "severity": "MED",
@@ -175,14 +182,7 @@
       },
       {
         "severity": "MED",
-        "title": "Commit dashboard/data/queue.json on every drain run and untrack .work-queue-results/",
-        "lens": "data-integrity",
-        "priority": 12,
-        "id": "yae-queue-uncommitted-multiday-gap"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a pack script that rebuilds every .skill from source on release, or delete the stale artifacts",
+        "title": "Add a pack script that rebuilds every .skill from source on release, or delete the stale packaged artifacts",
         "lens": "maintainability",
         "priority": 12,
         "id": "yae-skill-artifacts-stale-vs-source"
@@ -203,27 +203,40 @@
       },
       {
         "severity": "MED",
-        "title": "Align the Budget page --amber to the homepage gold and delete the unreferenced declarations from the 18 sub-pages",
+        "title": "Align the Budget page's --amber to the homepage gold and delete the unreferenced amber and warn declarations from the 18 sub-pages",
         "lens": "visual-reuse",
         "priority": 10,
         "id": "yae-amber-token-means-three-colors"
       },
       {
         "severity": "MED",
-        "title": "Extend the gate-payload guard to both gates and drop the stale claim from CLAUDE.md",
+        "title": "Extend the gate-payload guard to the Brackish Rising gate as well and drop the stale no-integrity-guard claim from CLAUDE.md",
         "lens": "reliability",
         "priority": 10,
         "id": "yae-gate-payload-decode-guard-residual"
       },
       {
         "severity": "MED",
-        "title": "Untrack the four stale dated reports in docs/, delete the two untracked ones, and clear the 56 local .loop-* artifacts",
+        "title": "Untrack the four stale dated reports in docs/ and clear the 56 local .loop-* artifacts",
         "lens": "maintainability",
         "priority": 10,
         "id": "yae-housekeeping-tracked-cruft"
+      },
+      {
+        "severity": "MED",
+        "title": "Untrack the 65 files under .work-queue-results/ so the ignore rule and the index stop disagreeing",
+        "lens": "data-integrity",
+        "priority": 10,
+        "id": "yae-work-queue-results-ignored-but-tracked"
       }
     ],
     "deferred": [
+      {
+        "severity": "MED",
+        "title": "Queue arrivals outpace the drain: 444 to 600 items in two days, 531 pending, zero auto-safe eligible on every drain",
+        "lens": "cost-economics",
+        "reason": "Blocked on Kane's throughput decision; the auto-safe pool is exhausted by design and the backlog-burndown routine already owns the judgment work"
+      },
       {
         "severity": "LOW",
         "title": "dashboard-api/wrangler.toml publishes the Cloudflare account id and KV namespace id; identifiers not credentials",
@@ -232,139 +245,271 @@
       },
       {
         "severity": "LOW",
+        "title": "terms/index.html carries no Open Graph, Twitter card or canonical tag while the homepage and all nine project pages carry all three",
+        "lens": "seo-open-graph",
+        "reason": "LOW polish; rides along with the terms-page date fix rather than earning its own pass"
+      },
+      {
+        "severity": "LOW",
         "title": "Eight orphan routine directories under .claude/scheduled-tasks/ do not appear in the live registry and never fire",
         "lens": "maintainability",
         "reason": "Verified inert; cleanup is cosmetic and outside the YaE repo"
       }
     ],
-    "health": 74,
+    "health": 75,
     "lensScores": {
       "architecture": 73,
-      "reliability": 78,
-      "security": 65,
+      "reliability": 84,
+      "security": 68,
       "performance": 86,
-      "data-integrity": 70,
+      "data-integrity": 72,
       "maintainability": 68,
-      "solo-tool-ux": 66,
-      "cost-economics": 50,
+      "solo-tool-ux": 71,
+      "cost-economics": 57,
       "dependency": 88,
       "observability": 88,
       "strategic-kill-this": 66,
-      "compliance-data-steward": 59,
+      "compliance-data-steward": 56,
       "visual-reuse": 78,
       "org-writing": 71,
       "link-rot": 90,
-      "seo-open-graph": 86,
+      "seo-open-graph": 84,
       "accessibility": 74
     },
     "openFindings": {
       "yae-tracked-queue-artifacts-public": {
-        "runsOpen": 1
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 19,
+        "firstSeen": "2026-07-17"
       },
       "yae-project-page-milestone-not-live-stamped": {
-        "runsOpen": 1
-      },
-      "yae-release-add-all-sweeps-operational-state": {
-        "runsOpen": 1
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-27"
       },
       "yae-guards-absent-from-workflow-path": {
-        "runsOpen": 1
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
       },
       "yae-skipgate-cannot-fire": {
-        "runsOpen": 1
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 19,
+        "firstSeen": "2026-07-17"
       },
       "yae-barraise-run-cost-unmeasured": {
-        "runsOpen": 1
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
+      },
+      "yae-private-status-json-publicly-fetchable": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-30"
       },
       "yae-homepage-links-robots-disallowed-paths": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-28"
       },
       "yae-terms-page-no-effective-date": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-28"
       },
       "yae-ring-a11y-block-is-the-better-donor": {
-        "runsOpen": 1
-      },
-      "yae-release-step-ordering-corrupt-json-ships": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-28"
       },
       "yae-project-context-stale-and-v1": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
       },
       "yae-four-project-registries": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
       },
       "yae-statusjson-contract-unversioned": {
-        "runsOpen": 1
-      },
-      "yae-work-queue-runner-pwsh-not-installed": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 19,
+        "firstSeen": "2026-07-17"
       },
       "yae-subpage-no-heading-structure": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
       },
       "yae-subpage-no-reduced-motion-focus-visible": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 21,
+        "firstSeen": "2026-07-17"
       },
       "yae-subpage-no-skip-link-or-main-landmark": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-27"
       },
       "yae-budget-scheduler-off-template": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
       },
       "yae-queue-no-enum-validation": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
       },
       "yae-archive-not-clean-terminal-store": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
       },
       "yae-local-git-never-packed": {
-        "runsOpen": 1
-      },
-      "yae-gitignore-no-secret-shape-patterns": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
       },
       "yae-skillreview-tree-public": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 19,
+        "firstSeen": "2026-07-17"
       },
-      "yae-dashboard-queue-payload-uncapped": {
-        "runsOpen": 1
+      "yae-release-ps1-no-pathspec": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-30"
       },
       "yae-handover-roadmap-stale-scheduling": {
-        "runsOpen": 1
-      },
-      "yae-queue-uncommitted-multiday-gap": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 19,
+        "firstSeen": "2026-07-17"
       },
       "yae-skill-artifacts-stale-vs-source": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
       },
       "yae-entity-emdash-evades-voice-check": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-27"
       },
       "yae-queue-get-returns-unfiltered-blob": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
       },
       "yae-amber-token-means-three-colors": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 12,
+        "firstSeen": "2026-07-17"
       },
       "yae-gate-payload-decode-guard-residual": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
       },
       "yae-housekeeping-tracked-cruft": {
-        "runsOpen": 1
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 13,
+        "firstSeen": "2026-07-17"
+      },
+      "yae-work-queue-results-ignored-but-tracked": {
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-07-30"
       }
     },
-    "tensionsOpen": {
-      "security-vs-data-integrity": 3,
-      "guards-vs-one-command-release": 12,
-      "observability-vs-privacy": 18,
-      "queue-size-vs-commit-cadence": 4,
-      "cost-cadence-vs-freshness": 18,
-      "milestone-stamping-vs-editorial-freedom": 2,
-      "template-port-vs-heading-structure": 3,
-      "motion-guard-vs-brand-motion": 20
-    }
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "security",
+          "data-integrity"
+        ],
+        "runsSeen": 4
+      },
+      {
+        "lenses": [
+          "architecture",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 13
+      },
+      {
+        "lenses": [
+          "observability",
+          "compliance-data-steward"
+        ],
+        "runsSeen": 19
+      },
+      {
+        "lenses": [
+          "data-integrity",
+          "cost-economics"
+        ],
+        "runsSeen": 5
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 19
+      },
+      {
+        "lenses": [
+          "org-writing",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 3
+      },
+      {
+        "lenses": [
+          "accessibility",
+          "org-writing"
+        ],
+        "runsSeen": 4
+      },
+      {
+        "lenses": [
+          "accessibility",
+          "visual-reuse"
+        ],
+        "runsSeen": 21
+      }
+    ]
   },
   "stale": false,
   "tags": [
