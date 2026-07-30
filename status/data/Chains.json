@@ -53,13 +53,20 @@
         }
     },
     "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-07-28.md",
-        "latestReportAt": "2026-07-28T11:31:00Z",
+        "latestReportPath": "docs/BAR_RAISE-2026-07-30.md",
+        "latestReportAt": "2026-07-30T11:56:33Z",
         "verdict": "needs-attention",
-        "topFinding": "The pile came back in one pass. Yesterday's report closed the stranded-canonical-docs finding when commit 7c4f298 absorbed six files, with a warning that the rule producing the pile had not changed. It rebuilt on the first nightly pass: HOW_TO_ADMIN.md, scripts/README.md and scripts/run-course-refresh.ps1 are modified and uncommitted, carrying today's verified-correct .admin-token phantom-path fixes, one git checkout from gone, while the pushed repo still sends an operator to a folder where the token is not. Under that, code stasis for a fourth pass: git diff 77efb38..HEAD over src, worker, supabase, scripts, index.html, package.json, app.js, sw.js and manifest.json is empty, so every code-facing finding was re-verified against current source and all still read the same. profiles_update_own at supabase/migrations/0001_init.sql:190 has no WITH CHECK, billing still takes identity from body.userId, wrangler.toml still has no observability block, delete_my_account still drops the profile with no Stripe cancellation, and course records still carry no _rev. Four of those are open 26 passes and three sit on a money path live since 0.54.0. Third mover is the queue, wrong way: 46 open YaC items against 40, zero drained, every arrival judgment-bound work no auto-safe pass may apply. One thing improved: d4d710b flushed tools/kv_backup.py's progress output, closing an item the canonical audit had carried unqueued for three passes, and it was committed rather than stranded, which is the shape the rest of this report is asking for.",
-        "actionsOpen": 98,
-        "actionsClosed": 2,
+        "topFinding": "Four commits landed since the last pass and one of them did not reach production. 07fe502 added the [observability] block to worker/wrangler.toml:20-24, the fix for a finding open four passes, and it is committed but undeployed: scripts/release.ps1:368-370 computes $workerChanged from git status --porcelain -- worker/src/ alone, so a wrangler.toml change cannot trigger a deploy and the next release will skip it too. The live worker answers /api/health but is still the pre-07-28 build with Workers Logs off, so error paths remain invisible after the request ends. The repo says solved, the dashboard will say solved, the behaviour is unchanged. Under that, the money path has not moved for a fifth pass and is open 27: profiles_update_own at supabase/migrations/0001_init.sql:190 still has no WITH CHECK and no later migration redefines it, billing.js still takes identity from the request body at :53, :369, :446, :575 and :637, delete_my_account still drops the profile with no Stripe cancellation, course records still carry no _rev, and the consensus write at courses.js:394 is still unsanitized with an uncapped _consensusUpdates. Real payments have been live since 0.54.0. Queue moved the wrong way again: 49 open YaC items against 46, zero drained. One genuine close: 26dff85 committed the stranded .admin-token doc corrections that sat two days in the working tree, and the tree is clean for the first time in three passes.",
+        "actionsOpen": 99,
+        "actionsClosed": 1,
         "actions": [
+            {
+                "severity": "HIGH",
+                "priority": 25,
+                "id": "gate-page-publish-03",
+                "lens": "gate-page-publish",
+                "title": "Widen the release.ps1 worker deploy gate from `worker/src/` to `worker/`, and deploy the pending observability block now with `-ForceWorker`. scripts/release.ps1:368-370."
+            },
             {
                 "severity": "HIGH",
                 "title": "Add a WITH CHECK to `profiles_update_own` and revoke UPDATE on the subscription, comped and role columns from the authenticated role.",
@@ -233,12 +240,6 @@
                 "severity": "MED",
                 "title": "Make wrangler deploy failure abort before the Discord post, and trigger on the live worker's appVersion rather than the pre-commit tree.",
                 "lens": "gate-page-publish",
-                "priority": 20
-            },
-            {
-                "severity": "MED",
-                "title": "Commit the three stranded `.admin-token` doc corrections (HOW_TO_ADMIN.md, scripts/README.md, scripts/run-course-refresh.ps1) so the fix reaches the pushed repo.",
-                "lens": "audit-loop-integrity",
                 "priority": 20
             },
             {
@@ -497,7 +498,7 @@
             },
             {
                 "severity": "MED",
-                "title": "Point README.md and `tools/repo_metadata.json` at yesandchains.com and re-run the metadata updater.",
+                "title": "Reconcile `tools/repo_metadata.json` FROM live before running `update_repo_metadata.py` again: homepage and topics up from the live About panel, description down from the JSON. Running the updater as-is would demote the homepage and delete four topics.",
                 "lens": "brand-consistency",
                 "priority": 15
             },
@@ -651,6 +652,13 @@
                 "title": "Make `_scrubMyKvAttribution` throw when the loop exits without `done`, and add an orphan-attribution sweep.",
                 "lens": "data-integrity",
                 "priority": 8
+            },
+            {
+                "severity": "MED",
+                "priority": 15,
+                "id": "audit-loop-integrity-06",
+                "lens": "audit-loop-integrity",
+                "title": "Add a freshness assertion on `audit.latestReportAt` in the daily dashboard sync: warn past 36h, fail past 72h, so a missing nightly stops reading as a clean one."
             }
         ],
         "deferred": [
@@ -739,7 +747,7 @@
                 "reason": "blocked on Nick decision"
             }
         ],
-        "health": 73,
+        "health": 72,
         "lensScores": {
             "architecture": 66,
             "reliability": 74,
@@ -750,7 +758,7 @@
             "solo-tool-ux": 82,
             "cost-economics": 74,
             "dependency": 79,
-            "observability": 72,
+            "observability": 74,
             "strategic-kill-this": 70,
             "compliance-data-steward": 66,
             "worker-cpu-budget": 84,
@@ -760,280 +768,283 @@
             "sync": 66,
             "dataset-size": 72,
             "skill-suite-health": 73,
-            "work-queue-hygiene": 82,
-            "audit-loop-integrity": 80,
+            "work-queue-hygiene": 74,
+            "audit-loop-integrity": 78,
             "fuse-truncation-defense": 80,
             "incident-runbook-currency": 68,
-            "scheduled-task-firing-state": 86,
+            "scheduled-task-firing-state": 80,
             "skill-trigger-collisions": 62,
             "skill-chain-handoff-integrity": 72,
-            "per-project-ps1-stack": 70,
+            "per-project-ps1-stack": 74,
             "discord-notify-wiring": 56,
             "version-pill-drift": 82,
-            "gate-page-publish": 70,
+            "gate-page-publish": 66,
             "solo-dev-voice-portfolio": 64,
             "ai-tell-concealment-currency": 74,
-            "brand-consistency": 76
+            "brand-consistency": 72
         },
         "openFindings": [
             {
                 "id": "architecture-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "auth-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "compliance-02",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 26,
+                "runsOpen": 27,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "compliance-03",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 26,
+                "runsOpen": 27,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "security-01",
                 "severity": "HIGH",
                 "priority": 25,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "compliance-04",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "cost-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 26,
+                "runsOpen": 27,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 26,
+                "runsOpen": 27,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "dataint-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dataset-size-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dependency-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "discord-notify-wiring-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "incident-runbook-currency-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "install-offline-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "kv-data-shape-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "maintainability-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "reliability-04",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-chain-handoff-integrity-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-suite-health-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "solo-dev-voice-portfolio-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-02",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-03",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 4,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "observability-10",
-                "severity": "HIGH",
-                "priority": 16,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "per-project-ps1-stack-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "reliability-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "security-03",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "skill-suite-health-02",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "sync-01",
                 "severity": "HIGH",
                 "priority": 16,
-                "runsOpen": 23,
+                "runsOpen": 24,
                 "firstSeen": "2026-07-04"
             },
             {
                 "id": "finance-02",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 26,
+                "runsOpen": 27,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "version-pill-drift-01",
                 "severity": "HIGH",
                 "priority": 15,
-                "runsOpen": 4,
+                "runsOpen": 5,
                 "firstSeen": "2026-07-25"
             },
             {
                 "id": "dataint-02",
                 "severity": "MED",
                 "priority": 10,
-                "runsOpen": 26,
+                "runsOpen": 27,
                 "firstSeen": "2026-07-01"
             },
             {
                 "id": "readme-01",
                 "severity": "HIGH",
                 "priority": 20,
-                "runsOpen": 3,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-26"
             },
             {
                 "id": "audit-loop-integrity-03",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 3,
+                "runsOpen": 4,
                 "firstSeen": "2026-07-26"
             },
             {
                 "id": "audit-loop-integrity-04",
                 "severity": "MED",
                 "priority": 16,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-27"
             },
             {
                 "id": "known-issues-01",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 2,
+                "runsOpen": 3,
                 "firstSeen": "2026-07-27"
             },
             {
                 "id": "audit-loop-integrity-05",
                 "severity": "MED",
                 "priority": 20,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-28"
             },
             {
                 "id": "work-queue-hygiene-01",
                 "severity": "MED",
                 "priority": 15,
-                "runsOpen": 1,
+                "runsOpen": 2,
                 "firstSeen": "2026-07-28"
+            },
+            {
+                "id": "gate-page-publish-03",
+                "severity": "HIGH",
+                "runsOpen": 1
+            },
+            {
+                "id": "audit-loop-integrity-06",
+                "severity": "MED",
+                "runsOpen": 1
             }
         ],
         "tensionsOpen": [
@@ -1042,56 +1053,56 @@
                     "reliability",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 28
+                "runsSeen": 29
             },
             {
                 "lenses": [
                     "security",
                     "solo-tool-ux"
                 ],
-                "runsSeen": 25
+                "runsSeen": 26
             },
             {
                 "lenses": [
                     "data-integrity",
                     "cost-economics"
                 ],
-                "runsSeen": 22
+                "runsSeen": 23
             },
             {
                 "lenses": [
                     "security",
                     "data-integrity"
                 ],
-                "runsSeen": 4
+                "runsSeen": 5
             },
             {
                 "lenses": [
                     "install-and-offline",
                     "dependency"
                 ],
-                "runsSeen": 4
+                "runsSeen": 5
             },
             {
                 "lenses": [
                     "solo-dev-voice-portfolio",
                     "ai-tell-concealment-currency"
                 ],
-                "runsSeen": 4
+                "runsSeen": 5
             },
             {
                 "lenses": [
                     "strategic-kill-this",
                     "cost-economics"
                 ],
-                "runsSeen": 4
+                "runsSeen": 5
             },
             {
                 "lenses": [
                     "audit-loop-integrity",
                     "gate-page-publish"
                 ],
-                "runsSeen": 2
+                "runsSeen": 3
             }
         ]
     },
