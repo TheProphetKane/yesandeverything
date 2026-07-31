@@ -1076,6 +1076,14 @@
     if (n == null || !isFinite(n)) return "$0.00";
     return "$" + (n >= 100 ? n.toFixed(0) : n.toFixed(2));
   }
+  // Canonical "total input" / "total tokens" for a usage record (a daily bucket or an
+  // allTime object). cacheRead is typically ~95%+ of real input under prompt caching, so
+  // "input" alone (or "input + output") massively undercounts real usage -- that bug once
+  // shipped in every totals tile, the stats modal, the wheel, and the strip minis
+  // independently, because each had its own inline "input + output" sum. Route every such
+  // sum through these two so the fix can't silently drift again.
+  function totalIn(rec) { return rec ? ((rec.input || 0) + (rec.cacheRead || 0) + (rec.cacheWrite || 0)) : 0; }
+  function totalTok(rec) { return totalIn(rec) + (rec ? (rec.output || 0) : 0); }
   /* Pre-log backfill: calibrated estimate of spend older than the surviving
      transcripts (git commits x measured tokens-per-commit; see
      scripts/estimate-usage-backfill.ps1). Kept separate from measured data;
@@ -1345,7 +1353,7 @@
   function coreMetric(d) {
     if (VIEW === "cost") return d.costUSD || 0;
     if (VIEW === "cache") return (d.cacheRead || 0) + (d.cacheWrite || 0);
-    return (d.input || 0) + (d.output || 0);
+    return totalTok(d);
   }
   function coreRows(usage) {
     var todayK = dayKey(0);
@@ -1353,7 +1361,7 @@
       var u = usage && usage.projects ? usage.projects[p.id] : null;
       var t = { id: p.id, tag: p.tag, hue: p.hue, inT: 0, outT: 0, val: 0 };
       if (u) (u.daily || []).forEach(function (d) {
-        if (d.d === todayK) { t.inT += d.input || 0; t.outT += d.output || 0; t.val += coreMetric(d); }
+        if (d.d === todayK) { t.inT += totalIn(d); t.outT += d.output || 0; t.val += coreMetric(d); }
       });
       return t;
     }).filter(function (r) { return r.val > 0; });
@@ -1833,13 +1841,13 @@
         if (FILTER !== "ALL" && pid !== FILTER) return;
         var u = usage.projects[pid];
         if (u.allTime) {
-          tAll.tok += (u.allTime.input || 0) + (u.allTime.output || 0);
+          tAll.tok += totalTok(u.allTime);
           tAll.cost += u.allTime.costUSD || 0;
         }
         sessions += u.sessions || 0;
         (u.daily || []).forEach(function (d) {
-          if (d.d === todayK) { tToday.tok += (d.input || 0) + (d.output || 0); tToday.cost += d.costUSD || 0; }
-          if (d.d === yesterK) { tYester.tok += (d.input || 0) + (d.output || 0); }
+          if (d.d === todayK) { tToday.tok += totalTok(d); tToday.cost += d.costUSD || 0; }
+          if (d.d === yesterK) { tYester.tok += totalTok(d); }
         });
       });
     }
@@ -2352,7 +2360,7 @@
         var u = usage.projects[pid];
         var meta = metaFor(pid);
         if (u.allTime) {
-          tAll.tok += (u.allTime.input || 0) + (u.allTime.output || 0);
+          tAll.tok += totalTok(u.allTime);
           tAll.cost += u.allTime.costUSD || 0;
           // per-project lifetime includes its purged-log estimate so the bars
           // sum to the headline
@@ -2361,11 +2369,11 @@
         }
         sessions += u.sessions || 0;
         (u.daily || []).forEach(function (d) {
-          if (d.d === todayK) { tToday.tok += (d.input || 0) + (d.output || 0); tToday.cost += d.costUSD || 0; }
-          if (d.d === yesterK) { tYester.tok += (d.input || 0) + (d.output || 0); }
+          if (d.d === todayK) { tToday.tok += totalTok(d); tToday.cost += d.costUSD || 0; }
+          if (d.d === yesterK) { tYester.tok += totalTok(d); }
           for (var k = 0; k < 14; k++) {
             if (d.d === dayKey(13 - k)) {
-              tokSeries[k] += (d.input || 0) + (d.output || 0);
+              tokSeries[k] += totalTok(d);
               costSeries[k] += d.costUSD || 0;
             }
           }
@@ -2571,29 +2579,30 @@
 
     var todayK = dayKey(0);
     var byDay = byDayFor(id);
-    var today = { input: 0, output: 0, cost: 0, cr: 0 };
+    var today = { input: 0, output: 0, cost: 0, cr: 0, tok: 0 };
     if (byDay[todayK]) {
       today.input = byDay[todayK].input; today.output = byDay[todayK].output;
       today.cost = byDay[todayK].costUSD; today.cr = byDay[todayK].cacheRead;
+      today.tok = totalTok(byDay[todayK]);
     }
     var allTok = 0, allCost = 0, sess = 0;
     if (isAll && usage && usage.projects) {
       Object.keys(usage.projects).forEach(function (pid) {
         var up = usage.projects[pid];
-        if (up.allTime) { allTok += (up.allTime.input || 0) + (up.allTime.output || 0); allCost += up.allTime.costUSD || 0; }
+        if (up.allTime) { allTok += totalTok(up.allTime); allCost += up.allTime.costUSD || 0; }
         sess += up.sessions || 0;
       });
     } else if (u && u.allTime) {
-      allTok = (u.allTime.input || 0) + (u.allTime.output || 0);
+      allTok = totalTok(u.allTime);
       allCost = u.allTime.costUSD || 0;
       sess = u.sessions || 0;
     }
 
     var head = el("div", { className: "spot-head" });
     var name = el("div", { className: "name" });
-    var pdot = el("span", { className: "pdot" + ((today.input + today.output) > 0 ? " hot" : "") });
+    var pdot = el("span", { className: "pdot" + (today.tok > 0 ? " hot" : "") });
     pdot.style.background = m.hue; pdot.style.boxShadow = "0 0 10px " + m.hue + "88";
-    pdot.title = (today.input + today.output) > 0 ? "tokens burned today: active" : "no tokens today: quiet";
+    pdot.title = today.tok > 0 ? "tokens burned today: active" : "no tokens today: quiet";
     name.appendChild(pdot);
     name.appendChild(txt(m.displayName));
     if (status && status.version) name.appendChild(el("span", { className: "ver", text: "v" + status.version, title: "current released version" }));
@@ -2608,7 +2617,7 @@
       ? "today's burn + lifetime incl. ~" + fmtTok(bfI.estTokens) + " / ~" + fmtUSD(bfI.estCostUSD) + " estimated from pre-log commits"
       : "today's burn and the all-time totals" });
     ul.appendChild(txt("today "));
-    ul.appendChild(el("b", { text: fmtTok(today.input + today.output) }));
+    ul.appendChild(el("b", { text: fmtTok(today.tok) }));
     ul.appendChild(txt(" ("));
     ul.appendChild(el("span", { className: "cost", text: fmtUSD(today.cost) }));
     ul.appendChild(txt(") / all-time "));
@@ -2890,7 +2899,7 @@
       var todayTok = 0, series = [], smax = 1;
       for (var j = DAYS - 1; j >= 0; j--) {
         var d = byDay[dayKey(j)] || {};
-        var v = (d.input || 0) + (d.output || 0);
+        var v = totalTok(d);
         if (j === 0) todayTok = v;
         smax = Math.max(smax, v);
         series.push(v);
@@ -3302,6 +3311,11 @@
 
   function fUSD(n) { n = +n || 0; return "$" + (n >= 100 ? Math.round(n).toLocaleString() : n.toFixed(2)); }
   function fTok(n) { n = +n || 0; if (n >= 1e6) return (n / 1e6).toFixed(2) + "M"; if (n >= 1e3) return (n / 1e3).toFixed(1) + "k"; return String(Math.round(n)); }
+  // Isolated from the main render IIFE (see file header), so this module needs its own copy
+  // of the "total tokens includes cache" helper -- see the main script's totalIn/totalTok
+  // for why input+output alone undercounts real usage by ~20x under prompt caching.
+  function totalIn(rec) { return rec ? ((rec.input || 0) + (rec.cacheRead || 0) + (rec.cacheWrite || 0)) : 0; }
+  function totalTok(rec) { return totalIn(rec) + (rec ? (rec.output || 0) : 0); }
   function pctStr(n) { n = +n; if (!isFinite(n)) return "n/a"; n = Math.max(-9999, Math.min(9999, n)); return (n >= 0 ? "+" : "") + n.toFixed(1) + "%"; }
   function nameFor(id) {
     var m = { BR: "Rising", HBH: "Hordes", YaA: "Apothecary", YaB: "Budget", YaC: "Chains", YaE: "Everything", YaS: "Scheduler" };
@@ -3318,7 +3332,7 @@
       var streak = 0, best = 0;
       daily.forEach(function (r) {
         sum.input += r.input || 0; sum.output += r.output || 0; sum.cacheRead += r.cacheRead || 0; sum.cost += r.costUSD || 0;
-        var act = (r.input || 0) + (r.output || 0) > 0;
+        var act = totalTok(r) > 0;
         if (act) { active++; streak++; if (streak > best) best = streak; } else { streak = 0; }
         if ((r.costUSD || 0) > maxDay.c) maxDay = { c: r.costUSD || 0, d: r.d };
       });
@@ -3326,7 +3340,11 @@
       for (var i = 0; i < n; i++) { if (i >= n - 7) last7 += daily[i].costUSD || 0; else if (i >= n - 14) prev7 += daily[i].costUSD || 0; }
       var wow = prev7 > 0 ? (last7 - prev7) / prev7 * 100 : (last7 > 0 ? 100 : 0);
       var chr = (sum.cacheRead + sum.input) > 0 ? sum.cacheRead / (sum.cacheRead + sum.input) * 100 : 0;
-      var allTime = p.allTime || (sum.input + sum.output);
+      // p.allTime is an OBJECT ({input,output,cacheRead,cacheWrite,costUSD}), always
+      // truthy, so `p.allTime || fallback` picked the object itself every time (never the
+      // numeric fallback), and `port.allTime += allTime` below silently coerced it to
+      // "[object Object]" string concatenation. totalTok() always returns a number.
+      var allTime = p.allTime ? totalTok(p.allTime) : totalTok(sum);
       per[id] = { sum: sum, chr: chr, wow: wow, active: active, best: best, streak: streak, maxDay: maxDay, last7: last7, allTime: allTime, sessions: p.sessions || 0 };
       port.input += sum.input; port.output += sum.output; port.cacheRead += sum.cacheRead; port.cost += sum.cost;
       port.allTime += allTime; port.sessions += (p.sessions || 0);
