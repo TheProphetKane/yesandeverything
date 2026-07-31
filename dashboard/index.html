@@ -1262,10 +1262,31 @@
       if (id === "ALL" && pid === "unattributed") return;
       if (id === "ALL" && !REGISTERED_IDS[pid]) return;
       (src[pid].daily || []).forEach(function (d) {
-        if (!out[d.d]) out[d.d] = { d: d.d, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, costUSD: 0 };
+        if (!out[d.d]) {
+          out[d.d] = {
+            d: d.d, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, costUSD: 0,
+            cacheEff: {
+              gainUsd: 0, gainTokens: 0, ttlLossUsd: 0, ttlLossTokens: 0,
+              switchLossUsd: 0, switchLossTokens: 0, subagentUsd: 0, subagentTokens: 0,
+              sessionStartUsd: 0, sessionStartTokens: 0, unclassifiedUsd: 0, unclassifiedTokens: 0
+            }
+          };
+        }
         out[d.d].input += d.input || 0; out[d.d].output += d.output || 0;
         out[d.d].cacheRead += d.cacheRead || 0; out[d.d].cacheWrite += d.cacheWrite || 0;
         out[d.d].costUSD += d.costUSD || 0;
+        // cacheEff is a rolling-window feature (not every day/project has it yet), so merge
+        // whatever fields are present rather than requiring the whole sub-object.
+        var ce = d.cacheEff;
+        if (ce) {
+          var acc = out[d.d].cacheEff;
+          acc.gainUsd += ce.gainUsd || 0; acc.gainTokens += ce.gainTokens || 0;
+          acc.ttlLossUsd += ce.ttlLossUsd || 0; acc.ttlLossTokens += ce.ttlLossTokens || 0;
+          acc.switchLossUsd += ce.switchLossUsd || 0; acc.switchLossTokens += ce.switchLossTokens || 0;
+          acc.subagentUsd += ce.subagentUsd || 0; acc.subagentTokens += ce.subagentTokens || 0;
+          acc.sessionStartUsd += ce.sessionStartUsd || 0; acc.sessionStartTokens += ce.sessionStartTokens || 0;
+          acc.unclassifiedUsd += ce.unclassifiedUsd || 0; acc.unclassifiedTokens += ce.unclassifiedTokens || 0;
+        }
       });
     });
     return out;
