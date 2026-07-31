@@ -312,6 +312,15 @@ $RX_MODEL = New-Object regex '"model"\s*:\s*"([^"]+)"', $RXC
 $RX_TS  = New-Object regex '"timestamp"\s*:\s*"([^"]+)"', $RXC
 $RX_CWD = New-Object regex '"cwd"\s*:\s*"([^"]*)"', $RXC
 $RX_MID = New-Object regex '"id"\s*:\s*"(msg_[^"]+)"', $RXC
+# Cache-TTL split: the API reports cache_creation_input_tokens as a bare total AND
+# broken out by which TTL bucket it was written under. ephemeral_1h is what Claude
+# Code requests automatically on a subscription for the MAIN conversation; ephemeral_5m
+# is what subagents always get (their own separate cache, 5-min TTL even on a
+# subscription) and what the main conversation falls back to once usage exceeds the
+# plan limit and starts drawing paid credits. See docs: code.claude.com/docs/en/prompt-caching.
+$RX_EPH1H = New-Object regex '"ephemeral_1h_input_tokens"\s*:\s*(\d+)', $RXC
+$RX_EPH5M = New-Object regex '"ephemeral_5m_input_tokens"\s*:\s*(\d+)', $RXC
+$RX_SIDECHAIN = New-Object regex '"isSidechain"\s*:\s*(true|false)', $RXC
 function RxVal([System.Text.RegularExpressions.Regex]$rx, [string]$s) {
   $m = $rx.Match($s)
   if ($m.Success) { return $m.Groups[1].Value }
@@ -340,6 +349,7 @@ $FreshScan = ($Audit -or $Rescan)
 $Files = @{}   # path -> @{ length; processed; project; votes; lastMsgId }
 $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
 $AggM = @{}    # project -> model family -> @{ input; output; cacheRead; cacheWrite; cost }
+$AggCache = @{} # project -> date -> @{ gain/ttlLoss/switchLoss/subagent/sessionStart/unclassified Tokens+Usd }
 $PrevOldest = $null   # oldest record ever seen across runs (the log horizon)
 if (-not $FreshScan -and (Test-Path $StatePath)) {
   try {
@@ -355,7 +365,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     foreach ($prop in $state.files.PSObject.Properties) {
       $votes = @{}
       if ($prop.Value.votes) { foreach ($v in $prop.Value.votes.PSObject.Properties) { $votes[$v.Name] = [int]$v.Value } }
-      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs; taskProj = $prop.Value.taskProj }
+      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs; taskProj = $prop.Value.taskProj; lastUsageTs = $prop.Value.lastUsageTs }
     }
     foreach ($row in $state.agg) {
       $rp = Resolve-ProjectId $row.p
@@ -375,9 +385,25 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
         $bm.cacheRead += [long]$row.cacheRead; $bm.cacheWrite += [long]$row.cacheWrite; $bm.cost += [double]$row.cost
       }
     }
+    if ($state.aggC) {
+      foreach ($row in $state.aggC) {
+        $rp = Resolve-ProjectId $row.p
+        if (-not $AggCache.ContainsKey($rp)) { $AggCache[$rp] = @{} }
+        if (-not $AggCache[$rp].ContainsKey($row.d)) {
+          $AggCache[$rp][$row.d] = @{ gainTokens = [long]0; gainUsd = [double]0; ttlLossTokens = [long]0; ttlLossUsd = [double]0; switchLossTokens = [long]0; switchLossUsd = [double]0; subagentTokens = [long]0; subagentUsd = [double]0; sessionStartTokens = [long]0; sessionStartUsd = [double]0; unclassifiedTokens = [long]0; unclassifiedUsd = [double]0 }
+        }
+        $cc = $AggCache[$rp][$row.d]
+        $cc.gainTokens += [long]$row.gainTokens; $cc.gainUsd += [double]$row.gainUsd
+        $cc.ttlLossTokens += [long]$row.ttlLossTokens; $cc.ttlLossUsd += [double]$row.ttlLossUsd
+        $cc.switchLossTokens += [long]$row.switchLossTokens; $cc.switchLossUsd += [double]$row.switchLossUsd
+        $cc.subagentTokens += [long]$row.subagentTokens; $cc.subagentUsd += [double]$row.subagentUsd
+        $cc.sessionStartTokens += [long]$row.sessionStartTokens; $cc.sessionStartUsd += [double]$row.sessionStartUsd
+        $cc.unclassifiedTokens += [long]$row.unclassifiedTokens; $cc.unclassifiedUsd += [double]$row.unclassifiedUsd
+      }
+    }
   } catch {
     Write-Host "WARN: full rescan. ($_)" -ForegroundColor Yellow
-    $Files = @{}; $Agg = @{}
+    $Files = @{}; $Agg = @{}; $AggCache = @{}
   }
 }
 
@@ -399,6 +425,41 @@ function Add-Usage([string]$proj, [string]$day, $u, [string]$model) {
   if (-not $AggM[$proj].ContainsKey($fam)) { $AggM[$proj][$fam] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
   $bm = $AggM[$proj][$fam]
   $bm.input += $in; $bm.output += $out; $bm.cacheRead += $cr; $bm.cacheWrite += $cw; $bm.cost += $cost
+}
+
+# Cache-efficiency buckets, per project per day. "gain" is the $ actually saved by every
+# cache READ (billed at ~10% of input rate instead of full price). The write-side buckets
+# split cache_creation_input_tokens by WHY the write happened, since only one of them is a
+# genuine "loss": sessionStart (first cache-bearing turn of a session, nothing to reuse --
+# unavoidable, not a loss), subagent (subagents always use the 5-min TTL regardless of
+# subscription -- structural SDK cost, not something idle time caused), ttlLoss (a write that
+# followed a gap longer than the applicable TTL since this session's last usage-bearing turn
+# -- the cache went cold from inactivity, exactly what Kane asked to track), switchLoss (a
+# write with NO long gap -- forced by a model/effort switch, /compact, MCP change, upgrade,
+# etc., not by idle time), unclassified (an older client whose transcript lacks the
+# ephemeral_1h/5m split, so the write can't be attributed to a TTL bucket at all).
+function Add-CacheEfficiency([string]$proj, [string]$day, [string]$bucket, [long]$tokens, [double]$usd) {
+  if ($tokens -eq 0 -and $usd -eq 0) { return }
+  if (-not $AggCache.ContainsKey($proj)) { $AggCache[$proj] = @{} }
+  if (-not $AggCache[$proj].ContainsKey($day)) {
+    $AggCache[$proj][$day] = @{
+      gainTokens = [long]0; gainUsd = [double]0
+      ttlLossTokens = [long]0; ttlLossUsd = [double]0
+      switchLossTokens = [long]0; switchLossUsd = [double]0
+      subagentTokens = [long]0; subagentUsd = [double]0
+      sessionStartTokens = [long]0; sessionStartUsd = [double]0
+      unclassifiedTokens = [long]0; unclassifiedUsd = [double]0
+    }
+  }
+  $c = $AggCache[$proj][$day]
+  switch ($bucket) {
+    "gain"         { $c.gainTokens += $tokens; $c.gainUsd += $usd }
+    "ttlLoss"      { $c.ttlLossTokens += $tokens; $c.ttlLossUsd += $usd }
+    "switchLoss"   { $c.switchLossTokens += $tokens; $c.switchLossUsd += $usd }
+    "subagent"     { $c.subagentTokens += $tokens; $c.subagentUsd += $usd }
+    "sessionStart" { $c.sessionStartTokens += $tokens; $c.sessionStartUsd += $usd }
+    "unclassified" { $c.unclassifiedTokens += $tokens; $c.unclassifiedUsd += $usd }
+  }
 }
 
 # ----- Scan -----------------------------------------------------------------
@@ -428,11 +489,18 @@ foreach ($root in $SCAN_ROOTS) {
     $votes = @{}
     $lastMsgId = $null
     $lastTs = $null
+    # Last USAGE-bearing turn seen for this session (distinct from $lastTs, which
+    # advances on every line). Drives the cache-efficiency gap check below: a write
+    # that follows a gap longer than the applicable TTL since this timestamp means the
+    # cache went cold from inactivity. Persisted per file so the check survives across
+    # incremental runs, not just within one.
+    $lastUsageTs = $null
     if ($prev) {
       $processed = $prev.processed
       if ($prev.votes) { $votes = $prev.votes }
       $lastMsgId = $prev.lastMsgId
       if ($prev.lastTs) { try { $lastTs = [datetime]$prev.lastTs } catch { $lastTs = $null } }
+      if ($prev.lastUsageTs) { try { $lastUsageTs = [datetime]$prev.lastUsageTs } catch { $lastUsageTs = $null } }
     }
     $scannedFiles++
     if ($scannedFiles % 25 -eq 0) { Write-Host ("  ...{0} file(s) in, {1} usage record(s) so far" -f $scannedFiles, $usageRecords) -ForegroundColor DarkGray }
@@ -466,8 +534,11 @@ foreach ($root in $SCAN_ROOTS) {
         $ui = $line.IndexOf('"usage"')
         if ($ui -lt 0) { continue }
         # read the token counts only from a small window starting at the usage
-        # object, so token-count-looking text elsewhere in the line can't hit
-        $win = $line.Substring($ui, [Math]::Min(600, $line.Length - $ui))
+        # object, so token-count-looking text elsewhere in the line can't hit.
+        # 700 (was 600): the ephemeral_1h/5m split sits inside a nested cache_creation
+        # object about 220 chars into the usage block, after server_tool_use and
+        # service_tier; 600 cut it close, 700 gives margin for future fields.
+        $win = $line.Substring($ui, [Math]::Min(700, $line.Length - $ui))
         $inS = RxVal $RX_IN $win
         $outS = RxVal $RX_OUT $win
         if ($inS -eq $null -and $outS -eq $null) { continue }
@@ -477,11 +548,19 @@ foreach ($root in $SCAN_ROOTS) {
           cache_read_input_tokens = [long]$(if (($v = RxVal $RX_CR $win)) { $v } else { 0 })
           cache_creation_input_tokens = [long]$(if (($v2 = RxVal $RX_CW $win)) { $v2 } else { 0 })
         }
+        # TTL split (0/0 on an older client that predates this field; handled as
+        # "unclassified" in the cache-efficiency pass below, never silently dropped).
+        $eph1h = [long]$(if (($v3 = RxVal $RX_EPH1H $win)) { $v3 } else { 0 })
+        $eph5m = [long]$(if (($v4 = RxVal $RX_EPH5M $win)) { $v4 } else { 0 })
         $model = RxVal $RX_MODEL $line
         $msgId = RxVal $RX_MID $line
         $strong = $null
         $cwdS = RxVal $RX_CWD $line
         if ($cwdS) { $strong = Get-ProjectFor $cwdS; if ($strong) { $ctxProj = $strong } }
+        # A subagent's own conversation always uses the 5-minute TTL, even on a
+        # subscription (docs.claude.com/en/prompt-caching#subagents-and-the-cache), so its
+        # writes are structural SDK overhead, not something idle time or model choice caused.
+        $isSidechain = ((RxVal $RX_SIDECHAIN $line) -eq "true")
         $ts = $null
         $tsS = RxVal $RX_TS $line
         if ($tsS) { try { $ts = [datetime]$tsS } catch { $ts = $null } }
@@ -492,7 +571,7 @@ foreach ($root in $SCAN_ROOTS) {
         if ($ts) { $lastTs = $ts }
         elseif ($lastTs) { $ts = $lastTs }
         else { $ts = $f.CreationTime; $tsFallbacks++ }
-        $rec = @{ strong = $strong; lineHit = $lineHit; ctx = $ctxProj; msgId = $msgId; ts = $ts; usage = $usage; model = $model }
+        $rec = @{ strong = $strong; lineHit = $lineHit; ctx = $ctxProj; msgId = $msgId; ts = $ts; usage = $usage; model = $model; eph1h = $eph1h; eph5m = $eph5m; sidechain = $isSidechain }
         # Dedupe: one message id = one usage, globally. Transcript copies and
         # interleaved repeats of the same message must not double-count.
         if ($msgId) {
@@ -530,13 +609,52 @@ foreach ($root in $SCAN_ROOTS) {
         if (-not $newestTs -or $r.ts -gt $newestTs) { $newestTs = $r.ts }
         $u = $r.usage
         $fileTok += [long]($u.input_tokens) + [long]($u.output_tokens)
-        Add-Usage $proj (Get-CentralDay $r.ts) $u $r.model
+        $rDay = Get-CentralDay $r.ts
+        Add-Usage $proj $rDay $u $r.model
+
+        # Cache efficiency: every read is a "gain" (billed at ~10% of input rate instead
+        # of full price). A write's classification depends on why it happened -- see
+        # Add-CacheEfficiency's header comment for what each bucket means.
+        $rPrice = Get-Price $r.model
+        $crTok = [long]($u.cache_read_input_tokens)
+        if ($crTok -gt 0) {
+          $gainUsd = $crTok * ($rPrice.in - $rPrice.cacheRead) / 1e6
+          Add-CacheEfficiency $proj $rDay "gain" $crTok $gainUsd
+        }
+        $writeTok = $r.eph1h + $r.eph5m
+        $writeTokTotal = [long]($u.cache_creation_input_tokens)
+        if ($writeTok -eq 0 -and $writeTokTotal -gt 0) {
+          # older client, no ephemeral_1h/5m split reported -- can't attribute to a TTL
+          $uncUsd = $writeTokTotal * ($rPrice.cacheWrite - $rPrice.cacheRead) / 1e6
+          Add-CacheEfficiency $proj $rDay "unclassified" $writeTokTotal $uncUsd
+        } elseif ($writeTok -gt 0) {
+          $lossUsd = $writeTok * ($rPrice.cacheWrite - $rPrice.cacheRead) / 1e6
+          if ($r.sidechain) {
+            Add-CacheEfficiency $proj $rDay "subagent" $writeTok $lossUsd
+          } elseif (-not $lastUsageTs) {
+            # first usage-bearing turn this session has ever had: nothing to reuse yet
+            Add-CacheEfficiency $proj $rDay "sessionStart" $writeTok $lossUsd
+          } else {
+            # ephemeral_1h>0 means THIS write used the 1-hour bucket -> 3600s TTL;
+            # otherwise it used the 5-minute bucket (subscription overage fallback,
+            # since sidechain already branched above) -> 300s TTL. +30s clock/latency slack.
+            $ttlSeconds = if ($r.eph1h -gt 0) { 3600 } else { 300 }
+            $gapSeconds = ($r.ts - $lastUsageTs).TotalSeconds
+            if ($gapSeconds -gt ($ttlSeconds + 30)) {
+              Add-CacheEfficiency $proj $rDay "ttlLoss" $writeTok $lossUsd
+            } else {
+              Add-CacheEfficiency $proj $rDay "switchLoss" $writeTok $lossUsd
+            }
+          }
+        }
+        if (($u.input_tokens) -or ($u.output_tokens) -or $crTok -or $writeTok -or $writeTokTotal) { $lastUsageTs = $r.ts }
+
         if ($r.msgId) { $lastMsgId = $r.msgId }
       }
       if ($Audit -and $fileTok -gt 0) {
         $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "Everything" }); tokens = $fileTok }
       }
-      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }); taskProj = $taskProj }
+      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }); taskProj = $taskProj; lastUsageTs = $(if ($lastUsageTs) { $lastUsageTs.ToString("o") } else { $null }) }
     } catch {
       Write-Host "WARN: error reading $key ($($_.Exception.Message)); file skipped this run." -ForegroundColor Yellow
     } finally {
@@ -622,7 +740,22 @@ foreach ($proj in ($Agg.Keys | Sort-Object)) {
     $allTime.cacheRead += $b.cacheRead; $allTime.cacheWrite += $b.cacheWrite
     $allTime.costUSD += $b.cost
     if ([datetime]$day -ge $cutoff) {
-      $daily += [ordered]@{ d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; costUSD = [math]::Round($b.cost, 4) }
+      $dayEntry = [ordered]@{ d = $day; input = $b.input; output = $b.output; cacheRead = $b.cacheRead; cacheWrite = $b.cacheWrite; costUSD = [math]::Round($b.cost, 4) }
+      # cacheEff is a rolling-window feature (this project/day may predate it, or the
+      # transcript may have aged out before it was added), so it is intentionally NOT
+      # part of the ledger-floored allTime block above -- only daily, only what's measured.
+      if ($AggCache.ContainsKey($proj) -and $AggCache[$proj].ContainsKey($day)) {
+        $cc = $AggCache[$proj][$day]
+        $dayEntry.cacheEff = [ordered]@{
+          gainUsd = [math]::Round($cc.gainUsd, 4); gainTokens = $cc.gainTokens
+          ttlLossUsd = [math]::Round($cc.ttlLossUsd, 4); ttlLossTokens = $cc.ttlLossTokens
+          switchLossUsd = [math]::Round($cc.switchLossUsd, 4); switchLossTokens = $cc.switchLossTokens
+          subagentUsd = [math]::Round($cc.subagentUsd, 4); subagentTokens = $cc.subagentTokens
+          sessionStartUsd = [math]::Round($cc.sessionStartUsd, 4); sessionStartTokens = $cc.sessionStartTokens
+          unclassifiedUsd = [math]::Round($cc.unclassifiedUsd, 4); unclassifiedTokens = $cc.unclassifiedTokens
+        }
+      }
+      $daily += $dayEntry
     }
   }
   $allTime.costUSD = [math]::Round($allTime.costUSD, 2)
@@ -833,7 +966,22 @@ foreach ($proj in $AggM.Keys) {
     $flatM += [ordered]@{ p = $proj; m = $fam; input = $bm.input; output = $bm.output; cacheRead = $bm.cacheRead; cacheWrite = $bm.cacheWrite; cost = $bm.cost }
   }
 }
-Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat; aggM = $flatM })
+$flatC = @()
+foreach ($proj in $AggCache.Keys) {
+  foreach ($day in $AggCache[$proj].Keys) {
+    $cc = $AggCache[$proj][$day]
+    $flatC += [ordered]@{
+      p = $proj; d = $day
+      gainTokens = $cc.gainTokens; gainUsd = $cc.gainUsd
+      ttlLossTokens = $cc.ttlLossTokens; ttlLossUsd = $cc.ttlLossUsd
+      switchLossTokens = $cc.switchLossTokens; switchLossUsd = $cc.switchLossUsd
+      subagentTokens = $cc.subagentTokens; subagentUsd = $cc.subagentUsd
+      sessionStartTokens = $cc.sessionStartTokens; sessionStartUsd = $cc.sessionStartUsd
+      unclassifiedTokens = $cc.unclassifiedTokens; unclassifiedUsd = $cc.unclassifiedUsd
+    }
+  }
+}
+Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat; aggM = $flatM; aggC = $flatC })
 
 # ----- Queue summary for the dashboard ---------------------------------------
 # Live "queued" counts per project, refreshed every collect run, so the
