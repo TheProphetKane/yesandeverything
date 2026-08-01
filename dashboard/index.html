@@ -1687,7 +1687,9 @@
       maxCost = Math.max(maxCost, rec.cost);
       // gain and loss share ONE scale (both dollars, directly comparable), so whichever is
       // taller on a given day is visibly the bigger number -- that comparison is the point.
-      maxCacheEff = Math.max(maxCacheEff, gainVal(rec), lossVal(rec));
+      // gain and loss STACK (loss renders as a band on top of gain, see buildFlow), so the
+      // scale must fit the combined height on the tallest day, not either alone.
+      maxCacheEff = Math.max(maxCacheEff, gainVal(rec) + lossVal(rec));
       sum30 += rec.input + rec.output;
       if (i < 7) sum7 += rec.input + rec.output;
       days.push(rec);
@@ -1748,16 +1750,26 @@
       svg.appendChild(svgEl("path", { class: "area out-a", fill: "url(#gout-" + projId + ")", d: dnD2 + " L" + W + "," + MID + " L0," + MID + " Z" }));
 
       if (isFlow) {
-        // Cache gain (green) / loss (red) grow DOWNWARD from the midline, sharing ONE scale
-        // (maxCacheEff) so the two are directly comparable day to day: green line above red
-        // line on a given day means that day was net-positive on caching, and vice versa.
+        // Cache gain (green) / loss (red) grow DOWNWARD from the midline as a TRUE STACK:
+        // green fills midline-to-gain, red fills a BAND from gain up to gain+loss. They
+        // never occupy the same pixels. (Earlier version anchored both independently at the
+        // midline; two translucent fills overlapping right at the midline, where both
+        // gradients are strongest, optically blended green-under-red into orange -- Kane,
+        // 2026-08-01. Stacking removes the overlap outright instead of fighting the blend.)
         var gainPts = days.map(function (r, i) { return [i * step, MID + (gainVal(r) / maxCacheEff) * AMP]; });
-        var lossPts = days.map(function (r, i) { return [i * step, MID + (lossVal(r) / maxCacheEff) * AMP]; });
-        var gainD = smoothPath(gainPts), lossD = smoothPath(lossPts);
+        var stackPts = days.map(function (r, i) { return [i * step, MID + ((gainVal(r) + lossVal(r)) / maxCacheEff) * AMP]; });
+        var gainD = smoothPath(gainPts), stackD = smoothPath(stackPts);
         svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L0," + MID + " Z" }));
-        svg.appendChild(svgEl("path", { class: "area loss-a", fill: "url(#gloss-" + projId + ")", d: lossD + " L" + W + "," + MID + " L0," + MID + " Z" }));
+        // Band outline: along the gain curve (top edge), down to the stack curve's right end,
+        // back along the stack curve in reverse (bottom edge), up to the gain curve's left end, close.
+        var stackBack = smoothPath(stackPts.slice().reverse()).replace(/^M[-\d.]+,[-\d.]+/, "");
+        var bandD = gainD
+          + " L" + stackPts[stackPts.length - 1][0].toFixed(1) + "," + stackPts[stackPts.length - 1][1].toFixed(1)
+          + stackBack
+          + " L" + gainPts[0][0].toFixed(1) + "," + gainPts[0][1].toFixed(1) + " Z";
+        svg.appendChild(svgEl("path", { class: "area loss-a", fill: "url(#gloss-" + projId + ")", d: bandD }));
         svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
-        svg.appendChild(svgEl("path", { class: "line loss-l", d: lossD, pathLength: 1 }));
+        svg.appendChild(svgEl("path", { class: "line loss-l", d: stackD, pathLength: 1 }));
       }
 
       svg.appendChild(svgEl("line", { class: "midline", x1: 0, y1: MID, x2: W, y2: MID }));
