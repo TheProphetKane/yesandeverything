@@ -6,12 +6,193 @@
                        "pct":  55,
                        "anchored":  "2026-07-06"
                    },
-    "version":  "v0.3.355",
+    "version":  "v0.3.373",
     "lastCommit":  {
-                       "message":  "Expand The Snake\u0027s fishing table",
-                       "at":  "2026-07-31T12:02:36-05:00",
-                       "sha":  "b8662d5"
+                       "message":  "Fix Nern\u0027Oxar wrongly cited as a Servitor on the Council of Elder Orbs ladder",
+                       "at":  "2026-07-31T16:32:38-05:00",
+                       "sha":  "e76bdf6"
                    },
     "liveUrl":  "https://gnosis.yesandeverything.com",
-    "updatedAt":  "2026-07-31T12:03:00-05:00"
+    "updatedAt":  "2026-07-31T22:21:53-05:00",
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-07-24.md",
+                     "latestReportAt":  "2026-07-24T23:55:00Z",
+                     "verdict":  "needs-attention",
+                     "topFinding":  "The DM answer store is still served unauthenticated and the exposure grew four times since 2026-07-16. GET /api/answers and /api/answers/export return before the DM gate in web/worker.js, and an anonymous probe today served 731 answered qids of which 554 appear only on /questions-dm, 285,492 characters of DM answer payload, against 183 qids and 68,394 characters eight days ago. The v0.3.251 board split correctly moved 654 lore questions onto the DM board, and approving those drafts wrote them into the same public keyspace, because the data layer under the page gate has no concept of secrecy. Separately, scripts/write-dashboard-status.ps1 is the portfolio\u0027s only clobber-writer and has been wiping this project\u0027s bar-raise and audit blocks on every release since 2026-07-16, so the one project carrying a live BLOCK is the one whose dashboard card cannot show it.",
+                     "actionsOpen":  10,
+                     "actionsClosed":  1,
+                     "actions":  [
+                                     {
+                                         "p":  25,
+                                         "severity":  "high",
+                                         "title":  "Namespace DM answers under a d: KV prefix, filter loadAnswers by the gate cookie, and require the password on /api/answers/export",
+                                         "lens":  "security",
+                                         "finding":  "security-01",
+                                         "blocking":  true
+                                     },
+                                     {
+                                         "p":  20,
+                                         "severity":  "high",
+                                         "title":  "Add an anonymous GET /api/answers payload assertion to release.ps1 that fails the deploy when a /questions-dm qid appears in the response",
+                                         "lens":  "reliability",
+                                         "finding":  "reliability-01"
+                                     },
+                                     {
+                                         "p":  20,
+                                         "severity":  "high",
+                                         "title":  "Give write-dashboard-status.ps1 the read-modify-write preamble the other five projects use, so releases stop wiping barRaise and audit",
+                                         "lens":  "reliability",
+                                         "finding":  "reliability-02"
+                                     },
+                                     {
+                                         "p":  16,
+                                         "severity":  "medium",
+                                         "title":  "Cap the text length on /api/answer, /api/sticky and /api/note, and reject character: \"DM\" without a valid gate cookie",
+                                         "lens":  "security",
+                                         "finding":  "security-02"
+                                     },
+                                     {
+                                         "p":  15,
+                                         "severity":  "medium",
+                                         "title":  "Promote LORE-21 to a build-breaking check so a public page linking a dm-paths URL fails the build",
+                                         "lens":  "architecture",
+                                         "finding":  "architecture-01"
+                                     },
+                                     {
+                                         "p":  15,
+                                         "severity":  "medium",
+                                         "title":  "Lazy-load the globe\u0027s base patches by visible hemisphere instead of pulling 17.6MB before first paint",
+                                         "lens":  "performance",
+                                         "finding":  "performance-02"
+                                     },
+                                     {
+                                         "p":  12,
+                                         "severity":  "medium",
+                                         "title":  "Log KV write failures instead of swallowing them, and assert payloads rather than status codes",
+                                         "lens":  "observability",
+                                         "finding":  "observability-01"
+                                     },
+                                     {
+                                         "p":  12,
+                                         "severity":  "medium",
+                                         "title":  "Serve the public question board from a cached projection instead of walking the whole answer store on every load",
+                                         "lens":  "performance",
+                                         "finding":  "performance-01"
+                                     },
+                                     {
+                                         "p":  12,
+                                         "severity":  "medium",
+                                         "title":  "Hoist one esc() into a shared client preamble, delete the eight copies, and split the globe data table out of web/build.mjs",
+                                         "lens":  "maintainability",
+                                         "finding":  "maintainability-01"
+                                     },
+                                     {
+                                         "p":  10,
+                                         "severity":  "medium",
+                                         "title":  "Record the pinned three.js revision, its licence, and the do-not-upgrade reason in PROJECT_SPEC.md",
+                                         "lens":  "dependency",
+                                         "finding":  "dependency-01"
+                                     }
+                                 ],
+                     "deferred":  [
+                                      {
+                                          "severity":  "low",
+                                          "title":  "Gate password literal sits in CLAUDE.md, PROJECT_SPEC.md and web/worker.js",
+                                          "lens":  "security",
+                                          "reason":  "blocked on Kane\u0027s decision, queued as handler-audit-2026-07-10-gnosis-gate-password-decision; repo is PRIVATE so this is defense in depth"
+                                      },
+                                      {
+                                          "severity":  "low",
+                                          "title":  "Item catalog open5e/OGL provenance is not recorded in PROJECT_SPEC.md",
+                                          "lens":  "compliance-data-steward",
+                                          "reason":  "blocked on Kane\u0027s framing, queued as canonical-audit-2026-07-16-gnosis-catalog-ogl-provenance; should land with the three.js provenance note"
+                                      }
+                                  ],
+                     "health":  75,
+                     "lensScores":  {
+                                        "architecture":  76,
+                                        "reliability":  72,
+                                        "security":  28,
+                                        "performance":  68,
+                                        "data-integrity":  90,
+                                        "maintainability":  62,
+                                        "solo-tool-ux":  88,
+                                        "cost-economics":  90,
+                                        "dependency":  82,
+                                        "observability":  66,
+                                        "strategic-kill-this":  96,
+                                        "compliance-data-steward":  78
+                                    },
+                     "openFindings":  [
+                                          {
+                                              "id":  "security-01",
+                                              "severity":  "high",
+                                              "runsOpen":  2,
+                                              "blocking":  true
+                                          },
+                                          {
+                                              "id":  "security-02",
+                                              "severity":  "medium",
+                                              "runsOpen":  2
+                                          },
+                                          {
+                                              "id":  "security-03",
+                                              "severity":  "low",
+                                              "runsOpen":  2,
+                                              "deferred":  true
+                                          },
+                                          {
+                                              "id":  "reliability-01",
+                                              "severity":  "high",
+                                              "runsOpen":  2
+                                          },
+                                          {
+                                              "id":  "reliability-02",
+                                              "severity":  "high",
+                                              "runsOpen":  1
+                                          },
+                                          {
+                                              "id":  "architecture-01",
+                                              "severity":  "medium",
+                                              "runsOpen":  2
+                                          },
+                                          {
+                                              "id":  "performance-01",
+                                              "severity":  "medium",
+                                              "runsOpen":  2
+                                          },
+                                          {
+                                              "id":  "performance-02",
+                                              "severity":  "medium",
+                                              "runsOpen":  1
+                                          },
+                                          {
+                                              "id":  "maintainability-01",
+                                              "severity":  "medium",
+                                              "runsOpen":  2
+                                          },
+                                          {
+                                              "id":  "dependency-01",
+                                              "severity":  "medium",
+                                              "runsOpen":  1
+                                          },
+                                          {
+                                              "id":  "observability-01",
+                                              "severity":  "medium",
+                                              "runsOpen":  2
+                                          },
+                                          {
+                                              "id":  "compliance-02",
+                                              "severity":  "low",
+                                              "runsOpen":  2,
+                                              "deferred":  true
+                                          }
+                                      ],
+                     "tensionsOpen":  [
+                                          "security vs solo-tool-ux (shared answer store keeps the approve flow one click)",
+                                          "security vs performance (keyspace split before the cached projection)",
+                                          "art fidelity vs performance (16K globe masters vs 17.6MB cold start)"
+                                      ],
+                     "blocking":  true
+                 }
 }
