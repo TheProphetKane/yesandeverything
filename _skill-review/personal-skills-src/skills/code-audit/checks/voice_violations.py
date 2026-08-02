@@ -67,6 +67,50 @@ PATTERNS = [
 
 FIRST_PERSON_RE = re.compile(r"^\s*[-*]?\s*(?:\d+\.\s*)?(I |I'll |we |we'll |let's )", re.M)
 
+# Hand-authored public HTML, per project. These pages ship to a live site, so the
+# dash rules apply to them, but only the dash rules: the prose patterns below
+# (AI tool names, inline <svg>, first person) produce noise on marketing copy that
+# legitimately names tools and uses inline glyph SVG. Generated or mirrored trees
+# are excluded because their content is owned by another repo's publish step.
+PUBLIC_HTML_BY_PROJECT = {
+    "YesAndEverything": ["index.html", "404.html", "terms", "budget", "projects", "status"],
+}
+PUBLIC_HTML_EXCLUDE_PARTS = {
+    "hordes", "brackish-rising", "apothecary", "dashboard", "dashboard-api",
+    "sitemap", "work", "_skill-review", "docs", "node_modules", "invoices",
+}
+# Dash patterns only. Entities are the ones that hid on the live site: a page can
+# read clean in the source and still render an em dash to a visitor.
+HTML_PATTERNS = [
+    (r"—", "HIGH", "voice-em-dash", "literal em dash (U+2014)", "Hyphen, comma, parens, or period."),
+    (r"–", "HIGH", "voice-en-dash", "literal en dash (U+2013)", "Hyphen, comma, parens, or period."),
+    (r"&mdash;|&ndash;|&#8212;|&#8211;|&#x201[34];", "HIGH", "voice-em-dash-entity",
+     "em or en dash HTML entity", "Hyphen, comma, parens, or period."),
+]
+
+
+def html_targets(root: Path, project: str):
+    """Yield hand-authored public HTML pages for the project, or nothing."""
+    for rel in PUBLIC_HTML_BY_PROJECT.get(project, []):
+        p = root / rel
+        if p.is_file():
+            yield p
+        elif p.is_dir():
+            for f in sorted(p.rglob("*.html")):
+                if PUBLIC_HTML_EXCLUDE_PARTS & set(f.relative_to(root).parts):
+                    continue
+                yield f
+
+
+def scan_html(p: Path) -> None:
+    src = safe_read(p)
+    if src is None:
+        return
+    for pat, sev, cat, msg, fix in HTML_PATTERNS:
+        for m in re.finditer(pat, src, re.M):
+            line_no = src[:m.start()].count("\n") + 1
+            emit(sev, cat, p, line_no, msg, fix=fix)
+
 def is_public_file(p: Path, root: Path, project: str) -> bool:
     if p.name in EXCLUDE_FILES:
         return False
@@ -110,6 +154,8 @@ def main():
             continue
         if is_public_file(p, root, args.project):
             scan_file(p, args.project)
+    for p in html_targets(root, args.project):
+        scan_html(p)
 
 if __name__ == "__main__":
     main()
