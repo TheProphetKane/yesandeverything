@@ -1,368 +1,369 @@
 {
-  "project": "Cattery",
-  "displayName": "Yes& Cattery",
-  "version": "0.25.3",
-  "lastReleaseAt": "2026-08-01T08:22:36-05:00",
-  "lastReleaseMessage": "rate limiter keys on client IP not the caller-controlled Authorization header; smoke test distinguishes unreachable from denied",
-  "milestone": {
-    "id": "v0.12",
-    "label": "Phase 2 built (escrow payments, reviews, waitlists, admin tiers); launch-readiness next",
-    "status": "in-progress"
-  },
-  "completion": {
-    "pct": 84,
-    "anchored": "2026-07-02"
-  },
-  "itemsLeft": {
-    "open": 5,
-    "queue": 0,
-    "backlog": 0,
-    "gates": 5,
-    "items": [
-      "Verify breeder release-to-payout end-to-end after a breeder completes Stripe onboarding (Connect enabled in test; onboarding verified)",
-      "Register apex yesandcattery.com + route; remove demo data at launch",
-      "Legal review of Terms + Privacy + escrow custody model; onboard founding breeders with real data",
-      "Go-live ops (monitoring/alerting, Stripe live-key rotation)",
-      "Phase 3: dispute handling on held deposits"
-    ]
-  },
-  "backlog": {
-    "count": 0,
-    "items": []
-  },
-  "repoUrl": "https://github.com/TheProphetKane/yesandcattery",
-  "liveUrl": "https://cattery.yesandeverything.com",
-  "workTreeClean": true,
-  "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-01.md",
-    "latestReportAt": "2026-08-01T06:34:06Z",
-    "findings": {
-      "high": 0,
-      "medium": 0,
-      "low": 0
-    }
-  },
-  "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
-    "latestReportAt": "2026-07-24T13:30:00Z",
-    "verdict": "needs-attention",
-    "topFinding": "The verdict moves to needs-attention because the orders cascade is not latent: public/app.js:1217 advertises account closure through a support mailto and :882 promises \"We remove your profile and listings\", and with no in-app delete that means a manual operator delete in the Supabase dashboard, which is exactly what fires orders_cattery_id_fkey ON DELETE CASCADE and erases every held, released, and refunded escrow row for that cattery. The first deletion request Cattery receives destroys its own money trail, with no warning to the operator. The fix is three lines in migration 0019, written 2026-07-16 and still untracked and unapplied twelve days on. Real ground was gained against that: 0009 and 0010 were recovered verbatim from the prod migration ledger with provenance headers, and today's canonical audit diffed all 14 prod tables column-for-column against disk and found them identical, closing the standing \"prod may have drifted\" gap. No hard-rule breach: secrets gitignored and untracked, RLS on all 14 tables, screened-badge and buyer-privacy invariants intact.",
-    "actionsOpen": 15,
-    "actionsClosed": 3,
-    "actions": [
-      {
-        "severity": "HIGH",
-        "title": "Apply 0019 to prod with supabase db push so a deletion request stops erasing the escrow money trail, then commit it.",
-        "lens": "data-integrity",
-        "priority": 25,
-        "id": "canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Record a Stripe webhook event as processed only after the DB write succeeds and return 5xx on failure so Stripe retries; move the 10KB body cap below the webhook exemption.",
-        "lens": "reliability",
-        "priority": 20,
-        "id": "bar-raise-2026-07-08-cattery-webhook-event-loss"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Add structured console.error on every Stripe and RPC failure branch (webhook, release, refund, checkout, onboard) so failed payouts surface in Workers logs.",
-        "lens": "observability",
-        "priority": 20,
-        "id": "bar-raise-2026-07-08-cattery-money-path-logging"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a processing filter to the admin panel plus a reconciliation sweep for orders stranded in releasing/refunding, and a recovery runbook in docs/STRIPE.md.",
-        "lens": "reliability",
-        "priority": 16,
-        "id": "bar-raise-2026-07-08-cattery-stuck-escrow-reconcile"
-      },
-      {
-        "severity": "MED",
-        "title": "Send an Idempotency-Key (order id plus action) on the transfer, refund, and checkout Stripe POSTs.",
-        "lens": "payment-idempotency",
-        "priority": 15,
-        "id": "bar-raise-2026-07-08-cattery-stripe-idempotency-key"
-      },
-      {
-        "severity": "MED",
-        "title": "Push discovery and inbox queries server-side: a has-available count RPC, a latest-message-per-thread view, and server-side filter plus pagination before the catalog outgrows the 200-row cap.",
-        "lens": "performance",
-        "priority": 15,
-        "id": "bar-raise-2026-07-08-cattery-server-side-queries"
-      },
-      {
-        "severity": "MED",
-        "title": "Write the account-deletion runbook and scope the closure copy at public/app.js:1217 and :882 so it does not promise removal of settled financial records.",
-        "lens": "compliance-data-steward",
-        "priority": 15,
-        "id": "bar-raise-2026-07-24-cattery-deletion-retention-runbook"
-      },
-      {
-        "severity": "MED",
-        "title": "Apply 0018 in the same push as 0019 to close the photos bucket listing, then re-run the Supabase security advisor.",
-        "lens": "security",
-        "priority": 12,
-        "id": "canonical-audit-2026-07-10-cattery-photos-bucket-listing"
-      },
-      {
-        "severity": "MED",
-        "title": "Serve grid image thumbnails via Supabase image transform and reserve originals for detail views.",
-        "lens": "performance",
-        "priority": 12,
-        "id": "bar-raise-2026-07-08-cattery-image-thumbnails"
-      },
-      {
-        "severity": "MED",
-        "title": "Update the bar-raise-cattery task brief, which still calls Cattery a no-payments Phase 1 project.",
-        "lens": "solo-tool-ux",
-        "priority": 12,
-        "id": "bar-raise-2026-07-24-cattery-scheduled-task-stale-brief"
-      },
-      {
-        "severity": "MED",
-        "title": "Pin the @supabase/supabase-js version in scripts/vendor-supabase.ps1 and commit a package-lock.json.",
-        "lens": "dependency",
-        "priority": 10,
-        "id": "bar-raise-2026-07-08-cattery-pin-supabase-js"
-      },
-      {
-        "severity": "MED",
-        "title": "Collapse the two overlapping Cattery working-tree queue items into one.",
-        "lens": "solo-tool-ux",
-        "priority": 10,
-        "id": "bar-raise-2026-07-24-cattery-queue-dupe-worktree"
-      },
-      {
-        "severity": "MED",
-        "title": "Block kitten status edits while a non-terminal order references that kitten.",
-        "lens": "data-integrity",
-        "priority": 9,
-        "id": "bar-raise-2026-07-08-cattery-reservation-lock-vs-status"
-      },
-      {
-        "severity": "MED",
-        "title": "Harden release.ps1 so a failed wrangler deploy does not leave a bumped-and-pushed-but-not-live state.",
-        "lens": "release-ps1-stack",
-        "priority": 8,
-        "id": "bar-raise-2026-07-08-cattery-release-deploy-order"
-      },
-      {
-        "severity": "HIGH",
-        "lens": "security",
-        "priority": 2,
-        "id": "bar-raise-2026-08-01-cattery-ratelimit-binding-noop",
-        "title": "The API_RATE_LIMITER binding does not enforce - 40 calls on one key against a 30/60s cap all returned success:true. Migrate wrangler.jsonc from the legacy unsafe.bindings shape to the GA top-level ratelimits array, which needs a wrangler v4 bump first (3.114.17 drops the key as an unexpected field)."
-      }
-    ],
-    "deferred": [
-      {
-        "severity": "MED",
-        "title": "Complete the external legal review of the escrow custody model plus Terms and Privacy before onboarding real breeders or rotating to live Stripe keys.",
-        "lens": "compliance-data-steward",
-        "reason": "blocked on external legal review (gate 3)"
-      },
-      {
-        "severity": "MED",
-        "title": "Make an explicit go/no-go on the launch commitment (legal, one founding breeder, register the apex) before further dev polish.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Nick decision"
-      },
-      {
-        "severity": "MED",
-        "title": "Wire out-of-band failure alerting on money-path and webhook failures.",
-        "lens": "observability",
-        "reason": "go-live ops (gate 4)"
-      },
-      {
-        "severity": "MED",
-        "title": "Enable Supabase PITR for the escrow money ledger.",
-        "lens": "backup-cadence",
-        "reason": "gated to Stripe live-key rotation (gate 4)"
-      },
-      {
-        "severity": "LOW",
-        "title": "Add a release-time demo/seed-data guard so demo rows do not ship live once the apex route is added.",
-        "lens": "gate-page-publish",
-        "reason": "launch step (gate 2)"
-      },
-      {
-        "severity": "LOW",
-        "title": "Phase 3 dispute handling on held deposits.",
-        "lens": "strategic-kill-this",
-        "reason": "post-launch (Phase 3)"
-      }
-    ],
-    "health": 80,
-    "lensScores": {
-      "architecture": 80,
-      "reliability": 62,
-      "security": 85,
-      "performance": 78,
-      "data-integrity": 76,
-      "maintainability": 84,
-      "solo-tool-ux": 72,
-      "cost-economics": 88,
-      "dependency": 82,
-      "observability": 55,
-      "strategic-kill-this": 66,
-      "compliance-data-steward": 70,
-      "payment-idempotency": 58,
-      "worker-cpu-budget": 95,
-      "kv-data-shape": 80,
-      "backup-cadence": 66,
-      "release-ps1-stack": 85,
-      "release-discord-notify": 92,
-      "version-pill-drift": 88,
-      "gate-page-publish": 92,
-      "solo-dev-voice": 88,
-      "ai-tell-concealment": 83,
-      "brand-consistency": 95,
-      "finance-threat-model": 82,
-      "auth-token-hygiene": 90
+    "project": "Cattery",
+    "displayName": "Yes& Cattery",
+    "version": "0.25.3",
+    "lastReleaseAt": "2026-08-01T08:22:36-05:00",
+    "lastReleaseMessage": "rate limiter keys on client IP not the caller-controlled Authorization header; smoke test distinguishes unreachable from denied",
+    "milestone": {
+        "id": "v0.12",
+        "label": "Phase 2 built (escrow payments, reviews, waitlists, admin tiers); launch-readiness next",
+        "status": "in-progress"
     },
-    "openFindings": [
-      {
-        "id": "canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-07-15"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-webhook-event-loss",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-money-path-logging",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-stuck-escrow-reconcile",
-        "severity": "MED",
-        "priority": 16,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-stripe-idempotency-key",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-server-side-queries",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-24-cattery-deletion-retention-runbook",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-24"
-      },
-      {
-        "id": "canonical-audit-2026-07-10-cattery-photos-bucket-listing",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-07-15"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-image-thumbnails",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-24-cattery-scheduled-task-stale-brief",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-24"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-pin-supabase-js",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-24-cattery-queue-dupe-worktree",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-07-24"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-reservation-lock-vs-status",
-        "severity": "MED",
-        "priority": 9,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      },
-      {
-        "id": "bar-raise-2026-07-08-cattery-release-deploy-order",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-08"
-      }
-    ],
-    "tensionsOpen": [
-      {
-        "lenses": [
-          "compliance-data-steward",
-          "data-integrity"
+    "completion": {
+        "pct": 84,
+        "anchored": "2026-07-02"
+    },
+    "itemsLeft": {
+        "open": 5,
+        "queue": 0,
+        "backlog": 0,
+        "gates": 5,
+        "items": [
+            "Verify breeder release-to-payout end-to-end after a breeder completes Stripe onboarding (Connect enabled in test; onboarding verified)",
+            "Register apex yesandcattery.com + route; remove demo data at launch",
+            "Legal review of Terms + Privacy + escrow custody model; onboard founding breeders with real data",
+            "Go-live ops (monitoring/alerting, Stripe live-key rotation)",
+            "Phase 3: dispute handling on held deposits"
+        ]
+    },
+    "backlog": {
+        "count": 0,
+        "items": []
+    },
+    "repoUrl": "https://github.com/TheProphetKane/yesandcattery",
+    "liveUrl": "https://cattery.yesandeverything.com",
+    "workTreeClean": true,
+    "audit": {
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-02.md",
+        "latestReportAt": "2026-08-02T06:34:45Z",
+        "findings": {
+            "critical": 0,
+            "high": 2,
+            "medium": 3,
+            "low": 0
+        }
+    },
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+        "latestReportAt": "2026-07-24T13:30:00Z",
+        "verdict": "needs-attention",
+        "topFinding": "The verdict moves to needs-attention because the orders cascade is not latent: public/app.js:1217 advertises account closure through a support mailto and :882 promises \"We remove your profile and listings\", and with no in-app delete that means a manual operator delete in the Supabase dashboard, which is exactly what fires orders_cattery_id_fkey ON DELETE CASCADE and erases every held, released, and refunded escrow row for that cattery. The first deletion request Cattery receives destroys its own money trail, with no warning to the operator. The fix is three lines in migration 0019, written 2026-07-16 and still untracked and unapplied twelve days on. Real ground was gained against that: 0009 and 0010 were recovered verbatim from the prod migration ledger with provenance headers, and today's canonical audit diffed all 14 prod tables column-for-column against disk and found them identical, closing the standing \"prod may have drifted\" gap. No hard-rule breach: secrets gitignored and untracked, RLS on all 14 tables, screened-badge and buyer-privacy invariants intact.",
+        "actionsOpen": 15,
+        "actionsClosed": 3,
+        "actions": [
+            {
+                "severity": "HIGH",
+                "title": "Apply 0019 to prod with supabase db push so a deletion request stops erasing the escrow money trail, then commit it.",
+                "lens": "data-integrity",
+                "priority": 25,
+                "id": "canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Record a Stripe webhook event as processed only after the DB write succeeds and return 5xx on failure so Stripe retries; move the 10KB body cap below the webhook exemption.",
+                "lens": "reliability",
+                "priority": 20,
+                "id": "bar-raise-2026-07-08-cattery-webhook-event-loss"
+            },
+            {
+                "severity": "HIGH",
+                "title": "Add structured console.error on every Stripe and RPC failure branch (webhook, release, refund, checkout, onboard) so failed payouts surface in Workers logs.",
+                "lens": "observability",
+                "priority": 20,
+                "id": "bar-raise-2026-07-08-cattery-money-path-logging"
+            },
+            {
+                "severity": "MED",
+                "title": "Add a processing filter to the admin panel plus a reconciliation sweep for orders stranded in releasing/refunding, and a recovery runbook in docs/STRIPE.md.",
+                "lens": "reliability",
+                "priority": 16,
+                "id": "bar-raise-2026-07-08-cattery-stuck-escrow-reconcile"
+            },
+            {
+                "severity": "MED",
+                "title": "Send an Idempotency-Key (order id plus action) on the transfer, refund, and checkout Stripe POSTs.",
+                "lens": "payment-idempotency",
+                "priority": 15,
+                "id": "bar-raise-2026-07-08-cattery-stripe-idempotency-key"
+            },
+            {
+                "severity": "MED",
+                "title": "Push discovery and inbox queries server-side: a has-available count RPC, a latest-message-per-thread view, and server-side filter plus pagination before the catalog outgrows the 200-row cap.",
+                "lens": "performance",
+                "priority": 15,
+                "id": "bar-raise-2026-07-08-cattery-server-side-queries"
+            },
+            {
+                "severity": "MED",
+                "title": "Write the account-deletion runbook and scope the closure copy at public/app.js:1217 and :882 so it does not promise removal of settled financial records.",
+                "lens": "compliance-data-steward",
+                "priority": 15,
+                "id": "bar-raise-2026-07-24-cattery-deletion-retention-runbook"
+            },
+            {
+                "severity": "MED",
+                "title": "Apply 0018 in the same push as 0019 to close the photos bucket listing, then re-run the Supabase security advisor.",
+                "lens": "security",
+                "priority": 12,
+                "id": "canonical-audit-2026-07-10-cattery-photos-bucket-listing"
+            },
+            {
+                "severity": "MED",
+                "title": "Serve grid image thumbnails via Supabase image transform and reserve originals for detail views.",
+                "lens": "performance",
+                "priority": 12,
+                "id": "bar-raise-2026-07-08-cattery-image-thumbnails"
+            },
+            {
+                "severity": "MED",
+                "title": "Update the bar-raise-cattery task brief, which still calls Cattery a no-payments Phase 1 project.",
+                "lens": "solo-tool-ux",
+                "priority": 12,
+                "id": "bar-raise-2026-07-24-cattery-scheduled-task-stale-brief"
+            },
+            {
+                "severity": "MED",
+                "title": "Pin the @supabase/supabase-js version in scripts/vendor-supabase.ps1 and commit a package-lock.json.",
+                "lens": "dependency",
+                "priority": 10,
+                "id": "bar-raise-2026-07-08-cattery-pin-supabase-js"
+            },
+            {
+                "severity": "MED",
+                "title": "Collapse the two overlapping Cattery working-tree queue items into one.",
+                "lens": "solo-tool-ux",
+                "priority": 10,
+                "id": "bar-raise-2026-07-24-cattery-queue-dupe-worktree"
+            },
+            {
+                "severity": "MED",
+                "title": "Block kitten status edits while a non-terminal order references that kitten.",
+                "lens": "data-integrity",
+                "priority": 9,
+                "id": "bar-raise-2026-07-08-cattery-reservation-lock-vs-status"
+            },
+            {
+                "severity": "MED",
+                "title": "Harden release.ps1 so a failed wrangler deploy does not leave a bumped-and-pushed-but-not-live state.",
+                "lens": "release-ps1-stack",
+                "priority": 8,
+                "id": "bar-raise-2026-07-08-cattery-release-deploy-order"
+            },
+            {
+                "severity": "HIGH",
+                "lens": "security",
+                "priority": 2,
+                "id": "bar-raise-2026-08-01-cattery-ratelimit-binding-noop",
+                "title": "The API_RATE_LIMITER binding does not enforce - 40 calls on one key against a 30/60s cap all returned success:true. Migrate wrangler.jsonc from the legacy unsafe.bindings shape to the GA top-level ratelimits array, which needs a wrangler v4 bump first (3.114.17 drops the key as an unexpected field)."
+            }
         ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "data-integrity",
-          "solo-tool-ux"
+        "deferred": [
+            {
+                "severity": "MED",
+                "title": "Complete the external legal review of the escrow custody model plus Terms and Privacy before onboarding real breeders or rotating to live Stripe keys.",
+                "lens": "compliance-data-steward",
+                "reason": "blocked on external legal review (gate 3)"
+            },
+            {
+                "severity": "MED",
+                "title": "Make an explicit go/no-go on the launch commitment (legal, one founding breeder, register the apex) before further dev polish.",
+                "lens": "strategic-kill-this",
+                "reason": "blocked on Nick decision"
+            },
+            {
+                "severity": "MED",
+                "title": "Wire out-of-band failure alerting on money-path and webhook failures.",
+                "lens": "observability",
+                "reason": "go-live ops (gate 4)"
+            },
+            {
+                "severity": "MED",
+                "title": "Enable Supabase PITR for the escrow money ledger.",
+                "lens": "backup-cadence",
+                "reason": "gated to Stripe live-key rotation (gate 4)"
+            },
+            {
+                "severity": "LOW",
+                "title": "Add a release-time demo/seed-data guard so demo rows do not ship live once the apex route is added.",
+                "lens": "gate-page-publish",
+                "reason": "launch step (gate 2)"
+            },
+            {
+                "severity": "LOW",
+                "title": "Phase 3 dispute handling on held deposits.",
+                "lens": "strategic-kill-this",
+                "reason": "post-launch (Phase 3)"
+            }
         ],
-        "runsSeen": 3
-      },
-      {
-        "lenses": [
-          "security",
-          "maintainability"
+        "health": 80,
+        "lensScores": {
+            "architecture": 80,
+            "reliability": 62,
+            "security": 85,
+            "performance": 78,
+            "data-integrity": 76,
+            "maintainability": 84,
+            "solo-tool-ux": 72,
+            "cost-economics": 88,
+            "dependency": 82,
+            "observability": 55,
+            "strategic-kill-this": 66,
+            "compliance-data-steward": 70,
+            "payment-idempotency": 58,
+            "worker-cpu-budget": 95,
+            "kv-data-shape": 80,
+            "backup-cadence": 66,
+            "release-ps1-stack": 85,
+            "release-discord-notify": 92,
+            "version-pill-drift": 88,
+            "gate-page-publish": 92,
+            "solo-dev-voice": 88,
+            "ai-tell-concealment": 83,
+            "brand-consistency": 95,
+            "finance-threat-model": 82,
+            "auth-token-hygiene": 90
+        },
+        "openFindings": [
+            {
+                "id": "canonical-audit-2026-07-16-cattery-orders-cascade-prod-unapplied",
+                "severity": "HIGH",
+                "priority": 25,
+                "runsOpen": 2,
+                "firstSeen": "2026-07-15"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-webhook-event-loss",
+                "severity": "HIGH",
+                "priority": 20,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-money-path-logging",
+                "severity": "HIGH",
+                "priority": 20,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-stuck-escrow-reconcile",
+                "severity": "MED",
+                "priority": 16,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-stripe-idempotency-key",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-server-side-queries",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-24-cattery-deletion-retention-runbook",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-24"
+            },
+            {
+                "id": "canonical-audit-2026-07-10-cattery-photos-bucket-listing",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 2,
+                "firstSeen": "2026-07-15"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-image-thumbnails",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-24-cattery-scheduled-task-stale-brief",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-24"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-pin-supabase-js",
+                "severity": "MED",
+                "priority": 10,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-24-cattery-queue-dupe-worktree",
+                "severity": "MED",
+                "priority": 10,
+                "runsOpen": 1,
+                "firstSeen": "2026-07-24"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-reservation-lock-vs-status",
+                "severity": "MED",
+                "priority": 9,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            },
+            {
+                "id": "bar-raise-2026-07-08-cattery-release-deploy-order",
+                "severity": "MED",
+                "priority": 8,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-08"
+            }
         ],
-        "runsSeen": 3
-      },
-      {
-        "lenses": [
-          "backup-cadence",
-          "cost-economics"
-        ],
-        "runsSeen": 3
-      }
+        "tensionsOpen": [
+            {
+                "lenses": [
+                    "compliance-data-steward",
+                    "data-integrity"
+                ],
+                "runsSeen": 1
+            },
+            {
+                "lenses": [
+                    "data-integrity",
+                    "solo-tool-ux"
+                ],
+                "runsSeen": 3
+            },
+            {
+                "lenses": [
+                    "security",
+                    "maintainability"
+                ],
+                "runsSeen": 3
+            },
+            {
+                "lenses": [
+                    "backup-cadence",
+                    "cost-economics"
+                ],
+                "runsSeen": 3
+            }
+        ]
+    },
+    "metrics": [],
+    "workQueueDepth": 0,
+    "stale": false,
+    "tags": [
+        "browser-app",
+        "marketplace",
+        "supabase",
+        "cat-breeders",
+        "two-sided",
+        "release-pipeline",
+        "public-voice"
     ]
-  },
-  "metrics": [],
-  "workQueueDepth": 0,
-  "stale": false,
-  "tags": [
-    "browser-app",
-    "marketplace",
-    "supabase",
-    "cat-breeders",
-    "two-sided",
-    "release-pipeline",
-    "public-voice"
-  ]
 }
