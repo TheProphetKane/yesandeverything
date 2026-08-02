@@ -30,9 +30,18 @@ Follow `waves/02_per_project_discovery.md`. The wave produces an internal contex
 
 Before fanning out 12 subagents, check whether a full pass would measure anything new:
 
-- zero commits since the previous bar-raise (`latestReportAt` in the status JSON), AND
-- the working tree is unchanged vs what the previous run saw, AND
+- zero commits since the previous bar-raise (`latestReportAt` in the status JSON) **touching project-owned paths**, AND
+- the working tree is unchanged vs what the previous run saw **on project-owned paths**, AND
 - no open BLOCK.
+
+**Both the commit check and the tree check are scoped to project-owned paths.** Unscoped, neither can ever hold on a hub repo: YaE takes ~1900 commits a month of which under 4% touch anything YaE owns, and the 30-minute usage collector rewrites `.work-queue.json`, `dashboard/data/*` and `usage-log/*` every single day, so the tree differs from the previous run's view daily no matter what shipped. The gate then never fires and the whole pass runs on a project that changed nothing. Scope it by excluding generated and collector-written state from both checks. For YaE that exclusion list is `.work-queue*.json`, `.work-queue-results/`, `status/data/`, `dashboard/data/` and `usage-log/`; for other projects it is whatever their release script or a scheduled task rewrites without a human touching it. Run both checks with an explicit pathspec:
+
+```
+git -C <root> log --oneline <sinceRef>..HEAD -- . ':(exclude).work-queue*.json' ':(exclude)status/data' ':(exclude)dashboard/data' ':(exclude)usage-log'
+git -C <root> status --porcelain -- . ':(exclude).work-queue*.json' ':(exclude)status/data' ':(exclude)dashboard/data' ':(exclude)usage-log'
+```
+
+BLOCK precedence is unchanged: an open BLOCK still forces a full pass regardless of how quiet the scoped checks read.
 
 Queue movement is deliberately NOT a gate condition. A starved queue is not evidence of a quiet project: if this project's findings failed to enqueue, the resulting lack of movement would satisfy the gate, re-fire carry-forward, and the drop could never be repaired -- the gate would be reading its own failure as calm. Judge quiet by commits and tree state only.
 
