@@ -5,10 +5,21 @@
 # Usage from the YaE repo root:
 #   .\scripts\release.ps1
 #
+# -Path forwards pathspecs to push-to-github.ps1 so the release stages only
+# what you shipped. Without it the push stages everything, which sweeps
+# whatever another session left staged into your commit. Routines write
+# status/data, dashboard/data and the queue continuously, so an unscoped
+# release almost always carries someone else's work:
+#   .\scripts\release.ps1 -Path status/data/Ring.json
+#
 # Note: HBH's publish-gdd.ps1 already pushes to this repo from the HBH
 # side. THIS script is for direct YaE edits (landing-page changes, new
 # project cards, apothecary mirror updates that didn't come from
 # X:\YesAndApothecary\deploy.ps1, etc).
+
+param(
+    [string[]]$Path = @()
+)
 
 $ErrorActionPreference = "Stop"
 $here = $PSScriptRoot
@@ -46,7 +57,12 @@ try {
 
     Write-Host ""
     Write-Host "==== Step 3/4: push YaE to GitHub ====" -ForegroundColor Magenta
-    & (Join-Path $here "push-to-github.ps1")
+    if ($Path.Count -gt 0) {
+        Write-Host "Scoped to: $($Path -join ', ')" -ForegroundColor DarkGray
+        & (Join-Path $here "push-to-github.ps1") -Path $Path
+    } else {
+        & (Join-Path $here "push-to-github.ps1")
+    }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "push-to-github.ps1 exited $LASTEXITCODE." -ForegroundColor Red
         exit $LASTEXITCODE
