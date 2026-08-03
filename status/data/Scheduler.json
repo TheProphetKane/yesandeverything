@@ -1,180 +1,180 @@
 {
-  "project": "Scheduler",
-  "displayName": "Yes& Scheduler",
-  "version": "0.7.1",
-  "lastReleaseAt": "2026-07-06T10:45:16-05:00",
-  "lastReleaseMessage": "Docs drift-fix: DESIGN.md caught up with reality. No code...",
-  "milestone": {
-    "id": "M8",
-    "label": "Shift options + holidays",
-    "status": "shipped"
-  },
-  "completion": {
-    "pct": 60,
-    "anchored": "2026-06-28"
-  },
-  "itemsLeft": {
-    "open": 3,
-    "queue": 1,
-    "backlog": 0,
-    "gates": 2,
-    "items": [
-      "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
-      "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
+    "project": "Scheduler",
+    "displayName": "Yes& Scheduler",
+    "version": "0.7.1",
+    "lastReleaseAt": "2026-07-06T10:45:16-05:00",
+    "lastReleaseMessage": "Docs drift-fix: DESIGN.md caught up with reality. No code...",
+    "milestone": {
+        "id": "M8",
+        "label": "Shift options + holidays",
+        "status": "shipped"
+    },
+    "completion": {
+        "pct": 60,
+        "anchored": "2026-06-28"
+    },
+    "itemsLeft": {
+        "open": 3,
+        "queue": 1,
+        "backlog": 0,
+        "gates": 2,
+        "items": [
+            "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
+            "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
+        ]
+    },
+    "backlog": {
+        "count": 0,
+        "items": []
+    },
+    "repoUrl": "https://github.com/TheProphetKane/yesandscheduler",
+    "workTreeClean": false,
+    "audit": {
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-03.md",
+        "latestReportAt": "2026-08-03T06:16:31Z",
+        "findings": {
+            "critical": 0,
+            "high": 2,
+            "medium": 1,
+            "low": 1
+        }
+    },
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
+        "latestReportAt": "2026-07-25T02:30:00Z",
+        "verdict": "in-progress",
+        "topFinding": "The stranded v0.7.x pass is now 14 days old and the pile grew again, but the sharper find this run is what happens when its blocked sibling finally lands. scripts/sync-audit-dashboard.ps1 (untracked, written 2026-07-10 to close the chronic audit-pointer finding) unconditionally Remove-Item -Force's .git/index.lock and .git/HEAD.lock in YesAndEverything at lines 104-107, with no live-process check and no git-guard.ps1 dot-source. That is the exact pattern this project's CLAUDE.md and the portfolio git-safety standard forbid, aimed at the busiest repo on the FUSE mount: YaE takes writes from every per-project routine, the hourly queue drain, and the 30-minute usage refresh. Wiring it as written trades a stale dashboard pointer for NUL-corrupted YaE git state. Everything else holds: all five hard rules pass, so no BLOCK, and the 139 tests across 21 files run green in the dirty tree, so the unshipped work is verified-correct rather than merely unfinished. Health slips 88 to 85 entirely on machinery findings, not app regressions; release-sync-01 stays HIGH at 3 runs and audit-loop-integrity-01 is chronic at 6.",
+        "actionsOpen": 2,
+        "actionsClosed": 5,
+        "actions": [
+            {
+                "severity": "HIGH",
+                "title": "Bump the version, write the CHANGELOG entry, and run scripts/release.ps1 so the 14-day v0.7.x pass lands at HEAD and migration 0011 applies (prod schema advances from 0010).",
+                "lens": "release-sync",
+                "priority": 25,
+                "id": "release-sync-01"
+            },
+            {
+                "severity": "MED",
+                "title": "Wire the hardened sync-audit-dashboard.ps1 into audit-scheduler-nightly so the dashboard audit pointer stops sitting 19 days stale (reads 2026-07-05 while CANONICAL_AUDIT-2026-07-24.md is on disk). Chronic at 6 runs.",
+                "lens": "audit-loop-integrity",
+                "priority": 15,
+                "id": "audit-loop-integrity-01"
+            }
+        ],
+        "deferred": [
+            {
+                "severity": "MED",
+                "title": "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
+                "lens": "cost-economics",
+                "reason": "blocked on Nick decision: commit to a Stripe milestone"
+            },
+            {
+                "severity": "MED",
+                "title": "Surface the drive-to-first-user-via-seed-demo vs re-park posture decision to Nick; both completion gates dead-end on it.",
+                "lens": "strategic-kill-this",
+                "reason": "blocked on Nick decision: posture (drive vs park)"
+            }
+        ],
+        "health": 85,
+        "lensScores": {
+            "architecture": 92,
+            "reliability": 90,
+            "security": 93,
+            "performance": 86,
+            "data-integrity": 86,
+            "maintainability": 84,
+            "solo-tool-ux": 88,
+            "cost-economics": 90,
+            "dependency": 93,
+            "observability": 82,
+            "strategic-kill-this": 80,
+            "compliance-data-steward": 93,
+            "worker-cpu-budget": 92,
+            "kv-data-shape": 92,
+            "auth-token-hygiene": 94,
+            "skill-suite-health": 92,
+            "work-queue-hygiene": 88,
+            "audit-loop-integrity": 66,
+            "fuse-truncation-defense": 80,
+            "incident-runbook-currency": 94,
+            "scheduled-task-firing-state": 78,
+            "skill-trigger-collisions": 91,
+            "skill-chain-handoff-integrity": 76,
+            "per-project-ps1-stack": 72,
+            "discord-notify-wiring": 95,
+            "version-pill-drift": 74,
+            "gate-page-publish": 72,
+            "release-sync": 64
+        },
+        "openFindings": [
+            {
+                "id": "release-sync-01",
+                "severity": "HIGH",
+                "priority": 25,
+                "runsOpen": 3,
+                "firstSeen": "2026-07-13"
+            },
+            {
+                "id": "audit-loop-integrity-01",
+                "severity": "MED",
+                "priority": 15,
+                "runsOpen": 6,
+                "firstSeen": "2026-06-28",
+                "chronic": true
+            },
+            {
+                "id": "strategic-kill-this-01",
+                "severity": "MED",
+                "priority": 12,
+                "runsOpen": 6,
+                "firstSeen": "2026-06-28",
+                "chronic": true
+            }
+        ],
+        "tensionsOpen": [
+            {
+                "lenses": [
+                    "audit-loop-integrity",
+                    "per-project-ps1-stack"
+                ],
+                "runsSeen": 1
+            },
+            {
+                "lenses": [
+                    "release-sync",
+                    "audit-loop-integrity"
+                ],
+                "runsSeen": 2
+            },
+            {
+                "lenses": [
+                    "cost-economics",
+                    "strategic-kill-this"
+                ],
+                "runsSeen": 6
+            }
+        ]
+    },
+    "metrics": [
+        {
+            "k": "api routes",
+            "v": "57"
+        },
+        {
+            "k": "migrations",
+            "v": "10"
+        },
+        {
+            "k": "test files",
+            "v": "22"
+        }
+    ],
+    "workQueueDepth": 1,
+    "stale": false,
+    "tags": [
+        "cloud-edge",
+        "orchestration",
+        "release-pipeline"
     ]
-  },
-  "backlog": {
-    "count": 0,
-    "items": []
-  },
-  "repoUrl": "https://github.com/TheProphetKane/yesandscheduler",
-  "workTreeClean": false,
-  "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-02.md",
-    "latestReportAt": "2026-08-02T06:34:45Z",
-    "findings": {
-      "critical": 0,
-      "high": 3,
-      "medium": 1,
-      "low": 1
-    }
-  },
-  "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-07-24.md",
-    "latestReportAt": "2026-07-25T02:30:00Z",
-    "verdict": "in-progress",
-    "topFinding": "The stranded v0.7.x pass is now 14 days old and the pile grew again, but the sharper find this run is what happens when its blocked sibling finally lands. scripts/sync-audit-dashboard.ps1 (untracked, written 2026-07-10 to close the chronic audit-pointer finding) unconditionally Remove-Item -Force's .git/index.lock and .git/HEAD.lock in YesAndEverything at lines 104-107, with no live-process check and no git-guard.ps1 dot-source. That is the exact pattern this project's CLAUDE.md and the portfolio git-safety standard forbid, aimed at the busiest repo on the FUSE mount: YaE takes writes from every per-project routine, the hourly queue drain, and the 30-minute usage refresh. Wiring it as written trades a stale dashboard pointer for NUL-corrupted YaE git state. Everything else holds: all five hard rules pass, so no BLOCK, and the 139 tests across 21 files run green in the dirty tree, so the unshipped work is verified-correct rather than merely unfinished. Health slips 88 to 85 entirely on machinery findings, not app regressions; release-sync-01 stays HIGH at 3 runs and audit-loop-integrity-01 is chronic at 6.",
-    "actionsOpen": 2,
-    "actionsClosed": 5,
-    "actions": [
-      {
-        "severity": "HIGH",
-        "title": "Bump the version, write the CHANGELOG entry, and run scripts/release.ps1 so the 14-day v0.7.x pass lands at HEAD and migration 0011 applies (prod schema advances from 0010).",
-        "lens": "release-sync",
-        "priority": 25,
-        "id": "release-sync-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Wire the hardened sync-audit-dashboard.ps1 into audit-scheduler-nightly so the dashboard audit pointer stops sitting 19 days stale (reads 2026-07-05 while CANONICAL_AUDIT-2026-07-24.md is on disk). Chronic at 6 runs.",
-        "lens": "audit-loop-integrity",
-        "priority": 15,
-        "id": "audit-loop-integrity-01"
-      }
-    ],
-    "deferred": [
-      {
-        "severity": "MED",
-        "title": "Keep the live-payment build gated behind an explicit Stripe milestone commitment so entitlement work stops accreting ahead of revenue.",
-        "lens": "cost-economics",
-        "reason": "blocked on Nick decision: commit to a Stripe milestone"
-      },
-      {
-        "severity": "MED",
-        "title": "Surface the drive-to-first-user-via-seed-demo vs re-park posture decision to Nick; both completion gates dead-end on it.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Nick decision: posture (drive vs park)"
-      }
-    ],
-    "health": 85,
-    "lensScores": {
-      "architecture": 92,
-      "reliability": 90,
-      "security": 93,
-      "performance": 86,
-      "data-integrity": 86,
-      "maintainability": 84,
-      "solo-tool-ux": 88,
-      "cost-economics": 90,
-      "dependency": 93,
-      "observability": 82,
-      "strategic-kill-this": 80,
-      "compliance-data-steward": 93,
-      "worker-cpu-budget": 92,
-      "kv-data-shape": 92,
-      "auth-token-hygiene": 94,
-      "skill-suite-health": 92,
-      "work-queue-hygiene": 88,
-      "audit-loop-integrity": 66,
-      "fuse-truncation-defense": 80,
-      "incident-runbook-currency": 94,
-      "scheduled-task-firing-state": 78,
-      "skill-trigger-collisions": 91,
-      "skill-chain-handoff-integrity": 76,
-      "per-project-ps1-stack": 72,
-      "discord-notify-wiring": 95,
-      "version-pill-drift": 74,
-      "gate-page-publish": 72,
-      "release-sync": 64
-    },
-    "openFindings": [
-      {
-        "id": "release-sync-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-13"
-      },
-      {
-        "id": "audit-loop-integrity-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-06-28",
-        "chronic": true
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 6,
-        "firstSeen": "2026-06-28",
-        "chronic": true
-      }
-    ],
-    "tensionsOpen": [
-      {
-        "lenses": [
-          "audit-loop-integrity",
-          "per-project-ps1-stack"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "release-sync",
-          "audit-loop-integrity"
-        ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "cost-economics",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 6
-      }
-    ]
-  },
-  "metrics": [
-    {
-      "k": "api routes",
-      "v": "57"
-    },
-    {
-      "k": "migrations",
-      "v": "10"
-    },
-    {
-      "k": "test files",
-      "v": "22"
-    }
-  ],
-  "workQueueDepth": 1,
-  "stale": false,
-  "tags": [
-    "cloud-edge",
-    "orchestration",
-    "release-pipeline"
-  ]
 }
