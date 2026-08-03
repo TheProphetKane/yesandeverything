@@ -26,7 +26,7 @@
       --ink-0:#06080b;--ink-1:#0d1117;--ink-2:#141a22;--ink-3:#1f2632;--ink-4:#2c3543;
       --fg-0:#ecf0f5;--fg-1:#a4aeba;--fg-2:#697381;--fg-3:#4a5563;
       --accent:#ff00ff;--accent-hot:#ff66ff;--accent-dim:#5a1d5a;--accent-glow:rgba(255,0,255,0.22);
-      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);--amber:#cc5500;--warn:#cc5500;
+      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);
       --mono:ui-monospace,"JetBrains Mono","SF Mono","Cascadia Code",Menlo,Consolas,monospace;
       --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif;
       --serif:"Iowan Old Style","Palatino Linotype","Georgia",serif;
@@ -76,17 +76,34 @@
     footer{margin-top:56px;padding-top:22px;border-top:1px dashed var(--ink-3);color:var(--fg-3);font-size:11.5px;
       display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
     @media(max-width:520px){.wrap{padding:32px 16px 64px}}
+  
+    /* a11y: focus, motion, contrast, skip link. Donor: Ring public/styles.css */
+    a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+    textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
+      outline:2px solid var(--accent,#ff00ff);outline-offset:2px;border-radius:3px}
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+        transition-duration:.001ms !important;scroll-behavior:auto !important}}
+    @media (prefers-contrast:more){
+      :root{--fg-1:#d4dae2;--fg-2:#b3bcc7}}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+      clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .skip-link{position:absolute;left:-9999px;top:8px;z-index:1000;padding:8px 14px;border-radius:4px;
+      font-family:var(--mono,ui-monospace,monospace);font-size:13px;text-decoration:none;
+      background:var(--ink-2,#141a22);color:var(--fg-0,#ecf0f5);border:1px solid var(--accent,#ff00ff)}
+    .skip-link:focus{left:8px}
   </style>
 </head>
 <body>
-  <main class="wrap">
+<a class="skip-link" href="#main">Skip to content</a>
+  <main class="wrap" id="main">
     <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>chains</div>
     <h1><span class="arrow">&rsaquo;</span> Yes&amp; Chains</h1>
     <div class="meta"><span class="pill status">Live</span><span class="pill"><!--live:version-->v1.5.0<!--/live--></span><span class="pill blue">PWA</span><span class="pill">Disc Golf</span></div>
     <p class="lead">A disc-golf caddy that lives in your pocket. Build bags, find courses, and walk a round hole-by-hole with a per-shot stat wizard that learns your game.</p>
 
     <section id="details">
-      <p class="label">details</p>
+      <h2 class="label">details</h2>
             <p class="body">Pull from roughly 6,300 US courses on a GPS map and start a round in a tap. The per-shot wizard logs throws with a tap-in shortcut inside 11 feet, an aim-point editor, and imports from TechDisc CSV and UDisc, plus JSON export so your data is yours.</p>
             <p class="body">Course detail pages show layouts, per-hole averages, score-distribution pips, and a best-at-course badge. It installs as a PWA, works fully offline, and survives mid-round signal drops with an outbox that syncs to the cloud when you reconnect.</p>
             <p class="body">An opt-in AI caddy (currently hidden behind a flag) recommends discs and lines through a Cloudflare Worker, with per-user spend caps. The app is in 1.0 launch prep.</p>
@@ -94,7 +111,7 @@
     </section>
 
     <section>
-      <p class="label">links</p>
+      <h2 class="label">links</h2>
       <div class="actions"><a href="#details" class="btn">Details</a> <a href="design.html" class="btn">Design</a> <a href="https://yesandchains.com" class="btn blue" target="_blank" rel="noopener">Launch &rarr;</a></div>
     </section>
 

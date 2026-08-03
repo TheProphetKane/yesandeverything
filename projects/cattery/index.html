@@ -26,7 +26,7 @@
       --ink-0:#06080b;--ink-1:#0d1117;--ink-2:#141a22;--ink-3:#1f2632;--ink-4:#2c3543;
       --fg-0:#ecf0f5;--fg-1:#a4aeba;--fg-2:#697381;--fg-3:#4a5563;
       --accent:#ff00ff;--accent-hot:#ff66ff;--accent-dim:#5a1d5a;--accent-glow:rgba(255,0,255,0.22);
-      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);--amber:#cc5500;--warn:#cc5500;
+      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);
       --mono:ui-monospace,"JetBrains Mono","SF Mono","Cascadia Code",Menlo,Consolas,monospace;
       --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif;
       --serif:"Iowan Old Style","Palatino Linotype","Georgia",serif;
@@ -76,24 +76,41 @@
     footer{margin-top:56px;padding-top:22px;border-top:1px dashed var(--ink-3);color:var(--fg-3);font-size:11.5px;
       display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
     @media(max-width:520px){.wrap{padding:32px 16px 64px}}
+  
+    /* a11y: focus, motion, contrast, skip link. Donor: Ring public/styles.css */
+    a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+    textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
+      outline:2px solid var(--accent,#ff00ff);outline-offset:2px;border-radius:3px}
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+        transition-duration:.001ms !important;scroll-behavior:auto !important}}
+    @media (prefers-contrast:more){
+      :root{--fg-1:#d4dae2;--fg-2:#b3bcc7}}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+      clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .skip-link{position:absolute;left:-9999px;top:8px;z-index:1000;padding:8px 14px;border-radius:4px;
+      font-family:var(--mono,ui-monospace,monospace);font-size:13px;text-decoration:none;
+      background:var(--ink-2,#141a22);color:var(--fg-0,#ecf0f5);border:1px solid var(--accent,#ff00ff)}
+    .skip-link:focus{left:8px}
   </style>
 </head>
 <body>
-  <main class="wrap">
+<a class="skip-link" href="#main">Skip to content</a>
+  <main class="wrap" id="main">
     <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>cattery</div>
     <h1><span class="arrow">&rsaquo;</span> Yes&amp; Cattery</h1>
     <div class="meta"><span class="pill status">In build</span><span class="pill"><!--live:version-->v0.25.3<!--/live--></span><span class="pill blue">Marketplace</span><span class="pill">Supabase</span></div>
     <p class="lead">A two-sided marketplace connecting screened cat breeders with serious buyers. <em>Trust is the product.</em></p>
 
     <section id="details">
-      <p class="label">details</p>
+      <h2 class="label">details</h2>
       <p class="body">Buyers browse verified catteries and litters instead of gambling on classifieds; breeders get a storefront, inquiry management, and a screening badge that actually means something because it is never faked or sold.</p>
       <p class="body">Phase one is listings plus messaging - no payments in the loop. The security boundary is enforced in the database itself: every table carries row-level-security policies, so a compromised client still cannot read another user&rsquo;s data.</p>
       <p class="body">Backend-first build on Supabase Auth + Postgres with a vanilla-JS front end. Currently in private build; launch domains are picked but not yet live.</p>
     </section>
 
     <section>
-      <p class="label">links</p>
+      <h2 class="label">links</h2>
       <div class="actions"><a href="#details" class="btn">Details</a> <a href="design.html" class="btn">Design</a> <span class="btn disabled" aria-disabled="true" title="In build - not launched yet">Launch</span></div>
     </section>
 

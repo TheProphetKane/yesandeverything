@@ -26,7 +26,7 @@
       --ink-0:#06080b;--ink-1:#0d1117;--ink-2:#141a22;--ink-3:#1f2632;--ink-4:#2c3543;
       --fg-0:#ecf0f5;--fg-1:#a4aeba;--fg-2:#697381;--fg-3:#4a5563;
       --accent:#ff00ff;--accent-hot:#ff66ff;--accent-dim:#5a1d5a;--accent-glow:rgba(255,0,255,0.22);
-      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);--amber:#cc5500;--warn:#cc5500;
+      --blue:#02a4d3;--blue-glow:rgba(2,164,211,0.28);
       --mono:ui-monospace,"JetBrains Mono","SF Mono","Cascadia Code",Menlo,Consolas,monospace;
       --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif;
       --serif:"Iowan Old Style","Palatino Linotype","Georgia",serif;
@@ -76,17 +76,34 @@
     footer{margin-top:56px;padding-top:22px;border-top:1px dashed var(--ink-3);color:var(--fg-3);font-size:11.5px;
       display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
     @media(max-width:520px){.wrap{padding:32px 16px 64px}}
+  
+    /* a11y: focus, motion, contrast, skip link. Donor: Ring public/styles.css */
+    a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+    textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
+      outline:2px solid var(--accent,#ff00ff);outline-offset:2px;border-radius:3px}
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+        transition-duration:.001ms !important;scroll-behavior:auto !important}}
+    @media (prefers-contrast:more){
+      :root{--fg-1:#d4dae2;--fg-2:#b3bcc7}}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+      clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .skip-link{position:absolute;left:-9999px;top:8px;z-index:1000;padding:8px 14px;border-radius:4px;
+      font-family:var(--mono,ui-monospace,monospace);font-size:13px;text-decoration:none;
+      background:var(--ink-2,#141a22);color:var(--fg-0,#ecf0f5);border:1px solid var(--accent,#ff00ff)}
+    .skip-link:focus{left:8px}
   </style>
 </head>
 <body>
-  <main class="wrap">
+<a class="skip-link" href="#main">Skip to content</a>
+  <main class="wrap" id="main">
     <div class="crumb"><a href="/">yesandeverything</a><span class="sep">/</span><a href="/#projects">projects</a><span class="sep">/</span>here-be-hordes</div>
     <h1><span class="arrow">&rsaquo;</span> Here Be Hordes</h1>
     <div class="meta"><span class="pill status">Pre-MVP</span><span class="pill"><!--live:version:Hordes-->v0.99.41<!--/live--></span><span class="pill blue">Godot 4.6</span><span class="pill">RTS</span></div>
     <p class="lead">A grim-dark colony-defense RTS in native 3D, framed from a classic 2:1 overhead camera. You hold a portal-anchored Order 42 outpost on a far exoplanet, pulling resources for a depleted Earth while the native undead test the wall every night.</p>
 
     <section id="details">
-      <p class="label">details</p>
+      <h2 class="label">details</h2>
             <p class="body">The fantasy is an industrial nightmare painted in oil. You raise harvesters, extractors, refineries, and habitat blocks, ring them with walls and towers, and route units across the colony grounds on a runtime-baked navmesh. The map is the enemy as much as the horde is: the colony has to grow loud to grow strong, and loud is what gets you killed.</p>
             <p class="body">The signature mechanic is <strong>noise</strong>. Every weapon fired and every building running emits sound that radiates out and pulls more enemies toward the source. A quiet base survives far longer than a productive one, so every expansion is a deliberate trade between output and exposure. A <strong>Terror</strong> system reads how badly a run is going and escalates pressure in response, so the difficulty curve bends to the player rather than a fixed script.</p>
             <p class="body">The build target is scale: hundreds to thousands of enemies on screen without the frame budget collapsing. That constraint drives the engineering, with data-oriented and batched (MultiMesh) enemy paths chosen over per-node work wherever the numbers get large. The current milestone is <!--live:milestone:Hordes-->M4, Pre-Production Lock<!--/live-->.</p>
@@ -94,7 +111,7 @@
     </section>
 
     <section>
-      <p class="label">links</p>
+      <h2 class="label">links</h2>
       <div class="actions"><a href="#details" class="btn">Details</a> <a href="/projects/here-be-hordes/design.html" class="btn">Design</a> <span class="btn disabled" aria-disabled="true">Launch</span></div>
     </section>
 
