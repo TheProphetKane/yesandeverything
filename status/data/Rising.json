@@ -1,9 +1,9 @@
 {
     "project":  "Rising",
     "displayName":  "Brackish Rising",
-    "version":  "0.59.54",
-    "lastReleaseAt":  "2026-08-03T12:17:43-05:00",
-    "lastReleaseMessage":  "Her Shambler rig is driven, and enemy Spine support is generic so the next rig needs no code. Support went into enemy_anim rather than a Shambler-specific driver: any enemy scene carrying a SpineSprite is found, cached on the node via meta, and driven from the anim state the base already computes - state to clip, facing rows 2 and 3 take the Back twins, rows 1 and 3 mirror the scale sign, magnitude stays scene-authored. draw_enemy skips its sprite blit when a rig is present so the static frame does not double-render, keeping the hover ring and HP bar. Her 0.72 scale is sanctioned scene-authored sizing, not a code scale constant. Waves still route Shamblers through the pooled MultiMesh path, so the rig shows on Node-routed Shamblers only.",
+    "version":  "0.59.55",
+    "lastReleaseAt":  "2026-08-03T13:19:17-05:00",
+    "lastReleaseMessage":  "The horde runs on frames baked from her rig, an upside-down-pool bug that predates the rig is fixed, and the pipeline is gated so it cannot silently rot. tools/bake_spine_sheets.gd samples each rig clip into a per-row sheet plus metadata with the rig sha; the artist ships rigs exactly as she does today and re-baking is our build step. enemy_renderer gained a baked mode and crowd_render_manager picks up any committed bake automatically, so the next rig animates in the horde with no code. Kane spotted pooled enemies rendering upside-down: the QuadMesh presents UV.y inverted in canvas space, so every pooled enemy has drawn flipped since the static swap - proven with tools/verify_pool_orientation.gd and fixed with a one-line shader flip. check_baked_sheets.py hard-fails the preship on rig-vs-bake sha drift; 37 new headless checks pin the row mapping and bake structure. Dead code: editor_preview_auto deleted, three degenerate variant tables collapsed, four scaffolds validated as keep. GDD carries art thumbnails for all six units and eight enemies.",
     "milestone":  {
                       "id":  "M1",
                       "label":  "Vertical Slice",
@@ -1185,7 +1185,7 @@
                     },
                     {
                         "k":  "gdd kb",
-                        "v":  "743"
+                        "v":  "918"
                     }
                 ],
     "workQueueDepth":  100,
