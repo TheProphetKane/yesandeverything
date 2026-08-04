@@ -7,78 +7,61 @@ git. The nightly queue-triage task overwrites the "Current state" section below
 on each run, so this file always reflects the latest pass rather than spawning a
 new dated file.
 
-Last pass: 2026-08-03.
+Last pass: 2026-08-04.
 ## Current state
 
-Pass: `nightly-sweep` (consolidated portfolio pass), 2026-08-03. Queue read and written through `scripts/queue_write.py`, which takes the shared lock and verifies the readback. Ages measured on the corpus's own `added` key, matching the previous two passes so the numbers stay comparable.
+Pass: `nightly-sweep` (consolidated portfolio pass), 2026-08-04. Queue read directly for measurement; the one mutation this pass made (a closure) went through `scripts/queue_write.py`, which takes the shared lock and verifies the readback. Ages measured on the corpus's own `added` key, matching prior passes.
 
 ### Depth
 
-| Measure | 2026-08-01 | 2026-08-02 | 2026-08-03 | Δ |
+| Measure | 2026-08-02 | 2026-08-03 | 2026-08-04 | Δ |
 |---|---|---|---|---|
-| Total items | 619 | 655 | **656** | +1 |
-| `pending` | 548 | 542 | 543 | +1 |
-| `blocked-on-user` | 60 | 58 | 58 | 0 |
-| `completed` | 1 | 44 | 44 | 0 |
+| Total items | 655 | 656 | **667** | +11 |
+| `pending` | 542 | 543 | 554 | +11 |
+| `blocked-on-user` | 58 | 58 | 58 | 0 |
+| `completed` | 44 | 44 | **45** | +1 |
 | `deferred` | 10 | 10 | 10 | 0 |
-| `dropped` | - | 1 | 1 | 0 |
-| Promptless (undrainable) | 0 | 0 | **0** | 0 |
-| Pending that are `auto_safe: true` | 0 | 0 | **0** | 0 |
+| `dropped` | 1 | 1 | 1 | 0 |
+| Promptless (undrainable) | 0 | 0 | **11** | +11 |
+| Pending that are `auto_safe: true` | 0 | 0 | 0 | 0 |
 
-**The queue barely moved, and that is the story.** One item in, none out. Every finding in tonight's twelve reports was already enqueued, so this sweep had almost nothing to add; and nothing drained it in twenty-four hours.
+The queue grew by 11 net, and it's a clean paper trail: 11 new pending items, all `bar-raise-finding` kind from an 2026-08-03 bar-raise run, and all 11 are **promptless** — no `prompt` field, so `work-queue-runner` cannot execute them. This is not a new defect: `queue-drain-2026-07-26-promptless-enqueues-undrainable` has tracked exactly this failure mode since 2026-07-26 ("Enqueue writers keep emitting items with no `prompt`... rate is rising"), and this pass is fresh evidence the rate is still rising. These 11 are one day old, so they don't fall into the aged-structural bucket below yet — flagging them now, before they age in, is the point of catching this early.
+
+**One closure landed this pass:** `canonical-audit-2026-07-30-scheduler-inert-system-settings-keys` (was pending, high). Tonight's Scheduler canonical-doc audit confirmed `DESIGN.md:355` (commit `d96b296`, 2026-07-30) now states plainly which `system_settings` keys are enforced and which aren't — the doc-vs-code drift this item tracked no longer exists. Closed with a note citing the evidence.
 
 ### Aged structural items (`auto_safe: false`, `pending`, older than 7 days)
 
-**267 items**, up from 239 last night. Severity: 188 medium, **60 high**, 18 low, 1 unset. Priority: 183 P2, **59 P1**, 24 P3, 1 P4. Oldest is **17 days** (2026-07-17); nothing is older, so the tail is not growing backwards, it is the middle crossing the seven-day line.
+**295 items**, up from 267 on 2026-08-03. Severity: 206 medium, **66 high**, 22 low, 1 unset. Priority: 200 P2, **66 P1**, 28 P3, 1 P4. Oldest is still **18 days** (2026-07-17) — the tail isn't growing backwards, the middle keeps crossing the seven-day line.
 
-By project: hordes 123, rising 33, everything 30, ring 17, gnosis 14, chains 8, scheduler 8, skylight 6, yab 6, agents 6, apothecary 5, cattery 4, budget 4, cross 2, portfolio 1.
+By project: hordes 124, rising 40, everything 35, ring 19, gnosis 14, chains 10, skylight 9, scheduler 9, budget 9, yab 6, agents 6, apothecary 5, cattery 4, cross 3, portfolio 1, skill-suite 1.
 
-### The aged P1 band has still never been attempted
+### The aged P1/high band has still never been attempted
 
-**62 aged P1/high items, 61 of them at `attempts: 0`** (the 62nd has no `attempts` key). Not one has been picked up and failed. Third consecutive pass finding the same clean pattern, at 39, then 56, now 62.
+**69 aged P1/high items, all 69 at `attempts: 0`.** Not one has been picked up and failed. Fourth consecutive pass finding the same clean pattern: 39, then 56, then 62, now 69.
 
-Across all 267 aged items: 257 at `attempts: 0`, 3 at `attempts: 1`, 7 unset. **96% of the aged backlog has never been touched once**, unchanged from last night.
+Disposition, unchanged from the previous three passes and for the same reason: **leave all 69 pending.** The severity guard says never archive `high`/`P0`/`P1` and set `blocked-on-user` with a `drainNote` instead. That's deliberately not applied here, because `blocked-on-user` would assert something untrue — these were never started, they're not waiting on Kane for an answer. Marking them so would also hide them from `backlog-burndown-daily`, the one routine explicitly authorized to attempt judgment-bound work.
 
-Growth is slowing: the band went 39 → 56 (+44%) in the first day, then 56 → 62 (+11%) in the second. That is intake falling back toward normal after the bar-raise burst, not the backlog draining.
-
-Disposition, unchanged from the previous two passes and for the same reason: **leave all 62 pending.** The severity guard says never archive `high`/`P0`/`P1` and set `blocked-on-user` with a `drainNote` instead. That is deliberately not applied, because `blocked-on-user` would assert something untrue: these are not waiting on Kane for an answer, they were never started. Marking them so would also hide them from `backlog-burndown-daily`, the one routine explicitly authorized to attempt judgment-bound work.
-
-Hordes alone accounts for 123 of 267 aged items. That is not neglect: its canonical doc is `docs/GDD.html`, and `CLAUDE.md` binds any GDD edit to a version bump plus a changelog entry plus a release, none of which an unattended routine may do. Every GDD-side finding is queued by construction and can only drain in an attended session. Eight consecutive nightly passes have recorded an empty Applied section there for exactly this reason.
+Hordes alone accounts for 124 of 295 aged items, same structural reason as every prior pass: its canonical doc is `docs/GDD.html`, and `CLAUDE.md` binds any GDD edit to a version bump plus a changelog entry plus a release, none of which an unattended routine may do. Ninth consecutive nightly pass recording an empty Applied section there for exactly this reason.
 
 ### Actions taken
 
-- **Archived: 0.** Justified, not skipped. Measured tonight: **zero duplicate-title groups** across all 543 pending items, **zero promptless items**, **zero items missing the `added` key**, and every aged item traces to a finding this sweep re-verified against disk. Archiving would not reduce work, it would delete the record and tomorrow's audit would re-enqueue the same finding under a new id.
-- **Status changes: 0**, for the reason above.
-- **Closed: 0.** Nothing became provably done in the last day. `canonical-audit-2026-07-30-yae-hub-audit-pointer-never-seeded` was checked as a candidate and deliberately left open: the hub's pointer resolves again tonight, but only because this sweep stamped it by hand, which is exactly what the item says nothing automated does.
-- **Opened: 1.** `audit-dashboard-absolute-docsdir-writes-absolute-pointer-2026-08-03` (P3/low), a real defect this sweep hit and corrected mid-run. Written with `added`, `kind` and `attempts` present, so the schema mistake the last two passes had to fix did not recur.
-- **Schema normalisation: 0 needed**, first pass in three nights with nothing to correct.
+- **Archived: 0.** Same justification as every prior pass: zero duplicate-title groups measured across all 554 pending items, zero items missing the `added` key, and every re-checked aged item still traces to a finding this sweep (or a prior one) verified against disk tonight.
+- **Closed: 1.** `canonical-audit-2026-07-30-scheduler-inert-system-settings-keys` (detail above).
+- **Status changes: 1** (the closure above). No other status changes — nothing else became provably done tonight.
+- **Opened: 0** from this queue-triage pass directly. (Tonight's twelve canonical-doc audits found no findings that weren't already queued — see each project's `CANONICAL_AUDIT-2026-08-04.md`.)
+- **Flagged, not yet actioned:** the 11 new promptless `bar-raise-finding` items (detail above) — fresh evidence for the standing `queue-drain-2026-07-26-promptless-enqueues-undrainable` item, not a new root cause.
+- **Schema normalisation: 0 needed.**
 
-### Intake vs close: the governor still cannot reach its own target
+### Intake vs close: still cannot reach its own target
 
-`status/data/backlog-trend.json`, written by `backlog-burndown-daily`:
-
-| Date | actionsOpen | queuePending | opened | closed | Outcome |
-|---|---|---|---|---|---|
-| 2026-07-27 | 399 | 358 | 0 | 7 | target met |
-| 2026-07-28 | 398 | 382 | 11 | 13 | target met |
-| 2026-07-30 | 560 | 536 | **164** | 2 | UNDER-WATER, target 166 |
-| 2026-08-01 | 668 | 576 | **109** | 2 | UNDER-WATER, target 111 |
-| 2026-08-02 | - | 663 | 0 | 5 | net -5 |
-
-The 08-02 row is the first good news in a week: intake 0, closed 5. But it is a burst, not a trend, and it came from a burndown run rather than from any change to the structure below.
-
-**1. Intake is bursty because bar-raise files every lens finding.** Daily intake ran 0-11 while per-project audits fed the queue; since 2026-07-30 it has spiked to 109-164 on bar-raise days and near zero otherwise. The governor's rule is "close intake + 2", which is unreachable in a 45-minute box on a spike day.
-
-**2. There is still no automated drain.** The `auto_safe: true` pool is at **zero pending items** for a third consecutive night, and `queue-drain-hourly` remains `enabled: false`, last run 2026-07-31. The only live drain is `backlog-burndown-daily`: judgment-authorized, time-boxed, closing 2-5 per run.
-
-At the observed rates the aged band grows on bar-raise days faster than the burndown clears in a week.
+`status/data/backlog-trend.json`, written by `backlog-burndown-daily`, was not independently re-derived this pass (stayed inside the nightly time box); the 2026-08-02 trend note (`intake 0, closed 5, net -5`, first good week in a while) is the most recent reading on record. This report doesn't have a fresher number to add to that table tonight.
 
 ### Recommendation
 
-Unchanged, because nothing about the structure changed. This queue does not need triage and will not respond to more of it. The options are a decision for Kane:
+Unchanged from every prior pass, because nothing about the structure changed. This queue does not need triage and will not respond to more of it. The options are a decision for Kane:
 
-- **Cap bar-raise intake.** File only the top N findings per run and summarise the rest in the report, so the queue tracks what will actually be worked.
+- **Cap bar-raise intake** and fix the promptless-enqueue bug at the source — tonight's 11 new stranded items are exactly the failure mode `queue-drain-2026-07-26-promptless-enqueues-undrainable` describes, still live eight days after it was filed.
 - **Re-enable `queue-drain-hourly`** and rebuild an auto-safe class, so mechanical items stop competing with judgment items for the burndown's box.
 - **Accept the queue as an archive rather than a work list**, stop measuring the governor against a target it cannot hit, and say so in the trend note instead of logging UNDER-WATER.
 
-Doing none of these is also a choice. Its outcome is visible: 62 P1 items, none of them ever attempted, the oldest now 17 days.
+Doing none of these is also a choice. Its outcome is visible: 69 P1/high items, none of them ever attempted, the oldest now 18 days, and an undrainable-item defect that keeps reproducing on every bar-raise run.
