@@ -1231,15 +1231,24 @@
       });
     });
   }
-  function smoothPath(pts) {
+  // Catmull-Rom-ish smoothing. The control points are derived from the NEIGHBOURS, so on a
+  // sharp 0 -> spike -> 0 transition the curve overshoots past the data envelope. On this
+  // chart the midline is a semantic boundary (tokens above it, cache dollars below), and the
+  // overshoot pushed every series across it by up to 3.5px on 13 of 14 project views.
+  // yMin/yMax are optional: pass the series' own half of the chart and the control points are
+  // clamped into it, so a curve can never bleed past its own baseline. Omit them for the old
+  // unclamped behaviour.
+  function smoothPath(pts, yMin, yMax) {
     if (!pts.length) return "";
-    if (pts.length < 3) return "M" + pts.map(function (p) { return p[0] + "," + p[1]; }).join(" L");
-    var d = "M" + pts[0][0] + "," + pts[0][1];
+    var lo = (yMin == null) ? -Infinity : yMin, hi = (yMax == null) ? Infinity : yMax;
+    function cy(v) { return Math.max(lo, Math.min(hi, v)); }
+    if (pts.length < 3) return "M" + pts.map(function (p) { return p[0] + "," + cy(p[1]); }).join(" L");
+    var d = "M" + pts[0][0] + "," + cy(pts[0][1]).toFixed(1);
     for (var i = 0; i < pts.length - 1; i++) {
       var p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
-      d += "C" + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + "," + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)
-         + " " + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + "," + (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)
-         + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
+      d += "C" + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + "," + cy(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)
+         + " " + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + "," + cy(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)
+         + " " + p2[0].toFixed(1) + "," + cy(p2[1]).toFixed(1);
     }
     return d;
   }
@@ -1727,7 +1736,7 @@
       var base = H - 20;
       var cPts = days.map(function (r, i) { return [i * step, base - (r.cost / maxCost) * (base - 8)]; });
       lastY = cPts[cPts.length - 1][1];
-      var dnD = smoothPath(cPts);
+      var dnD = smoothPath(cPts, 0, base);   // never dip below its own baseline
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gc-" + projId + ")", d: dnD + " L" + W + "," + base + " L0," + base + " Z" }));
       svg.appendChild(svgEl("line", { class: "midline", x1: 0, y1: base, x2: W, y2: base }));
       dnPathEl = svgEl("path", { class: "line out-l", d: dnD, pathLength: 1 });
@@ -1747,7 +1756,10 @@
         return [i * step, isFlow ? (MID - dv) : (MID + dv)];
       });
       lastY = upPts[upPts.length - 1][1];
-      var upD = smoothPath(upPts), dnD2 = smoothPath(dnPts);
+      // "in" always sits above the midline. "out" joins it above in flow view, but stays
+      // mirrored below in the cache view, so its clamp follows the same branch.
+      var upD = smoothPath(upPts, 0, MID);
+      var dnD2 = isFlow ? smoothPath(dnPts, 0, MID) : smoothPath(dnPts, MID, H);
       svg.appendChild(svgEl("path", { class: "area in-a", fill: "url(#gin-" + projId + ")", d: upD + " L" + W + "," + MID + " L0," + MID + " Z" }));
       svg.appendChild(svgEl("path", { class: "area out-a", fill: "url(#gout-" + projId + ")", d: dnD2 + " L" + W + "," + MID + " L0," + MID + " Z" }));
 
@@ -1776,7 +1788,9 @@
           var shown = Math.min(lossVal(r) * LOSS_MULT, gainVal(r) * 0.9);
           return [i * step, MID + (shown / maxGain) * AMP];
         });
-        var gainD = smoothPath(gainPts), lossD = smoothPath(lossPts);
+        // Both cache series live strictly below the midline; clamp so neither bleeds up into
+        // the token half, and so a zero-loss day rests exactly on the midline.
+        var gainD = smoothPath(gainPts, MID, H), lossD = smoothPath(lossPts, MID, H);
         svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L0," + MID + " Z" }));
         svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
         svg.appendChild(svgEl("path", { class: "line loss-l", d: lossD, pathLength: 1 }));
