@@ -1,62 +1,70 @@
 {
-  "purpose": "Daily backlog trend. Written by backlog-burndown-daily. actionsOpen = sum of barRaise.actionsOpen across projects; queuePending = pending items in .work-queue.json. opened/closed are that day's deltas the burndown observed/effected.",
-  "updated": "2026-08-03T13:50:00Z",
-  "series": [
-    {
-      "date": "2026-07-27",
-      "actionsOpen": 406,
-      "queuePending": 358,
-      "opened": null,
-      "closed": null,
-      "note": "baseline seeded when the daily governor was built"
-    },
-    {
-      "date": "2026-07-27",
-      "actionsOpen": 399,
-      "queuePending": 358,
-      "opened": 0,
-      "closed": 7,
-      "note": "first governed run; target was 5 (intake 0). Closed 3 Apothecary (shipped v1.1.3), 3 Scheduler, 1 Rising (shipped v0.59.50)."
-    },
-    {
-      "date": "2026-07-28",
-      "actionsOpen": 398,
-      "queuePending": 382,
-      "opened": 11,
-      "closed": 13,
-      "note": "target 13 (intake 11 + 2) met. Ring 3 (v0.17.20/21), YaE 4, Chains 2, Scheduler 1, Hordes 1 (v0.99.41), Apothecary 1 (v1.1.4). Also fixed a portfolio-wide status-writer cp1252 read bug across 9 repos."
-    },
-    {
-      "date": "2026-07-30",
-      "actionsOpen": 560,
-      "queuePending": 536,
-      "opened": 164,
-      "closed": 2,
-      "note": "UNDER-WATER. Intake 164 (45 unlogged on 2026-07-29 - no ledger entry that day - plus 119 from this mornings Hordes/Budget/Chains/Apothecary bar-raises). Target was 166, unreachable in a 45-min box. Closed 2 HIGH exposure items end-to-end: YaE yae-tracked-queue-artifacts-public (four queue snapshots untracked from the public repo, verified 404 on Pages and raw) and Ring brand-consistency-01 (real name and email fictionalized in public/data/seed.json, shipped v0.17.22). Skill-namespace collision cluster (~5 findings across Budget/Chains/Hordes) left open: needs Kanes call on which namespace is authoritative."
-    },
-    {
-      "date": "2026-08-01",
-      "actionsOpen": 668,
-      "queuePending": 576,
-      "opened": 109,
-      "closed": 2,
-      "note": "UNDER-WATER. Intake 109 (669 open at start vs 560 logged 2026-07-30; no ledger entry on 2026-07-31 so some of that is unlogged carry). Target was 111, not reachable in a 45-min box. Closed 2 Cattery items end-to-end and shipped v0.25.2/v0.25.3: prose em dashes out of public/app.js incl the entity form, and the API rate limiter re-keyed off the caller-controlled Authorization header onto cf-connecting-ip. Verification turned up a bigger one: the API_RATE_LIMITER binding does not enforce at all (40 calls on one key against a 30/60s cap all success:true) - logged as a new HIGH, needs a wrangler v4 bump to move to the GA ratelimits shape. Also fixed the Cattery smoke test reporting an unreachable host as a failed security assertion, and scoped its YaE status commit so it stops sweeping other sessions staged work."
-    },
-    {
-      "date": "2026-08-02",
-      "actionsOpen": 663,
-      "queuePending": 542,
-      "opened": 0,
-      "closed": 5,
-      "note": "Target met: intake 0 (668 open at start, same as the 2026-08-01 entry), so TARGET was the quiet-day floor of 5. Closed 5 end-to-end and pushed all of them. YaE: untracked the 65 .work-queue-results files the ignore rule already covered; replaced the four entity dashes on terms/, budget/ and projects/budget/ and extended voice_violations.py to scan public HTML, which immediately caught a fifth on index.html:2149; scoped the bar-raise skip gate to project-owned paths so it can fire at all. Scheduler: rewrote the project index and design pages from the v0.4.1 prose to the v0.7.x surface. Apothecary: the stranded PROJECT_SPEC drift fixes had already shipped in 8c95e32, closed on evidence rather than a fabricated fix. Also fixed a pre-existing release blocker found on the way: this morning's constellation bar-raise wrote the literal hordes gate phrase into topActions[4].label, so check-status-json.ps1 was failing portfolio-wide and no project could release. Reworded without the phrase; guard green. Two things could NOT be done: the .loop-* half of yae-housekeeping-tracked-cruft (56 stale probe dirs, bulk delete blocked by the permission classifier, left open) and syncing the installed plugin copy of voice_violations.py under AppData (not writable from this session), so the extended check is live in source but not in the running skill until the already-tracked repackage-and-reinstall action lands."
-    },
-    {
-      "date": "2026-08-03",
-      "actionsOpen": 705,
-      "queuePending": 554,
-      "opened": 49,
-      "closed": 7,
-      "note": "UNDER-WATER. Intake 49 (712 open at start vs 663 logged 2026-08-02, from this morning's bar-raises), so TARGET was 51 and a 45-min box could not reach it. Closed 7 end-to-end and pushed all of them, all YaE. Five went in one sweep over the public sub-pages: ported the Ring a11y block (the better donor - element-agnostic focus-visible list and a universal reduced-motion reset rather than per-class rules) into the 18 project pages plus status, sitemap, terms and 404, added a skip link and a main landmark to every page lacking one, fixed heading structure (gate card title down to h2 so the document title is the single h1 on the design pages, section labels up to real h2s, an h1 for 404), and aligned the Budget page's --amber from cc5500 to the homepage gold cc8400 plus dropped the amber and warn declarations no page referenced. Also passed a -Path pathspec from release.ps1 into push-to-github.ps1 (the receiving half already existed) and shipped it through the new code path itself as the test: the commit carried exactly one file and left another session's staged Hordes/Rising work staged. Finished yae-housekeeping-tracked-cruft - yesterday's blocked .loop-* half cleared via PowerShell (56 zero-byte probe files) and the four June investigation reports untracked. Reverted my own edits to apothecary/, brackish-rising/ and hordes/: CLAUDE.md says those are generated mirrors, so the fix belongs in their source repos. Left yae-local-git-never-packed alone - it is gated on no routines in flight and the hourly queue-drain fires at :30. Left yae-handover-roadmap-stale-scheduling alone - BAR_RAISE_ROADMAP.md is referenced by CLAUDE.md, PERSONAL_CLAUDE_ARCHITECTURE.md and the bar-raise skill sources, so retiring it is doc surgery, not a quick close."
-    }
-  ]
+    "purpose": "Daily backlog trend. Written by backlog-burndown-daily. actionsOpen = sum of barRaise.actionsOpen across projects; queuePending = pending items in .work-queue.json. opened/closed are that day's deltas the burndown observed/effected.",
+    "updated": "2026-08-04T13:37:54Z",
+    "series": [
+        {
+            "date": "2026-07-27",
+            "actionsOpen": 406,
+            "queuePending": 358,
+            "opened": null,
+            "closed": null,
+            "note": "baseline seeded when the daily governor was built"
+        },
+        {
+            "date": "2026-07-27",
+            "actionsOpen": 399,
+            "queuePending": 358,
+            "opened": 0,
+            "closed": 7,
+            "note": "first governed run; target was 5 (intake 0). Closed 3 Apothecary (shipped v1.1.3), 3 Scheduler, 1 Rising (shipped v0.59.50)."
+        },
+        {
+            "date": "2026-07-28",
+            "actionsOpen": 398,
+            "queuePending": 382,
+            "opened": 11,
+            "closed": 13,
+            "note": "target 13 (intake 11 + 2) met. Ring 3 (v0.17.20/21), YaE 4, Chains 2, Scheduler 1, Hordes 1 (v0.99.41), Apothecary 1 (v1.1.4). Also fixed a portfolio-wide status-writer cp1252 read bug across 9 repos."
+        },
+        {
+            "date": "2026-07-30",
+            "actionsOpen": 560,
+            "queuePending": 536,
+            "opened": 164,
+            "closed": 2,
+            "note": "UNDER-WATER. Intake 164 (45 unlogged on 2026-07-29 - no ledger entry that day - plus 119 from this mornings Hordes/Budget/Chains/Apothecary bar-raises). Target was 166, unreachable in a 45-min box. Closed 2 HIGH exposure items end-to-end: YaE yae-tracked-queue-artifacts-public (four queue snapshots untracked from the public repo, verified 404 on Pages and raw) and Ring brand-consistency-01 (real name and email fictionalized in public/data/seed.json, shipped v0.17.22). Skill-namespace collision cluster (~5 findings across Budget/Chains/Hordes) left open: needs Kanes call on which namespace is authoritative."
+        },
+        {
+            "date": "2026-08-01",
+            "actionsOpen": 668,
+            "queuePending": 576,
+            "opened": 109,
+            "closed": 2,
+            "note": "UNDER-WATER. Intake 109 (669 open at start vs 560 logged 2026-07-30; no ledger entry on 2026-07-31 so some of that is unlogged carry). Target was 111, not reachable in a 45-min box. Closed 2 Cattery items end-to-end and shipped v0.25.2/v0.25.3: prose em dashes out of public/app.js incl the entity form, and the API rate limiter re-keyed off the caller-controlled Authorization header onto cf-connecting-ip. Verification turned up a bigger one: the API_RATE_LIMITER binding does not enforce at all (40 calls on one key against a 30/60s cap all success:true) - logged as a new HIGH, needs a wrangler v4 bump to move to the GA ratelimits shape. Also fixed the Cattery smoke test reporting an unreachable host as a failed security assertion, and scoped its YaE status commit so it stops sweeping other sessions staged work."
+        },
+        {
+            "date": "2026-08-02",
+            "actionsOpen": 663,
+            "queuePending": 542,
+            "opened": 0,
+            "closed": 5,
+            "note": "Target met: intake 0 (668 open at start, same as the 2026-08-01 entry), so TARGET was the quiet-day floor of 5. Closed 5 end-to-end and pushed all of them. YaE: untracked the 65 .work-queue-results files the ignore rule already covered; replaced the four entity dashes on terms/, budget/ and projects/budget/ and extended voice_violations.py to scan public HTML, which immediately caught a fifth on index.html:2149; scoped the bar-raise skip gate to project-owned paths so it can fire at all. Scheduler: rewrote the project index and design pages from the v0.4.1 prose to the v0.7.x surface. Apothecary: the stranded PROJECT_SPEC drift fixes had already shipped in 8c95e32, closed on evidence rather than a fabricated fix. Also fixed a pre-existing release blocker found on the way: this morning's constellation bar-raise wrote the literal hordes gate phrase into topActions[4].label, so check-status-json.ps1 was failing portfolio-wide and no project could release. Reworded without the phrase; guard green. Two things could NOT be done: the .loop-* half of yae-housekeeping-tracked-cruft (56 stale probe dirs, bulk delete blocked by the permission classifier, left open) and syncing the installed plugin copy of voice_violations.py under AppData (not writable from this session), so the extended check is live in source but not in the running skill until the already-tracked repackage-and-reinstall action lands."
+        },
+        {
+            "date": "2026-08-03",
+            "actionsOpen": 705,
+            "queuePending": 554,
+            "opened": 49,
+            "closed": 7,
+            "note": "UNDER-WATER. Intake 49 (712 open at start vs 663 logged 2026-08-02, from this morning's bar-raises), so TARGET was 51 and a 45-min box could not reach it. Closed 7 end-to-end and pushed all of them, all YaE. Five went in one sweep over the public sub-pages: ported the Ring a11y block (the better donor - element-agnostic focus-visible list and a universal reduced-motion reset rather than per-class rules) into the 18 project pages plus status, sitemap, terms and 404, added a skip link and a main landmark to every page lacking one, fixed heading structure (gate card title down to h2 so the document title is the single h1 on the design pages, section labels up to real h2s, an h1 for 404), and aligned the Budget page's --amber from cc5500 to the homepage gold cc8400 plus dropped the amber and warn declarations no page referenced. Also passed a -Path pathspec from release.ps1 into push-to-github.ps1 (the receiving half already existed) and shipped it through the new code path itself as the test: the commit carried exactly one file and left another session's staged Hordes/Rising work staged. Finished yae-housekeeping-tracked-cruft - yesterday's blocked .loop-* half cleared via PowerShell (56 zero-byte probe files) and the four June investigation reports untracked. Reverted my own edits to apothecary/, brackish-rising/ and hordes/: CLAUDE.md says those are generated mirrors, so the fix belongs in their source repos. Left yae-local-git-never-packed alone - it is gated on no routines in flight and the hourly queue-drain fires at :30. Left yae-handover-roadmap-stale-scheduling alone - BAR_RAISE_ROADMAP.md is referenced by CLAUDE.md, PERSONAL_CLAUDE_ARCHITECTURE.md and the bar-raise skill sources, so retiring it is doc surgery, not a quick close."
+        },
+        {
+            "date": "2026-08-04",
+            "actionsOpen": 654,
+            "queuePending": 553,
+            "opened": 0,
+            "closed": 5,
+            "note": "Target met: intake 0 (open count actually dropped from 705 logged 2026-08-03 to 659 measured this morning, some other session's closes landing overnight), so TARGET was the quiet-day floor of 5. Closed 5 end-to-end and pushed all of them across 4 repos. YaE: shipped yae-guards-absent-from-workflow-path (HIGH, 13 runs open) by adding an artifact-integrity guard step to deploy-pages.yml mirroring push-to-github.ps1's index.html/CNAME/hordes-gate checks plus check-status-json.ps1, dry-run verified locally before shipping and confirmed green on the live GitHub Actions run after push. Gnosis: recorded three.js r128's MIT licence, upstream URL and pin rationale in PROJECT_SPEC.md, shipped through release.ps1 (v0.3.402, all live checks passed). Chains: added the missing README.md row to CLAUDE.md's canonical-layer routing table, scoped the commit around another session's in-progress app.js/auth-modal/cloud/main.ts edits so those stayed untouched. Budget: rewrote the YaE-WARN hazard entry in CLAUDE.md to name the PS 5.1 stderr-wrap cause and the v0.14.10 Invoke-Git fix instead of telling every future session to shrug the WARN off forever, verified against CHANGELOG.md that v0.14.9/v0.14.10 actually shipped that fix. Cattery: fixed the bar-raise-cattery scheduled-task brief (outside any repo, at the scheduled-tasks SKILL.md) which still called Cattery a no-payments Phase 1 project; Stripe Connect escrow shipped v0.25.1. One self-inflicted near-miss: a Budget.json hand-edit briefly introduced a duplicate-brace JSON syntax error, caught by check-status-json.ps1 before commit and fixed. Attempted and abandoned: untracking the 143-file _skill-review/ tree (a real MED security exposure, 19 runs open) was blocked by the auto-mode classifier on a bulk git rm --cached as a destructive-looking op; left open rather than working around the block."
+        }
+    ]
 }
