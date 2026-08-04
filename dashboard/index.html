@@ -334,12 +334,9 @@
   .flow .side-label.in { top: 4px; color: var(--cyan); opacity: 0.85; }
   /* "out" moved up to share the top with "in" (2026-08-01); stacked directly under it. */
   .flow .side-label.out { top: 17px; color: var(--accent); opacity: 0.85; }
-  /* cache gain/loss occupy the bottom half "out" vacated, in two SEPARATE lanes on their
-     own scales: gain hangs down from the midline, loss rises from its own baseline. Each
-     label sits with its own lane rather than both being stacked at the bottom. */
-  .flow .side-label.gain { top: 50%; margin-top: 3px; color: var(--ok); opacity: 0.85; }
-  .flow .side-label.loss { bottom: 30px; color: var(--loss); opacity: 0.85; }
-  .flow line.lossbase { stroke: var(--ink-4); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.65; }
+  /* cache gain/loss share the bottom half "out" vacated, one lane, one scale. */
+  .flow .side-label.gain { bottom: 22px; color: var(--ok); opacity: 0.85; }
+  .flow .side-label.loss { bottom: 9px; color: var(--loss); opacity: 0.85; }
   .flow path.area { opacity: 0; animation: areaIn 1.1s var(--ease-out-quart) forwards; }
   .flow path.area.in-a { animation-delay: 0.15s; }
   .flow path.area.out-a { animation-delay: 0.3s; }
@@ -1755,25 +1752,32 @@
       svg.appendChild(svgEl("path", { class: "area out-a", fill: "url(#gout-" + projId + ")", d: dnD2 + " L" + W + "," + MID + " L0," + MID + " Z" }));
 
       if (isFlow) {
-        // Cache gain (green) and loss (red) each get their OWN LANE in the bottom half, with
-        // its own baseline and its own scale. Two earlier attempts both failed to read:
-        //   1. both anchored at the midline, independent scales -> the translucent fills
-        //      overlapped where both gradients are strongest and blended into orange.
-        //   2. stacked on one shared scale -> no overlap, but loss is only 1.7-8.6% of gain
-        //      on a normal day, so the red curve sat ~2% off the green and read as ONE line
-        //      (Kane, 2026-08-04: "lined up, they arent actually reading properly").
-        // Separate lanes fix both at once: the bands cannot share pixels (no blending) and
-        // each is scaled to its own norm (a small loss still fills its lane and is legible).
-        // Gain hangs DOWN from the midline; loss rises UP from the bottom; a gap between.
-        var LANE = 21, GAP = 6;
-        var gainBase = MID, lossBase = MID + AMP;
-        var gainPts = days.map(function (r, i) { return [i * step, gainBase + (gainVal(r) / maxGain) * LANE]; });
-        var lossPts = days.map(function (r, i) { return [i * step, lossBase - (lossVal(r) / maxLoss) * LANE]; });
+        // Cache gain (green) and loss (red) share ONE lane hanging down from the midline and
+        // ONE scale (maxGain), so they read against each other directly. Loss is AMPLIFIED so
+        // it is trackable, and CLAMPED so it can never draw taller than that day's gain.
+        //
+        // The bug this replaces: the red line used to trace gain+loss (a stack top). Loss runs
+        // 1.7-8.6% of gain, so the two paths differed by well under a pixel and rendered as
+        // literally the same line - Kane, 2026-08-04: "100% aligned to a T, which means there
+        // was something wrong". It was a real defect, not a scale nuance.
+        //
+        // LOSS_MULT is derived, not hardcoded: it lifts the worst loss day to ~70% of the
+        // chart's gain peak, so the red line has real amplitude whatever the ratio happens to
+        // be. The per-day clamp is what enforces "never sits larger than cache saved" even on
+        // an outlier day (e.g. a thin-data day where loss is a big fraction of a tiny gain).
+        // Loss draws as a LINE ONLY, no filled area: two translucent fills overlapping in one
+        // lane is what blended green-under-red into orange in an earlier pass.
+        var LOSS_MULT = Math.max(1, (maxGain / Math.max(maxLoss, 1e-9)) * 0.7);
+        var gainPts = days.map(function (r, i) { return [i * step, MID + (gainVal(r) / maxGain) * AMP]; });
+        var lossPts = days.map(function (r, i) {
+          // Clamp to 90% of gain, not 100%: clamping to exactly gain made the two lines
+          // coincident on the days where the clamp bites, which is the same unreadable
+          // "aligned to a T" result this whole fix exists to remove.
+          var shown = Math.min(lossVal(r) * LOSS_MULT, gainVal(r) * 0.9);
+          return [i * step, MID + (shown / maxGain) * AMP];
+        });
         var gainD = smoothPath(gainPts), lossD = smoothPath(lossPts);
-        svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + gainBase + " L0," + gainBase + " Z" }));
-        svg.appendChild(svgEl("path", { class: "area loss-a", fill: "url(#gloss-" + projId + ")", d: lossD + " L" + W + "," + lossBase + " L0," + lossBase + " Z" }));
-        // Loss baseline, so a zero-loss day reads as "sitting on the floor" rather than blank.
-        svg.appendChild(svgEl("line", { class: "lossbase", x1: 0, y1: lossBase, x2: W, y2: lossBase }));
+        svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L0," + MID + " Z" }));
         svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
         svg.appendChild(svgEl("path", { class: "line loss-l", d: lossD, pathLength: 1 }));
       }
@@ -1850,8 +1854,9 @@
     if (labelUp) wrap.appendChild(el("span", { className: "side-label in", text: labelUp, title: VIEW === "cost" ? "estimated dollars per day" : VIEW === "cache" ? "context re-read from cache" : "prompt + context tokens in" }));
     if (labelDn) wrap.appendChild(el("span", { className: "side-label out", text: labelDn, title: VIEW === "cache" ? "context written to cache" : "generated tokens out" }));
     if (isFlow) {
-      wrap.appendChild(el("span", { className: "side-label gain", text: "cache saved ≤" + fmtUSD(maxGain), title: "$ actually saved by cache reads that day. Hangs down from the midline, on its OWN scale (peak " + fmtUSD(maxGain) + "/day) so it stays readable next to a much smaller loss." }));
-      wrap.appendChild(el("span", { className: "side-label loss", text: "re-cache lost ≤" + fmtUSD(maxLoss), title: "$ spent rebuilding a cache that should still have been warm: idle past the 1h/5m TTL, or a mid-session model/effort switch, /compact, etc. Rises from its own baseline on its OWN scale (peak " + fmtUSD(maxLoss) + "/day). NOTE the two cache lanes are NOT on a shared scale, so height is not directly comparable between them: read the numbers in the hover tooltip for that." }));
+      var lossMultTxt = "×" + (LOSS_MULT >= 10 ? Math.round(LOSS_MULT) : LOSS_MULT.toFixed(1));
+      wrap.appendChild(el("span", { className: "side-label gain", text: "cache saved", title: "$ actually saved by cache reads that day. True scale, peak " + fmtUSD(maxGain) + "/day." }));
+      wrap.appendChild(el("span", { className: "side-label loss", text: "re-cache lost " + lossMultTxt, title: "$ spent rebuilding a cache that should still have been warm: idle past the 1h/5m TTL, or a mid-session model/effort switch, /compact, etc. Real peak " + fmtUSD(maxLoss) + "/day, which is only " + (100 * maxLoss / maxGain).toFixed(1) + "% of the cache-saved peak, so the line is drawn " + lossMultTxt + " to be trackable. It is also clamped so it can never draw taller than that day's cache-saved line. Hover any day for the true dollar figures." }));
     }
     wrap.appendChild(svg);
     var axis = el("div", { className: "axis-note" });
