@@ -32,6 +32,37 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Guard artifact integrity
+        # Mirrors the local push-time guards in scripts/push-to-github.ps1 and
+        # scripts/check-status-json.ps1 so a push that bypassed those scripts
+        # (raw git push, a different script) still can't ship a truncated
+        # index.html, a broken CNAME, or a corrupt status/data/*.json.
+        shell: pwsh
+        run: |
+          & ./scripts/check-status-json.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          $indexTail = ((Get-Content index.html -Tail 3) -join "`n").TrimEnd()
+          if (-not $indexTail.EndsWith("</html>")) {
+            Write-Host "INTEGRITY FAIL: index.html does not end with </html>." -ForegroundColor Red
+            exit 1
+          }
+
+          $cname = (Get-Content CNAME -Raw).Trim()
+          if ($cname -ne "yesandeverything.com") {
+            Write-Host "INTEGRITY FAIL: CNAME should be 'yesandeverything.com' but contains: '$cname'" -ForegroundColor Red
+            exit 1
+          }
+
+          if (Test-Path "hordes/index.html") {
+            $hordesContent = Get-Content "hordes/index.html" -Raw
+            if ($hordesContent -notmatch '(?:var|let|const)\s+ENCODED\s*=') {
+              Write-Host "INTEGRITY FAIL: hordes/index.html no longer has the var ENCODED line." -ForegroundColor Red
+              exit 1
+            }
+          }
+
+          Write-Host "Artifact integrity guards passed." -ForegroundColor Green
       - name: Stamp live project data into pages
         # Every project release pushes its status/data/<Project>.json here, which
         # triggers this deploy; this step folds those numbers (version, milestone)
