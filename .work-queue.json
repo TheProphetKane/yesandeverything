@@ -13185,8 +13185,23 @@
       "source": "bar-raise-rotating 2026-08-03 (X:\\HereBeHordes\\docs\\BAR_RAISE-2026-08-03.md)",
       "title": "Restore gui/theme/custom_font pointing at assets/fonts/Electrolize-Regular.ttf in project.godot, then reconcile the choose_mode.gd:6-7 header comment to the section 15 rule.",
       "evidence": "project.godot has no [gui] section at all; docs/GDD.html:1878 and :4711 both claim Electrolize is wired as project.godot gui/theme/custom_font; Electrolize is referenced in exactly one place in the whole UI tree, choose_mode.gd:36,239; choose_mode.gd:6-7 documents the inverse rule"
+    },
+    {
+      "id": "nightly-sweep-2026-08-05-chains-findings-count-writer-zero",
+      "added": "2026-08-05",
+      "project": "chains",
+      "kind": "drift-fix",
+      "auto_safe": false,
+      "priority": "P2",
+      "status": "pending",
+      "attempts": 0,
+      "source": "nightly-sweep 2026-08-05 / X:\\YesAndEverything\\docs\\DIGEST-2026-08-05.md",
+      "severity": "low",
+      "title": "Chains dashboard audit findings-count writer reports 0/0/0/0 against a real 10-finding report",
+      "detail": "status/data/Chains.json's audit.findings block has read {critical:0,high:0,medium:0,low:0} for at least the last two nightly passes, while docs/CANONICAL_AUDIT-2026-08-05.md (and the 08-04 report before it) carries 10 numbered carried findings. Whatever writes Chains' findings counts into the dashboard JSON either isn't running for this project or is silently zeroing the block. Tonight's audit-pointer refresh only touches latestReportPath/latestReportAt by design and does not correct findings counts, so this has been carried unfixed across passes. Needs someone to find and fix the writer (likely the same class of bug as the Budget dashboard-writer zeros fix from e2a6f47, but confirm before assuming the same root cause).",
+      "prompt": "CHAINS LOW P2 (source: nightly-sweep 2026-08-05): Chains dashboard audit findings-count writer reports 0/0/0/0 against a real 10-finding report.\n\nstatus/data/Chains.json's audit.findings block reads {critical:0,high:0,medium:0,low:0} while the actual canonical-doc audit report carries 10 numbered carried findings. Find whatever writes this project's findings counts (check scripts/write-dashboard-status.ps1 or equivalent in X:\\YesAndChains) and confirm whether it's not running, misparsing the report's severity tags, or silently zeroing on some condition. Compare against Budget's e2a6f47 fix (a similar zeros bug) but verify the root cause before assuming it's identical. Fix the writer so it reflects the report's actual severity counts, then re-verify against the current CANONICAL_AUDIT report."
     }
   ],
   "last_drain": "2026-07-31T00:00Z",
-  "updated": "2026-08-05T06:23Z"
+  "updated": "2026-08-05T06:28Z"
 }
