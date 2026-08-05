@@ -5744,7 +5744,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -5759,7 +5759,8 @@
       "notes": "Auto-enqueued by audit-budget-nightly 2026-07-25. Handler-file edit, deliberately excluded from the auto-fix pass.\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
       "prompt": "BUDGET MEDIUM P1 (source: audit-budget-nightly 2026-07-25 / X:\\YesAndBudget\\docs\\CANONICAL_AUDIT-2026-07-25.md): YaB CLAUDE.md still tells the reader to dismiss a release WARN that is now a real signal\n\nCLAUDE.md:87-89 documents 'release.ps1 \"YaE ... failed\" WARN is usually a false alarm' and instructs the reader not to go digging in YaE on the strength of it. That was true through v0.14.8: the spurious WARN came from PowerShell 5.1 wrapping a native git command's ordinary stderr into an ErrorRecord, flipping $? even on exit code 0. v0.14.9 and v0.14.10 added the shared Invoke-Git wrapper at scripts/git-guard.ps1:30-39, and write-dashboard-status.ps1 now routes its git calls through it and gates each WARN on $LASTEXITCODE (lines 265 and 273). A WARN today means the dashboard push actually failed. The handler now inverts the correct response. Rewrite the hazard section to say the artifact was fixed in v0.14.10 and a WARN should be investigated. Smaller companion: CLAUDE.md:80 credits the guarded lock path 'as of v0.14.4' without noting git-guard also supplies Invoke-Git as of v0.14.10. drift-auto-fix never edits CLAUDE.md, so this needs a hand pass.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
       "promptBackfilledAt": "2026-07-26T12:38Z",
-      "drainNote": "2026-08-01 RE-RATED UP: the Invoke-Git fix landed in YaB on 2026-07-31 and covers write-dashboard-status.ps1:318,327,335 - the exact script that emitted those WARNs. The cause the CLAUDE.md:87-92 section was written around is GONE, so the section now trains the reader to dismiss a signal that is trustworthy. Fix changes from \"invert the wording\" to \"replace the section\": say the cause was PS 5.1 wrapping git stderr into a terminating error, that Invoke-Git fixed it 2026-07-31, and that a WARN now means investigate."
+      "drainNote": "2026-08-01 RE-RATED UP: the Invoke-Git fix landed in YaB on 2026-07-31 and covers write-dashboard-status.ps1:318,327,335 - the exact script that emitted those WARNs. The cause the CLAUDE.md:87-92 section was written around is GONE, so the section now trains the reader to dismiss a signal that is trustworthy. Fix changes from \"invert the wording\" to \"replace the section\": say the cause was PS 5.1 wrapping git stderr into a terminating error, that Invoke-Git fixed it 2026-07-31, and that a WARN now means investigate.",
+      "resolution_note": "Resolved by Budget commit 624d68a (2026-08-04): CLAUDE.md now names the PS 5.1 stderr-wrap root cause and the v0.14.10 Invoke-Git fix instead of shrugging indefinitely. Confirmed by 2026-08-05 nightly canonical audit."
     },
     {
       "id": "canonical-audit-2026-07-25-yab-cors-undocumented-in-design",
@@ -13187,5 +13188,5 @@
     }
   ],
   "last_drain": "2026-07-31T00:00Z",
-  "updated": "2026-08-04T06:34Z"
+  "updated": "2026-08-05T06:23Z"
 }
