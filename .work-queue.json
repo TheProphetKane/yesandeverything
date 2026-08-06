@@ -5644,7 +5644,7 @@
       "kind": "code-safety",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "audit-scheduler-nightly 2026-07-25 / docs/CANONICAL_AUDIT-2026-07-25.md finding 1",
       "severity": "high",
@@ -5656,7 +5656,8 @@
       "prompt": "NARROWED 2026-08-02. Two of the original three files are already fixed: sync-audit-dashboard.ps1 in 57f7bd2 and push-to-github.ps1 in ffc1e45. Do NOT re-fix those. ONE file remains in this repo: X:\\YesAndScheduler\\scripts\\write-dashboard-status.ps1 lines 240-246 loop over index.lock and HEAD.lock in the YaE tree and Remove-Item -Force each one, five lines before Assert-GitSafe runs at :251. The guard exists to decide whether a lock is stale or held by a live git process, and it can never see the lock because the script already deleted it. Deleting a lock under a live git process corrupts the index. Fix: delete the foreach block at :240-246 and let Assert-GitSafe adjudicate, matching the comment push-to-github.ps1 now carries at :22-24. SCOPE NOTE: the same pattern was found tonight in 18 other scripts across 9 repos, tracked separately as nightly-2026-08-02-portfolio-blind-git-lock-delete. Fix this one here; the sweep is that item.",
       "promptBackfilledAt": "2026-07-26T12:38Z",
       "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe. | 2026-07-30 audit-scheduler-nightly: scope narrowed from three scripts to two after 57f7bd2 fixed sync-audit-dashboard.ps1. title, evidence, fix and prompt rewritten; status, priority, severity, auto_safe and attempts untouched.",
-      "drainNote": "2026-08-02 nightly: narrowed from three files to one so whoever picks it up does not re-fix the two already closed."
+      "drainNote": "2026-08-02 nightly: narrowed from three files to one so whoever picks it up does not re-fix the two already closed.",
+      "resolution": "Deleted the pre-Assert-GitSafe foreach Remove-Item lock block at write-dashboard-status.ps1:240-246 (2 lines dropped); Assert-GitSafe now gets first look at every lock. Shipped in v0.7.2 (commit 2c4a68b)."
     },
     {
       "id": "canonical-audit-2026-07-25-scheduler-release-inflight-v07x",
@@ -13413,7 +13414,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13425,7 +13426,8 @@
       "impact": 3,
       "confidence": 5,
       "prompt": "In scripts/push-to-github.ps1, compare package.json's version against scripts/.discord_last_posted.txt before building the commit message; fall back to a plain 'chore: <diff summary>' title when they match, so a standalone script fix can't masquerade as a release in git history (this is what produced commit ffc1e45).",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "push-to-github.ps1 now compares package.json version against .discord_last_posted.txt before staging a feat(scheduler) release title; falls back to a chore(scheduler) title naming the changed files when version is unchanged. Shipped and verified live in the v0.7.2 release itself (correctly took the feat path since the version did change). Commit 2c4a68b."
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-invoke-git-runbook-gap",
@@ -13434,7 +13436,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13446,7 +13448,8 @@
       "impact": 3,
       "confidence": 5,
       "prompt": "Add a bullet to X:\\YesAndScheduler\\CLAUDE.md pointing at scripts/git-guard.ps1's Invoke-Git helper (added in commit 57f7bd2 after PS 5.1 turned git's benign stderr into a terminating error), mirroring the existing lock-file bullet's structure.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "Added a Things-that-will-bite-you bullet to CLAUDE.md documenting the PS 5.1 stderr-as-terminating-error hazard and git-guard.ps1 Invoke-Git wrapper. Shipped in v0.7.2."
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-skill-trigger-reciprocal-clause",
@@ -13476,7 +13479,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13488,7 +13491,8 @@
       "impact": 3,
       "confidence": 5,
       "prompt": "Update X:\\YesAndScheduler\\.project-context.json scheduled_tasks to [\"bar-raise-rotating (Wednesday slot, daily cron 30 6 * * *; replaced per-project routines 2026-07-30)\"] and add a nightly-sweep line, since the bar-raise skill's own Step 0 reads this field to verify the audit loop is wired.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "Updated .project-context.json scheduled_tasks to name bar-raise-rotating (Wednesday slot) + nightly-sweep instead of the retired Friday bar-raise-scheduler task. Shipped in v0.7.2."
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-inline-authz-dedup",
