@@ -1,429 +1,364 @@
 {
-    "project":  "Agents",
-    "displayName":  "Yes\u0026 Agents",
-    "version":  "1.1.0",
-    "lastReleaseAt":  "2026-08-07T08:32:25-05:00",
-    "lastReleaseMessage":  "docs: reword D-008 off a specific model generation, document Invoke-Git PS5.1 hazard",
-    "milestone":  {
-                      "id":  "v1",
-                      "label":  "v1 complete (all M1-M6 shipped)",
-                      "status":  "shipped"
-                  },
-    "completion":  {
-                       "pct":  100,
-                       "anchored":  "2026-06-23"
-                   },
-    "itemsLeft":  null,
-    "repoUrl":  "https://github.com/TheProphetKane/yesandagents",
-    "workTreeClean":  true,
-    "tunnel":  {
-                   "up":  true,
-                   "serverHealthy":  true,
-                   "lastSeen":  "2026-08-07T13:32:11.3145320Z",
-                   "heartbeatAgeMin":  0.3
-               },
-    "auth":  {
-                 "ok":  true,
-                 "reason":  "ok",
-                 "checkedAt":  "2026-08-07T12:56:46.259Z"
-             },
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-08-07.md",
-                  "latestReportAt":  "2026-08-07T06:21:47Z",
-                  "findings":  {
-                                   "critical":  0,
-                                   "high":  0,
-                                   "medium":  3,
-                                   "low":  2
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-08-06.md",
-                     "latestReportAt":  "2026-08-06T18:00:00Z",
-                     "verdict":  "needs-attention",
-                     "topFinding":  "This run closed one long-standing hazard (server.mjs\u0027s blind git-lock delete, fixed by commit 9ce4342) but found its exact twin still live in write-dashboard-status.ps1, targeting the shared, higher-concurrency YaE repo. Three independent lenses traced the chronic null-barRaise finding to its actual root cause: the bar-raise skill\u0027s own orchestrator still assumes Agents.json was deliberately deleted, a premise D-011 reversed on 2026-07-08 -- this run overrides that stale guard and writes the block for the first time, per CLAUDE.md\u0027s explicit current instruction. A separate lens digging into the portfolio queue found queue-drain-hourly disabled for 6 days, directly explaining why several of this project\u0027s own chronic findings haven\u0027t closed. Also found: a live dashboard gate password sitting in plaintext in a local run receipt. Health moved 80 to 70, but most of that reflects this run\u0027s lenses reading deeper (actual file contents, actual registry state) rather than fresh project decay -- the one unambiguous regression is the disabled queue drain.",
-                     "actionsOpen":  23,
-                     "actionsClosed":  0,
-                     "actions":  [
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Delete the blind lock-delete block in write-dashboard-status.ps1:131-134 and let Assert-GitSafe own lock clearing, matching push-to-github.ps1\u0027s fixed pattern.",
-                                         "lens":  "data-integrity",
-                                         "priority":  25,
-                                         "id":  "yaag-write-dashboard-status-blind-lock-delete"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Redact or purge the plaintext dashboard gate password from runs/2026-06-18*.jsonl and add a redaction pass on future receipt writes.",
-                                         "lens":  "compliance-data-steward",
-                                         "priority":  25,
-                                         "id":  "yaag-runs-plaintext-credential-exposure"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Fix bar-raise\u0027s per_project.md Step 7 guard: Agents.json was not deleted, D-011 was revised 2026-07-08.",
-                                         "lens":  "orch-skill-chain-handoff",
-                                         "priority":  20,
-                                         "id":  "yaag-bar-raise-orchestrator-stale-delisted-guard"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Delete the bar-raise-agents, bar-raise-yaag, and audit-agents-nightly scheduled-task directories outright now that bar-raise-rotating and nightly-sweep fully cover Agents.",
-                                         "lens":  "orch-skill-trigger-collisions",
-                                         "priority":  20,
-                                         "id":  "yaag-orphaned-bar-raise-skillfiles-not-deleted"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Re-enable queue-drain-hourly or make an explicit decision to retire it and fold its work into backlog-burndown-daily.",
-                                         "lens":  "orch-work-queue-hygiene",
-                                         "priority":  20,
-                                         "id":  "yaag-queue-drain-hourly-disabled-6-days"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Reopen the dropped queue item and scope nightly-sweep\u0027s retention to only the report types it generates; give bar-raise its own BAR_RAISE-* retention step.",
-                                         "lens":  "orch-audit-loop-integrity",
-                                         "priority":  20,
-                                         "id":  "yaag-audit-retention-prune-scope-fix-dropped"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Narrow the trigger descriptions on project-canonical-audit/code-audit/handler-audit so \u0027audit \u003cproject\u003e\u0027 doesn\u0027t ambiguously match all three.",
-                                         "lens":  "orch-skill-suite-health",
-                                         "priority":  16,
-                                         "id":  "yaag-skill-audit-trigger-collision"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Have loadProjects() back up an unparseable projects.json before writing defaults, instead of silently discarding it.",
-                                         "lens":  "reliability",
-                                         "priority":  15,
-                                         "id":  "yaag-loadprojects-destroys-registrations-on-parse-fail"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add an auth-degraded boolean to the non-loopback /healthz response so the credential-down banner fires for tunnel callers too.",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  15,
-                                         "id":  "yaag-auth-banner-blind-on-tunnel"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add D-003/D-004/D-006 assertions to check-readiness.ps1 and call it as a gate in release.ps1.",
-                                         "lens":  "maintainability",
-                                         "priority":  15,
-                                         "id":  "yaag-hard-rules-not-automated-tested"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Reword D-008 to describe the opus alias generically instead of naming a specific superseded generation.",
-                                         "lens":  "maintainability",
-                                         "priority":  15,
-                                         "id":  "yaag-d008-stale-model-generation"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Key the login rate limiter on remoteAddress unless a cf-ray header is present, matching the /healthz pattern.",
-                                         "lens":  "security",
-                                         "priority":  15,
-                                         "id":  "yaag-login-limiter-spoofable-xff"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add YaAg to git-unstick\u0027s repo map and add refs/heads/\u003cbranch\u003e.lock to both git-unstick and git-guard.ps1\u0027s lock-check lists.",
-                                         "lens":  "orch-incident-runbook-currency",
-                                         "priority":  15,
-                                         "id":  "yaag-git-unstick-missing-yaag-and-branch-lock"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Prune the 53 completed queue items and backfill or drop the 11 promptless project:hordes items.",
-                                         "lens":  "orch-work-queue-hygiene",
-                                         "priority":  15,
-                                         "id":  "yaag-queue-completed-unpruned-and-promptless-items"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add a P0-P3 priority picker to the console\u0027s queue button.",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  15,
-                                         "id":  "yaag-queue-no-priority-picker-in-ui"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Point the hourly auth probe\u0027s spawn cwd at a scratch directory instead of the repo root.",
-                                         "lens":  "cost-economics",
-                                         "priority":  15,
-                                         "id":  "yaag-auth-probe-loads-full-repo-context"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Relabel or split the \u0027runs archived\u0027 dashboard metric so it isn\u0027t read as total spawn volume.",
-                                         "lens":  "cost-economics",
-                                         "priority":  15,
-                                         "id":  "yaag-runs-archived-metric-undercounts-probes"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add a readback-and-parse check after the two server.mjs atomic writes (saveProjects, queue write).",
-                                         "lens":  "orch-fuse-truncation-defense",
-                                         "priority":  12,
-                                         "id":  "yaag-server-write-paths-no-readback"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Replace acquireQueueLock\u0027s synchronous Atomics.wait backoff with an async retry so lock contention doesn\u0027t stall the event loop.",
-                                         "lens":  "performance",
-                                         "priority":  12,
-                                         "id":  "yaag-async-queue-lock-blocks-event-loop"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add YaAg to adr-promoter\u0027s routing table and code-audit\u0027s supported-project list.",
-                                         "lens":  "orch-skill-suite-health",
-                                         "priority":  12,
-                                         "id":  "yaag-adr-promoter-code-audit-omit-yaag"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Extract one buffered pumpChildToSSE helper so /script gets the same partial-line handling /run and /new-project already have.",
-                                         "lens":  "architecture",
-                                         "priority":  12,
-                                         "id":  "yaag-script-sse-no-line-buffer"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add a CLAUDE.md bullet pointing at Invoke-Git so future git calls don\u0027t reintroduce the PS 5.1 stderr hazard.",
-                                         "lens":  "orch-incident-runbook-currency",
-                                         "priority":  8,
-                                         "id":  "yaag-ps51-stderr-hazard-not-in-claudemd"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Regenerate the skill suite README\u0027s project list from actual per-skill coverage.",
-                                         "lens":  "orch-skill-suite-health",
-                                         "priority":  8,
-                                         "id":  "yaag-skill-suite-readme-undersells-coverage"
-                                     }
-                                 ],
-                     "deferred":  [
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "README\u0027s \u0027in daily use\u0027 claim is contradicted by the run archive: real usage has been weekly-at-best for six weeks, coinciding with bar-raise review dates.",
-                                          "lens":  "strategic-kill-this",
-                                          "reason":  "Kane\u0027s call: soften the claim or start driving real console usage; unchanged from the prior review"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "7 shipped commits (up from 5) have no changelog entry.",
-                                          "lens":  "maintainability",
-                                          "reason":  "Kane\u0027s v1.1.1-vs-unreleased-note call, unchanged from the prior review"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Queue depth is growing (358 to 596 pending in 9 days), same throughput tension as YaE\u0027s own deferred finding this run.",
-                                          "lens":  "orch-work-queue-hygiene",
-                                          "reason":  "Blocked on Kane\u0027s portfolio-wide throughput decision, tracked once in YaE\u0027s bar-raise; not duplicated as a separate action here"
-                                      }
-                                  ],
-                     "health":  70,
-                     "lensScores":  {
-                                        "architecture":  76,
-                                        "reliability":  64,
-                                        "security":  84,
-                                        "performance":  80,
-                                        "data-integrity":  55,
-                                        "maintainability":  74,
-                                        "solo-tool-ux":  78,
-                                        "cost-economics":  74,
-                                        "dependency":  86,
-                                        "observability":  80,
-                                        "strategic-kill-this":  66,
-                                        "compliance-data-steward":  58,
-                                        "orch-skill-suite-health":  64,
-                                        "orch-work-queue-hygiene":  32,
-                                        "orch-audit-loop-integrity":  62,
-                                        "orch-fuse-truncation-defense":  78,
-                                        "orch-incident-runbook-currency":  64,
-                                        "orch-scheduled-task-firing":  84,
-                                        "orch-skill-trigger-collisions":  70,
-                                        "orch-skill-chain-handoff":  55
-                                    },
-                     "openFindings":  {
-                                          "yaag-write-dashboard-status-blind-lock-delete":  {
-                                                                                                "severity":  "HIGH",
-                                                                                                "priority":  25,
-                                                                                                "runsOpen":  1,
-                                                                                                "firstSeen":  "2026-08-06"
-                                                                                            },
-                                          "yaag-runs-plaintext-credential-exposure":  {
-                                                                                          "severity":  "HIGH",
-                                                                                          "priority":  25,
-                                                                                          "runsOpen":  1,
-                                                                                          "firstSeen":  "2026-08-06"
-                                                                                      },
-                                          "yaag-bar-raise-orchestrator-stale-delisted-guard":  {
-                                                                                                   "severity":  "HIGH",
-                                                                                                   "priority":  20,
-                                                                                                   "runsOpen":  1,
-                                                                                                   "firstSeen":  "2026-08-06"
-                                                                                               },
-                                          "yaag-orphaned-bar-raise-skillfiles-not-deleted":  {
-                                                                                                 "severity":  "HIGH",
-                                                                                                 "priority":  20,
-                                                                                                 "runsOpen":  1,
-                                                                                                 "firstSeen":  "2026-08-06"
-                                                                                             },
-                                          "yaag-queue-drain-hourly-disabled-6-days":  {
-                                                                                          "severity":  "HIGH",
-                                                                                          "priority":  20,
-                                                                                          "runsOpen":  1,
-                                                                                          "firstSeen":  "2026-08-06"
-                                                                                      },
-                                          "yaag-audit-retention-prune-scope-fix-dropped":  {
-                                                                                               "severity":  "HIGH",
-                                                                                               "priority":  20,
-                                                                                               "runsOpen":  1,
-                                                                                               "firstSeen":  "2026-08-06"
-                                                                                           },
-                                          "yaag-skill-audit-trigger-collision":  {
-                                                                                     "severity":  "HIGH",
-                                                                                     "priority":  16,
-                                                                                     "runsOpen":  1,
-                                                                                     "firstSeen":  "2026-08-06"
-                                                                                 },
-                                          "yaag-loadprojects-destroys-registrations-on-parse-fail":  {
-                                                                                                         "severity":  "HIGH",
-                                                                                                         "priority":  15,
-                                                                                                         "runsOpen":  1,
-                                                                                                         "firstSeen":  "2026-08-06"
-                                                                                                     },
-                                          "yaag-auth-banner-blind-on-tunnel":  {
-                                                                                   "severity":  "MED",
-                                                                                   "priority":  15,
-                                                                                   "runsOpen":  1,
-                                                                                   "firstSeen":  "2026-08-06"
-                                                                               },
-                                          "yaag-hard-rules-not-automated-tested":  {
-                                                                                       "severity":  "MED",
-                                                                                       "priority":  15,
-                                                                                       "runsOpen":  1,
-                                                                                       "firstSeen":  "2026-08-06"
-                                                                                   },
-                                          "yaag-d008-stale-model-generation":  {
-                                                                                   "severity":  "MED",
-                                                                                   "priority":  15,
-                                                                                   "runsOpen":  1,
-                                                                                   "firstSeen":  "2026-08-06"
-                                                                               },
-                                          "yaag-login-limiter-spoofable-xff":  {
-                                                                                   "severity":  "MED",
-                                                                                   "priority":  15,
-                                                                                   "runsOpen":  1,
-                                                                                   "firstSeen":  "2026-08-06"
-                                                                               },
-                                          "yaag-git-unstick-missing-yaag-and-branch-lock":  {
-                                                                                                "severity":  "MED",
-                                                                                                "priority":  15,
-                                                                                                "runsOpen":  1,
-                                                                                                "firstSeen":  "2026-08-06"
-                                                                                            },
-                                          "yaag-queue-completed-unpruned-and-promptless-items":  {
-                                                                                                     "severity":  "MED",
-                                                                                                     "priority":  15,
-                                                                                                     "runsOpen":  1,
-                                                                                                     "firstSeen":  "2026-08-06"
-                                                                                                 },
-                                          "yaag-queue-no-priority-picker-in-ui":  {
-                                                                                      "severity":  "MED",
-                                                                                      "priority":  15,
-                                                                                      "runsOpen":  1,
-                                                                                      "firstSeen":  "2026-08-06"
-                                                                                  },
-                                          "yaag-auth-probe-loads-full-repo-context":  {
-                                                                                          "severity":  "MED",
-                                                                                          "priority":  15,
-                                                                                          "runsOpen":  1,
-                                                                                          "firstSeen":  "2026-08-06"
-                                                                                      },
-                                          "yaag-runs-archived-metric-undercounts-probes":  {
-                                                                                               "severity":  "MED",
-                                                                                               "priority":  15,
-                                                                                               "runsOpen":  1,
-                                                                                               "firstSeen":  "2026-08-06"
-                                                                                           },
-                                          "yaag-server-write-paths-no-readback":  {
-                                                                                      "severity":  "MED",
-                                                                                      "priority":  12,
-                                                                                      "runsOpen":  1,
-                                                                                      "firstSeen":  "2026-08-06"
-                                                                                  },
-                                          "yaag-async-queue-lock-blocks-event-loop":  {
-                                                                                          "severity":  "MED",
-                                                                                          "priority":  12,
-                                                                                          "runsOpen":  1,
-                                                                                          "firstSeen":  "2026-08-06"
-                                                                                      },
-                                          "yaag-adr-promoter-code-audit-omit-yaag":  {
-                                                                                         "severity":  "MED",
-                                                                                         "priority":  12,
-                                                                                         "runsOpen":  1,
-                                                                                         "firstSeen":  "2026-08-06"
-                                                                                     },
-                                          "yaag-script-sse-no-line-buffer":  {
-                                                                                 "severity":  "MED",
-                                                                                 "priority":  12,
-                                                                                 "runsOpen":  1,
-                                                                                 "firstSeen":  "2026-08-06"
-                                                                             },
-                                          "yaag-ps51-stderr-hazard-not-in-claudemd":  {
-                                                                                          "severity":  "MED",
-                                                                                          "priority":  8,
-                                                                                          "runsOpen":  1,
-                                                                                          "firstSeen":  "2026-08-06"
-                                                                                      },
-                                          "yaag-skill-suite-readme-undersells-coverage":  {
-                                                                                              "severity":  "MED",
-                                                                                              "priority":  8,
-                                                                                              "runsOpen":  1,
-                                                                                              "firstSeen":  "2026-08-06"
-                                                                                          }
-                                      },
-                     "tensionsOpen":  [
-                                          {
-                                              "lenses":  [
-                                                             "orch-skill-chain-handoff",
-                                                             "observability"
-                                                         ],
-                                              "runsSeen":  1
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "cost-economics",
-                                                             "reliability"
-                                                         ],
-                                              "runsSeen":  2
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "orch-audit-loop-integrity",
-                                                             "orch-skill-suite-health"
-                                                         ],
-                                              "runsSeen":  1
-                                          }
-                                      ]
-                 },
-    "metrics":  [
-                    {
-                        "k":  "runs archived",
-                        "v":  "15"
-                    }
-                ],
-    "generatedAt":  "2026-08-07T13:32:30.7430596Z",
-    "stale":  false,
-    "tags":  [
-                 "orchestration",
-                 "solo-tool-ux"
-             ]
+  "project": "Agents",
+  "displayName": "Yes& Agents",
+  "version": "1.1.0",
+  "lastReleaseAt": "2026-08-07T08:32:25-05:00",
+  "lastReleaseMessage": "docs: reword D-008 off a specific model generation, document Invoke-Git PS5.1 hazard",
+  "milestone": {
+    "id": "v1",
+    "label": "v1 complete (all M1-M6 shipped)",
+    "status": "shipped"
+  },
+  "completion": {
+    "pct": 100,
+    "anchored": "2026-06-23"
+  },
+  "itemsLeft": null,
+  "repoUrl": "https://github.com/TheProphetKane/yesandagents",
+  "workTreeClean": true,
+  "tunnel": {
+    "up": true,
+    "serverHealthy": true,
+    "lastSeen": "2026-08-07T13:33:52.3086412Z",
+    "heartbeatAgeMin": 0
+  },
+  "auth": {
+    "ok": true,
+    "reason": "ok",
+    "checkedAt": "2026-08-07T12:56:46.259Z"
+  },
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-07.md",
+    "latestReportAt": "2026-08-07T06:21:47Z",
+    "findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 3,
+      "low": 2
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-08-06.md",
+    "latestReportAt": "2026-08-06T18:00:00Z",
+    "verdict": "needs-attention",
+    "topFinding": "This run closed one long-standing hazard (server.mjs's blind git-lock delete, fixed by commit 9ce4342) but found its exact twin still live in write-dashboard-status.ps1, targeting the shared, higher-concurrency YaE repo. Three independent lenses traced the chronic null-barRaise finding to its actual root cause: the bar-raise skill's own orchestrator still assumes Agents.json was deliberately deleted, a premise D-011 reversed on 2026-07-08 -- this run overrides that stale guard and writes the block for the first time, per CLAUDE.md's explicit current instruction. A separate lens digging into the portfolio queue found queue-drain-hourly disabled for 6 days, directly explaining why several of this project's own chronic findings haven't closed. Also found: a live dashboard gate password sitting in plaintext in a local run receipt. Health moved 80 to 70, but most of that reflects this run's lenses reading deeper (actual file contents, actual registry state) rather than fresh project decay -- the one unambiguous regression is the disabled queue drain.",
+    "actionsOpen": 18,
+    "actionsClosed": 5,
+    "actions": [
+      {
+        "severity": "HIGH",
+        "title": "Delete the blind lock-delete block in write-dashboard-status.ps1:131-134 and let Assert-GitSafe own lock clearing, matching push-to-github.ps1's fixed pattern.",
+        "lens": "data-integrity",
+        "priority": 25,
+        "id": "yaag-write-dashboard-status-blind-lock-delete"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Delete the bar-raise-agents, bar-raise-yaag, and audit-agents-nightly scheduled-task directories outright now that bar-raise-rotating and nightly-sweep fully cover Agents.",
+        "lens": "orch-skill-trigger-collisions",
+        "priority": 20,
+        "id": "yaag-orphaned-bar-raise-skillfiles-not-deleted"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Re-enable queue-drain-hourly or make an explicit decision to retire it and fold its work into backlog-burndown-daily.",
+        "lens": "orch-work-queue-hygiene",
+        "priority": 20,
+        "id": "yaag-queue-drain-hourly-disabled-6-days"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Reopen the dropped queue item and scope nightly-sweep's retention to only the report types it generates; give bar-raise its own BAR_RAISE-* retention step.",
+        "lens": "orch-audit-loop-integrity",
+        "priority": 20,
+        "id": "yaag-audit-retention-prune-scope-fix-dropped"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Narrow the trigger descriptions on project-canonical-audit/code-audit/handler-audit so 'audit <project>' doesn't ambiguously match all three.",
+        "lens": "orch-skill-suite-health",
+        "priority": 16,
+        "id": "yaag-skill-audit-trigger-collision"
+      },
+      {
+        "severity": "MED",
+        "title": "Add an auth-degraded boolean to the non-loopback /healthz response so the credential-down banner fires for tunnel callers too.",
+        "lens": "solo-tool-ux",
+        "priority": 15,
+        "id": "yaag-auth-banner-blind-on-tunnel"
+      },
+      {
+        "severity": "MED",
+        "title": "Add D-003/D-004/D-006 assertions to check-readiness.ps1 and call it as a gate in release.ps1.",
+        "lens": "maintainability",
+        "priority": 15,
+        "id": "yaag-hard-rules-not-automated-tested"
+      },
+      {
+        "severity": "MED",
+        "title": "Key the login rate limiter on remoteAddress unless a cf-ray header is present, matching the /healthz pattern.",
+        "lens": "security",
+        "priority": 15,
+        "id": "yaag-login-limiter-spoofable-xff"
+      },
+      {
+        "severity": "MED",
+        "title": "Add YaAg to git-unstick's repo map and add refs/heads/<branch>.lock to both git-unstick and git-guard.ps1's lock-check lists.",
+        "lens": "orch-incident-runbook-currency",
+        "priority": 15,
+        "id": "yaag-git-unstick-missing-yaag-and-branch-lock"
+      },
+      {
+        "severity": "MED",
+        "title": "Prune the 53 completed queue items and backfill or drop the 11 promptless project:hordes items.",
+        "lens": "orch-work-queue-hygiene",
+        "priority": 15,
+        "id": "yaag-queue-completed-unpruned-and-promptless-items"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a P0-P3 priority picker to the console's queue button.",
+        "lens": "solo-tool-ux",
+        "priority": 15,
+        "id": "yaag-queue-no-priority-picker-in-ui"
+      },
+      {
+        "severity": "MED",
+        "title": "Point the hourly auth probe's spawn cwd at a scratch directory instead of the repo root.",
+        "lens": "cost-economics",
+        "priority": 15,
+        "id": "yaag-auth-probe-loads-full-repo-context"
+      },
+      {
+        "severity": "MED",
+        "title": "Relabel or split the 'runs archived' dashboard metric so it isn't read as total spawn volume.",
+        "lens": "cost-economics",
+        "priority": 15,
+        "id": "yaag-runs-archived-metric-undercounts-probes"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a readback-and-parse check after the two server.mjs atomic writes (saveProjects, queue write).",
+        "lens": "orch-fuse-truncation-defense",
+        "priority": 12,
+        "id": "yaag-server-write-paths-no-readback"
+      },
+      {
+        "severity": "MED",
+        "title": "Replace acquireQueueLock's synchronous Atomics.wait backoff with an async retry so lock contention doesn't stall the event loop.",
+        "lens": "performance",
+        "priority": 12,
+        "id": "yaag-async-queue-lock-blocks-event-loop"
+      },
+      {
+        "severity": "MED",
+        "title": "Add YaAg to adr-promoter's routing table and code-audit's supported-project list.",
+        "lens": "orch-skill-suite-health",
+        "priority": 12,
+        "id": "yaag-adr-promoter-code-audit-omit-yaag"
+      },
+      {
+        "severity": "MED",
+        "title": "Extract one buffered pumpChildToSSE helper so /script gets the same partial-line handling /run and /new-project already have.",
+        "lens": "architecture",
+        "priority": 12,
+        "id": "yaag-script-sse-no-line-buffer"
+      },
+      {
+        "severity": "MED",
+        "title": "Regenerate the skill suite README's project list from actual per-skill coverage.",
+        "lens": "orch-skill-suite-health",
+        "priority": 8,
+        "id": "yaag-skill-suite-readme-undersells-coverage"
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "MED",
+        "title": "README's 'in daily use' claim is contradicted by the run archive: real usage has been weekly-at-best for six weeks, coinciding with bar-raise review dates.",
+        "lens": "strategic-kill-this",
+        "reason": "Kane's call: soften the claim or start driving real console usage; unchanged from the prior review"
+      },
+      {
+        "severity": "MED",
+        "title": "7 shipped commits (up from 5) have no changelog entry.",
+        "lens": "maintainability",
+        "reason": "Kane's v1.1.1-vs-unreleased-note call, unchanged from the prior review"
+      },
+      {
+        "severity": "MED",
+        "title": "Queue depth is growing (358 to 596 pending in 9 days), same throughput tension as YaE's own deferred finding this run.",
+        "lens": "orch-work-queue-hygiene",
+        "reason": "Blocked on Kane's portfolio-wide throughput decision, tracked once in YaE's bar-raise; not duplicated as a separate action here"
+      }
+    ],
+    "health": 70,
+    "lensScores": {
+      "architecture": 76,
+      "reliability": 64,
+      "security": 84,
+      "performance": 80,
+      "data-integrity": 55,
+      "maintainability": 74,
+      "solo-tool-ux": 78,
+      "cost-economics": 74,
+      "dependency": 86,
+      "observability": 80,
+      "strategic-kill-this": 66,
+      "compliance-data-steward": 58,
+      "orch-skill-suite-health": 64,
+      "orch-work-queue-hygiene": 32,
+      "orch-audit-loop-integrity": 62,
+      "orch-fuse-truncation-defense": 78,
+      "orch-incident-runbook-currency": 64,
+      "orch-scheduled-task-firing": 84,
+      "orch-skill-trigger-collisions": 70,
+      "orch-skill-chain-handoff": 55
+    },
+    "openFindings": {
+      "yaag-write-dashboard-status-blind-lock-delete": {
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-orphaned-bar-raise-skillfiles-not-deleted": {
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-queue-drain-hourly-disabled-6-days": {
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-audit-retention-prune-scope-fix-dropped": {
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-skill-audit-trigger-collision": {
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-auth-banner-blind-on-tunnel": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-hard-rules-not-automated-tested": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-login-limiter-spoofable-xff": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-git-unstick-missing-yaag-and-branch-lock": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-queue-completed-unpruned-and-promptless-items": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-queue-no-priority-picker-in-ui": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-auth-probe-loads-full-repo-context": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-runs-archived-metric-undercounts-probes": {
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-server-write-paths-no-readback": {
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-async-queue-lock-blocks-event-loop": {
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-adr-promoter-code-audit-omit-yaag": {
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-script-sse-no-line-buffer": {
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      },
+      "yaag-skill-suite-readme-undersells-coverage": {
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-06"
+      }
+    },
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "orch-skill-chain-handoff",
+          "observability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "reliability"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "orch-audit-loop-integrity",
+          "orch-skill-suite-health"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "runs archived",
+      "v": "15"
+    }
+  ],
+  "generatedAt": "2026-08-07T13:33:52.4276411Z",
+  "stale": false,
+  "tags": [
+    "orchestration",
+    "solo-tool-ux"
+  ]
 }
