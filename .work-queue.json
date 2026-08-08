@@ -13225,7 +13225,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13237,7 +13237,9 @@
       "impact": 5,
       "confidence": 5,
       "prompt": "Run `pnpm update hono` in apps/api and redeploy the Worker; confirm apps/api/package.json's lockfile now resolves to hono>=4.12.34.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "Bumped hono ^4.6.14 -> ^4.13.1 (satisfies >=4.12.34). Shipped in v0.7.3, deployed to scheduler-api Worker.",
+      "completedAt": "2026-08-08T05:10Z"
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-react-router-cve",
@@ -13246,7 +13248,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13258,7 +13260,9 @@
       "impact": 4,
       "confidence": 5,
       "prompt": "Run `pnpm update react-router-dom` in apps/web and rebuild/redeploy the SPA; confirm resolves to react-router-dom>=7.18.0.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "Bumped react-router-dom ^7.1.1 -> ^7.18.2 (satisfies >=7.18.0). Shipped in v0.7.3, SPA rebuilt and deployed.",
+      "completedAt": "2026-08-08T05:10Z"
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-replacejointable-nonatomic",
@@ -13267,7 +13271,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13279,7 +13283,9 @@
       "impact": 4,
       "confidence": 5,
       "prompt": "In apps/api/src/routes/users.ts (replaceJoinTable, ~line 490-506), wrap the DELETE and all per-id INSERTs in one c.env.DB.batch() call.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "replaceJoinTable (users.ts) now issues the DELETE + all per-id INSERTs as one db.batch() call. Shipped in v0.7.3.",
+      "completedAt": "2026-08-08T05:10Z"
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-swap-assignment-nonatomic",
@@ -13288,7 +13294,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13300,7 +13306,9 @@
       "impact": 4,
       "confidence": 5,
       "prompt": "In apps/api/src/routes/change-requests.ts applyDecision() swap branch (~line 444-503), submit the DELETE and INSERT OR IGNORE via one db.batch() call.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "applyDecision() swap branch (change-requests.ts) now submits the DELETE + INSERT OR IGNORE via one db.batch() call. Shipped in v0.7.3.",
+      "completedAt": "2026-08-08T05:10Z"
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-shift-assignment-race",
@@ -13309,7 +13317,7 @@
       "kind": "drift-fix",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -13321,7 +13329,9 @@
       "impact": 4,
       "confidence": 5,
       "prompt": "Add a migration creating UNIQUE(shift_id, user_id) on shift_assignments (currently only single-column indexes per migrations/0004_schedule.sql). Rewrite the open-shifts claim handler and shifts.ts manual-add capacity check in apps/api/src/routes/open-shifts.ts and shifts.ts to use one atomic write (db.batch() or a capacity-guarded INSERT) instead of separate SELECT-then-INSERT round trips.",
-      "notes": "Auto-enqueued by bar-raise 2026-08-05."
+      "notes": "Auto-enqueued by bar-raise 2026-08-05.",
+      "resolution": "Migration 0012 adds UNIQUE(shift_id, user_id) on shift_assignments (dedupes any existing rows first, keeping the earliest per pair). Rewrote the open-shift claim handler (open-shifts.ts) and the manager manual-add path (shifts.ts PATCH /:id/assignments) to enforce capacity + dedup inside the INSERT itself via a guarded subquery (WHERE count<max AND NOT EXISTS), not a separate SELECT the write could race behind; the manual-add path batches all adds in one db.batch() transaction so each guard sees prior adds in the same request. Verified: pnpm run verify (typecheck+tests+build) green, migration applies cleanly against both local and remote D1. Shipped in v0.7.3.",
+      "completedAt": "2026-08-08T05:10Z"
     },
     {
       "id": "bar-raise-2026-08-05-scheduler-error-handler-no-context",
@@ -14552,7 +14562,7 @@
       "finding_id": "yaag-runs-plaintext-credential-exposure",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -14563,7 +14573,9 @@
       "confidence": 5,
       "evidence": "X:\\YesAndAgents\\runs\\2026-06-18T15-53-04-005Z-Everything.jsonl",
       "tensions_with": [],
-      "prompt": "YaAg HIGH (bar-raise 2026-08-06): a local run receipt holds the live yesandeverything.com/dashboard gate password in plaintext plus old/new hashes. Redact/purge it and add a redaction pass on future receipts."
+      "prompt": "YaAg HIGH (bar-raise 2026-08-06): a local run receipt holds the live yesandeverything.com/dashboard gate password in plaintext plus old/new hashes. Redact/purge it and add a redaction pass on future receipts.",
+      "resolution": "Code fix already shipped this morning (commit c7144b0: redactSecrets() scrubs sha256 hashes + password call-outs from future run receipts before they hit disk). Backlog-burndown 2026-08-07 finished the retroactive purge: swept all runs/*.jsonl, found 4 files with password-shaped content (2 already redacted by an earlier pass today, 2 still exposing the live dashboard gate password plaintext plus a full brute-force candidate-password dictionary and its SHA-256 hashes). Redacted both in place; one redaction pass ate the JSON envelope of one record (regex lookbehind matched a real newline instead of the intended literal backslash-n), repaired by reconstructing the tool_result wrapper from the adjacent tool_use id. Verified: all runs/*.jsonl parse as valid JSONL, zero remaining 64-hex hashes or plaintext password call-outs anywhere in runs/.",
+      "completedAt": "2026-08-08T03:30Z"
     },
     {
       "id": "yaag-queue-drain-hourly-disabled-6-days",
@@ -14573,7 +14585,7 @@
       "finding_id": "yaag-queue-drain-hourly-disabled-6-days",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "dropped",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -14584,7 +14596,9 @@
       "confidence": 5,
       "evidence": "mcp__scheduled-tasks__list_scheduled_tasks: queue-drain-hourly enabled=false",
       "tensions_with": [],
-      "prompt": "Portfolio HIGH (bar-raise 2026-08-06, surfaced via YaAg review): queue-drain-hourly has been disabled since 2026-07-31; only judgment burndown is fighting inflow, explaining several projects' chronic findings not closing. Re-enable or make an explicit retirement decision."
+      "prompt": "Portfolio HIGH (bar-raise 2026-08-06, surfaced via YaAg review): queue-drain-hourly has been disabled since 2026-07-31; only judgment burndown is fighting inflow, explaining several projects' chronic findings not closing. Re-enable or make an explicit retirement decision.",
+      "resolution": "Not a regression -- checked C:\\Users\\Kane\\.claude\\scheduled-tasks\\queue-drain-hourly\\SKILL.md: the task's own description documents this as an intentional 2026-07-30 consolidation (\"Cut from hourly 2026-07-30: the auto-safe pool is usually empty so most hourly runs did nothing; real judgment drain lives in backlog-burndown-daily/-friday\"), not an accidental disable. Confirmed both replacement routines are live and running on schedule (backlog-burndown-daily lastRunAt 2026-08-07T13:17Z, backlog-burndown-friday running now). The underlying complaint -- chronic findings not closing -- is real (672 pending items) but is a throughput/capacity problem for the daily+Friday judgment drain, not something re-enabling an auto-safe-only hourly pass would fix (auto_safe is false on effectively 100% of pending items). Left as a blocked-on-user-style observation in the report rather than guessing at a capacity fix.",
+      "completedAt": "2026-08-08T03:30Z"
     },
     {
       "id": "yaag-skill-audit-trigger-collision",
@@ -14615,7 +14629,7 @@
       "finding_id": "yaag-loadprojects-destroys-registrations-on-parse-fail",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
       "lastWorkedAt": null,
@@ -14626,7 +14640,9 @@
       "confidence": 5,
       "evidence": "X:\\YesAndAgents\\server.mjs:62-69",
       "tensions_with": [],
-      "prompt": "YaAg HIGH (bar-raise 2026-08-06): loadProjects() silently overwrites projects.json with defaults on any parse failure, no backup -- would delete Counselor/Skylight registrations on a transient FUSE hiccup. Back up before overwrite."
+      "prompt": "YaAg HIGH (bar-raise 2026-08-06): loadProjects() silently overwrites projects.json with defaults on any parse failure, no backup -- would delete Counselor/Skylight registrations on a transient FUSE hiccup. Back up before overwrite.",
+      "resolution": "Already shipped this morning: commit 18f1781 backs up projects.json before overwriting with defaults on parse failure. Verified commit is on origin/main (no unpushed work).",
+      "completedAt": "2026-08-08T03:30Z"
     },
     {
       "id": "yaag-auth-banner-blind-on-tunnel",
@@ -15987,5 +16003,5 @@
     }
   ],
   "last_drain": "2026-07-31T00:00Z",
-  "updated": "2026-08-06T18:00:00Z"
+  "updated": "2026-08-08T05:10Z"
 }
