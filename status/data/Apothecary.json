@@ -1,469 +1,473 @@
 {
-  "project": "Apothecary",
-  "displayName": "Yes& Apothecary",
-  "version": "1.1.5",
-  "lastReleaseAt": "2026-08-09T08:20:41-05:00",
-  "lastReleaseMessage": "redact Claude model name from CHANGELOG (AI-tells voice rule)",
-  "milestone": {
-    "id": "v1.0",
-    "label": "v1.0 - core label designer complete",
-    "status": "done"
-  },
-  "completion": {
-    "pct": 100,
-    "anchored": "2026-06-23"
-  },
-  "itemsLeft": {
-    "open": 28,
-    "queue": 28,
-    "backlog": 0,
-    "gates": 0,
-    "items": []
-  },
-  "backlog": {
-    "count": 0,
-    "items": []
-  },
-  "repoUrl": "https://github.com/TheProphetKane/yesandapothecary",
-  "workTreeClean": true,
-  "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-09.md",
-    "latestReportAt": "2026-08-09T06:12:45Z",
-    "findings": {
-      "critical": 0,
-      "high": 0,
-      "medium": 4,
-      "low": 1
-    }
-  },
-  "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-05.md",
-    "latestReportAt": "2026-08-05T13:40:00Z",
-    "verdict": "needs-attention",
-    "topFinding": "The app itself did not regress: security, dependency, and compliance all still score in the 90s, and the three test suites remain green. This run's fuller domain-lens pass (generative-art and a deeper orchestration sweep) found real shipped-output defects the lighter checks were missing. The 43/199 over-cap herb descriptions don't just truncate mid-word in the editor preview, they truncate mid-word in the actual print and PNG output too. A fresh generative-art pass found 39 of 199 herbs (20%) render with a near-invisible border and glow because three category accent colors fall below 3:1 contrast against the parchment paper. Release-pipeline hygiene has a real gap: push-yae-mirror.ps1, the step that actually pushes the live site, still carries the PS 5.1 git-stderr bug fixed one script over on 2026-07-31 and never propagated. Housekeeping found a queue-process failure matching the exact pattern found on Scheduler the same day: a batch operation marked a real, still-open finding as completed using an unrelated project's completion note. Health drops from 82 to 75 and the verdict flips from working to needs-attention on the strength of confirmed shipped-output defects, not on health score alone.",
-    "actionsOpen": 24,
-    "actionsClosed": 4,
-    "health": 75,
-    "lensScores": {
-      "architecture": 84,
-      "reliability": 89,
-      "security": 95,
-      "performance": 90,
-      "data-integrity": 84,
-      "maintainability": 86,
-      "solo-tool-ux": 76,
-      "cost-economics": 79,
-      "dependency": 93,
-      "observability": 75,
-      "strategic-kill-this": 76,
-      "compliance-data-steward": 90,
-      "generative-art-schema-driven-correctness": 80,
-      "generative-art-print-fidelity": 68,
-      "generative-art-palette-discipline": 52,
-      "orchestration-skill-suite-health": 74,
-      "orchestration-work-queue-hygiene": 34,
-      "orchestration-audit-loop-integrity": 58,
-      "orchestration-fuse-truncation-defense": 88,
-      "orchestration-incident-runbook-currency": 58,
-      "orchestration-scheduled-task-firing-state": 74,
-      "orchestration-skill-trigger-collisions": 58,
-      "orchestration-skill-chain-handoff-integrity": 50,
-      "release-pipeline-per-project-ps1-stack": 74,
-      "release-pipeline-discord-notify-wiring": 74,
-      "release-pipeline-version-pill-drift": 78,
-      "release-pipeline-gate-page-publish": 94,
-      "public-voice-solo-dev-voice": 72,
-      "public-voice-ai-tell-concealment": 72,
-      "public-voice-brand-consistency": 86
-    },
-    "actions": [
-      {
-        "severity": "HIGH",
-        "title": "Fix the mid-word truncation at the source: word-boundary-aware slice in editor.js:693, since 43/199 herb records now confirmed to print and PNG-export cut off mid-word, not just preview.",
-        "lens": "generative-art-print-fidelity",
-        "id": "generative-art-print-fidelity-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Write a project-owned audit-report-to-dashboard sync script; the published low:1 count contradicts the 7 LOW items the linked report actually carries.",
-        "lens": "orchestration-audit-loop-integrity",
-        "id": "orchestration-audit-loop-integrity-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Derive a review-freshness signal from barRaise.latestReportAt and publish it as a field; the prior run's own recommended fix was never implemented and the blind spot is now 6 days, not the original 2.",
-        "lens": "observability",
-        "id": "barraise-skip-invisible-on-dashboard"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Darken 3 of 10 herb-category accent colors (39/199 herbs) that fall below 3:1 contrast against the parchment label paper, rendering borders/glow near-invisible.",
-        "lens": "generative-art-palette-discipline",
-        "id": "generative-art-palette-discipline-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Route push-yae-mirror.ps1's git calls through Invoke-Git; it still has the PS 5.1 stderr-wrap + LASTEXITCODE-clobber bug fixed only in push-to-github.ps1, and it's the step that pushes the live site mirror.",
-        "lens": "solo-tool-ux",
-        "id": "solo-tool-ux-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Confirm queue-drain-hourly is actually firing; 13 pending Apothecary queue items (oldest 19 days) have zero attempts, and the portfolio drain timestamp hasn't advanced in 5 days.",
-        "lens": "orchestration-work-queue-hygiene",
-        "id": "orchestration-work-queue-hygiene-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add CHANGELOG.md to deploy-to-yae.ps1's copy list, or explicitly decide the mirror shouldn't carry one and delete the stale copy; the public mirror is still 15 releases behind at v0.5.0.",
-        "lens": "release-pipeline-version-pill-drift",
-        "id": "release-pipeline-version-pill-drift-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Route saved-labels.js (and ideally autofit.js/print.js) through main.js's ctx dynamic-import path; now confirmed as 7 static imports with three modules double-instantiated after a build-stamp change.",
-        "lens": "architecture",
-        "id": "architecture-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Extend test-data-integrity.mjs to assert the herb-record key union and all six documented character caps; this is exactly the check that would have auto-caught the descFull violations.",
-        "lens": "data-integrity",
-        "id": "data-integrity-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Rewrite README's Extending section to say drop the PNG and run regen-symbols-manifest.ps1 instead of hand-edit data/symbols.js, which the file's own header says gets clobbered on the next regen.",
-        "lens": "maintainability",
-        "id": "maintainability-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Route regen-symbols-manifest.ps1 and regen-textures-manifest.ps1 through the same Write-FileAtomic helper release.ps1 already defines; both write shipped data/*.js files via plain Set-Content with no readback.",
-        "lens": "orchestration-fuse-truncation-defense",
-        "id": "release-pipeline-per-project-ps1-stack-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Correct CLAUDE.md's Discord webhook table: only 3 of 5 documented webhooks exist, and the Audit Bot entry actually posts to #apothecary-resources via post-audit-digests.ps1.",
-        "lens": "maintainability",
-        "id": "maintainability-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Darken theme.latinColor; it falls short of WCAG AA text contrast against both paper gradient stops for every label's scientific-name text.",
-        "lens": "generative-art-palette-discipline",
-        "id": "generative-art-palette-discipline-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Rewrite editor.js's preset-minimal-front factory layout to derive zone geometry from the active template descriptor instead of hardcoding it.",
-        "lens": "generative-art-schema-driven-correctness",
-        "id": "generative-art-schema-driven-correctness-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Strip 785.9MB of orphaned data/ingredients/ raw-photo blobs from git history (repo is 866MB total, should be near 1.2MB); run git-filter-repo/BFG and force-push a rewritten history.",
-        "lens": "cost-economics",
-        "id": "cost-economics-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a HEAD-comparison pre-check to the daily audit/bar-raise routine so a no-op day republishes the prior report unchanged instead of spending a full LLM pass; 4+ consecutive identical-finding days so far.",
-        "lens": "cost-economics",
-        "id": "cost-economics-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Update .project-context.json scheduled_tasks/review_cadence to name nightly-sweep + bar-raise-rotating; both listed per-project tasks are retired.",
-        "lens": "orchestration-scheduled-task-firing-state",
-        "id": "orchestration-scheduled-task-firing-state-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Add the PS 5.1 stderr-wrap hazard and Invoke-Git pattern to CLAUDE.md's Things that will bite you; the hazard is documented only in script comments.",
-        "lens": "orchestration-incident-runbook-currency",
-        "id": "orchestration-incident-runbook-currency-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add corporate-speak/hedging vocabulary (leverage, seamless, robust, delve, streamline) to solo-dev-voice-audit's Phase 3 pattern table; currently zero coverage.",
-        "lens": "public-voice-ai-tell-concealment",
-        "id": "public-voice-ai-tell-concealment-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Add index.html and src/ to .project-context.json's public_artifact_globs so the declared AI-tells scope matches CLAUDE.md's rule.",
-        "lens": "public-voice-ai-tell-concealment",
-        "id": "public-voice-ai-tell-concealment-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a fourth test suite covering the fuzzy herb-lookup alias/exact/prefix/contains chain that powers the flagship auto-fill flow; currently zero coverage.",
-        "lens": "maintainability",
-        "id": "maintainability-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Update CLAUDE.md's Deploy flow section to list all 6 steps release.ps1 actually runs; it currently describes only 5.",
-        "lens": "release-pipeline-per-project-ps1-stack",
-        "id": "release-pipeline-per-project-ps1-stack-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Decouple post-audit-digests.ps1 from release.ps1 so #apothecary-resources gets same-day digests; it currently only fires on release, leaving the channel 8 days / 3 reports behind.",
-        "lens": "release-pipeline-discord-notify-wiring",
-        "id": "release-pipeline-discord-notify-wiring-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Surface to Kane: is daily bar-raise plus nightly audit still proportionate for a feature-frozen, 100%-complete app with 3 weeks of doc-only commits and findings up to 13 runs stale.",
-        "lens": "strategic-kill-this",
-        "id": "strategic-kill-this-01"
-      }
-    ],
-    "deferred": [
-      {
-        "severity": "LOW",
-        "title": "75 shipped illustration PNGs are scraped from proprietary brand art with no verified redistribution license.",
-        "lens": "compliance-data-steward",
-        "reason": "owner-acknowledged, risk-accepted decision locked 2026-07-11"
-      },
-      {
-        "severity": "LOW",
-        "title": "The only external script dependency, html2canvas 1.4.1, is on an effectively abandoned upstream.",
-        "lens": "dependency",
-        "reason": "no known CVE; migrate only if a vulnerability is ever disclosed"
-      }
-    ],
-    "openFindings": [
-      {
-        "id": "generative-art-print-fidelity-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 5,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "orchestration-audit-loop-integrity-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 5,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "barraise-skip-invisible-on-dashboard",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "generative-art-palette-discipline-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "solo-tool-ux-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "orchestration-work-queue-hygiene-02",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "release-pipeline-version-pill-drift-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "architecture-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "data-integrity-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "maintainability-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "release-pipeline-per-project-ps1-stack-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "maintainability-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "generative-art-palette-discipline-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "generative-art-schema-driven-correctness-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "cost-economics-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "cost-economics-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "orchestration-scheduled-task-firing-state-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "orchestration-incident-runbook-currency-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "public-voice-ai-tell-concealment-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "public-voice-ai-tell-concealment-02",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "maintainability-03",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "release-pipeline-per-project-ps1-stack-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "release-pipeline-discord-notify-wiring-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "med",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      }
-    ],
-    "tensionsOpen": [
-      {
-        "lenses": [
-          "observability",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "cost-economics",
-          "observability"
-        ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "orchestration-audit-loop-integrity",
-          "orchestration-skill-chain-handoff-integrity"
-        ],
-        "runsSeen": 7
-      },
-      {
-        "lenses": [
-          "release-pipeline-per-project-ps1-stack",
-          "release-pipeline-gate-page-publish"
-        ],
-        "runsSeen": 3
-      },
-      {
-        "lenses": [
-          "architecture",
-          "maintainability"
-        ],
-        "runsSeen": 1
-      }
-    ]
-  },
-  "metrics": [
-    {
-      "k": "herbs",
-      "v": "199"
-    },
-    {
-      "k": "illustrations",
-      "v": "75"
-    },
-    {
-      "k": "art keywords",
-      "v": "75"
-    }
-  ],
-  "workQueueDepth": 28,
-  "stale": false,
-  "tags": [
-    "generative-art",
-    "orchestration",
-    "release-pipeline",
-    "public-voice"
-  ]
+    "project":  "Apothecary",
+    "displayName":  "Yes\u0026 Apothecary",
+    "version":  "1.1.5",
+    "lastReleaseAt":  "2026-08-09T08:22:30-05:00",
+    "lastReleaseMessage":  "route push-yae-mirror.ps1 git calls through Invoke-Git (PS5.1 stderr-wrap + LASTEXITCODE-clobber fix)",
+    "milestone":  {
+                      "id":  "v1.0",
+                      "label":  "v1.0 - core label designer complete",
+                      "status":  "done"
+                  },
+    "completion":  {
+                       "pct":  100,
+                       "anchored":  "2026-06-23"
+                   },
+    "itemsLeft":  {
+                      "open":  28,
+                      "queue":  28,
+                      "backlog":  0,
+                      "gates":  0,
+                      "items":  [
+
+                                ]
+                  },
+    "backlog":  {
+                    "count":  0,
+                    "items":  [
+
+                              ]
+                },
+    "repoUrl":  "https://github.com/TheProphetKane/yesandapothecary",
+    "workTreeClean":  true,
+    "audit":  {
+                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-08-09.md",
+                  "latestReportAt":  "2026-08-09T06:12:45Z",
+                  "findings":  {
+                                   "critical":  0,
+                                   "high":  0,
+                                   "medium":  4,
+                                   "low":  1
+                               }
+              },
+    "barRaise":  {
+                     "latestReportPath":  "docs/BAR_RAISE-2026-08-05.md",
+                     "latestReportAt":  "2026-08-05T13:40:00Z",
+                     "verdict":  "needs-attention",
+                     "topFinding":  "The app itself did not regress: security, dependency, and compliance all still score in the 90s, and the three test suites remain green. This run\u0027s fuller domain-lens pass (generative-art and a deeper orchestration sweep) found real shipped-output defects the lighter checks were missing. The 43/199 over-cap herb descriptions don\u0027t just truncate mid-word in the editor preview, they truncate mid-word in the actual print and PNG output too. A fresh generative-art pass found 39 of 199 herbs (20%) render with a near-invisible border and glow because three category accent colors fall below 3:1 contrast against the parchment paper. Release-pipeline hygiene has a real gap: push-yae-mirror.ps1, the step that actually pushes the live site, still carries the PS 5.1 git-stderr bug fixed one script over on 2026-07-31 and never propagated. Housekeeping found a queue-process failure matching the exact pattern found on Scheduler the same day: a batch operation marked a real, still-open finding as completed using an unrelated project\u0027s completion note. Health drops from 82 to 75 and the verdict flips from working to needs-attention on the strength of confirmed shipped-output defects, not on health score alone.",
+                     "actionsOpen":  24,
+                     "actionsClosed":  4,
+                     "health":  75,
+                     "lensScores":  {
+                                        "architecture":  84,
+                                        "reliability":  89,
+                                        "security":  95,
+                                        "performance":  90,
+                                        "data-integrity":  84,
+                                        "maintainability":  86,
+                                        "solo-tool-ux":  76,
+                                        "cost-economics":  79,
+                                        "dependency":  93,
+                                        "observability":  75,
+                                        "strategic-kill-this":  76,
+                                        "compliance-data-steward":  90,
+                                        "generative-art-schema-driven-correctness":  80,
+                                        "generative-art-print-fidelity":  68,
+                                        "generative-art-palette-discipline":  52,
+                                        "orchestration-skill-suite-health":  74,
+                                        "orchestration-work-queue-hygiene":  34,
+                                        "orchestration-audit-loop-integrity":  58,
+                                        "orchestration-fuse-truncation-defense":  88,
+                                        "orchestration-incident-runbook-currency":  58,
+                                        "orchestration-scheduled-task-firing-state":  74,
+                                        "orchestration-skill-trigger-collisions":  58,
+                                        "orchestration-skill-chain-handoff-integrity":  50,
+                                        "release-pipeline-per-project-ps1-stack":  74,
+                                        "release-pipeline-discord-notify-wiring":  74,
+                                        "release-pipeline-version-pill-drift":  78,
+                                        "release-pipeline-gate-page-publish":  94,
+                                        "public-voice-solo-dev-voice":  72,
+                                        "public-voice-ai-tell-concealment":  72,
+                                        "public-voice-brand-consistency":  86
+                                    },
+                     "actions":  [
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Fix the mid-word truncation at the source: word-boundary-aware slice in editor.js:693, since 43/199 herb records now confirmed to print and PNG-export cut off mid-word, not just preview.",
+                                         "lens":  "generative-art-print-fidelity",
+                                         "id":  "generative-art-print-fidelity-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Write a project-owned audit-report-to-dashboard sync script; the published low:1 count contradicts the 7 LOW items the linked report actually carries.",
+                                         "lens":  "orchestration-audit-loop-integrity",
+                                         "id":  "orchestration-audit-loop-integrity-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Derive a review-freshness signal from barRaise.latestReportAt and publish it as a field; the prior run\u0027s own recommended fix was never implemented and the blind spot is now 6 days, not the original 2.",
+                                         "lens":  "observability",
+                                         "id":  "barraise-skip-invisible-on-dashboard"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Darken 3 of 10 herb-category accent colors (39/199 herbs) that fall below 3:1 contrast against the parchment label paper, rendering borders/glow near-invisible.",
+                                         "lens":  "generative-art-palette-discipline",
+                                         "id":  "generative-art-palette-discipline-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Route push-yae-mirror.ps1\u0027s git calls through Invoke-Git; it still has the PS 5.1 stderr-wrap + LASTEXITCODE-clobber bug fixed only in push-to-github.ps1, and it\u0027s the step that pushes the live site mirror.",
+                                         "lens":  "solo-tool-ux",
+                                         "id":  "solo-tool-ux-01"
+                                     },
+                                     {
+                                         "severity":  "HIGH",
+                                         "title":  "Confirm queue-drain-hourly is actually firing; 13 pending Apothecary queue items (oldest 19 days) have zero attempts, and the portfolio drain timestamp hasn\u0027t advanced in 5 days.",
+                                         "lens":  "orchestration-work-queue-hygiene",
+                                         "id":  "orchestration-work-queue-hygiene-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add CHANGELOG.md to deploy-to-yae.ps1\u0027s copy list, or explicitly decide the mirror shouldn\u0027t carry one and delete the stale copy; the public mirror is still 15 releases behind at v0.5.0.",
+                                         "lens":  "release-pipeline-version-pill-drift",
+                                         "id":  "release-pipeline-version-pill-drift-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Route saved-labels.js (and ideally autofit.js/print.js) through main.js\u0027s ctx dynamic-import path; now confirmed as 7 static imports with three modules double-instantiated after a build-stamp change.",
+                                         "lens":  "architecture",
+                                         "id":  "architecture-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Extend test-data-integrity.mjs to assert the herb-record key union and all six documented character caps; this is exactly the check that would have auto-caught the descFull violations.",
+                                         "lens":  "data-integrity",
+                                         "id":  "data-integrity-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Rewrite README\u0027s Extending section to say drop the PNG and run regen-symbols-manifest.ps1 instead of hand-edit data/symbols.js, which the file\u0027s own header says gets clobbered on the next regen.",
+                                         "lens":  "maintainability",
+                                         "id":  "maintainability-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Route regen-symbols-manifest.ps1 and regen-textures-manifest.ps1 through the same Write-FileAtomic helper release.ps1 already defines; both write shipped data/*.js files via plain Set-Content with no readback.",
+                                         "lens":  "orchestration-fuse-truncation-defense",
+                                         "id":  "release-pipeline-per-project-ps1-stack-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Correct CLAUDE.md\u0027s Discord webhook table: only 3 of 5 documented webhooks exist, and the Audit Bot entry actually posts to #apothecary-resources via post-audit-digests.ps1.",
+                                         "lens":  "maintainability",
+                                         "id":  "maintainability-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Darken theme.latinColor; it falls short of WCAG AA text contrast against both paper gradient stops for every label\u0027s scientific-name text.",
+                                         "lens":  "generative-art-palette-discipline",
+                                         "id":  "generative-art-palette-discipline-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Rewrite editor.js\u0027s preset-minimal-front factory layout to derive zone geometry from the active template descriptor instead of hardcoding it.",
+                                         "lens":  "generative-art-schema-driven-correctness",
+                                         "id":  "generative-art-schema-driven-correctness-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Strip 785.9MB of orphaned data/ingredients/ raw-photo blobs from git history (repo is 866MB total, should be near 1.2MB); run git-filter-repo/BFG and force-push a rewritten history.",
+                                         "lens":  "cost-economics",
+                                         "id":  "cost-economics-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add a HEAD-comparison pre-check to the daily audit/bar-raise routine so a no-op day republishes the prior report unchanged instead of spending a full LLM pass; 4+ consecutive identical-finding days so far.",
+                                         "lens":  "cost-economics",
+                                         "id":  "cost-economics-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Update .project-context.json scheduled_tasks/review_cadence to name nightly-sweep + bar-raise-rotating; both listed per-project tasks are retired.",
+                                         "lens":  "orchestration-scheduled-task-firing-state",
+                                         "id":  "orchestration-scheduled-task-firing-state-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add the PS 5.1 stderr-wrap hazard and Invoke-Git pattern to CLAUDE.md\u0027s Things that will bite you; the hazard is documented only in script comments.",
+                                         "lens":  "orchestration-incident-runbook-currency",
+                                         "id":  "orchestration-incident-runbook-currency-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add corporate-speak/hedging vocabulary (leverage, seamless, robust, delve, streamline) to solo-dev-voice-audit\u0027s Phase 3 pattern table; currently zero coverage.",
+                                         "lens":  "public-voice-ai-tell-concealment",
+                                         "id":  "public-voice-ai-tell-concealment-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add index.html and src/ to .project-context.json\u0027s public_artifact_globs so the declared AI-tells scope matches CLAUDE.md\u0027s rule.",
+                                         "lens":  "public-voice-ai-tell-concealment",
+                                         "id":  "public-voice-ai-tell-concealment-02"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Add a fourth test suite covering the fuzzy herb-lookup alias/exact/prefix/contains chain that powers the flagship auto-fill flow; currently zero coverage.",
+                                         "lens":  "maintainability",
+                                         "id":  "maintainability-03"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Update CLAUDE.md\u0027s Deploy flow section to list all 6 steps release.ps1 actually runs; it currently describes only 5.",
+                                         "lens":  "release-pipeline-per-project-ps1-stack",
+                                         "id":  "release-pipeline-per-project-ps1-stack-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Decouple post-audit-digests.ps1 from release.ps1 so #apothecary-resources gets same-day digests; it currently only fires on release, leaving the channel 8 days / 3 reports behind.",
+                                         "lens":  "release-pipeline-discord-notify-wiring",
+                                         "id":  "release-pipeline-discord-notify-wiring-01"
+                                     },
+                                     {
+                                         "severity":  "MED",
+                                         "title":  "Surface to Kane: is daily bar-raise plus nightly audit still proportionate for a feature-frozen, 100%-complete app with 3 weeks of doc-only commits and findings up to 13 runs stale.",
+                                         "lens":  "strategic-kill-this",
+                                         "id":  "strategic-kill-this-01"
+                                     }
+                                 ],
+                     "deferred":  [
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "75 shipped illustration PNGs are scraped from proprietary brand art with no verified redistribution license.",
+                                          "lens":  "compliance-data-steward",
+                                          "reason":  "owner-acknowledged, risk-accepted decision locked 2026-07-11"
+                                      },
+                                      {
+                                          "severity":  "LOW",
+                                          "title":  "The only external script dependency, html2canvas 1.4.1, is on an effectively abandoned upstream.",
+                                          "lens":  "dependency",
+                                          "reason":  "no known CVE; migrate only if a vulnerability is ever disclosed"
+                                      }
+                                  ],
+                     "openFindings":  [
+                                          {
+                                              "id":  "generative-art-print-fidelity-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  5,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "orchestration-audit-loop-integrity-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  5,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "barraise-skip-invisible-on-dashboard",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  2,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "generative-art-palette-discipline-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "solo-tool-ux-01",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "orchestration-work-queue-hygiene-02",
+                                              "severity":  "high",
+                                              "priority":  20,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "release-pipeline-version-pill-drift-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  3,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "architecture-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  4,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "data-integrity-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  6,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "maintainability-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  3,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "release-pipeline-per-project-ps1-stack-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "maintainability-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "generative-art-palette-discipline-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "generative-art-schema-driven-correctness-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "cost-economics-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "cost-economics-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "orchestration-scheduled-task-firing-state-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "orchestration-incident-runbook-currency-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "public-voice-ai-tell-concealment-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "public-voice-ai-tell-concealment-02",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "maintainability-03",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "release-pipeline-per-project-ps1-stack-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "release-pipeline-discord-notify-wiring-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          },
+                                          {
+                                              "id":  "strategic-kill-this-01",
+                                              "severity":  "med",
+                                              "priority":  15,
+                                              "runsOpen":  1,
+                                              "firstSeen":  "2026-08-05"
+                                          }
+                                      ],
+                     "tensionsOpen":  [
+                                          {
+                                              "lenses":  [
+                                                             "observability",
+                                                             "solo-tool-ux"
+                                                         ],
+                                              "runsSeen":  2
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "cost-economics",
+                                                             "observability"
+                                                         ],
+                                              "runsSeen":  2
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "orchestration-audit-loop-integrity",
+                                                             "orchestration-skill-chain-handoff-integrity"
+                                                         ],
+                                              "runsSeen":  7
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "release-pipeline-per-project-ps1-stack",
+                                                             "release-pipeline-gate-page-publish"
+                                                         ],
+                                              "runsSeen":  3
+                                          },
+                                          {
+                                              "lenses":  [
+                                                             "architecture",
+                                                             "maintainability"
+                                                         ],
+                                              "runsSeen":  1
+                                          }
+                                      ]
+                 },
+    "metrics":  [
+                    {
+                        "k":  "herbs",
+                        "v":  "199"
+                    },
+                    {
+                        "k":  "illustrations",
+                        "v":  "75"
+                    },
+                    {
+                        "k":  "art keywords",
+                        "v":  "75"
+                    }
+                ],
+    "workQueueDepth":  28,
+    "stale":  false,
+    "tags":  [
+                 "generative-art",
+                 "orchestration",
+                 "release-pipeline",
+                 "public-voice"
+             ]
 }
