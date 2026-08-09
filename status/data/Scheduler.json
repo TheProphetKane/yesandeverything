@@ -44,8 +44,8 @@
     "latestReportAt": "2026-08-05T13:00:00Z",
     "verdict": "needs-attention",
     "topFinding": "This is the first full Tier-1 + domain fan-out (27 lenses) run against Scheduler since the 2026-07-24 pass only covered part of the lens set, and it surfaced real correctness bugs the lighter pass missed: three separate handlers commit multi-statement D1 writes as unbatched serial calls, so a mid-request interruption can silently truncate a user's org scope, strand a swapped shift with no assignee, or leave approved time off half-blocked. shift_assignments has no UNIQUE(shift_id, user_id) constraint, so the open-shifts claim path can double-book past max_employees under a race. apps/api runs hono 4.12.18 and apps/web runs react-router-dom 7.15.0, both carrying in-range HIGH CVEs a plain pnpm update would fix. The release pipeline itself got bypassed: commit ffc1e45 (2026-07-31) is titled like a v0.7.1 release but only touched a script, while a real perf fix and migration 0011 sat unreleased at HEAD for 9+ days. Health drops from 85 to 68 and the verdict flips to needs-attention on the strength of these live-breakage findings.",
-    "actionsOpen": 35,
-    "actionsClosed": 5,
+    "actionsOpen": 34,
+    "actionsClosed": 6,
     "actions": [
       {
         "severity": "HIGH",
@@ -70,12 +70,6 @@
         "title": "Add UNIQUE(shift_id,user_id) to shift_assignments and make the open-shifts claim/manual-add capacity checks atomic to close a double-booking race.",
         "lens": "data-integrity",
         "id": "data-integrity-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Delete the blind Remove-Item lock-clear block in write-dashboard-status.ps1; rely solely on Assert-GitSafe, matching sync-audit-dashboard.ps1's now-correct pattern.",
-        "lens": "reliability",
-        "id": "reliability-01"
       },
       {
         "severity": "HIGH",
@@ -320,13 +314,6 @@
       },
       {
         "id": "data-integrity-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-05"
-      },
-      {
-        "id": "reliability-01",
         "severity": "high",
         "priority": 20,
         "runsOpen": 1,
