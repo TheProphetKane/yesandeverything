@@ -1,915 +1,899 @@
 {
-    "project":  "Rising",
-    "displayName":  "Brackish Rising",
-    "version":  "0.59.59",
-    "lastReleaseAt":  "2026-08-10T23:21:04-05:00",
-    "lastReleaseMessage":  "The first real performance profile, and the unit render LOD that came out of it. The horde was never the problem - 1000 pooled enemies cost 7.7 ms and zero extra draw calls. Units were: the Scout rig carries 42 mesh slots and spine-godot submits one draw per slot, so 40 live rigs cost 22.7 ms and 1720 draw calls and blew the whole 16.67 ms frame before an enemy drew. Eight on-screen units now keep the live skeleton and the rest render the baked sheet through the Body sprite they already had, using the horde\u0027s bake pipeline. 40 units went 25.9 to 10.9 ms and 2234 draws to 933, visually indistinguishable. Two matching scan bugs also fell: the pooled find_closest_in_range walked every live record for every unit every frame, and every enemy walked the whole units group every frame ahead of any throttle. The 400-enemy 40-unit combat case went from about 44 ms to 27.4 ms - still over budget, with the remaining cost logged as an open investigation.",
-    "milestone":  {
-                      "id":  "M1",
-                      "label":  "Vertical Slice",
-                      "status":  "in-progress"
-                  },
-    "completion":  {
-                       "pct":  50,
-                       "anchored":  "2026-07-18"
-                   },
-    "itemsLeft":  {
-                      "open":  104,
-                      "queue":  100,
-                      "backlog":  0,
-                      "gates":  4,
-                      "items":  [
-                                    "M1 gameplay vertical slice not yet assembled: Hold the Wall 5-7 wave mission script (bk-mission-hold, P1), Lantern Oil drain + mission-fail clock UI, Shambler + Lunger combat tuning, and Hatchery destruction + Coral Receding VFX are all still pending per the GDD Roadmap tab (docs/GDD.html)",
-                                    "Wood Wall / Gate / Tower cell-occupant refactor (v0.14.0) and build-menu category-tab polish still pending",
-                                    "MVP art + audio integration ongoing and paced by Navy\u0027s delivery cadence: HUD rebuild, Spine2D rigs, and the terrain TileMapLayer migration landed through the v0.59.x series, but remaining unit/building art and MVP-scope audio are still outstanding",
-                                    "Basis for the 50% hold: the art-integration track has been the active work for weeks while the six gameplay slice deliverables above are unstarted; number is evidence-anchored here, not moved, and will only advance when a real gameplay deliverable lands"
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/brackish-rising",
-    "workTreeClean":  true,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-08-10.md",
-                  "latestReportAt":  "2026-08-10T06:09:58Z",
-                  "findings":  {
-                                   "critical":  0,
-                                   "high":  1,
-                                   "medium":  3,
-                                   "low":  0
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-08-10.md",
-                     "latestReportAt":  "2026-08-10T19:00:00Z",
-                     "verdict":  "needs-attention",
-                     "topFinding":  "Six real commits landed since 2026-08-03, all art/asset/economy-doc work (Spine rig animation, a baked-sprite pipeline with real integrity gating, an economy audit that fixed real price disagreements, an Asset Master List rewrite). None touch the six M1 vertical-slice deliverables still unstarted per .project-context.json, and the movement-speed bug a 2026-07-29 commit only documented still ships live -- the Leviathan still outruns everything. Two save/load defects are live: loading a game silently drops completed research effects and every purchased Keeper upgrade. queue-drain-hourly has been disabled 10 days, BR\u0027s own 24-day-old queue items are getting zero triage, and the strategic-kill-this-vs-maintainability tension has gone unresolved for 27 consecutive runs. Health fell 75 to 66 on two newly-confirmed live bugs plus the orchestration gaps, offset partially by the one real strengthening this window: a solid new bake-integrity preship gate.",
-                     "actionsOpen":  51,
-                     "actionsClosed":  0,
-                     "actions":  [
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  25,
-                                         "id":  "architecture-01",
-                                         "lens":  "architecture",
-                                         "title":  "Replace check_best_practices.py\u0027s stale GOD_FILES literal with a size-threshold scan over source/**/*.gd and regenerate the baseline so building.gd/wave_director.gd/settings.gd/enemy_pool.gd are actually ratcheted."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  25,
-                                         "id":  "maintainability-01",
-                                         "lens":  "maintainability",
-                                         "title":  "Replace check_best_practices.py\u0027s stale six-file GOD_FILES list with the current four-file watchlist so the preship ratchet actually measures live growth. (duplicate of architecture-01; land once)"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  25,
-                                         "id":  "strategic-kill-this-01",
-                                         "lens":  "strategic-kill-this",
-                                         "title":  "Direct the next BR commit at one concrete M1 gameplay deliverable (mission script, Lantern Oil clock, Shambler/Lunger tuning, or Hatchery/Coral VFX) instead of continuing art-integration by default."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "architecture-02",
-                                         "lens":  "architecture",
-                                         "title":  "Add a death/release signal to enemy_pool and have wave_director subscribe to it for pool-routed spawns so _alive_count decrements on pool kills the same as Node kills."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "security-01",
-                                         "lens":  "security",
-                                         "title":  "Move the BR GDD gate behind real server-side auth or drop the gate pretense; the viewer/editor phrases are plaintext JS constants readable via view-source."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "data-integrity-01",
-                                         "lens":  "data-integrity",
-                                         "title":  "Call research._apply_effect for every id restored into _completed on load, and extend the save snapshot to carry _active/_progress research state."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "data-integrity-02",
-                                         "lens":  "data-integrity",
-                                         "title":  "Add keepers\u0027 owned/pick-index/reroll/offer state and economy\u0027s waves-repelled/first-tent-relief flags to the save snapshot and restore path."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "maintainability-02",
-                                         "lens":  "maintainability",
-                                         "title":  "Strip or re-derive docs/ARCHITECTURE.md\u0027s hardcoded line-number anchors, which have drifted on every sample checked including one past end-of-file."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "dependency-01",
-                                         "lens":  "dependency",
-                                         "title":  "Extend check_clone_completeness.py to fail when a tracked .gd/.tscn references SpineSprite/SpineAnimationState but the spine-godot GDExtension binary is missing from git ls-files."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "observability-09",
-                                         "lens":  "observability",
-                                         "title":  "Wire tools/verify_pool_orientation.gd (or a headless equivalent) into preship.ps1 so a future shader/renderer regression of the same orientation-bug class fails the gate instead of shipping silently."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "observability-02",
-                                         "lens":  "observability",
-                                         "title":  "Write a parser that reads the newest CANONICAL_AUDIT-*.md\u0027s severity counts into the dashboard\u0027s audit.findings block instead of always carrying forward the last written value."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "strategic-kill-this-02",
-                                         "lens":  "strategic-kill-this",
-                                         "title":  "Run adr-promoter on the strategic-kill-this \u003c-\u003e maintainability tension now that it has re-surfaced for 27 consecutive runs with no decision."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "game-design-01",
-                                         "lens":  "game-design",
-                                         "title":  "Land the movement-speed code fix (pick one scale convention, drop the duplicate TILE_W/32 or the 0.5 halving) so the shipped speeds match the audited design column, including rebalancing the Leviathan."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "game-design-04",
-                                         "lens":  "game-design",
-                                         "title":  "Sequence a real gameplay pass (Shambler/Lunger tuning or the Hold-the-Wall mission script) before further art-track work; none of the six named M1 deliverables have moved."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "orchestration-01",
-                                         "lens":  "orchestration",
-                                         "title":  "Re-enable queue-drain-hourly (disabled 10 days) or split its stale-item-triage duty into a task that still runs; BR\u0027s oldest queue item is now 24 days old with zero triage."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "orchestration-02",
-                                         "lens":  "orchestration",
-                                         "title":  "Add a hard per-project deadline check to the bar-raise rotation so a sibling project\u0027s long fan-out can\u0027t push another project\u0027s forced-full-pass date past its own 7-day deadline."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "public-voice-01",
-                                         "lens":  "public-voice",
-                                         "title":  "Strip \u0027Cowork\u0027 from docs/GDD.html:3290/:3647 and CHANGELOG.md:249, matching the clean rewrite already done for the same event at GDD.html:3275."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  20,
-                                         "id":  "public-voice-02",
-                                         "lens":  "public-voice",
-                                         "title":  "Re-sync the solo-dev-voice-audit plugin snapshot from source, add a Brackish Rising row to its enforcement table, and add \u0027Cowork\u0027 to its AI-tool-name pattern."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  20,
-                                         "id":  "game-design-03",
-                                         "lens":  "game-design",
-                                         "title":  "Correct the stale BACKLOG.md \u0027Hold the Wall 5-7 wave mission\u0027 DONE row and either retarget m1_default.tres to the locked 5-7 minute shape or author the real vertical-slice mission fixture."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  16,
-                                         "id":  "reliability-01",
-                                         "lens":  "reliability",
-                                         "title":  "Give tools/bake_spine_sheets.gd\u0027s _bake() the same tmp-file + readback + atomic-rename pattern save_load.gd already uses, for both the PNG and the metadata JSON."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  16,
-                                         "id":  "cost-economics-01",
-                                         "lens":  "cost-economics",
-                                         "title":  "Add nightly-sweep and bar-raise-rotating to collect-usage.ps1\u0027s PROJECT_PATTERNS; Rising\u0027s dashboard cost is currently inverted (~6x) against Hordes on days when the opposite project actually ran the expensive fan-out."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  16,
-                                         "id":  "compliance-data-steward-01",
-                                         "lens":  "compliance-data-steward",
-                                         "title":  "Add a NOTICE/CREDITS.md to the release build recording the Spine Runtimes License terms and which party\u0027s Spine seat authorizes the shipped skeleton data."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  15,
-                                         "id":  "architecture-03",
-                                         "lens":  "architecture",
-                                         "title":  "Delete the duplicate Bilgemaw fortification-bonus string-match table and drive it from the actual building_name/is_fortification flag instead of two hardcoded (and stale) \u0027Watchtower\u0027 lists."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  15,
-                                         "id":  "reliability-02",
-                                         "lens":  "reliability",
-                                         "title":  "Branch on the returned bool in save_picker.gd\u0027s _on_save/_on_load and surface a failure state in the picker UI, mirroring the F6/F7 hotkey toast."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "security-02",
-                                         "lens":  "security",
-                                         "title":  "Extend check_secret_exposure.py to scan the resolved publish target (brackish-rising/index.html) where the gate phrases actually ship."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "performance-02",
-                                         "lens":  "performance",
-                                         "title":  "Capture a peak-wave profile with the new baked-sheet path active and append it to OPTIMIZATION_LOG.md, which has read \"no profile captured yet\" through six commits."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "data-integrity-03",
-                                         "lens":  "data-integrity",
-                                         "title":  "Update the Harpoon/Repeater/Mortar Battery build-menu tooltips to the shipped damage/fire-rate/radius constants, matching the fix already applied to Tryworks in the same commit."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "solo-tool-ux-01",
-                                         "lens":  "solo-tool-ux",
-                                         "title":  "Loop crowd_render_manager.build() over a data table of (type_id, dir, base) so a new baked rig needs only a data row, or correct the \u0027no code change\u0027 claim in docs/commits."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "observability-06",
-                                         "lens":  "observability",
-                                         "title":  "Make the BACKLOG.md milestone-cell match tolerant of composite cells like \u0027M0 -\u003e M1\u0027 instead of exact-match, and emit a matched-of-total denominator."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "orchestration-03",
-                                         "lens":  "orchestration",
-                                         "title":  "Add Brackish Rising to the adr-promoter routing table and cross-project-status-digest repos list; both currently hardcode a 4-project roster that omits BR."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "orchestration-04",
-                                         "lens":  "orchestration",
-                                         "title":  "Pick one canonical registration for handler-audit/project-canonical-audit (they exist twice, diverged) and retire the losing copy."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "release-pipeline-01",
-                                         "lens":  "release-pipeline",
-                                         "title":  "Give push-to-github.ps1 its own version-validation check so a direct invocation can\u0027t stamp an arbitrary, unvalidated version series into git history (already happened once, v0.16.7)."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  15,
-                                         "id":  "release-pipeline-02",
-                                         "lens":  "release-pipeline",
-                                         "title":  "Reconcile the #rising-resources digest channel: either create its webhook file or correct the docs/comments to say #rising-audit, which is where digests actually land."
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "priority":  12,
-                                         "id":  "architecture-04",
-                                         "lens":  "architecture",
-                                         "title":  "Route mission_setup.seed_idle_enemies through the same wave_director/enemy_pool dispatcher wave spawns use, or document the idle-vs-pool render split as a deliberate decision."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "performance-01",
-                                         "lens":  "performance",
-                                         "title":  "Hoist the baked-sprite branch outside the per-instance render loop in enemy_renderer.update_instances so the hot path has no per-instance branch/call overhead."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "maintainability-03",
-                                         "lens":  "maintainability",
-                                         "title":  "Add headless test coverage for enemy_pool and settings, starting with a pool spawn-then-release test asserting the alive counter returns to zero."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "solo-tool-ux-02",
-                                         "lens":  "solo-tool-ux",
-                                         "title":  "Add scripts/bake.ps1 wrapping the bake + import + check_baked_sheets.py steps in one command, matching every other repeated-task wrapper convention."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "dependency-02",
-                                         "lens":  "dependency",
-                                         "title":  "Record the locked spine-godot/Godot/Spine-editor version triple in a machine-readable file and check it against baked-sheet metadata at preship."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "observability-05",
-                                         "lens":  "observability",
-                                         "title":  "Invoke write-dashboard-status.ps1 from the nightly canonical-audit routine, not only from release.ps1, so the audit block doesn\u0027t go stale between releases."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "game-design-02",
-                                         "lens":  "game-design",
-                                         "title":  "Add a hit-frame signal or event track on the Shambler\u0027s Attack clip so the rig\u0027s swing and the tick-based damage application agree."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  12,
-                                         "id":  "game-design-05",
-                                         "lens":  "game-design",
-                                         "title":  "Capture one peak-wave frame-time profile now that the baked-sheet renderer is live and record it as the first OPTIMIZATION_LOG.md baseline."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  10,
-                                         "id":  "security-03",
-                                         "lens":  "security",
-                                         "title":  "Replace the enumerated webhook filenames in .gitignore with a glob (.discord_*) so a new webhook file is covered automatically."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  10,
-                                         "id":  "security-04",
-                                         "lens":  "security",
-                                         "title":  "Add token-shaped content patterns (ghp_, github_pat_, sk-, 40-hex) to check_secret_exposure.py\u0027s detection."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  10,
-                                         "id":  "cost-economics-02",
-                                         "lens":  "cost-economics",
-                                         "title":  "Adopt git-lfs for assets/art or rewrite history to drop the ~350MB of superseded Delete/ art blobs bloating .git to ~490MB."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  10,
-                                         "id":  "public-voice-03",
-                                         "lens":  "public-voice",
-                                         "title":  "Reword the single first-person-collective \u0027our\u0027 in the v0.59.55 changelog entry to hold the established third-person register."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  9,
-                                         "id":  "strategic-kill-this-03",
-                                         "lens":  "strategic-kill-this",
-                                         "title":  "Write the BR-vs-HBH priority ADR naming which project gets the next block of hours."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  8,
-                                         "id":  "architecture-05",
-                                         "lens":  "architecture",
-                                         "title":  "Inject an explicit HUD/grid reference at scene-setup time instead of wave_director\u0027s parent-tree name/type walk in _find_hud()."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  8,
-                                         "id":  "reliability-03",
-                                         "lens":  "reliability",
-                                         "title":  "Add a push_warning on crowd_render_manager\u0027s texture-load-failure branch so a corrupt baked PNG doesn\u0027t fail silently."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  8,
-                                         "id":  "security-05",
-                                         "lens":  "security",
-                                         "title":  "Migrate user://options.tres to a verified-JSON shape or add an explicit type hint plus post-load field validation to the ResourceLoader.load call."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  8,
-                                         "id":  "observability-03",
-                                         "lens":  "observability",
-                                         "title":  "Re-derive the dashboard\u0027s work-queue depth on the same nightly cadence as the audit block rather than only at release time."
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "priority":  6,
-                                         "id":  "solo-tool-ux-03",
-                                         "lens":  "solo-tool-ux",
-                                         "title":  "Write an artist-facing doc stating the branch/push convention and the exact clip-name contract the bake pipeline hardcodes."
-                                     }
-                                 ],
-                     "deferred":  [
-                                      {
-                                          "severity":  "LOW",
-                                          "title":  "Keep deferred as br-bp-git-lfs-2026-06-16 and retarget it at the Delete/ and dropped-art blobs rather than the Spine DLLs when it is taken up.",
-                                          "lens":  "cost-economics",
-                                          "reason":  "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Have Kane pick the authoritative side of the design-versus-shipped speed table so the tuning pass has a fixed target.",
-                                          "lens":  "strategic-kill-this",
-                                          "reason":  "blocked on Kane decision: which side of the design-vs-shipped speed table is authoritative"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Halve M3 and M4 in the GDD - three hand-authored missions instead of ten, the 40 Doctrine cards only with Exclusive and Standalone moved to V2 - and mark the cut explicitly rather than letting it happen by attrition.",
-                                          "lens":  "strategic-kill-this",
-                                          "reason":  "blocked on Kane scope decision for M3 and M4"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "On signature, store the executed agreement off-machine and version-backed and record its location in docs/LICENSES.md.",
-                                          "lens":  "compliance-data-steward",
-                                          "reason":  "blocked on contract signing; agreement still unsigned"
-                                      },
-                                      {
-                                          "severity":  "LOW",
-                                          "title":  "Fold the Godot logo CC-BY attribution and a root LICENSE statement into the M4 Steam distribution prep alongside the credits screen.",
-                                          "lens":  "compliance-data-steward",
-                                          "reason":  "pre-M4 Steam distribution prep; no distribution path built yet"
-                                      }
-                                  ],
-                     "health":  66,
-                     "lensScores":  {
-                                        "architecture":  68,
-                                        "reliability":  78,
-                                        "security":  74,
-                                        "performance":  74,
-                                        "data-integrity":  71,
-                                        "maintainability":  71,
-                                        "solo-tool-ux":  74,
-                                        "cost-economics":  63,
-                                        "dependency":  65,
-                                        "observability":  52,
-                                        "strategic-kill-this":  45,
-                                        "compliance-data-steward":  71,
-                                        "game-design":  68,
-                                        "orchestration":  58,
-                                        "release-pipeline":  74,
-                                        "public-voice":  61
-                                    },
-                     "openFindings":  [
-                                          {
-                                              "id":  "architecture-01",
-                                              "severity":  "HIGH",
-                                              "priority":  25,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "maintainability-01",
-                                              "severity":  "HIGH",
-                                              "priority":  25,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-01",
-                                              "severity":  "HIGH",
-                                              "priority":  25,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "architecture-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "security-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "data-integrity-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "data-integrity-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "maintainability-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "dependency-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "observability-09",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "observability-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "game-design-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "game-design-04",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "orchestration-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "orchestration-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "public-voice-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "public-voice-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "game-design-03",
-                                              "severity":  "MED",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "reliability-01",
-                                              "severity":  "HIGH",
-                                              "priority":  16,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "cost-economics-01",
-                                              "severity":  "HIGH",
-                                              "priority":  16,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "compliance-data-steward-01",
-                                              "severity":  "MED",
-                                              "priority":  16,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "architecture-03",
-                                              "severity":  "HIGH",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "reliability-02",
-                                              "severity":  "HIGH",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "security-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "performance-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "data-integrity-03",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "solo-tool-ux-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "observability-06",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "orchestration-03",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "orchestration-04",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "release-pipeline-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "release-pipeline-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "architecture-04",
-                                              "severity":  "HIGH",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "performance-01",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "maintainability-03",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "solo-tool-ux-02",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "dependency-02",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "observability-05",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "game-design-02",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "game-design-05",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "security-03",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "security-04",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "cost-economics-02",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "public-voice-03",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-03",
-                                              "severity":  "MED",
-                                              "priority":  9,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "architecture-05",
-                                              "severity":  "MED",
-                                              "priority":  8,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "reliability-03",
-                                              "severity":  "MED",
-                                              "priority":  8,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "security-05",
-                                              "severity":  "MED",
-                                              "priority":  8,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          },
-                                          {
-                                              "id":  "observability-03",
-                                              "severity":  "MED",
-                                              "priority":  8,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-07-30"
-                                          },
-                                          {
-                                              "id":  "solo-tool-ux-03",
-                                              "severity":  "MED",
-                                              "priority":  6,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-10"
-                                          }
-                                      ],
-                     "tensionsOpen":  [
-                                          {
-                                              "lenses":  [
-                                                             "strategic-kill-this",
-                                                             "maintainability"
-                                                         ],
-                                              "runsSeen":  28
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "cost-economics",
-                                                             "reliability"
-                                                         ],
-                                              "runsSeen":  31
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "performance",
-                                                             "solo-tool-ux"
-                                                         ],
-                                              "runsSeen":  30
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "reliability",
-                                                             "maintainability"
-                                                         ],
-                                              "runsSeen":  25
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "solo-tool-ux",
-                                                             "reliability"
-                                                         ],
-                                              "runsSeen":  20
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "performance",
-                                                             "game-design"
-                                                         ],
-                                              "runsSeen":  3
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "orchestration",
-                                                             "cost-economics"
-                                                         ],
-                                              "runsSeen":  3
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "release-pipeline",
-                                                             "maintainability"
-                                                         ],
-                                              "runsSeen":  1
-                                          }
-                                      ]
-                 },
-    "metrics":  [
-                    {
-                        "k":  "units",
-                        "v":  "13"
-                    },
-                    {
-                        "k":  "buildings",
-                        "v":  "26"
-                    },
-                    {
-                        "k":  "enemies",
-                        "v":  "18"
-                    },
-                    {
-                        "k":  "tests",
-                        "v":  "2"
-                    },
-                    {
-                        "k":  "scenes",
-                        "v":  "57"
-                    },
-                    {
-                        "k":  "gdd kb",
-                        "v":  "1411"
-                    }
-                ],
-    "workQueueDepth":  100,
-    "stale":  false,
-    "tags":  [
-                 "game-design",
-                 "orchestration",
-                 "release-pipeline",
-                 "public-voice"
-             ]
+  "project": "Rising",
+  "displayName": "Brackish Rising",
+  "version": "0.59.59",
+  "lastReleaseAt": "2026-08-10T23:21:04-05:00",
+  "lastReleaseMessage": "The first real performance profile, and the unit render LOD that came out of it. The horde was never the problem - 1000 pooled enemies cost 7.7 ms and zero extra draw calls. Units were: the Scout rig carries 42 mesh slots and spine-godot submits one draw per slot, so 40 live rigs cost 22.7 ms and 1720 draw calls and blew the whole 16.67 ms frame before an enemy drew. Eight on-screen units now keep the live skeleton and the rest render the baked sheet through the Body sprite they already had, using the horde's bake pipeline. 40 units went 25.9 to 10.9 ms and 2234 draws to 933, visually indistinguishable. Two matching scan bugs also fell: the pooled find_closest_in_range walked every live record for every unit every frame, and every enemy walked the whole units group every frame ahead of any throttle. The 400-enemy 40-unit combat case went from about 44 ms to 27.4 ms - still over budget, with the remaining cost logged as an open investigation.",
+  "milestone": {
+    "id": "M1",
+    "label": "Vertical Slice",
+    "status": "in-progress"
+  },
+  "completion": {
+    "pct": 50,
+    "anchored": "2026-07-18"
+  },
+  "itemsLeft": {
+    "open": 104,
+    "queue": 100,
+    "backlog": 0,
+    "gates": 4,
+    "items": [
+      "M1 gameplay vertical slice not yet assembled: Hold the Wall 5-7 wave mission script (bk-mission-hold, P1), Lantern Oil drain + mission-fail clock UI, Shambler + Lunger combat tuning, and Hatchery destruction + Coral Receding VFX are all still pending per the GDD Roadmap tab (docs/GDD.html)",
+      "Wood Wall / Gate / Tower cell-occupant refactor (v0.14.0) and build-menu category-tab polish still pending",
+      "MVP art + audio integration ongoing and paced by Navy's delivery cadence: HUD rebuild, Spine2D rigs, and the terrain TileMapLayer migration landed through the v0.59.x series, but remaining unit/building art and MVP-scope audio are still outstanding",
+      "Basis for the 50% hold: the art-integration track has been the active work for weeks while the six gameplay slice deliverables above are unstarted; number is evidence-anchored here, not moved, and will only advance when a real gameplay deliverable lands"
+    ]
+  },
+  "backlog": {
+    "count": 0,
+    "items": []
+  },
+  "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
+  "workTreeClean": true,
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-10.md",
+    "latestReportAt": "2026-08-10T06:09:58Z",
+    "findings": {
+      "critical": 0,
+      "high": 1,
+      "medium": 3,
+      "low": 0
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-08-10.md",
+    "latestReportAt": "2026-08-10T19:00:00Z",
+    "verdict": "needs-attention",
+    "topFinding": "Six real commits landed since 2026-08-03, all art/asset/economy-doc work (Spine rig animation, a baked-sprite pipeline with real integrity gating, an economy audit that fixed real price disagreements, an Asset Master List rewrite). None touch the six M1 vertical-slice deliverables still unstarted per .project-context.json, and the movement-speed bug a 2026-07-29 commit only documented still ships live -- the Leviathan still outruns everything. Two save/load defects are live: loading a game silently drops completed research effects and every purchased Keeper upgrade. queue-drain-hourly has been disabled 10 days, BR's own 24-day-old queue items are getting zero triage, and the strategic-kill-this-vs-maintainability tension has gone unresolved for 27 consecutive runs. Health fell 75 to 66 on two newly-confirmed live bugs plus the orchestration gaps, offset partially by the one real strengthening this window: a solid new bake-integrity preship gate.",
+    "actionsOpen": 50,
+    "actionsClosed": 1,
+    "actions": [
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "architecture-01",
+        "lens": "architecture",
+        "title": "Replace check_best_practices.py's stale GOD_FILES literal with a size-threshold scan over source/**/*.gd and regenerate the baseline so building.gd/wave_director.gd/settings.gd/enemy_pool.gd are actually ratcheted."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "maintainability-01",
+        "lens": "maintainability",
+        "title": "Replace check_best_practices.py's stale six-file GOD_FILES list with the current four-file watchlist so the preship ratchet actually measures live growth. (duplicate of architecture-01; land once)"
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "strategic-kill-this-01",
+        "lens": "strategic-kill-this",
+        "title": "Direct the next BR commit at one concrete M1 gameplay deliverable (mission script, Lantern Oil clock, Shambler/Lunger tuning, or Hatchery/Coral VFX) instead of continuing art-integration by default."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "architecture-02",
+        "lens": "architecture",
+        "title": "Add a death/release signal to enemy_pool and have wave_director subscribe to it for pool-routed spawns so _alive_count decrements on pool kills the same as Node kills."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "security-01",
+        "lens": "security",
+        "title": "Move the BR GDD gate behind real server-side auth or drop the gate pretense; the viewer/editor phrases are plaintext JS constants readable via view-source."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "data-integrity-01",
+        "lens": "data-integrity",
+        "title": "Call research._apply_effect for every id restored into _completed on load, and extend the save snapshot to carry _active/_progress research state."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "data-integrity-02",
+        "lens": "data-integrity",
+        "title": "Add keepers' owned/pick-index/reroll/offer state and economy's waves-repelled/first-tent-relief flags to the save snapshot and restore path."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "maintainability-02",
+        "lens": "maintainability",
+        "title": "Strip or re-derive docs/ARCHITECTURE.md's hardcoded line-number anchors, which have drifted on every sample checked including one past end-of-file."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "dependency-01",
+        "lens": "dependency",
+        "title": "Extend check_clone_completeness.py to fail when a tracked .gd/.tscn references SpineSprite/SpineAnimationState but the spine-godot GDExtension binary is missing from git ls-files."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "observability-09",
+        "lens": "observability",
+        "title": "Wire tools/verify_pool_orientation.gd (or a headless equivalent) into preship.ps1 so a future shader/renderer regression of the same orientation-bug class fails the gate instead of shipping silently."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "observability-02",
+        "lens": "observability",
+        "title": "Write a parser that reads the newest CANONICAL_AUDIT-*.md's severity counts into the dashboard's audit.findings block instead of always carrying forward the last written value."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "strategic-kill-this-02",
+        "lens": "strategic-kill-this",
+        "title": "Run adr-promoter on the strategic-kill-this <-> maintainability tension now that it has re-surfaced for 27 consecutive runs with no decision."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "game-design-01",
+        "lens": "game-design",
+        "title": "Land the movement-speed code fix (pick one scale convention, drop the duplicate TILE_W/32 or the 0.5 halving) so the shipped speeds match the audited design column, including rebalancing the Leviathan."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "game-design-04",
+        "lens": "game-design",
+        "title": "Sequence a real gameplay pass (Shambler/Lunger tuning or the Hold-the-Wall mission script) before further art-track work; none of the six named M1 deliverables have moved."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "orchestration-01",
+        "lens": "orchestration",
+        "title": "Re-enable queue-drain-hourly (disabled 10 days) or split its stale-item-triage duty into a task that still runs; BR's oldest queue item is now 24 days old with zero triage."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "orchestration-02",
+        "lens": "orchestration",
+        "title": "Add a hard per-project deadline check to the bar-raise rotation so a sibling project's long fan-out can't push another project's forced-full-pass date past its own 7-day deadline."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "public-voice-01",
+        "lens": "public-voice",
+        "title": "Strip 'Cowork' from docs/GDD.html:3290/:3647 and CHANGELOG.md:249, matching the clean rewrite already done for the same event at GDD.html:3275."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "public-voice-02",
+        "lens": "public-voice",
+        "title": "Re-sync the solo-dev-voice-audit plugin snapshot from source, add a Brackish Rising row to its enforcement table, and add 'Cowork' to its AI-tool-name pattern."
+      },
+      {
+        "severity": "MED",
+        "priority": 20,
+        "id": "game-design-03",
+        "lens": "game-design",
+        "title": "Correct the stale BACKLOG.md 'Hold the Wall 5-7 wave mission' DONE row and either retarget m1_default.tres to the locked 5-7 minute shape or author the real vertical-slice mission fixture."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 16,
+        "id": "reliability-01",
+        "lens": "reliability",
+        "title": "Give tools/bake_spine_sheets.gd's _bake() the same tmp-file + readback + atomic-rename pattern save_load.gd already uses, for both the PNG and the metadata JSON."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 16,
+        "id": "cost-economics-01",
+        "lens": "cost-economics",
+        "title": "Add nightly-sweep and bar-raise-rotating to collect-usage.ps1's PROJECT_PATTERNS; Rising's dashboard cost is currently inverted (~6x) against Hordes on days when the opposite project actually ran the expensive fan-out."
+      },
+      {
+        "severity": "MED",
+        "priority": 16,
+        "id": "compliance-data-steward-01",
+        "lens": "compliance-data-steward",
+        "title": "Add a NOTICE/CREDITS.md to the release build recording the Spine Runtimes License terms and which party's Spine seat authorizes the shipped skeleton data."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 15,
+        "id": "architecture-03",
+        "lens": "architecture",
+        "title": "Delete the duplicate Bilgemaw fortification-bonus string-match table and drive it from the actual building_name/is_fortification flag instead of two hardcoded (and stale) 'Watchtower' lists."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 15,
+        "id": "reliability-02",
+        "lens": "reliability",
+        "title": "Branch on the returned bool in save_picker.gd's _on_save/_on_load and surface a failure state in the picker UI, mirroring the F6/F7 hotkey toast."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "security-02",
+        "lens": "security",
+        "title": "Extend check_secret_exposure.py to scan the resolved publish target (brackish-rising/index.html) where the gate phrases actually ship."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "performance-02",
+        "lens": "performance",
+        "title": "Capture a peak-wave profile with the new baked-sheet path active and append it to OPTIMIZATION_LOG.md, which has read \"no profile captured yet\" through six commits."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "data-integrity-03",
+        "lens": "data-integrity",
+        "title": "Update the Harpoon/Repeater/Mortar Battery build-menu tooltips to the shipped damage/fire-rate/radius constants, matching the fix already applied to Tryworks in the same commit."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "solo-tool-ux-01",
+        "lens": "solo-tool-ux",
+        "title": "Loop crowd_render_manager.build() over a data table of (type_id, dir, base) so a new baked rig needs only a data row, or correct the 'no code change' claim in docs/commits."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "observability-06",
+        "lens": "observability",
+        "title": "Make the BACKLOG.md milestone-cell match tolerant of composite cells like 'M0 -> M1' instead of exact-match, and emit a matched-of-total denominator."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "orchestration-03",
+        "lens": "orchestration",
+        "title": "Add Brackish Rising to the adr-promoter routing table and cross-project-status-digest repos list; both currently hardcode a 4-project roster that omits BR."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "orchestration-04",
+        "lens": "orchestration",
+        "title": "Pick one canonical registration for handler-audit/project-canonical-audit (they exist twice, diverged) and retire the losing copy."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "release-pipeline-01",
+        "lens": "release-pipeline",
+        "title": "Give push-to-github.ps1 its own version-validation check so a direct invocation can't stamp an arbitrary, unvalidated version series into git history (already happened once, v0.16.7)."
+      },
+      {
+        "severity": "MED",
+        "priority": 15,
+        "id": "release-pipeline-02",
+        "lens": "release-pipeline",
+        "title": "Reconcile the #rising-resources digest channel: either create its webhook file or correct the docs/comments to say #rising-audit, which is where digests actually land."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 12,
+        "id": "architecture-04",
+        "lens": "architecture",
+        "title": "Route mission_setup.seed_idle_enemies through the same wave_director/enemy_pool dispatcher wave spawns use, or document the idle-vs-pool render split as a deliberate decision."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "performance-01",
+        "lens": "performance",
+        "title": "Hoist the baked-sprite branch outside the per-instance render loop in enemy_renderer.update_instances so the hot path has no per-instance branch/call overhead."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "maintainability-03",
+        "lens": "maintainability",
+        "title": "Add headless test coverage for enemy_pool and settings, starting with a pool spawn-then-release test asserting the alive counter returns to zero."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "solo-tool-ux-02",
+        "lens": "solo-tool-ux",
+        "title": "Add scripts/bake.ps1 wrapping the bake + import + check_baked_sheets.py steps in one command, matching every other repeated-task wrapper convention."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "dependency-02",
+        "lens": "dependency",
+        "title": "Record the locked spine-godot/Godot/Spine-editor version triple in a machine-readable file and check it against baked-sheet metadata at preship."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "observability-05",
+        "lens": "observability",
+        "title": "Invoke write-dashboard-status.ps1 from the nightly canonical-audit routine, not only from release.ps1, so the audit block doesn't go stale between releases."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "game-design-02",
+        "lens": "game-design",
+        "title": "Add a hit-frame signal or event track on the Shambler's Attack clip so the rig's swing and the tick-based damage application agree."
+      },
+      {
+        "severity": "MED",
+        "priority": 12,
+        "id": "game-design-05",
+        "lens": "game-design",
+        "title": "Capture one peak-wave frame-time profile now that the baked-sheet renderer is live and record it as the first OPTIMIZATION_LOG.md baseline."
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "security-03",
+        "lens": "security",
+        "title": "Replace the enumerated webhook filenames in .gitignore with a glob (.discord_*) so a new webhook file is covered automatically."
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "security-04",
+        "lens": "security",
+        "title": "Add token-shaped content patterns (ghp_, github_pat_, sk-, 40-hex) to check_secret_exposure.py's detection."
+      },
+      {
+        "severity": "MED",
+        "priority": 10,
+        "id": "cost-economics-02",
+        "lens": "cost-economics",
+        "title": "Adopt git-lfs for assets/art or rewrite history to drop the ~350MB of superseded Delete/ art blobs bloating .git to ~490MB."
+      },
+      {
+        "severity": "MED",
+        "priority": 9,
+        "id": "strategic-kill-this-03",
+        "lens": "strategic-kill-this",
+        "title": "Write the BR-vs-HBH priority ADR naming which project gets the next block of hours."
+      },
+      {
+        "severity": "MED",
+        "priority": 8,
+        "id": "architecture-05",
+        "lens": "architecture",
+        "title": "Inject an explicit HUD/grid reference at scene-setup time instead of wave_director's parent-tree name/type walk in _find_hud()."
+      },
+      {
+        "severity": "MED",
+        "priority": 8,
+        "id": "reliability-03",
+        "lens": "reliability",
+        "title": "Add a push_warning on crowd_render_manager's texture-load-failure branch so a corrupt baked PNG doesn't fail silently."
+      },
+      {
+        "severity": "MED",
+        "priority": 8,
+        "id": "security-05",
+        "lens": "security",
+        "title": "Migrate user://options.tres to a verified-JSON shape or add an explicit type hint plus post-load field validation to the ResourceLoader.load call."
+      },
+      {
+        "severity": "MED",
+        "priority": 8,
+        "id": "observability-03",
+        "lens": "observability",
+        "title": "Re-derive the dashboard's work-queue depth on the same nightly cadence as the audit block rather than only at release time."
+      },
+      {
+        "severity": "MED",
+        "priority": 6,
+        "id": "solo-tool-ux-03",
+        "lens": "solo-tool-ux",
+        "title": "Write an artist-facing doc stating the branch/push convention and the exact clip-name contract the bake pipeline hardcodes."
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "LOW",
+        "title": "Keep deferred as br-bp-git-lfs-2026-06-16 and retarget it at the Delete/ and dropped-art blobs rather than the Spine DLLs when it is taken up.",
+        "lens": "cost-economics",
+        "reason": "backlog-parked br-bp-git-lfs-2026-06-16; history rewrite risky on FUSE"
+      },
+      {
+        "severity": "MED",
+        "title": "Have Kane pick the authoritative side of the design-versus-shipped speed table so the tuning pass has a fixed target.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Kane decision: which side of the design-vs-shipped speed table is authoritative"
+      },
+      {
+        "severity": "MED",
+        "title": "Halve M3 and M4 in the GDD - three hand-authored missions instead of ten, the 40 Doctrine cards only with Exclusive and Standalone moved to V2 - and mark the cut explicitly rather than letting it happen by attrition.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Kane scope decision for M3 and M4"
+      },
+      {
+        "severity": "MED",
+        "title": "On signature, store the executed agreement off-machine and version-backed and record its location in docs/LICENSES.md.",
+        "lens": "compliance-data-steward",
+        "reason": "blocked on contract signing; agreement still unsigned"
+      },
+      {
+        "severity": "LOW",
+        "title": "Fold the Godot logo CC-BY attribution and a root LICENSE statement into the M4 Steam distribution prep alongside the credits screen.",
+        "lens": "compliance-data-steward",
+        "reason": "pre-M4 Steam distribution prep; no distribution path built yet"
+      }
+    ],
+    "health": 66,
+    "lensScores": {
+      "architecture": 68,
+      "reliability": 78,
+      "security": 74,
+      "performance": 74,
+      "data-integrity": 71,
+      "maintainability": 71,
+      "solo-tool-ux": 74,
+      "cost-economics": 63,
+      "dependency": 65,
+      "observability": 52,
+      "strategic-kill-this": 45,
+      "compliance-data-steward": 71,
+      "game-design": 68,
+      "orchestration": 58,
+      "release-pipeline": 74,
+      "public-voice": 61
+    },
+    "openFindings": [
+      {
+        "id": "architecture-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "architecture-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "security-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "dependency-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "observability-09",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "observability-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "strategic-kill-this-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "game-design-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "game-design-04",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "orchestration-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "orchestration-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "public-voice-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "public-voice-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "game-design-03",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "reliability-01",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "compliance-data-steward-01",
+        "severity": "MED",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "architecture-03",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "reliability-02",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "security-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "data-integrity-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "observability-06",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "orchestration-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "orchestration-04",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "release-pipeline-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "release-pipeline-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "architecture-04",
+        "severity": "HIGH",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "performance-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "maintainability-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "solo-tool-ux-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "dependency-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "observability-05",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "game-design-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "game-design-05",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "security-03",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "security-04",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "cost-economics-02",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "strategic-kill-this-03",
+        "severity": "MED",
+        "priority": 9,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "architecture-05",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "reliability-03",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "security-05",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      },
+      {
+        "id": "observability-03",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "solo-tool-ux-03",
+        "severity": "MED",
+        "priority": 6,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-10"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "strategic-kill-this",
+          "maintainability"
+        ],
+        "runsSeen": 28
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "reliability"
+        ],
+        "runsSeen": 31
+      },
+      {
+        "lenses": [
+          "performance",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 30
+      },
+      {
+        "lenses": [
+          "reliability",
+          "maintainability"
+        ],
+        "runsSeen": 25
+      },
+      {
+        "lenses": [
+          "solo-tool-ux",
+          "reliability"
+        ],
+        "runsSeen": 20
+      },
+      {
+        "lenses": [
+          "performance",
+          "game-design"
+        ],
+        "runsSeen": 3
+      },
+      {
+        "lenses": [
+          "orchestration",
+          "cost-economics"
+        ],
+        "runsSeen": 3
+      },
+      {
+        "lenses": [
+          "release-pipeline",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "units",
+      "v": "13"
+    },
+    {
+      "k": "buildings",
+      "v": "26"
+    },
+    {
+      "k": "enemies",
+      "v": "18"
+    },
+    {
+      "k": "tests",
+      "v": "2"
+    },
+    {
+      "k": "scenes",
+      "v": "57"
+    },
+    {
+      "k": "gdd kb",
+      "v": "1411"
+    }
+  ],
+  "workQueueDepth": 100,
+  "stale": false,
+  "tags": [
+    "game-design",
+    "orchestration",
+    "release-pipeline",
+    "public-voice"
+  ]
 }
