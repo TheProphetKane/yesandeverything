@@ -7,17 +7,17 @@ git. The nightly queue-triage task overwrites the "Current state" section below
 on each run, so this file always reflects the latest pass rather than spawning a
 new dated file.
 
-Last pass: 2026-08-10.
+Last pass: 2026-08-11.
 ## Current state
 
-Pass: `nightly-sweep` (consolidated portfolio pass), 2026-08-10. Queue read directly for measurement; no mutations made this pass (tonight's twelve canonical-doc audits found no findings not already queued).
+Pass: `nightly-sweep` (consolidated portfolio pass), 2026-08-11. Queue read directly for measurement; no mutations made this pass (tonight's twelve canonical-doc audits found no findings not already queued).
 
 ### Depth
 
-| Measure | 2026-08-08 | 2026-08-09 | 2026-08-10 | Δ |
+| Measure | 2026-08-09 | 2026-08-10 | 2026-08-11 | Δ |
 |---|---|---|---|---|
-| Total items | 797 | 885 | 885 | 0 |
-| `pending` | 664 | 752 | 752 | 0 |
+| Total items | 885 | 885 | 885 | 0 |
+| `pending` | 752 | 752 | 752 | 0 |
 | `blocked-on-user` | 57 | 57 | 57 | 0 |
 | `completed` | 64 | 64 | 64 | 0 |
 | `deferred` | 10 | 10 | 10 | 0 |
@@ -25,19 +25,19 @@ Pass: `nightly-sweep` (consolidated portfolio pass), 2026-08-10. Queue read dire
 | Promptless (undrainable) | 11 | 11 | 11 | 0 |
 | Pending that are `auto_safe: true` | 0 | 0 | 0 | 0 |
 
-Flat night — zero net change on every measure. No new bar-raise dumps landed, and nothing was drained by this pass (structural items still need judgment, not a nightly audit).
+Second flat night in a row — zero net change on every measure. No new bar-raise dumps landed, and nothing was drained by this pass (structural items still need judgment, not a nightly audit).
 
 ### Aged structural items (`auto_safe: false`, `pending`, older than 7 days)
 
-**539 items, up from 527 on 2026-08-09 (+12), ordinary calendar drift.** Severity: 329 `medium`, 164 `high`, 40 `low`, 6 unset. Priority: 321 P2, **166 P1**, 48 P3, 2 P4, 2 P0. Oldest is now **24 days** (`hbh-orphan-mainmenu-settings-deadcode-2026-07-17`, unchanged item, one day older).
+**545 items, up from 539 on 2026-08-10 (+6), ordinary calendar drift.** Severity: 329 `medium`, 164 `high`, 40 `low`, 6 unset (plus 5 `MED`/1 `HIGH` casing outliers, unchanged). Priority: 326 P2, **167 P1**, 48 P3, 2 P4, 2 P0. Oldest is now **25 days** (`hbh-orphan-mainmenu-settings-deadcode-2026-07-17`, unchanged item, one day older).
 
-By project: hordes 207, rising 100, gnosis 44, everything 40, budget 26, skylight 20, ring 20, chains 16, apothecary 10, agents 10, scheduler 9, cattery 7, cross 6, yab 6, portfolio 5, plus the casing-split remainder below.
+By project: hordes 207, rising 100, everything 46, gnosis 44, budget 26, skylight 20, ring 20, chains 16, apothecary 10, agents 10, scheduler 9, cattery 7, cross 6, yab 6, portfolio 5, plus the casing-split remainder below.
 
 ### The aged P1/high band grew with the calendar, still never attempted
 
-**172 aged P1/high items, all 172 at `attempts: 0`.** Up from 158 on 2026-08-09 (+14). Disposition unchanged from every prior pass: **leave all 172 pending.** The severity guard says never archive `high`/`P0`/`P1` and set `blocked-on-user` with a `drainNote` instead — deliberately not applied here, because `blocked-on-user` would assert something untrue: these were never started, they're not waiting on Kane for an answer.
+**173 aged P1/high items, all 173 at `attempts: 0`.** Up from 172 on 2026-08-10 (+1). Disposition unchanged from every prior pass: **leave all 173 pending.** The severity guard says never archive `high`/`P0`/`P1` and set `blocked-on-user` with a `drainNote` instead — deliberately not applied here, because `blocked-on-user` would assert something untrue: these were never started, they're not waiting on Kane for an answer.
 
-Hordes alone accounts for 207 of 539 aged items, same structural reason as every prior pass: its canonical doc is `docs/GDD.html`, and `CLAUDE.md` binds any GDD edit to a version bump plus a changelog entry plus a release, none of which an unattended routine may do. Fifteenth consecutive nightly pass recording an empty Applied section there for exactly this reason.
+Hordes alone accounts for 207 of 545 aged items, same structural reason as every prior pass: its canonical doc is `docs/GDD.html`, and `CLAUDE.md` binds any GDD edit to a version bump plus a changelog entry plus a release, none of which an unattended routine may do. Sixteenth consecutive nightly pass recording an empty Applied section there for exactly this reason.
 
 ### Escalated: the project-key casing split is much wider than previously tracked
 
@@ -65,15 +65,15 @@ Still nothing confirmed to read `project` case-sensitively — this pass did not
 - **Closed: 0** by this triage pass directly.
 - **Status changes: 0** from queue-triage tonight.
 - **Opened: 0** from this queue-triage pass directly. Tonight's twelve canonical-doc audits found no findings not already queued.
-- **Flagged, not yet actioned:** the widened casing split (Ring, Cattery, Chains — detail above, now a real data-integrity risk rather than cosmetic); the 11 promptless `bar-raise-finding` items from 2026-08-03, still tracked by `queue-drain-2026-07-26-promptless-enqueues-undrainable`, now twenty-two days after it was filed.
+- **Flagged, not yet actioned:** the widened casing split (Ring, Cattery, Chains — detail above, now a real data-integrity risk rather than cosmetic); the 11 promptless `bar-raise-finding` items from 2026-08-03, still tracked by `queue-drain-2026-07-26-promptless-enqueues-undrainable`, now 16 days after it was filed (2026-07-26).
 
 ### Recommendation
 
 Unchanged in substance from every prior pass, with one addition: the casing split (above) just crossed from "3-item cosmetic footnote" to "coin-flip on two projects," and is now the single highest-value quick win in the queue — a mechanical bulk fix, not a design decision, unlike everything else on this list. Separately, still a decision for Kane:
 
-- **Cap bar-raise intake** and fix the promptless-enqueue bug at the source — the 11 stranded items from 2026-08-03 are exactly the failure mode `queue-drain-2026-07-26-promptless-enqueues-undrainable` describes, now twenty-two days after it was filed.
+- **Cap bar-raise intake** and fix the promptless-enqueue bug at the source — the 11 stranded items from 2026-08-03 are exactly the failure mode `queue-drain-2026-07-26-promptless-enqueues-undrainable` describes, now 16 days after it was filed.
 - **Re-enable `queue-drain-hourly`** and rebuild an auto-safe class, so mechanical items stop competing with judgment items for the burndown's box.
 - **Accept the queue as an archive rather than a work list**, stop measuring the governor against a target it cannot hit, and say so in the trend note instead of logging UNDER-WATER.
 - **Grow the daily governor's box**, especially given the queue's demonstrated capacity to absorb 88 items in a single overnight window.
 
-Doing none of these is also a choice. Its outcome is visible: 172 P1/high items, none of them ever attempted, the oldest now 24 days.
+Doing none of these is also a choice. Its outcome is visible: 173 P1/high items, none of them ever attempted, the oldest now 25 days.
