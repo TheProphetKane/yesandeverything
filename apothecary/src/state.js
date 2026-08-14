@@ -49,7 +49,13 @@ export function createState(initial) {
   }
 
   function notify() {
-    for (const fn of listeners) fn(state);
+    for (const fn of listeners) {
+      try {
+        fn(state);
+      } catch (err) {
+        console.error('state listener failed:', err);
+      }
+    }
   }
 
   return { get, set, patchNested, subscribe };
@@ -143,7 +149,7 @@ export function defaultState() {
     latin: 'Matricaria chamomilla',
     props: 'Healing · Sleep · Peace · Solar Magic',
     description: 'Sun-blessed and gentle. Heals the body, quiets the restless mind. The Celts drank it at dawn to greet the light.',
-    accent: '#C4922A',
+    accent: '#A77C24',
     symbol: 'solar-wheel',
     botanical: 'flower',
     icon: 'chamomile',

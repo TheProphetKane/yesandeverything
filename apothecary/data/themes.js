@@ -12,7 +12,7 @@ export const THEMES = {
     // Label text base colors (accent overrides where applicable)
     shopColor: '#1C0A00',
     shopShadow: '0 0 3px rgba(196,146,42,0.5), 0 0 6px rgba(196,146,42,0.25)',
-    latinColor: '#A07820',
+    latinColor: '#735617',
     descColor: '#2E1A08',
     // Border
     borderOpacityOuter: 0.7,

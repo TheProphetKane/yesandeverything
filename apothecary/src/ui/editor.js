@@ -8,6 +8,7 @@
 // picker, layout presets.
 
 import { printLabel } from '../util/print.js';
+import { truncateAtWordBoundary } from '../util/truncate.js';
 // v0.11.1: cross-module references for cache-bust safety travel through ctx,
 // not static imports. main.js owns the versioned dynamic-import graph; any
 // static import here would fetch an un-versioned URL that Cloudflare may
@@ -690,7 +691,7 @@ export function mountEditor(root, ctx) {
       illustration: null,
       icon: found.icon ?? null,
       runes: found.runes.map(r => ({ c: r.c, m: r.m })),
-      descFull:     (found.descFull     ?? found.desc).slice(0, tmpl.descFullMaxChars),
+      descFull:     truncateAtWordBoundary(found.descFull ?? found.desc, tmpl.descFullMaxChars),
       historicUses: (found.historicUses ?? '').slice(0, tmpl.historicMaxChars),
       compounds:    (found.compounds    ?? '').slice(0, tmpl.compoundsMaxChars),
       cautions:     (found.cautions     ?? '').slice(0, tmpl.cautionsMaxChars),
