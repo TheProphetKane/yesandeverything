@@ -1,9 +1,9 @@
 {
     "project":  "Rising",
     "displayName":  "Brackish Rising",
-    "version":  "0.59.66",
-    "lastReleaseAt":  "2026-08-14T22:38:37-05:00",
-    "lastReleaseMessage":  "Nine live bugs cleared from the queue, plus two gate fixes surfaced while landing them. Pool-routed enemy kills never decremented wave_director\u0027s alive counter (enemy_pool had no death signal at all), so the wave-repelled reward - Sonic Pressure relief, the field-hospital heal, the success toast - was unreachable for any horde spawned through the pool path, which is the default for all eight enemy types; enemy_pool now emits enemy_released and wave_director subscribes to it, with two new headless tests pinning the round trip. Loading a save replayed the completed-research set without calling _apply_effect, so lab tier and the tier-4 gate silently reverted even though the research tab showed the nodes complete; the load path now replays the effect for each restored node and also captures in-flight research and its progress, neither of which were saved before. Every drafted Keeper and the waves-repelled / first-tent-relief economy counters lived outside the snapshot entirely, so a load dropped them while a building\u0027s already-boosted max_hp from a Keeper mod applied at build time stuck around - both now round-trip. Restored building and unit hp used to apply raw and skip anything at or below zero, so a stray value above the live max_hp over-healed past the cap and a dying entity mid-death-animation was quietly revived to full instead of restored dying; it is now clamped to [1, max_hp]. The save picker discarded every save_to / load_from / delete_slot return value and nothing subscribed to the four save/load signals, so a rejected crash-safe write looked identical to a successful one; the picker and both autosave paths now toast and log on failure. options.tres was written with a bare ResourceSaver.save() straight to the live path and loaded on nothing stronger than ResourceLoader.exists(), so a truncated file silently produced a null global.settings and a corrupt-but-present file could in principle load a foreign script\u0027s _init(); saves now go through a tmp-write-verify-rename helper and loads reject anything that is not exactly the options script. Wired Beacon and Hatchery to their delivered Beacon512 / Hatchery512 art instead of the House placeholder both had stood in for since neither had its own sprite wired; Wood Gate, Wood Tower and Stone Gate still need real art from Navy before the same fix applies to them.",
+    "version":  "0.59.67",
+    "lastReleaseAt":  "2026-08-14T22:45:23-05:00",
+    "lastReleaseMessage":  "Three stale TILE_W=32 comments corrected to the real value, plus one dead research branch cleared while in the area. enemy_base.gd, selection_helpers.gd and trench_sweeper.gd all still described the pre-v0.58.x tile width (32px, from the v0.17.0 halving) and one of them derived a wrong on-screen pixel figure from it; TILE_W has been 106 since v0.58.x, sized to fit the native 256px art at 1.0x, so the comments and the trench_sweeper cone-range figure now match constants.gd. Also dropped trench_sweeper.gd\u0027s dead has_upgrade(\u0026full_choke) check - full_choke was a research node from an earlier design pass that was cut when the mechanic shipped as the Full Broadside Keeper instead, so the branch could never fire; the Keeper check just above it already covers the same no-falloff behavior correctly.",
     "milestone":  {
                       "id":  "M1",
                       "label":  "Vertical Slice",
@@ -873,7 +873,7 @@
                     },
                     {
                         "k":  "gdd kb",
-                        "v":  "1419"
+                        "v":  "1428"
                     }
                 ],
     "workQueueDepth":  100,
