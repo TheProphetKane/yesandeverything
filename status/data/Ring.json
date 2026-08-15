@@ -1,711 +1,695 @@
 {
-    "project":  "Ring",
-    "displayName":  "Yes\u0026 Ring",
-    "version":  "0.17.25",
-    "lastReleaseAt":  "2026-08-14T22:20:41-05:00",
-    "lastReleaseMessage":  "backlog burndown - sharing leak test, state-write retry, sync-retry indicator, doc fixes",
-    "milestone":  {
-                      "id":  "v0.16",
-                      "label":  "v0.16 - Supabase auth + Stripe subscriptions + live TICA data pipeline",
-                      "status":  "shipped"
-                  },
-    "completion":  {
-                       "pct":  76,
-                       "anchored":  "2026-07-03"
-                   },
-    "itemsLeft":  {
-                      "open":  4,
-                      "queue":  0,
-                      "backlog":  0,
-                      "gates":  4,
-                      "items":  [
-                                    "Judge-panel coverage polish: intl coverage grows as the daily cron converges; re-check cadence for clubs that post panels late",
-                                    "Multi-user ownership model (docs/AUTH-OWNERSHIP-DESIGN.md): MERGED co-ownership (shared writes both see), email invite notification, reg-number join requests + certificate verification",
-                                    "Auth polish: email OTP code / verification edge cases",
-                                    "Security (docs/SECURITY.md): sprint 2026-06-30..07-02 (v0.17.2-0.17.10). DONE: CSP+headers (run_worker_first), rate limits, audit log, prototype-pollution guard, shared-cat payload sanitization, seed-share owner-check, DB advisor lockdown (migration 0006), judge-rating anti-ballot-stuffing, supabase-js confirmed latest, leaked webhook revoked, rotation runbook. **P1-7 DONE + verified live: per-user state migrated to Postgres user_state with RLS (migration 0007); dual-write KV+PG, STATE_READ=pg flag + KV fallback/lazy-backfill; RLS isolation proven (own-row-only/anon-denied); view-as+sharing stay on KV; cost-neutral (free tier) + cron keep-warm.** **Turnstile widget CREATED + site key wired + deployed (v0.17.12, 2026-07-02): managed-mode widget for ring.yesandeverything.com, TURNSTILE_SITE_KEY var live, /api/config serves it, CSP opens challenges.cloudflare.com, login renders widget + passes captchaToken; verified turnstile.render() accepts the key on the live hostname.** **Turnstile ENFORCING (2026-07-03): Kane pasted the secret into Supabase CAPTCHA; verified live — OTP without captcha_token now returns captcha_failed.** OPEN: full relational cats/shows normalization (optional product-scale), move view-as/sharing reads to DEFINER RPCs. Ring Resources Bot webhook recreated 2026-07-06 (real URL on disk, audit digests posting again)."
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandring",
-    "liveUrl":  "https://ring.yesandeverything.com",
-    "workTreeClean":  false,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-08-14.md",
-                  "latestReportAt":  "2026-08-14T06:14:33Z",
-                  "findings":  {
-                                   "critical":  0,
-                                   "high":  3,
-                                   "medium":  1,
-                                   "low":  1
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-08-14.md",
-                     "latestReportAt":  "2026-08-14T11:45:00Z",
-                     "verdict":  "needs-attention",
-                     "topFinding":  "Health moved 73 to 64 this run, the sharpest single-week drop yet, and it\u0027s real rather than an artifact of running more lenses: twelve of last week\u0027s open findings turned five runs old simultaneously (data-integrity-01/02, compliance-01, pwa-sync-01, cost-economics-01, architecture-01, observability-02, compliance-02, security-02, reliability-04, dependency-02, auth-token-hygiene-02), meaning nothing from the very first bar-raise on 2026-07-07 has been touched in a month, and none of last week\u0027s 27 open actions closed this run. The state-sync bug is the one with real teeth: mergeStates() still replaces decisionsList/judgeStatus/myVotes/catTargets wholesale instead of merging them, now confirmed to drop edits on a single-device reboot (not just cross-device), and it pairs with a dual-write path (KV plus Postgres) that discards pgStateWrite\u0027s failure result -- with STATE_READ=pg now live in production, a lost Postgres write silently reverts a user\u0027s latest decision with nothing surfaced anywhere. Two new HIGH findings landed in the same window a HIGH voice finding was fixed: an em dash still reaches the public status/data/Ring.json through .project-context.json, the same defect shape as the index.html fix from a week ago, and auth-token-hygiene got measurably worse (GET /api/state now pays two serial live Supabase round-trips per request instead of one KV read). Commit history for the past two weeks is almost entirely release-tooling and voice hardening -- strategic-kill-this-01 already called this out a week ago asking for a product-decision session instead; that session still hasn\u0027t happened, and six of those days had zero commits at all.",
-                     "actionsOpen":  38,
-                     "actionsClosed":  0,
-                     "actions":  [
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Give schedulePush a retry-with-backoff path (or re-arm on next app-visible) and a not-synced indicator instead of swallowing push failures silently.",
-                                         "lens":  "reliability",
-                                         "priority":  20,
-                                         "id":  "reliability-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Check pgStateWrite\u0027s return value in handleStatePost and retry or log on failure, so a lost Postgres write in the KV+Postgres dual-write can\u0027t silently revert a user\u0027s state now that STATE_READ=pg is live.",
-                                         "lens":  "data-integrity",
-                                         "priority":  20,
-                                         "id":  "data-integrity-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Add timestamp-aware conflict handling to mergeStates() so decisionsList, judgeStatus, myVotes, and catTargets union instead of getting replaced wholesale on sync; confirmed this run to also drop edits on a single-device reboot, not just cross-device.",
-                                         "lens":  "pwa-sync",
-                                         "priority":  20,
-                                         "id":  "pwa-sync-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Bump public/sw.js\u0027s VERSION constant on every release (it\u0027s still yar-v0.17.17, 7+ releases stale) so the cache namespace rotates and orphaned entries get pruned; wire it into scripts/release.ps1 alongside the __RING_BUILD stamp.",
-                                         "lens":  "reliability",
-                                         "priority":  20,
-                                         "id":  "reliability-06"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Back up the KV-only community judge ratings to a Postgres mirror or a scheduled snapshot.",
-                                         "lens":  "data-integrity",
-                                         "priority":  20,
-                                         "id":  "data-integrity-02"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Commit a runnable single-cat-extraction leak test and an npm test script, or correct SECURITY.md\u0027s claim that the leak test and view-as gate are unit-tested -- no test file exists anywhere in the repo.",
-                                         "lens":  "maintainability",
-                                         "priority":  20,
-                                         "id":  "maintainability-02"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Add console.error to every silent catch block in the TICA-scraping and billing handlers (only one console.error exists in the whole codebase) so a systemic break stops being invisible.",
-                                         "lens":  "observability",
-                                         "priority":  20,
-                                         "id":  "observability-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Spend the next Ring session on the v1.0-freeze-vs-Phase-2-scope decision and the pricing question instead of further release-script hardening; the session this was flagged to force a week ago still hasn\u0027t happened, and six more days have passed with zero commits.",
-                                         "lens":  "strategic-kill-this",
-                                         "priority":  20,
-                                         "id":  "strategic-kill-this-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Add authenticated user-data export and delete endpoints plus a documented retention policy -- no such endpoint exists anywhere in the Worker.",
-                                         "lens":  "compliance-data-steward",
-                                         "priority":  20,
-                                         "id":  "compliance-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Strip the em dash from .project-context.json\u0027s completion.remaining text (the Turnstile note) -- it republishes verbatim into the public status/data/Ring.json, the same defect class ai-tell-concealment-01 just fixed in index.html one hop upstream.",
-                                         "lens":  "solo-dev-voice",
-                                         "priority":  20,
-                                         "id":  "ai-tell-concealment-03"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Cache or JWKS-verify Supabase tokens so verifyUser stops paying a live round-trip on every authenticated request -- GET /api/state now pays two serial live Supabase calls per request (verifyUser then pgStateRead) since STATE_READ flipped to pg, worsening the original finding.",
-                                         "lens":  "auth-token-hygiene",
-                                         "priority":  20,
-                                         "id":  "auth-token-hygiene-02"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Add a release-time grep gate for em dashes and AI-tell vocabulary across every public_artifact_globs path, and extend voice_scope to cover .project-context.json and CLAUDE.md itself -- every catch to date, including last week\u0027s fix, has been manual and reactive.",
-                                         "lens":  "ai-tell-concealment",
-                                         "priority":  18,
-                                         "id":  "ai-tell-concealment-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Move view-as and shared-cats reads onto SECURITY DEFINER RPCs to match the RLS-backed isolation already shipped for own-data reads.",
-                                         "lens":  "security",
-                                         "priority":  16,
-                                         "id":  "security-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Raise or make dynamic standTable\u0027s 14-page hard cap (completed seasons already run 11+ pages deep) and log when the walk is terminated by hitting the cap rather than by running out of rows.",
-                                         "lens":  "performance",
-                                         "priority":  16,
-                                         "id":  "performance-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Section public/app.js into documented layers matching PROJECT_SPEC.md\u0027s module list -- only 4 section markers exist across 2516 lines and the labels no longer describe what\u0027s under them.",
-                                         "lens":  "architecture",
-                                         "priority":  15,
-                                         "id":  "architecture-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Apply AbortSignal.timeout to the Stripe, Supabase, Discord, and Resend fetches the way TICA fetches already do.",
-                                         "lens":  "reliability",
-                                         "priority":  15,
-                                         "id":  "reliability-03"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Skip the multi-cat picker grid and land directly on the single cat\u0027s dashboard when myCats().length === 1 -- the picker costs a click on every visit for the one real user.",
-                                         "lens":  "solo-tool-ux",
-                                         "priority":  15,
-                                         "id":  "solo-tool-ux-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Bump the wrangler devDependency to the major actually in use (pinned ^3.90.0, actually running 4.123.0 via npx) and commit a lockfile.",
-                                         "lens":  "dependency",
-                                         "priority":  15,
-                                         "id":  "dependency-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Wire a persistent log sink (Discord post, reusing the existing feedback-webhook pattern) for cron and scraper failures instead of relying on the ephemeral live tail.",
-                                         "lens":  "observability",
-                                         "priority":  15,
-                                         "id":  "observability-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Have scheduled() write a lastCronRun/lastCronOk marker to KV and surface it in /api/health, distinct from the existing calendarAgeMin freshness proxy.",
-                                         "lens":  "observability",
-                                         "priority":  15,
-                                         "id":  "observability-03"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Hold off wiring readers/writers to the ten multi-user ownership tables (cat_members, cat_invites, cat_verifications) migrated a month ago with zero usage until the v1.0-vs-Phase-2 decision is actually made.",
-                                         "lens":  "strategic-kill-this",
-                                         "priority":  15,
-                                         "id":  "strategic-kill-this-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Extract git-guard.ps1 into one shared portfolio script -- the PS5.1 git-stderr fix has now been independently re-derived in at least four projects (Ring, Skylight, Agents, Chains).",
-                                         "lens":  "strategic-kill-this",
-                                         "priority":  15,
-                                         "id":  "strategic-kill-this-03"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Publish a short privacy/terms page naming the data collected (email, TICA reg, Stripe status) and its retention behavior -- none exists anywhere in the repo or on the live site.",
-                                         "lens":  "compliance-data-steward",
-                                         "priority":  15,
-                                         "id":  "compliance-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Wrap the Step 4 Discord-notify invocation in release.ps1 in the same try/catch pattern as Steps 3 and 5 so an uncaught error in discord-notify.ps1 can\u0027t abort the release and skip audit-digest posting.",
-                                         "lens":  "release-ps1-stack",
-                                         "priority":  15,
-                                         "id":  "release-ps1-stack-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Build the missing Ring Audit Bot / Ring Backlog Bot webhooks (only 3 of 5 documented webhooks exist) or trim CLAUDE.md\u0027s table down to the three channels that actually receive posts.",
-                                         "lens":  "discord-notify-wiring",
-                                         "priority":  15,
-                                         "id":  "discord-notify-wiring-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Reconcile .project-context.json\u0027s milestone block: the label still frames auth+billing as the open target while the same file\u0027s shipped_since_last_anchor already lists them as done.",
-                                         "lens":  "brand-consistency",
-                                         "priority":  15,
-                                         "id":  "brand-consistency-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Parallelize the sequential per-grant KV reads in handleSharedCats with Promise.all.",
-                                         "lens":  "kv-data-shape",
-                                         "priority":  15,
-                                         "id":  "kv-data-shape-01"
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Distinguish \u0027no remote row\u0027 from \u0027read failed\u0027 in loadRemoteState so a transient GET failure on boot can\u0027t overwrite a newer remote state with stale local data.",
-                                         "lens":  "data-integrity",
-                                         "priority":  12,
-                                         "id":  "data-integrity-06"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add a console.warn (or a shared swallow() helper) to the silent sync-path catches in app.js (schedulePush, loadRemoteState) so a failed background push leaves a trace.",
-                                         "lens":  "maintainability",
-                                         "priority":  12,
-                                         "id":  "maintainability-03"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Document which TICA pages/markup shapes each of the five hand-written scraping parsers depends on, so a silent TICA redesign is triaged fast instead of re-discovered from scratch.",
-                                         "lens":  "dependency",
-                                         "priority":  12,
-                                         "id":  "dependency-03"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add CLAUDE.md and .project-context.json to voice_scope -- CLAUDE.md already claims itself as covered but the scope list omits it, and .project-context.json is proven to leak content onto a public surface.",
-                                         "lens":  "ai-tell-concealment",
-                                         "priority":  12,
-                                         "id":  "ai-tell-concealment-04"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add Stripe billing/subscriptions to the YaE Ring Details page -- neither the index nor design page mentions it, even though it\u0027s shipped, live infrastructure.",
-                                         "lens":  "brand-consistency",
-                                         "priority":  12,
-                                         "id":  "brand-consistency-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Move the judge fav/dis tally to an atomic Postgres UPDATE or explicitly document the accepted KV read-modify-write race.",
-                                         "lens":  "data-integrity",
-                                         "priority":  12,
-                                         "id":  "data-integrity-05"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Log a warning whenever the KV-backed rate limiter falls back to fail-open so a dead RATINGS binding is visible (also closes a security blind spot on the same code path).",
-                                         "lens":  "reliability",
-                                         "priority":  10,
-                                         "id":  "reliability-04"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Stop paying a KV write on every rate-limit check (the state-autosave debounce half of this finding is now resolved; the per-request rate-limit write is not).",
-                                         "lens":  "cost-economics",
-                                         "priority":  10,
-                                         "id":  "cost-economics-01"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Record the vendored supabase-js version and pull date in a header comment on public/vendor/supabase.js.",
-                                         "lens":  "dependency",
-                                         "priority":  10,
-                                         "id":  "dependency-02"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Wrap the /api/* route dispatch in a top-level try/catch that returns a JSON 500 with security headers, as a backstop for handler bugs that currently fall through to Cloudflare\u0027s generic error page.",
-                                         "lens":  "reliability",
-                                         "priority":  9,
-                                         "id":  "reliability-05"
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add data/scoring.json to the service worker\u0027s SHELL precache array alongside seed.json.",
-                                         "lens":  "pwa-install-offline",
-                                         "priority":  8,
-                                         "id":  "pwa-install-offline-01"
-                                     }
-                                 ],
-                     "deferred":  [
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Decide a v1.0 freeze vs a scoped Phase-2 milestone (ownership, invites, cert verification).",
-                                          "lens":  "strategic-kill-this",
-                                          "reason":  "blocked on Nick/Kane decision"
-                                      },
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Revisit pricing/unit economics; $1/mo needs roughly 500 users to cover hosting.",
-                                          "lens":  "cost-economics",
-                                          "reason":  "blocked on Nick/Kane decision"
-                                      },
-                                      {
-                                          "severity":  "LOW",
-                                          "title":  "Judge-panel coverage polish, auth OTP edge cases, and the DEFINER-RPC migration for view-as/sharing.",
-                                          "lens":  "strategic-kill-this",
-                                          "reason":  "hold until the v1.0/Phase-2 decision resolves scope"
-                                      }
-                                  ],
-                     "health":  64,
-                     "lensScores":  {
-                                        "architecture":  66,
-                                        "reliability":  58,
-                                        "security":  84,
-                                        "performance":  66,
-                                        "data-integrity":  57,
-                                        "maintainability":  60,
-                                        "solo-tool-ux":  79,
-                                        "cost-economics":  80,
-                                        "dependency":  55,
-                                        "observability":  42,
-                                        "strategic-kill-this":  47,
-                                        "compliance-data-steward":  58,
-                                        "pwa-install-offline":  78,
-                                        "pwa-sync":  50,
-                                        "pwa-dataset-size":  94,
-                                        "release-ps1-stack":  68,
-                                        "discord-notify-wiring":  58,
-                                        "version-pill-drift":  100,
-                                        "gate-page-publish":  82,
-                                        "solo-dev-voice":  62,
-                                        "ai-tell-concealment":  28,
-                                        "brand-consistency":  58,
-                                        "worker-cpu-budget":  55,
-                                        "kv-data-shape":  58,
-                                        "auth-token-hygiene":  45
-                                    },
-                     "openFindings":  [
-                                          {
-                                              "id":  "reliability-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "data-integrity-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "pwa-sync-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "reliability-06",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "data-integrity-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "maintainability-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  3,
-                                              "firstSeen":  "2026-07-24"
-                                          },
-                                          {
-                                              "id":  "observability-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "compliance-01",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "ai-tell-concealment-03",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "auth-token-hygiene-02",
-                                              "severity":  "HIGH",
-                                              "priority":  20,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "ai-tell-concealment-02",
-                                              "severity":  "HIGH",
-                                              "priority":  18,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "security-02",
-                                              "severity":  "MED",
-                                              "priority":  16,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "performance-01",
-                                              "severity":  "MED",
-                                              "priority":  16,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "architecture-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "reliability-03",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "solo-tool-ux-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "dependency-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "observability-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "observability-03",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-03",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "compliance-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "release-ps1-stack-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "discord-notify-wiring-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "brand-consistency-02",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "kv-data-shape-01",
-                                              "severity":  "MED",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "data-integrity-06",
-                                              "severity":  "HIGH",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "maintainability-03",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "dependency-03",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "ai-tell-concealment-04",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "brand-consistency-01",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "data-integrity-05",
-                                              "severity":  "MED",
-                                              "priority":  12,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          },
-                                          {
-                                              "id":  "reliability-04",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "cost-economics-01",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "dependency-02",
-                                              "severity":  "MED",
-                                              "priority":  10,
-                                              "runsOpen":  5,
-                                              "firstSeen":  "2026-07-07"
-                                          },
-                                          {
-                                              "id":  "reliability-05",
-                                              "severity":  "MED",
-                                              "priority":  9,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-14"
-                                          },
-                                          {
-                                              "id":  "pwa-install-offline-01",
-                                              "severity":  "MED",
-                                              "priority":  8,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-07"
-                                          }
-                                      ],
-                     "tensionsOpen":  [
-                                          {
-                                              "lenses":  [
-                                                             "auth-token-hygiene",
-                                                             "performance"
-                                                         ],
-                                              "runsSeen":  5
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "security",
-                                                             "maintainability"
-                                                         ],
-                                              "runsSeen":  5
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "cost-economics",
-                                                             "reliability"
-                                                         ],
-                                              "runsSeen":  2
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "compliance-data-steward",
-                                                             "solo-tool-ux"
-                                                         ],
-                                              "runsSeen":  2
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "reliability",
-                                                             "security"
-                                                         ],
-                                              "runsSeen":  1
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "strategic-kill-this",
-                                                             "release-pipeline"
-                                                         ],
-                                              "runsSeen":  1
-                                          }
-                                      ]
-                 },
-    "metrics":  [
-                    {
-                        "k":  "cats",
-                        "v":  "1"
-                    },
-                    {
-                        "k":  "shows",
-                        "v":  "6"
-                    },
-                    {
-                        "k":  "judges",
-                        "v":  "84"
-                    },
-                    {
-                        "k":  "breeds",
-                        "v":  "89"
-                    }
-                ],
-    "workQueueDepth":  0,
-    "stale":  false,
-    "tags":  [
-                 "browser-app",
-                 "pwa",
-                 "tica",
-                 "cat-shows",
-                 "release-pipeline",
-                 "public-voice"
-             ]
+  "project": "Ring",
+  "displayName": "Yes& Ring",
+  "version": "0.17.26",
+  "lastReleaseAt": "2026-08-15T08:26:02-05:00",
+  "lastReleaseMessage": "fix(ring): strip em dash from .project-context.json Turnstile note (ai-tell-concealment-03)",
+  "milestone": {
+    "id": "v0.16",
+    "label": "v0.16 - Supabase auth + Stripe subscriptions + live TICA data pipeline",
+    "status": "shipped"
+  },
+  "completion": {
+    "pct": 76,
+    "anchored": "2026-07-03"
+  },
+  "itemsLeft": {
+    "open": 4,
+    "queue": 0,
+    "backlog": 0,
+    "gates": 4,
+    "items": [
+      "Judge-panel coverage polish: intl coverage grows as the daily cron converges; re-check cadence for clubs that post panels late",
+      "Multi-user ownership model (docs/AUTH-OWNERSHIP-DESIGN.md): MERGED co-ownership (shared writes both see), email invite notification, reg-number join requests + certificate verification",
+      "Auth polish: email OTP code / verification edge cases",
+      "Security (docs/SECURITY.md): sprint 2026-06-30..07-02 (v0.17.2-0.17.10). DONE: CSP+headers (run_worker_first), rate limits, audit log, prototype-pollution guard, shared-cat payload sanitization, seed-share owner-check, DB advisor lockdown (migration 0006), judge-rating anti-ballot-stuffing, supabase-js confirmed latest, leaked webhook revoked, rotation runbook. **P1-7 DONE + verified live: per-user state migrated to Postgres user_state with RLS (migration 0007); dual-write KV+PG, STATE_READ=pg flag + KV fallback/lazy-backfill; RLS isolation proven (own-row-only/anon-denied); view-as+sharing stay on KV; cost-neutral (free tier) + cron keep-warm.** **Turnstile widget CREATED + site key wired + deployed (v0.17.12, 2026-07-02): managed-mode widget for ring.yesandeverything.com, TURNSTILE_SITE_KEY var live, /api/config serves it, CSP opens challenges.cloudflare.com, login renders widget + passes captchaToken; verified turnstile.render() accepts the key on the live hostname.** **Turnstile ENFORCING (2026-07-03): Kane pasted the secret into Supabase CAPTCHA; verified live, OTP without captcha_token now returns captcha_failed.** OPEN: full relational cats/shows normalization (optional product-scale), move view-as/sharing reads to DEFINER RPCs. Ring Resources Bot webhook recreated 2026-07-06 (real URL on disk, audit digests posting again)."
+    ]
+  },
+  "backlog": {
+    "count": 0,
+    "items": []
+  },
+  "repoUrl": "https://github.com/TheProphetKane/yesandring",
+  "liveUrl": "https://ring.yesandeverything.com",
+  "workTreeClean": true,
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-15.md",
+    "latestReportAt": "2026-08-15T06:14:32Z",
+    "findings": {
+      "critical": 0,
+      "high": 3,
+      "medium": 1,
+      "low": 1
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-08-14.md",
+    "latestReportAt": "2026-08-14T11:45:00Z",
+    "verdict": "needs-attention",
+    "topFinding": "Health moved 73 to 64 this run, the sharpest single-week drop yet, and it's real rather than an artifact of running more lenses: twelve of last week's open findings turned five runs old simultaneously (data-integrity-01/02, compliance-01, pwa-sync-01, cost-economics-01, architecture-01, observability-02, compliance-02, security-02, reliability-04, dependency-02, auth-token-hygiene-02), meaning nothing from the very first bar-raise on 2026-07-07 has been touched in a month, and none of last week's 27 open actions closed this run. The state-sync bug is the one with real teeth: mergeStates() still replaces decisionsList/judgeStatus/myVotes/catTargets wholesale instead of merging them, now confirmed to drop edits on a single-device reboot (not just cross-device), and it pairs with a dual-write path (KV plus Postgres) that discards pgStateWrite's failure result -- with STATE_READ=pg now live in production, a lost Postgres write silently reverts a user's latest decision with nothing surfaced anywhere. Two new HIGH findings landed in the same window a HIGH voice finding was fixed: an em dash still reaches the public status/data/Ring.json through .project-context.json, the same defect shape as the index.html fix from a week ago, and auth-token-hygiene got measurably worse (GET /api/state now pays two serial live Supabase round-trips per request instead of one KV read). Commit history for the past two weeks is almost entirely release-tooling and voice hardening -- strategic-kill-this-01 already called this out a week ago asking for a product-decision session instead; that session still hasn't happened, and six of those days had zero commits at all.",
+    "actionsOpen": 37,
+    "actionsClosed": 1,
+    "actions": [
+      {
+        "severity": "HIGH",
+        "title": "Give schedulePush a retry-with-backoff path (or re-arm on next app-visible) and a not-synced indicator instead of swallowing push failures silently.",
+        "lens": "reliability",
+        "priority": 20,
+        "id": "reliability-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Check pgStateWrite's return value in handleStatePost and retry or log on failure, so a lost Postgres write in the KV+Postgres dual-write can't silently revert a user's state now that STATE_READ=pg is live.",
+        "lens": "data-integrity",
+        "priority": 20,
+        "id": "data-integrity-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add timestamp-aware conflict handling to mergeStates() so decisionsList, judgeStatus, myVotes, and catTargets union instead of getting replaced wholesale on sync; confirmed this run to also drop edits on a single-device reboot, not just cross-device.",
+        "lens": "pwa-sync",
+        "priority": 20,
+        "id": "pwa-sync-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Bump public/sw.js's VERSION constant on every release (it's still yar-v0.17.17, 7+ releases stale) so the cache namespace rotates and orphaned entries get pruned; wire it into scripts/release.ps1 alongside the __RING_BUILD stamp.",
+        "lens": "reliability",
+        "priority": 20,
+        "id": "reliability-06"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Back up the KV-only community judge ratings to a Postgres mirror or a scheduled snapshot.",
+        "lens": "data-integrity",
+        "priority": 20,
+        "id": "data-integrity-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Commit a runnable single-cat-extraction leak test and an npm test script, or correct SECURITY.md's claim that the leak test and view-as gate are unit-tested -- no test file exists anywhere in the repo.",
+        "lens": "maintainability",
+        "priority": 20,
+        "id": "maintainability-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add console.error to every silent catch block in the TICA-scraping and billing handlers (only one console.error exists in the whole codebase) so a systemic break stops being invisible.",
+        "lens": "observability",
+        "priority": 20,
+        "id": "observability-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Spend the next Ring session on the v1.0-freeze-vs-Phase-2-scope decision and the pricing question instead of further release-script hardening; the session this was flagged to force a week ago still hasn't happened, and six more days have passed with zero commits.",
+        "lens": "strategic-kill-this",
+        "priority": 20,
+        "id": "strategic-kill-this-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add authenticated user-data export and delete endpoints plus a documented retention policy -- no such endpoint exists anywhere in the Worker.",
+        "lens": "compliance-data-steward",
+        "priority": 20,
+        "id": "compliance-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Cache or JWKS-verify Supabase tokens so verifyUser stops paying a live round-trip on every authenticated request -- GET /api/state now pays two serial live Supabase calls per request (verifyUser then pgStateRead) since STATE_READ flipped to pg, worsening the original finding.",
+        "lens": "auth-token-hygiene",
+        "priority": 20,
+        "id": "auth-token-hygiene-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add a release-time grep gate for em dashes and AI-tell vocabulary across every public_artifact_globs path, and extend voice_scope to cover .project-context.json and CLAUDE.md itself -- every catch to date, including last week's fix, has been manual and reactive.",
+        "lens": "ai-tell-concealment",
+        "priority": 18,
+        "id": "ai-tell-concealment-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Move view-as and shared-cats reads onto SECURITY DEFINER RPCs to match the RLS-backed isolation already shipped for own-data reads.",
+        "lens": "security",
+        "priority": 16,
+        "id": "security-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Raise or make dynamic standTable's 14-page hard cap (completed seasons already run 11+ pages deep) and log when the walk is terminated by hitting the cap rather than by running out of rows.",
+        "lens": "performance",
+        "priority": 16,
+        "id": "performance-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Section public/app.js into documented layers matching PROJECT_SPEC.md's module list -- only 4 section markers exist across 2516 lines and the labels no longer describe what's under them.",
+        "lens": "architecture",
+        "priority": 15,
+        "id": "architecture-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Apply AbortSignal.timeout to the Stripe, Supabase, Discord, and Resend fetches the way TICA fetches already do.",
+        "lens": "reliability",
+        "priority": 15,
+        "id": "reliability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Skip the multi-cat picker grid and land directly on the single cat's dashboard when myCats().length === 1 -- the picker costs a click on every visit for the one real user.",
+        "lens": "solo-tool-ux",
+        "priority": 15,
+        "id": "solo-tool-ux-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Bump the wrangler devDependency to the major actually in use (pinned ^3.90.0, actually running 4.123.0 via npx) and commit a lockfile.",
+        "lens": "dependency",
+        "priority": 15,
+        "id": "dependency-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Wire a persistent log sink (Discord post, reusing the existing feedback-webhook pattern) for cron and scraper failures instead of relying on the ephemeral live tail.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Have scheduled() write a lastCronRun/lastCronOk marker to KV and surface it in /api/health, distinct from the existing calendarAgeMin freshness proxy.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Hold off wiring readers/writers to the ten multi-user ownership tables (cat_members, cat_invites, cat_verifications) migrated a month ago with zero usage until the v1.0-vs-Phase-2 decision is actually made.",
+        "lens": "strategic-kill-this",
+        "priority": 15,
+        "id": "strategic-kill-this-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Extract git-guard.ps1 into one shared portfolio script -- the PS5.1 git-stderr fix has now been independently re-derived in at least four projects (Ring, Skylight, Agents, Chains).",
+        "lens": "strategic-kill-this",
+        "priority": 15,
+        "id": "strategic-kill-this-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Publish a short privacy/terms page naming the data collected (email, TICA reg, Stripe status) and its retention behavior -- none exists anywhere in the repo or on the live site.",
+        "lens": "compliance-data-steward",
+        "priority": 15,
+        "id": "compliance-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap the Step 4 Discord-notify invocation in release.ps1 in the same try/catch pattern as Steps 3 and 5 so an uncaught error in discord-notify.ps1 can't abort the release and skip audit-digest posting.",
+        "lens": "release-ps1-stack",
+        "priority": 15,
+        "id": "release-ps1-stack-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Build the missing Ring Audit Bot / Ring Backlog Bot webhooks (only 3 of 5 documented webhooks exist) or trim CLAUDE.md's table down to the three channels that actually receive posts.",
+        "lens": "discord-notify-wiring",
+        "priority": 15,
+        "id": "discord-notify-wiring-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Reconcile .project-context.json's milestone block: the label still frames auth+billing as the open target while the same file's shipped_since_last_anchor already lists them as done.",
+        "lens": "brand-consistency",
+        "priority": 15,
+        "id": "brand-consistency-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Parallelize the sequential per-grant KV reads in handleSharedCats with Promise.all.",
+        "lens": "kv-data-shape",
+        "priority": 15,
+        "id": "kv-data-shape-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Distinguish 'no remote row' from 'read failed' in loadRemoteState so a transient GET failure on boot can't overwrite a newer remote state with stale local data.",
+        "lens": "data-integrity",
+        "priority": 12,
+        "id": "data-integrity-06"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a console.warn (or a shared swallow() helper) to the silent sync-path catches in app.js (schedulePush, loadRemoteState) so a failed background push leaves a trace.",
+        "lens": "maintainability",
+        "priority": 12,
+        "id": "maintainability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Document which TICA pages/markup shapes each of the five hand-written scraping parsers depends on, so a silent TICA redesign is triaged fast instead of re-discovered from scratch.",
+        "lens": "dependency",
+        "priority": 12,
+        "id": "dependency-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add CLAUDE.md and .project-context.json to voice_scope -- CLAUDE.md already claims itself as covered but the scope list omits it, and .project-context.json is proven to leak content onto a public surface.",
+        "lens": "ai-tell-concealment",
+        "priority": 12,
+        "id": "ai-tell-concealment-04"
+      },
+      {
+        "severity": "MED",
+        "title": "Add Stripe billing/subscriptions to the YaE Ring Details page -- neither the index nor design page mentions it, even though it's shipped, live infrastructure.",
+        "lens": "brand-consistency",
+        "priority": 12,
+        "id": "brand-consistency-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Move the judge fav/dis tally to an atomic Postgres UPDATE or explicitly document the accepted KV read-modify-write race.",
+        "lens": "data-integrity",
+        "priority": 12,
+        "id": "data-integrity-05"
+      },
+      {
+        "severity": "MED",
+        "title": "Log a warning whenever the KV-backed rate limiter falls back to fail-open so a dead RATINGS binding is visible (also closes a security blind spot on the same code path).",
+        "lens": "reliability",
+        "priority": 10,
+        "id": "reliability-04"
+      },
+      {
+        "severity": "MED",
+        "title": "Stop paying a KV write on every rate-limit check (the state-autosave debounce half of this finding is now resolved; the per-request rate-limit write is not).",
+        "lens": "cost-economics",
+        "priority": 10,
+        "id": "cost-economics-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Record the vendored supabase-js version and pull date in a header comment on public/vendor/supabase.js.",
+        "lens": "dependency",
+        "priority": 10,
+        "id": "dependency-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap the /api/* route dispatch in a top-level try/catch that returns a JSON 500 with security headers, as a backstop for handler bugs that currently fall through to Cloudflare's generic error page.",
+        "lens": "reliability",
+        "priority": 9,
+        "id": "reliability-05"
+      },
+      {
+        "severity": "MED",
+        "title": "Add data/scoring.json to the service worker's SHELL precache array alongside seed.json.",
+        "lens": "pwa-install-offline",
+        "priority": 8,
+        "id": "pwa-install-offline-01"
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "MED",
+        "title": "Decide a v1.0 freeze vs a scoped Phase-2 milestone (ownership, invites, cert verification).",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Nick/Kane decision"
+      },
+      {
+        "severity": "MED",
+        "title": "Revisit pricing/unit economics; $1/mo needs roughly 500 users to cover hosting.",
+        "lens": "cost-economics",
+        "reason": "blocked on Nick/Kane decision"
+      },
+      {
+        "severity": "LOW",
+        "title": "Judge-panel coverage polish, auth OTP edge cases, and the DEFINER-RPC migration for view-as/sharing.",
+        "lens": "strategic-kill-this",
+        "reason": "hold until the v1.0/Phase-2 decision resolves scope"
+      }
+    ],
+    "health": 64,
+    "lensScores": {
+      "architecture": 66,
+      "reliability": 58,
+      "security": 84,
+      "performance": 66,
+      "data-integrity": 57,
+      "maintainability": 60,
+      "solo-tool-ux": 79,
+      "cost-economics": 80,
+      "dependency": 55,
+      "observability": 42,
+      "strategic-kill-this": 47,
+      "compliance-data-steward": 58,
+      "pwa-install-offline": 78,
+      "pwa-sync": 50,
+      "pwa-dataset-size": 94,
+      "release-ps1-stack": 68,
+      "discord-notify-wiring": 58,
+      "version-pill-drift": 100,
+      "gate-page-publish": 82,
+      "solo-dev-voice": 62,
+      "ai-tell-concealment": 28,
+      "brand-consistency": 58,
+      "worker-cpu-budget": 55,
+      "kv-data-shape": 58,
+      "auth-token-hygiene": 45
+    },
+    "openFindings": [
+      {
+        "id": "reliability-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "pwa-sync-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "reliability-06",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-24"
+      },
+      {
+        "id": "observability-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "compliance-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "auth-token-hygiene-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "ai-tell-concealment-02",
+        "severity": "HIGH",
+        "priority": 18,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "security-02",
+        "severity": "MED",
+        "priority": 16,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "performance-01",
+        "severity": "MED",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "architecture-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "reliability-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "solo-tool-ux-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "dependency-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "observability-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "strategic-kill-this-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "strategic-kill-this-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "compliance-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "release-ps1-stack-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "discord-notify-wiring-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "brand-consistency-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "kv-data-shape-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "data-integrity-06",
+        "severity": "HIGH",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "maintainability-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "dependency-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "ai-tell-concealment-04",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "brand-consistency-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "data-integrity-05",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "reliability-04",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "dependency-02",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "reliability-05",
+        "severity": "MED",
+        "priority": 9,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-14"
+      },
+      {
+        "id": "pwa-install-offline-01",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-07"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "auth-token-hygiene",
+          "performance"
+        ],
+        "runsSeen": 5
+      },
+      {
+        "lenses": [
+          "security",
+          "maintainability"
+        ],
+        "runsSeen": 5
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "reliability"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "compliance-data-steward",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "reliability",
+          "security"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "strategic-kill-this",
+          "release-pipeline"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "cats",
+      "v": "1"
+    },
+    {
+      "k": "shows",
+      "v": "6"
+    },
+    {
+      "k": "judges",
+      "v": "84"
+    },
+    {
+      "k": "breeds",
+      "v": "89"
+    }
+  ],
+  "workQueueDepth": 0,
+  "stale": false,
+  "tags": [
+    "browser-app",
+    "pwa",
+    "tica",
+    "cat-shows",
+    "release-pipeline",
+    "public-voice"
+  ]
 }
