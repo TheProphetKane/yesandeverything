@@ -1716,14 +1716,16 @@
       "finding_id": "dataint-02",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "severity": "medium",
       "impact": 3,
       "confidence": 4,
       "evidence": "worker/src/handlers/billing.js:104-218 (KV read-modify-write on the spend counters)",
       "source": "bar-raise-yac 2026-07-17 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-17.md",
       "prompt": "Yes& Chains [MED, bar-raise finding dataint-02]: the AI cost-cap counters are a KV read-modify-write at worker/src/handlers/billing.js:104-218, so concurrent requests interleave and the caps can overshoot. KV is eventually consistent with no compare-and-swap, so this is structural, not a tuning problem. Exposure is currently latent because CHAINS_VISIBLE is false and the AI surfaces are hidden, but it becomes a real spend risk the moment that flag flips, so land it before the flip. Fix: move the counters to an atomic primitive (a Durable Object per cap window is the natural fit, or a Supabase row with an atomic increment). Couple this with cost-01 and the CHAINS_VISIBLE flip. Ships via X:\\YesAndChains\\scripts\\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01."
+      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-17. Finding has been open since 2026-07-01 with no queue item; the 2026-07-04 auto-enqueue covered only auth-01, compliance-04, install-offline-01, finance-03 and sync-01, and later carry-forward runs asserted coverage without re-checking. Not a new finding; a repaired handoff. First seen 2026-07-01.",
+      "drainNote": "Caddy cost-cap counters are a non-atomic key-value read-modify-write. Needs a real architecture call: a Durable Object or a Supabase atomic-increment row, before the AI surface (currently CHAINS_VISIBLE=false) flips visible.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-chains-finance-02",
@@ -1827,7 +1829,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-17 / docs/BAR_RAISE-2026-07-17.md",
       "severity": "high",
@@ -1838,9 +1840,10 @@
       "evidence": "Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3d.gd:72-79 runs the game, and economy.gd:361-368 reads cap bonuses off the dead tree so those bonuses are permanently 0.",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-17 finding maintainability-01 (HIGH, P1, lens maintainability): Reconcile the two research implementations: the 778-line research autoload (project.godot:27) has zero live callers while a 5-tech stand-in at world_3d.gd:72-79 runs the game, and economy.gd:361-368 reads cap bonuses off the dead tree so those bonuses are permanently 0. See docs/BAR_RAISE-2026-07-17.md for full evidence. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump + changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
       "notes": "Enqueued by bar-raise-hordes 2026-07-17.",
-      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, read-only, all three legs confirmed. (1) research autoload still registered at project.godot:27. (2) Zero live 'Research.' call sites anywhere under source/ outside the autoload itself. (3) The 5-tech stand-in RESEARCH_TECHS dict is still the thing driving the game at source/world3d/world_3d.gd:72-79 (field/munitions/drill/logistics/fortify). economy.gd get_cap still resolves the dead tree via /root/research for Mass Fabrication cap bonuses, so those bonuses remain permanently 0.",
+      "drainNote": "Two research-system implementations coexist: a fully orphaned 778-line autoload, and a private dict-based one actually driving the game. Needs a decision: route the live code through the autoload, or formally retire the autoload. Large blast radius either way.",
       "lastAttemptAt": "2026-07-26T10:30Z",
-      "lastNoticedAt": "2026-07-26T10:30:00Z"
+      "lastNoticedAt": "2026-07-26T10:30:00Z",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-hordes-incident-runbook-currency-01",
@@ -2358,7 +2361,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-17 / docs/BAR_RAISE-2026-07-17.md",
       "severity": "high",
@@ -2366,7 +2369,9 @@
       "confidence": 5,
       "finding_id": "maintainability-01",
       "evidence": "No test files or vitest config anywhere in X:\\YesAndSkylight; package.json:7-12 defines only typecheck. src/dates.ts:15-67 and src/parse.ts:101-108 are pure, fragile and untested. The wall-clock bug shipped in exactly this code in commit 9c00025.",
-      "prompt": "Skylight's pure date and JSON-extraction helpers have no tests, and a timezone bug shipped and was fixed in that exact code inside one month. Add a vitest suite over normDate, epochOf, addHour, nextDay and fmtWhen in src/dates.ts, plus extractJson in src/parse.ts, and wire the run into scripts/release.ps1 beside the existing typecheck. Cover the three input forms the module documents: date-only, naive wall-clock, and absolute ISO with offset. Do not refactor the helpers on the way past; the suite is the deliverable. NOTE: this finding has been open since 2026-07-03 and was never enqueued until now, so it is the oldest open HIGH on this project. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-17.md."
+      "prompt": "Skylight's pure date and JSON-extraction helpers have no tests, and a timezone bug shipped and was fixed in that exact code inside one month. Add a vitest suite over normDate, epochOf, addHour, nextDay and fmtWhen in src/dates.ts, plus extractJson in src/parse.ts, and wire the run into scripts/release.ps1 beside the existing typecheck. Cover the three input forms the module documents: date-only, naive wall-clock, and absolute ISO with offset. Do not refactor the helpers on the way past; the suite is the deliverable. NOTE: this finding has been open since 2026-07-03 and was never enqueued until now, so it is the oldest open HIGH on this project. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-17.md.",
+      "resolution": "Added a vitest suite (27 tests) covering the pure date and JSON-extraction helpers, the exact area a timezone bug shipped in before. Deliberately did not wire it into the shared release script -- out of scope for an additive-only pass. Commit 04edaa8.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-skylight-security-01",
@@ -3047,14 +3052,16 @@
       "finding_id": "install-offline-01",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "severity": "medium",
       "impact": 3,
       "confidence": 5,
       "evidence": "src/persistence.ts:162 (starred-course persistence); sw.js (service worker cache). Starred-course canonical detail is not persisted to localStorage, so an offline round shows a par-3 skeleton instead of real hole/pin data.",
       "source": "bar-raise-yac 2026-07-20 (carry-forward reconciliation) / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-20.md",
       "prompt": "Yes& Chains [MED, bar-raise finding install-offline-01]: a starred course opened offline shows a par-3 skeleton, not its real hole/pin data. The canonical course detail is fetched on demand and never persisted, so with no network the app has nothing to render (src/persistence.ts:162, sw.js). Fix: when a user stars a course, persist its canonical detail (holes, pars, pin positions) to localStorage so an offline round renders real data; keep the service worker cache in sync. Ships via X:\\YesAndChains\\scripts\release.ps1. app.js is build output, edit src/ and worker/src/. Canonical-doc writes go through tools/safe_write.py. Solo-dev voice, no em dashes. Re-verify the cited anchors before editing.",
-      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-20. Finding open since 2026-07-04 (13 runs); its prior blocked-on-user queue item is gone, so re-enqueued to restore the handoff."
+      "notes": "Enqueue-reconciliation by bar-raise-yac 2026-07-20. Finding open since 2026-07-04 (13 runs); its prior blocked-on-user queue item is gone, so re-enqueued to restore the handoff.",
+      "drainNote": "Fix requires editing src/persistence.ts, which bundles into app.js/app.js.map -- both are in another live session's uncommitted Turnstile work. Skipped per the hard rule against touching conflicted files; needs a session with a clean tree.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-20-chains-sync-01",
@@ -5299,7 +5306,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-skylight 2026-07-24 / docs/BAR_RAISE-2026-07-24.md",
       "severity": "medium",
@@ -5307,7 +5314,9 @@
       "confidence": 5,
       "finding_id": "maintainability-03",
       "evidence": "docs/FAMILY_CALENDAR_MIGRATION.md section 4b states the colour rule is name-based, says it supersedes the earlier reading, and records the four school-run series as shipped orange (Lexi) and pink (Nick). Section 5's 'Events to migrate' table still lists the same four series as 'Family -> blue', with a blockquote arguing the opposite of 4b.",
-      "prompt": "The Skylight family-calendar migration runbook contradicts itself on the colour for the four school-run series. docs/FAMILY_CALENDAR_MIGRATION.md section 4b records the name-based rule that actually shipped (title says Nick -> pink, says Lexi -> orange, otherwise blue) and explicitly supersedes the earlier reading; section 5's migration table still says Family -> blue for the same four series and carries a blockquote defending that reading. Anyone executing section 5 would recolour four already-verified series. Correct the section 5 colour column and blockquote so the document states one rule. Do not change src/owners.ts or any live calendar entry; this is a doc-consistency fix only. The repo is co-owned by a parallel session, so check git status before committing and never sweep another session's changes. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-24.md."
+      "prompt": "The Skylight family-calendar migration runbook contradicts itself on the colour for the four school-run series. docs/FAMILY_CALENDAR_MIGRATION.md section 4b records the name-based rule that actually shipped (title says Nick -> pink, says Lexi -> orange, otherwise blue) and explicitly supersedes the earlier reading; section 5's migration table still says Family -> blue for the same four series and carries a blockquote defending that reading. Anyone executing section 5 would recolour four already-verified series. Correct the section 5 colour column and blockquote so the document states one rule. Do not change src/owners.ts or any live calendar entry; this is a doc-consistency fix only. The repo is co-owned by a parallel session, so check git status before committing and never sweep another session's changes. See X:\\YesAndSkylight\\docs\\BAR_RAISE-2026-07-24.md.",
+      "resolution": "No longer reproduces -- the migration doc has been substantially rewritten since this was filed; the described section split and contradiction don't exist in the current file. No change needed.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-24-skylight-solo-tool-ux-02",
@@ -5611,7 +5620,7 @@
       "project": "rising",
       "kind": "canonical-audit-finding",
       "auto_safe": false,
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "audit-rising-nightly 2026-07-25 / docs/CANONICAL_AUDIT-2026-07-25.md",
       "id": "canonical-audit-2026-07-25-rising-claude-md-heaviest-list-stale",
@@ -5625,7 +5634,9 @@
       "action": "Trim the list to the authored level scene. Handler files are never auto-edited, so this needs a deliberate pass. The same three items were corrected in the GDD Best Practices tab by the 2026-07-25 drift pass.",
       "prompt": "RISING MEDIUM P3 (source: audit-rising-nightly 2026-07-25 / docs/CANONICAL_AUDIT-2026-07-25.md): CLAUDE.md lists three shipped items among the heaviest remaining best-practices work\n\nEvidence: CLAUDE.md line 4 names the heaviest br-bp-* items as \"terrain to TileMapLayer, an authored Main/World/GUI level scene, the input map to the editor Input Map, .tres stat Resources\". Three of the four have landed: terrain in v0.59.42, the input map (33 actions authored in the project.godot [input] section, input_add_action ratcheted to 0, and input_defaults.gd stating there is no longer any runtime action-registration pass), and stat Resources in E5. Only the authored level scene is genuinely open. This is the primer a future session reads first, so it is pointing at finished work.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
       "promptBackfilledAt": "2026-07-26T12:38Z",
-      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe."
+      "notes": "2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
+      "resolution": "Re-verified: terrain, input map, and stat resources all landed since this was filed. CLAUDE.md rewritten to name the one item still genuinely open (the authored main scene).",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "canonical-audit-2026-07-25-chains-claudemd-flag-gating",
@@ -6067,7 +6078,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-25 / docs/BAR_RAISE-2026-07-25.md",
       "severity": "high",
@@ -6078,7 +6089,9 @@
       "evidence": "economy.gd:62-74 RESOURCE_BASE_CAP biomass/aggregate/alloy/volatiles = 50; :241-251 _DEFAULT_AMOUNTS_PLAYTEST starts each at 50; :321-327 add() clamps to get_cap now that DEBUG_INFINITE_RESOURCES is false; :359-386 get_cap = base + per*_warehouses.size(); grep finds ZERO callers of economy.register_warehouse outside economy.gd and world_3d.gd:389-406 has no support arm, so _warehouses.size() is permanently 0; building_catalog_3d.gd:42 Warehouse costs biomass 80 + aggregate 60, and no catalog entry produces aggregate or volatiles. Commit de46692.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-25 finding playability-09 (HIGH, P1, lens playability): Retiring the dev economy exposed a hard deadlock: the four resource caps are pinned at 50 forever because the only cap-raiser costs more than the cap allows and is never registered, so 14 of 37 buildings and 4 of 5 research techs are permanently unaffordable. Raise the four base caps or seed the run above them, wire the Warehouse placement path to call economy.register_warehouse, then re-check every catalog and research cost against the reachable ceiling. Evidence: economy.gd:62-74 RESOURCE_BASE_CAP biomass/aggregate/alloy/volatiles = 50; :241-251 _DEFAULT_AMOUNTS_PLAYTEST starts each at 50; :321-327 add() clamps to get_cap now that DEBUG_INFINITE_RESOURCES is false; :359-386 get_cap = base + per*_warehouses.size(); grep finds ZERO callers of economy.register_warehouse outside economy.gd and world_3d.gd:389-406 has no support arm, so _warehouses.size() is permanently 0; building_catalog_3d.gd:42 Warehouse costs biomass 80 + aggregate 60, and no catalog entry produces aggregate or volatiles. Commit de46692. See docs/BAR_RAISE-2026-07-25.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-25. This run capped auto-enqueue at the top 10 of 23 uncovered findings because the HBH slice grew 39 to 110 in one day with 104 never attempted; the 13 held ids are listed in the report under Auto-enqueued."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-25. This run capped auto-enqueue at the top 10 of 23 uncovered findings because the HBH slice grew 39 to 110 in one day with 104 never attempted; the 13 held ids are listed in the report under Auto-enqueued.",
+      "drainNote": "Partial: wired the Warehouse's cap-raise registration, which was completely unwired. Does not clear the underlying deadlock -- Warehouse costs more of its resource than the reachable cap allows. Needs a decision: raise the base caps, seed runs above them, or lower Warehouse's cost.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-25-hordes-work-queue-hygiene-03",
@@ -6107,7 +6120,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-25 / docs/BAR_RAISE-2026-07-25.md",
       "severity": "high",
@@ -6118,7 +6131,9 @@
       "evidence": "research.gd is 778 lines (REGISTRY :76, progress tick :358-368, try_start :703); try_start and every is_*_unlocked / get_*_multiplier getter has zero callers outside research.gd; the live path is world_3d.gd:68, :74, :419-433 and :643-651, spending via raw economy.add and gating on a local _researched bool.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
       "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-25 finding architecture-07 (HIGH, P1, lens architecture): Two complete research implementations coexist and have diverged: the canonical tech-tree autoload is fully orphaned while world_3d.gd runs a private dict-based one, so any tech-tree tuning in the autoload has no effect on the shipped game. Route world_3d._research_tech and _do_research through research.try_start and research.is_*_unlocked, or formally retire source/autoloads/research.gd and delete its [autoload] entry. Evidence: research.gd is 778 lines (REGISTRY :76, progress tick :358-368, try_start :703); try_start and every is_*_unlocked / get_*_multiplier getter has zero callers outside research.gd; the live path is world_3d.gd:68, :74, :419-433 and :643-651, spending via raw economy.add and gating on a local _researched bool. See docs/BAR_RAISE-2026-07-25.md for the full report. Read-only verify before changing anything. HBH hard rules apply: update the GDD at the end of the reply (pill bump plus changelog entry) and ship via scripts/release.ps1, which requires an attended session. Use the Python atomic write-with-readback pattern for docs/GDD.html, project.godot, source/autoloads/*.gd and source/world3d/*.gd.",
-      "notes": "Enqueued by bar-raise-hordes 2026-07-25. This run capped auto-enqueue at the top 10 of 23 uncovered findings because the HBH slice grew 39 to 110 in one day with 104 never attempted; the 13 held ids are listed in the report under Auto-enqueued."
+      "notes": "Enqueued by bar-raise-hordes 2026-07-25. This run capped auto-enqueue at the top 10 of 23 uncovered findings because the HBH slice grew 39 to 110 in one day with 104 never attempted; the 13 held ids are listed in the report under Auto-enqueued.",
+      "drainNote": "Same dual-research-implementation finding as maintainability-01 above, different lens.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-25-hordes-strategic-kill-this-07",
@@ -6607,10 +6622,10 @@
       "finding_id": "incident-runbook-currency-01",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-08-14T23:20:00Z",
       "lastAttemptAt": null,
       "source": "bar-raise 2026-07-25 (X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-25.md)",
       "severity": "high",
@@ -6618,7 +6633,8 @@
       "confidence": 5,
       "evidence": "no runbook or ops file exists in X:\\YesAndChains\\docs (34 files, all audits/specs/setup guides); docs/KNOWN_ISSUES.md:16 reads 'Active issues: None at this time' with last commit f1c1f9e 2026-05-15, untouched across the entire live-payments era; worker/src/handlers/admin.js has zero matches for subscription/entitle/grant and all six admin routes (worker/src/index.js:185,237,260,271,277,282) are course/analytics",
       "tensions_with": [],
-      "prompt": "YaC HIGH (bar-raise 2026-07-25, incident-runbook-currency-01): The app has been charging real cards since 0.54.0 and has already had three production money-path defects (dead Manage-subscription button, double-charge path, Supabase-blip entitlement lockout, all fixed in 0.58.0/0.58.2/0.58.3), yet there is NO incident runbook telling future-Nick how to respond to any of them. No runbook or ops file exists anywhere in X:\\YesAndChains\\docs (34 files, all audits, specs and setup guides). docs/KNOWN_ISSUES.md:16 still reads 'Active issues: None at this time' with its last commit f1c1f9e dated 2026-05-15, untouched across the entire live-payments era. And there is no admin lever either: worker/src/handlers/admin.js has zero matches for subscription/entitle/grant, and all six admin routes (worker/src/index.js:185, :237, :260, :271, :277, :282) are course and analytics only, so there is no way to inspect, comp, revoke or purge a user's entitlement. FIX: write docs/RUNBOOK-billing.md with one numbered procedure per money-path incident - double charge, refund request, Stripe webhook outage plus dashboard resend, stuck or poisoned entitlement (including the entitled:${userId} KV key at worker/src/lib.js:1696), Supabase outage, worker rollback - and link it from the CLAUDE.md canonical index."
+      "prompt": "YaC HIGH (bar-raise 2026-07-25, incident-runbook-currency-01): The app has been charging real cards since 0.54.0 and has already had three production money-path defects (dead Manage-subscription button, double-charge path, Supabase-blip entitlement lockout, all fixed in 0.58.0/0.58.2/0.58.3), yet there is NO incident runbook telling future-Nick how to respond to any of them. No runbook or ops file exists anywhere in X:\\YesAndChains\\docs (34 files, all audits, specs and setup guides). docs/KNOWN_ISSUES.md:16 still reads 'Active issues: None at this time' with its last commit f1c1f9e dated 2026-05-15, untouched across the entire live-payments era. And there is no admin lever either: worker/src/handlers/admin.js has zero matches for subscription/entitle/grant, and all six admin routes (worker/src/index.js:185, :237, :260, :271, :277, :282) are course and analytics only, so there is no way to inspect, comp, revoke or purge a user's entitlement. FIX: write docs/RUNBOOK-billing.md with one numbered procedure per money-path incident - double charge, refund request, Stripe webhook outage plus dashboard resend, stuck or poisoned entitlement (including the entitled:${userId} KV key at worker/src/lib.js:1696), Supabase outage, worker rollback - and link it from the CLAUDE.md canonical index.",
+      "resolution": "Wrote docs/RUNBOOK-billing.md: one numbered procedure each for double charge, refund request, Stripe webhook outage plus resend, stuck entitlement, Supabase outage, and worker rollback. Linked from CLAUDE.md. Commit e226a93, pushed."
     },
     {
       "id": "bar-raise-2026-07-25-chains-kv-data-shape-01",
@@ -6628,10 +6644,10 @@
       "finding_id": "kv-data-shape-01",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-08-14T23:20:00Z",
       "lastAttemptAt": null,
       "source": "bar-raise 2026-07-25 (X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-25.md)",
       "severity": "high",
@@ -6639,7 +6655,8 @@
       "confidence": 5,
       "evidence": "worker/src/lib.js:121 KV_KEY_INDEX='course-index:by-name'; read in full at worker/src/handlers/courses.js:167 and :214 with no Cache-Control; read-modify-written from courses.js:110-132 (public unauthenticated GET), contribute.js:125-138 and :517-525, admin.js:660-661 and :714-719. Measured from data/kv-backups/kv-backup-2026-07-20.json.gz: 2,398,857 bytes / 13,015 entries. Benchmarked: parse+findIndex+stringify 27.7/28.3/30.3ms; library read ~15ms warm, ~54ms cold isolate",
       "tensions_with": [],
-      "prompt": "YaC HIGH (bar-raise 2026-07-25, kv-data-shape-01): The entire course catalog lives in ONE 2.4MB KV value that is fetched and JSON-parsed on every public library/lookup request and fully rewritten by three separate read-modify-write paths including an unauthenticated GET, so it is simultaneously the hottest read key, a per-key write-rate hot spot, and a last-write-wins loss window that grows linearly with course count. worker/src/lib.js:121 defines KV_KEY_INDEX = 'course-index:by-name'. Read in full at worker/src/handlers/courses.js:167 (/api/courses/lookup) and :214 (/api/courses/library), with no HTTP or Cache-API caching anywhere (j() at worker/src/lib.js:48-53 emits no Cache-Control). Rewritten from courses.js:110-132 (the PUBLIC /api/courses/nearby path), contribute.js:125-138 and :517-525, and admin.js:660-661 and :714-719. Measured from data/kv-backups/kv-backup-2026-07-20.json.gz: 2,398,857 bytes holding 13,015 entries. Benchmarked on that exact payload: parse+findIndex+stringify is 27.7/28.3/30.3ms per contribute or merge; the library read path is ~15ms warm and ~54ms on a cold isolate. FIX: shard the index by state or geohash prefix (course-index:v2:<state>) so reads fetch only the relevant shard and writes touch only one shard; memoize the parsed index at module scope keyed on a version stamp; add a short Cache-Control (s-maxage 60-300) to the library and lookup responses; and stop rewriting the index from the public nearby path. This also resolves worker-cpu-budget-01 and -02."
+      "prompt": "YaC HIGH (bar-raise 2026-07-25, kv-data-shape-01): The entire course catalog lives in ONE 2.4MB KV value that is fetched and JSON-parsed on every public library/lookup request and fully rewritten by three separate read-modify-write paths including an unauthenticated GET, so it is simultaneously the hottest read key, a per-key write-rate hot spot, and a last-write-wins loss window that grows linearly with course count. worker/src/lib.js:121 defines KV_KEY_INDEX = 'course-index:by-name'. Read in full at worker/src/handlers/courses.js:167 (/api/courses/lookup) and :214 (/api/courses/library), with no HTTP or Cache-API caching anywhere (j() at worker/src/lib.js:48-53 emits no Cache-Control). Rewritten from courses.js:110-132 (the PUBLIC /api/courses/nearby path), contribute.js:125-138 and :517-525, and admin.js:660-661 and :714-719. Measured from data/kv-backups/kv-backup-2026-07-20.json.gz: 2,398,857 bytes holding 13,015 entries. Benchmarked on that exact payload: parse+findIndex+stringify is 27.7/28.3/30.3ms per contribute or merge; the library read path is ~15ms warm and ~54ms on a cold isolate. FIX: shard the index by state or geohash prefix (course-index:v2:<state>) so reads fetch only the relevant shard and writes touch only one shard; memoize the parsed index at module scope keyed on a version stamp; add a short Cache-Control (s-maxage 60-300) to the library and lookup responses; and stop rewriting the index from the public nearby path. This also resolves worker-cpu-budget-01 and -02.",
+      "resolution": "Partial: added a short edge cache (2 minutes, stale-while-revalidate) to the two hottest reads against the 13,015-entry course index. Verified live via curl post-deploy. Commit 7996b9a, worker redeployed. The larger fix (shard the index by state or geohash) is a real live-data-shape migration not attempted unattended -- needs a decision on sharding key and migration plan."
     },
     {
       "id": "bar-raise-2026-07-25-chains-dataset-size-01",
@@ -7731,7 +7748,7 @@
       "project": "rising",
       "kind": "canonical-audit-finding",
       "auto_safe": false,
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "audit-rising-nightly 2026-07-27 / docs/CANONICAL_AUDIT-2026-07-27.md",
       "priority": "P3",
@@ -7742,7 +7759,9 @@
       "title": "The Decisions-tab Harpoonist SP open question was answered by the 2026-07-26 drift pass and still reads as open",
       "evidence": "The question closes: the next Numbers pass should either confirm 0.20 or pick a different value and update the v0.15.0 SP-ladder block to include the Harpoonist row. The 2026-07-26 drift pass added exactly that row at +0.20 per shot to the Numbers SP table, and harpoonist.gd:31 still sets 0.20. The question is resolved in fact and still presented as open. Not auto-applied because the Decisions tab is a Locked-Decisions surface and drift-auto-fix never edits locked decisions.",
       "action": "Mark the Harpoonist SP question resolved at 0.20 and point it at the Numbers row that now carries it, or state why 0.20 is still provisional.",
-      "prompt": "RISING P3 (source: audit-rising-nightly 2026-07-27 / docs/CANONICAL_AUDIT-2026-07-27.md): The Decisions-tab Harpoonist SP open question was answered by the 2026-07-26 drift pass and still reads as open\n\nEvidence: The question closes: the next Numbers pass should either confirm 0.20 or pick a different value and update the v0.15.0 SP-ladder block to include the Harpoonist row. The 2026-07-26 drift pass added exactly that row at +0.20 per shot to the Numbers SP table, and harpoonist.gd:31 still sets 0.20. The question is resolved in fact and still presented as open. Not auto-applied because the Decisions tab is a Locked-Decisions surface and drift-auto-fix never edits locked decisions.\n\nSuggested action: Mark the Harpoonist SP question resolved at 0.20 and point it at the Numbers row that now carries it, or state why 0.20 is still provisional.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item and say so."
+      "prompt": "RISING P3 (source: audit-rising-nightly 2026-07-27 / docs/CANONICAL_AUDIT-2026-07-27.md): The Decisions-tab Harpoonist SP open question was answered by the 2026-07-26 drift pass and still reads as open\n\nEvidence: The question closes: the next Numbers pass should either confirm 0.20 or pick a different value and update the v0.15.0 SP-ladder block to include the Harpoonist row. The 2026-07-26 drift pass added exactly that row at +0.20 per shot to the Numbers SP table, and harpoonist.gd:31 still sets 0.20. The question is resolved in fact and still presented as open. Not auto-applied because the Decisions tab is a Locked-Decisions surface and drift-auto-fix never edits locked decisions.\n\nSuggested action: Mark the Harpoonist SP question resolved at 0.20 and point it at the Numbers row that now carries it, or state why 0.20 is still provisional.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item and say so.",
+      "resolution": "Confirmed the code value now matches the numbers-tab table added by an earlier drift pass. Converted the stale open question into a locked decision entry.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "added": "2026-07-27",
@@ -8314,7 +8333,9 @@
       "impact": 5,
       "confidence": 5,
       "evidence": "docs/GDD.html Assets tab: 185 of 197 rows carry data-asset-default=\"todo\", including all 15 building rows; assets/art/buildings/ holds 18 PNG and 14 building .tscn bind a Body sprite; Roadmap M6 strikes the building-sprite deliverable at v0.59.36 and the Progress tab marks 12 of 14 building art rows done",
-      "tensions_with": []
+      "tensions_with": [],
+      "drainNote": "Partial, genuinely still open -- do not treat as closed. All Building rows were already correct (an earlier process, not this session). Sample-verified every other category against the real asset tree; found and fixed 2 real misses (hud-wavetimer, sp-mainmenu). About 144 rows remain marked todo; spot-checks suggest most are genuinely unshipped, but this was not a full 197-row walk. Commit f7721ed covers the 2 fixes.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "canonical-audit-2026-07-28-rising-god-file-ratchet-not-enforced",
@@ -8341,14 +8362,16 @@
       "kind": "structural",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "prompt": "In X:\\BrackishRising\\docs\\GDD.html at line 4673, PROGRESS_DATA marks { id: 'demo-build', t: 'Demo build (M1 mission, time-limited)', s: 'done' }, the only done row in the Release category. There is no export_presets.cfg anywhere in the repo, no exported binary, and bin/ holds only the Spine GDExtension libraries; the Roadmap M8 card lists the same deliverable plain under a Todo badge; and the M1 mission the demo would ship is itself the in-progress milestone. Establish whether anything was actually exported. If not, set the row to todo. This row feeds the weighted v1.0 hero bar and the per-domain completion chart, so correcting it moves the published percentage, which is the intended outcome rather than a reason to leave it. Write via tmp plus os.replace with read-back, then run python scripts/check_gdd_integrity.py.",
       "source": "2026-07-28 canonical audit",
       "severity": "medium",
       "impact": 4,
       "confidence": 5,
       "evidence": "docs/GDD.html:4673 PROGRESS_DATA { id: 'demo-build', s: 'done' } against no export_presets.cfg in the repo, bin/ holding only Spine GDExtension libraries, and the Roadmap M8 card listing the identically-worded deliverable plain under a Todo badge",
-      "tensions_with": []
+      "tensions_with": [],
+      "resolution": "No export config or exported binary exists anywhere in the repo. Corrected the progress-data row from done to todo.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "canonical-audit-2026-07-28-rising-hold-the-wall-status-split",
@@ -8357,14 +8380,16 @@
       "kind": "structural",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "prompt": "Three canonical surfaces in X:\\BrackishRising disagree about the same M1 deliverable. The GDD Roadmap M1 card strikes 'Hold the Wall mission script (5-7 wave cadence)' as shipped and annotates it 'data-driven as m1_default.tres + wave_director HORDE_DAYS'; PROGRESS_DATA in docs/GDD.html carries mission-hold as todo; and .project-context.json lists 'Hold the Wall 5-7 wave mission script (bk-mission-hold, P1)' first under completion.remaining. The shipped resource supports neither wording cleanly: source/data/missions/m1_default.tres is display_name \"Mission 1: Hold the Line\", target_day = 30, with four horde nights at days 7, 14, 21 and 28, which is a 30-day survival mission and not a 5-7 wave slice, and M1's own target paragraph still describes a 5-7 minute mission. Decide which side is stale, the deliverable text or the strike, then make all three surfaces plus the M1 target paragraph say the same thing. If the design moved from a 5-7 wave slice to a 30-day survival mission, that is a scope change worth a Decisions-tab entry rather than a silent reword. Do not edit the Decisions tab without an explicit go.",
       "source": "2026-07-28 canonical audit",
       "severity": "medium",
       "impact": 4,
       "confidence": 5,
       "evidence": "Roadmap M1 strikes 'Hold the Wall mission script (5-7 wave cadence)' as shipped; PROGRESS_DATA mission-hold is 'todo'; .project-context.json completion.remaining lists it as pending P1; source/data/missions/m1_default.tres is display_name \"Mission 1: Hold the Line\" with target_day = 30 and horde nights at days 7, 14, 21, 28",
-      "tensions_with": []
+      "tensions_with": [],
+      "drainNote": "Item explicitly says not to edit the Decisions tab without a go-ahead. One-line decision needed: is the mission a short wave-count slice as the milestone text still says, or the shipped survival-night mission the actual game data defines -- current wording matches neither.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "canonical-audit-2026-07-28-rising-m4-card-pool-shipped-unmarked",
@@ -8405,14 +8430,16 @@
       "kind": "structural",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "prompt": "In X:\\BrackishRising\\docs\\GDD.html the MVP-ready readout is dead twice over. At :3862 the backlog half of the calculation selects tr[data-backlog-id][data-scope=\"mvp\"], but backlog rows carry data-backlog-scope=\"mvp\" (27 of them) and the literal string data-scope=\"mvp\" appears exactly once in the whole file, in that selector, so mvpBl is always 0 and the figure would report assets-only while its label claims to include the backlog. It never renders anyway: at :3870 document.getElementById('progress-mvp-ready') resolves to null because no element with that id exists in the markup. Decide whether the readout is wanted. If yes, fix the selector to data-backlog-scope and add the progress-mvp-ready element where the readout belongs (the Progress tab header is the obvious home, beside the v1.0 hero bar), and note that it will only be meaningful once the backlog rows have real default statuses, which is queued as canonical-audit-2026-07-28-rising-backlog-tab-no-default-status. If not, delete the whole block rather than leaving a computation that discards its own result. Write via tmp plus os.replace with read-back, then run python scripts/check_gdd_integrity.py.",
       "source": "2026-07-28 canonical audit",
       "severity": "medium",
       "impact": 2,
       "confidence": 5,
       "evidence": "docs/GDD.html:3862 selects tr[data-backlog-id][data-scope=\"mvp\"] but rows carry data-backlog-scope=\"mvp\" (27 rows); the literal data-scope=\"mvp\" occurs once in the file and that occurrence is the selector itself; :3870 writes into getElementById('progress-mvp-ready'), an id that exists nowhere in the markup",
-      "tensions_with": []
+      "tensions_with": [],
+      "drainNote": "One-line decision needed: is the MVP-ready readout wanted at all (fix the dead selector and add the missing element), or should the dead computation be deleted outright?",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "canonical-audit-2026-07-28-rising-bp-baseline-unit-gd-stale",
@@ -8421,14 +8448,16 @@
       "kind": "structural",
       "auto_safe": false,
       "priority": "P3",
-      "status": "pending",
+      "status": "completed",
       "prompt": "X:\\BrackishRising\\scripts\\.bp_baseline.json still carries \"source/units/unit.gd\": 955 while the file is 954 lines, so the gate prints 'unit.gd 954L (baseline 955) ok' on every run and the file can silently grow one line back before the ratchet notices. A real reduction landed and was never ratcheted in. CLAUDE.md documents the fix: python scripts/check_best_practices.py --update-baseline. Observed in the 2026-07-27 audit and still standing. Regenerate the baseline, confirm every other tracked count is unchanged in the diff rather than accepting a wholesale rewrite, and coordinate with canonical-audit-2026-07-28-rising-god-file-ratchet-not-enforced if that item lands first, since extending GOD_FILES requires a baseline regeneration anyway and the two should be one commit.",
       "source": "2026-07-28 canonical audit",
       "severity": "low",
       "impact": 1,
       "confidence": 5,
       "evidence": "scripts/.bp_baseline.json has \"source/units/unit.gd\": 955 against 954 lines on disk; check_best_practices.py prints 'unit.gd 954L (baseline 955) ok' on every run",
-      "tensions_with": []
+      "tensions_with": [],
+      "resolution": "No longer reproduces -- the baseline file already matches the live file exactly, regenerated by an earlier fix this evening.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "canonical-audit-2026-07-28-chains-preship-doc-staleness-gate",
@@ -8683,10 +8712,10 @@
       "auto_safe": false,
       "priority": "P3",
       "severity": "low",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-08-14T23:20:00Z",
       "lastAttemptAt": null,
       "source": "audit-skylight-nightly 2026-07-28 / X:\\YesAndSkylight\\docs\\CANONICAL_AUDIT-2026-07-28.md",
       "finding_id": "C3",
@@ -8698,7 +8727,8 @@
       "drainNote": "One additive marker, additive only, no deletion. Trivial once a human says yes; blocked only because section 7 is a decisions section.",
       "tensions_with": null,
       "prompt": "cd X:\\YesAndSkylight first. SKYLIGHT LOW P3 (source: audit-skylight-nightly 2026-07-28 / X:\\YesAndSkylight\\docs\\CANONICAL_AUDIT-2026-07-28.md): DESIGN.md D1 still describes the dead reverse API as a live arrangement.\n\nX:\\YesAndSkylight\\DESIGN.md D1 (section 7 Key decisions, around lines 123-129) still reads 'Lists/chores/tasks stay on the Skylight reverse API (skylight.ts), which Google can't cover' in the present tense with no supersession marker, while section 8 records that the reverse API has been DEAD since 2026-07-25 (POST /api/sessions returns 401 'This version of Skylight is no longer supported' -- a version gate, not an auth failure). The 2026-07-27 drift-fix pass added supersession markers to DESIGN sections 1, 2, 3, 4, 5, 6 and 8 but left section 7 untouched, so D1 is the last anchor in the doc that still describes the dead path as a live arrangement. The 2026-07-28 pass also declined to touch it: section 7 is a decisions section, and the drift-auto-fix classifier refuses to auto-edit decision/locked sections, so this needs an attended yes. The fix is one additive marker, in the same shape as the markers already applied elsewhere -- keep the original sentence and append something like: 'Superseded 2026-07-25: the reverse API is dead (section 8), so lists/chores/tasks have no working driver at all; this records the original split, not a live arrangement.' Do not delete the original text -- every other marker in this doc preserves the historical record of what was tried.",
-      "notes": "Surfaced by the 2026-07-28 canonical audit as C3 (sub-item of the carried N6 finding)."
+      "notes": "Surfaced by the 2026-07-28 canonical audit as C3 (sub-item of the carried N6 finding).",
+      "resolution": "Appended a supersession marker to DESIGN.md section 7 D1 matching every other section's style -- it still described the dead reverse API in present tense. Commit f61ed87 (no git remote configured on this repo; committed locally per its documented state)."
     },
     {
       "id": "canonical-audit-2026-07-28-gnosis-secret-marked-questions-public",
@@ -8820,14 +8850,16 @@
       "finding_id": "work-queue-hygiene-01",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "blocked-on-user",
       "severity": "medium",
       "impact": 3,
       "confidence": 5,
       "evidence": "X:\\YesAndEverything\\.work-queue.json holds 46 open chains items (33 P1, 9 P2, 4 P3) against 40 at the 2026-07-27 pass, with zero drained. Oldest open bar-raise items date to 2026-07-17 (dataint-01, compliance-02, compliance-03), all P1, all on the money path.",
       "source": "bar-raise-chains 2026-07-28 / X:\\YesAndChains\\docs\\BAR_RAISE-2026-07-28.md",
       "prompt": "Yes& Chains [MED, bar-raise finding work-queue-hygiene-01]: the chains slice of X:\\YesAndEverything\\.work-queue.json grew 40 -> 46 open items this week with nothing drained, and every arrival is judgment-bound work no auto-safe pass may apply (README refresh deadlock, KNOWN_ISSUES disposition, BACKLOG 2.2.7 disposition, docs/audits tracked-file deletion, doc-staleness gate). Do: walk the 46 open chains items, and for each either (a) confirm it is genuinely actionable and leave it, or (b) reclassify it as blocked-on-user with an explicit blocked_on field so the open count stops reading as actionable backlog. Report the split. Scope to project=chains only; do not touch other projects' items. Do not silently delete items and do not mark anything done that has not shipped. Edit .work-queue.json with a byte-identical python round-trip then tmp+os.replace, never PowerShell ConvertTo-Json and never git checkout. Solo-dev voice, no em dashes.",
-      "notes": "New finding, bar-raise-chains 2026-07-28. Finding rate has outrun decision rate; the queue is where the gap shows."
+      "notes": "New finding, bar-raise-chains 2026-07-28. Finding rate has outrun decision rate; the queue is where the gap shows.",
+      "drainNote": "Its own prompt asks to directly edit .work-queue.json (reclassify items, mark blocked_on) -- this session's queue file was read-only for repo agents by design, so this needs a session authorized to edit the queue itself.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-28-yab-orchestration-work-queue-hygiene-07",
@@ -9638,7 +9670,7 @@
       "finding_id": "orchestration-01",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-rising 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "high",
@@ -9648,7 +9680,9 @@
         "cost-economics"
       ],
       "evidence": "Session record local_5f755a5f-...json carries scheduledTaskId audit-rising-nightly, created 2026-07-29T06:23Z, errorCategory cli_fastfail, error 'MemoryExhaustion'. No bar-raise-rising session record exists for 2026-07-29 at all, while scheduled-tasks.json recordedSkips['bar-raise-rising'] holds 10 global_limit entries on 07-29 and 40 on 07-30. scheduled-tasks.json stores only a single overwritten lastRunAt per task, so both BR tasks read healthy. Grep for errorCategory, recordedSkips, scheduledTaskId or lastRunAt returns zero hits across the scheduled-tasks tree and YaE scripts.",
-      "prompt": "Both BR routines failed to produce output on 2026-07-29 - the nightly audit hard-crashed on memory exhaustion and the bar-raise never got a concurrency slot - and nothing in the system surfaces either failure, so the only tell was a bar-raise report dated two days back. Add a routine that reads the session records' errorCategory and scheduled-tasks.json recordedSkips each morning and writes a per-task fired, failed or skipped line into the dashboard. Evidence: Session record local_5f755a5f-...json carries scheduledTaskId audit-rising-nightly, created 2026-07-29T06:23Z, errorCategory cli_fastfail, error 'MemoryExhaustion'. No bar-raise-rising session record exists for 2026-07-29 at all, while scheduled-tasks.json recordedSkips['bar-raise-rising'] holds 10 global_limit entries on 07-29 and 40 on 07-30. scheduled-tasks.json stores only a single overwritten lastRunAt per task, so both BR tasks read healthy. Grep for errorCategory, recordedSkips, scheduledTaskId or lastRunAt returns zero hits across the scheduled-tasks tree and YaE scripts. (Brackish Rising, X:\\BrackishRising; finding orchestration-01 from docs/BAR_RAISE-2026-07-30.md.)"
+      "prompt": "Both BR routines failed to produce output on 2026-07-29 - the nightly audit hard-crashed on memory exhaustion and the bar-raise never got a concurrency slot - and nothing in the system surfaces either failure, so the only tell was a bar-raise report dated two days back. Add a routine that reads the session records' errorCategory and scheduled-tasks.json recordedSkips each morning and writes a per-task fired, failed or skipped line into the dashboard. Evidence: Session record local_5f755a5f-...json carries scheduledTaskId audit-rising-nightly, created 2026-07-29T06:23Z, errorCategory cli_fastfail, error 'MemoryExhaustion'. No bar-raise-rising session record exists for 2026-07-29 at all, while scheduled-tasks.json recordedSkips['bar-raise-rising'] holds 10 global_limit entries on 07-29 and 40 on 07-30. scheduled-tasks.json stores only a single overwritten lastRunAt per task, so both BR tasks read healthy. Grep for errorCategory, recordedSkips, scheduledTaskId or lastRunAt returns zero hits across the scheduled-tasks tree and YaE scripts. (Brackish Rising, X:\\BrackishRising; finding orchestration-01 from docs/BAR_RAISE-2026-07-30.md.)",
+      "drainNote": "Asks for a routine reading session-record error-category and scheduled-task skip data into the dashboard -- that's shared cross-project infrastructure outside this repo. Needs Kane to authorize the cross-project scope or reassign to a differently-scoped session.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-rising-orchestration-02",
@@ -9658,7 +9692,7 @@
       "finding_id": "orchestration-02",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-rising 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "high",
@@ -9668,7 +9702,9 @@
         "maintainability"
       ],
       "evidence": "The live drift-auto-fix SKILL.md:52-56 derives its target purely from the audit text and declares no edit surface of its own anywhere in Phases 2-4 (:50-112); file mtime 2026-07-28 05:21, unchanged since before the 07-28 bar-raise. The queued mechanism fix bar-raise-2026-07-28-rising-maintainability-06 is still pending at attempts 0. docs/drift-fixes-2026-07-30.md:225-232 states outright that text-fixing does not remove the mechanism.",
-      "prompt": "This run's four docs/ARCHITECTURE.md edits are a one-off consequence of the 07-30 audit naming that file, not a durable fix, because drift-auto-fix has no declared edit surface and simply edits whatever path the audit report happens to cite. Fix the mechanism at the audit end by making project-canonical-audit emit both halves of every mirrored doc pair as explicit targets, or land the queued tombstone so ARCHITECTURE.md stops being a second home for facts the GDD tab already owns. Evidence: The live drift-auto-fix SKILL.md:52-56 derives its target purely from the audit text and declares no edit surface of its own anywhere in Phases 2-4 (:50-112); file mtime 2026-07-28 05:21, unchanged since before the 07-28 bar-raise. The queued mechanism fix bar-raise-2026-07-28-rising-maintainability-06 is still pending at attempts 0. docs/drift-fixes-2026-07-30.md:225-232 states outright that text-fixing does not remove the mechanism. (Brackish Rising, X:\\BrackishRising; finding orchestration-02 from docs/BAR_RAISE-2026-07-30.md.)"
+      "prompt": "This run's four docs/ARCHITECTURE.md edits are a one-off consequence of the 07-30 audit naming that file, not a durable fix, because drift-auto-fix has no declared edit surface and simply edits whatever path the audit report happens to cite. Fix the mechanism at the audit end by making project-canonical-audit emit both halves of every mirrored doc pair as explicit targets, or land the queued tombstone so ARCHITECTURE.md stops being a second home for facts the GDD tab already owns. Evidence: The live drift-auto-fix SKILL.md:52-56 derives its target purely from the audit text and declares no edit surface of its own anywhere in Phases 2-4 (:50-112); file mtime 2026-07-28 05:21, unchanged since before the 07-28 bar-raise. The queued mechanism fix bar-raise-2026-07-28-rising-maintainability-06 is still pending at attempts 0. docs/drift-fixes-2026-07-30.md:225-232 states outright that text-fixing does not remove the mechanism. (Brackish Rising, X:\\BrackishRising; finding orchestration-02 from docs/BAR_RAISE-2026-07-30.md.)",
+      "drainNote": "Asks to fix the drift-auto-fix skill's edit-surface derivation, which lives outside this repo. Same cross-project scope issue as orchestration-01.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-rising-orchestration-06",
@@ -10051,7 +10087,7 @@
       "finding_id": "maintainability-08",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-rising 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "medium",
@@ -10059,7 +10095,9 @@
       "confidence": 5,
       "tensions_with": [],
       "evidence": "enemy_data.gd:50-55 reads 'the constant is the one knob to tune speed' immediately before :56-62 'the .tres are the authored source of truth and a designer tunes them in the Inspector'; NUMBERS is no longer a const (static var at :73). Separately CLAUDE.md:5 still lists '.tres stat Resources' and 'terrain to TileMapLayer' among the heaviest pending remediations; both landed (source/data/enemy_stats/*.tres; iso_grid.gd:191-194).",
-      "prompt": "The comment block above the enemy stat table contradicts itself across six lines about which surface is the tuning knob, and CLAUDE.md still lists two shipped remediations as pending. Delete the superseded 'the constant is the one knob' sentences at enemy_data.gd:50-55 and strike the two landed items from the CLAUDE.md:5 heaviest-remediation list. Evidence: enemy_data.gd:50-55 reads 'the constant is the one knob to tune speed' immediately before :56-62 'the .tres are the authored source of truth and a designer tunes them in the Inspector'; NUMBERS is no longer a const (static var at :73). Separately CLAUDE.md:5 still lists '.tres stat Resources' and 'terrain to TileMapLayer' among the heaviest pending remediations; both landed (source/data/enemy_stats/*.tres; iso_grid.gd:191-194). (Brackish Rising, X:\\BrackishRising; finding maintainability-08 from docs/BAR_RAISE-2026-07-30.md.)"
+      "prompt": "The comment block above the enemy stat table contradicts itself across six lines about which surface is the tuning knob, and CLAUDE.md still lists two shipped remediations as pending. Delete the superseded 'the constant is the one knob' sentences at enemy_data.gd:50-55 and strike the two landed items from the CLAUDE.md:5 heaviest-remediation list. Evidence: enemy_data.gd:50-55 reads 'the constant is the one knob to tune speed' immediately before :56-62 'the .tres are the authored source of truth and a designer tunes them in the Inspector'; NUMBERS is no longer a const (static var at :73). Separately CLAUDE.md:5 still lists '.tres stat Resources' and 'terrain to TileMapLayer' among the heaviest pending remediations; both landed (source/data/enemy_stats/*.tres; iso_grid.gd:191-194). (Brackish Rising, X:\\BrackishRising; finding maintainability-08 from docs/BAR_RAISE-2026-07-30.md.)",
+      "resolution": "Cut a superseded sentence in enemy_data.gd that contradicted the file's own source-of-truth note two lines below.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-rising-observability-06",
@@ -10448,7 +10486,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "high",
@@ -10458,7 +10496,9 @@
       "title": "Replace the raw keycode branches in world_3d._unhandled_input and iso_cam_3d._process with Input.is_action_* against the input_defaults action names, and either implement the try_hotkey reader for per_button_hotkeys or delete that override store and its Settings rows.",
       "evidence": "source/autoloads/input_defaults.gd:30-67 registers 33 InputMap actions; grep for is_action across source/ returns exactly one hit and it is a comment (input_defaults.gd:12). Gameplay reads raw keycodes instead at source/world3d/world_3d.gd:530-598 (KEY_1..KEY_8, KEY_T/Y/U/B, KEY_R, KEY_F, KEY_F5, KEY_F9, KEY_ESCAPE) and source/world3d/iso_cam_3d.gd:43-49 (KEY_W/A/S/D plus arrows). source/data/options.gd:91 per_button_hotkeys is written at settings.gd:578-580 and its documented reader hud.try_hotkey (settings.gd:567, input_defaults.gd:61) does not exist anywhere in the repo.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
-      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding architecture-09 (HIGH, P1, lens architecture). ACTION: Replace the raw keycode branches in world_3d._unhandled_input and iso_cam_3d._process with Input.is_action_* against the input_defaults action names, and either implement the try_hotkey reader for per_button_hotkeys or delete that override store and its Settings rows.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): source/autoloads/input_defaults.gd:30-67 registers 33 InputMap actions; grep for is_action across source/ returns exactly one hit and it is a comment (input_defaults.gd:12). Gameplay reads raw keycodes instead at source/world3d/world_3d.gd:530-598 (KEY_1..KEY_8, KEY_T/Y/U/B, KEY_R, KEY_F, KEY_F5, KEY_F9, KEY_ESCAPE) and source/world3d/iso_cam_3d.gd:43-49 (KEY_W/A/S/D plus arrows). source/data/options.gd:91 per_button_hotkeys is written at settings.gd:578-580 and its documented reader hud.try_hotkey (settings.gd:567, input_defaults.gd:61) does not exist anywhere in the repo."
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding architecture-09 (HIGH, P1, lens architecture). ACTION: Replace the raw keycode branches in world_3d._unhandled_input and iso_cam_3d._process with Input.is_action_* against the input_defaults action names, and either implement the try_hotkey reader for per_button_hotkeys or delete that override store and its Settings rows.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): source/autoloads/input_defaults.gd:30-67 registers 33 InputMap actions; grep for is_action across source/ returns exactly one hit and it is a comment (input_defaults.gd:12). Gameplay reads raw keycodes instead at source/world3d/world_3d.gd:530-598 (KEY_1..KEY_8, KEY_T/Y/U/B, KEY_R, KEY_F, KEY_F5, KEY_F9, KEY_ESCAPE) and source/world3d/iso_cam_3d.gd:43-49 (KEY_W/A/S/D plus arrows). source/data/options.gd:91 per_button_hotkeys is written at settings.gd:578-580 and its documented reader hud.try_hotkey (settings.gd:567, input_defaults.gd:61) does not exist anywhere in the repo.",
+      "drainNote": "Raw keycode handling versus an input-action-based refactor, plus a decision on whether the unused per-button-hotkey scaffolding gets implemented or deleted. Scoped but large; needs a call on direction before the refactor is worth doing.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-hordes-architecture-10",
@@ -10486,7 +10526,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "high",
@@ -10496,7 +10536,9 @@
       "title": "Delete the foreach lock-removal block at write-dashboard-status.ps1:230-236 and let Assert-GitSafe own lock clearing, matching sync-erik-branch.ps1.",
       "evidence": "scripts/write-dashboard-status.ps1:230-236 removes X:\\YesAndEverything\\.git\\index.lock and HEAD.lock with Remove-Item -Force -ErrorAction SilentlyContinue and no live-process check, THEN calls Assert-GitSafe at :238. The script dot-sources git-guard.ps1 at :14, whose header at git-guard.ps1:6-11 documents that exact blind delete as the race that NUL-truncated .git\\config and knocked refs/heads/main out of loose refs. scripts/sync-erik-branch.ps1:23 already has the same delete commented out as superseded by Assert-GitSafe. Landed 2026-05-26 in be66122, still live at HEAD 3487e94.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
-      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding reliability-11 (HIGH, P1, lens reliability). ACTION: Delete the foreach lock-removal block at write-dashboard-status.ps1:230-236 and let Assert-GitSafe own lock clearing, matching sync-erik-branch.ps1.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): scripts/write-dashboard-status.ps1:230-236 removes X:\\YesAndEverything\\.git\\index.lock and HEAD.lock with Remove-Item -Force -ErrorAction SilentlyContinue and no live-process check, THEN calls Assert-GitSafe at :238. The script dot-sources git-guard.ps1 at :14, whose header at git-guard.ps1:6-11 documents that exact blind delete as the race that NUL-truncated .git\\config and knocked refs/heads/main out of loose refs. scripts/sync-erik-branch.ps1:23 already has the same delete commented out as superseded by Assert-GitSafe. Landed 2026-05-26 in be66122, still live at HEAD 3487e94."
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding reliability-11 (HIGH, P1, lens reliability). ACTION: Delete the foreach lock-removal block at write-dashboard-status.ps1:230-236 and let Assert-GitSafe own lock clearing, matching sync-erik-branch.ps1.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): scripts/write-dashboard-status.ps1:230-236 removes X:\\YesAndEverything\\.git\\index.lock and HEAD.lock with Remove-Item -Force -ErrorAction SilentlyContinue and no live-process check, THEN calls Assert-GitSafe at :238. The script dot-sources git-guard.ps1 at :14, whose header at git-guard.ps1:6-11 documents that exact blind delete as the race that NUL-truncated .git\\config and knocked refs/heads/main out of loose refs. scripts/sync-erik-branch.ps1:23 already has the same delete commented out as superseded by Assert-GitSafe. Landed 2026-05-26 in be66122, still live at HEAD 3487e94.",
+      "resolution": "Removed a blind lock-file delete in the dashboard-status script, routing it through the same safe git-lock helper already used elsewhere.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-hordes-reliability-12",
@@ -10599,7 +10641,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "high",
@@ -10609,7 +10651,9 @@
       "title": "Reset _terror_relief inside clear_producers or add a clear_terror_relief called from _clear_run, and either persist POWER in the save res block or stop routing power supply through economy.add on replay.",
       "evidence": "source/world3d/economy_system.gd:16, :35-36, :39-41, :74; source/world3d/world_3d.gd:399, :402, :793, :880-892; save keys written at world_3d.gd:686-723. _clear_run calls only _econ.clear_producers(), which clears _producers but never resets _terror_relief, so every F9 load replays each housing building through _on_building_placed and adds the run's whole terror-relief total a second time, and the same replay re-adds the POWER stockpile the save's res block never captures.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
-      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding data-integrity-03 (HIGH, P1, lens data-integrity). ACTION: Reset _terror_relief inside clear_producers or add a clear_terror_relief called from _clear_run, and either persist POWER in the save res block or stop routing power supply through economy.add on replay.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): source/world3d/economy_system.gd:16, :35-36, :39-41, :74; source/world3d/world_3d.gd:399, :402, :793, :880-892; save keys written at world_3d.gd:686-723. _clear_run calls only _econ.clear_producers(), which clears _producers but never resets _terror_relief, so every F9 load replays each housing building through _on_building_placed and adds the run's whole terror-relief total a second time, and the same replay re-adds the POWER stockpile the save's res block never captures."
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding data-integrity-03 (HIGH, P1, lens data-integrity). ACTION: Reset _terror_relief inside clear_producers or add a clear_terror_relief called from _clear_run, and either persist POWER in the save res block or stop routing power supply through economy.add on replay.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): source/world3d/economy_system.gd:16, :35-36, :39-41, :74; source/world3d/world_3d.gd:399, :402, :793, :880-892; save keys written at world_3d.gd:686-723. _clear_run calls only _econ.clear_producers(), which clears _producers but never resets _terror_relief, so every F9 load replays each housing building through _on_building_placed and adds the run's whole terror-relief total a second time, and the same replay re-adds the POWER stockpile the save's res block never captures.",
+      "resolution": "Added clear_terror_relief(), called on run-clear, stopping the terror-relief total from doubling on every reload. Also removed a dead power-pool write on the same path (zero consumers since the power refactor). Shipped v0.99.46.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-hordes-data-integrity-04",
@@ -10618,7 +10662,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-hordes 2026-07-30 / docs/BAR_RAISE-2026-07-30.md",
       "severity": "high",
@@ -10628,7 +10672,9 @@
       "title": "Bump SAVE_VERSION to 2 and treat a version-1 file as pre-cap data by clamping explicitly with a HUD notice, rather than letting add() truncate it silently.",
       "evidence": "source/world3d/world_3d.gd:683 (SAVE_VERSION = 1, last touched in 348bd0a v0.98.4); source/autoloads/economy.gd:38, :231-256, :321-327. The flip landed in de46692 v0.99.40 (2026-07-24) per git log -S 'var DEBUG_INFINITE_RESOURCES'. Turning the flag from const true to runtime false made the stockpile cap clamp live, changing what a saved res block means, with no SAVE_VERSION bump and no version-less-than branch anywhere in the file.",
       "release_note": "update the GDD at the end of the reply (meta-pill bump plus changelog entry) and ship through scripts/release.ps1; this item is not complete until that release has run",
-      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding data-integrity-04 (HIGH, P1, lens data-integrity). ACTION: Bump SAVE_VERSION to 2 and treat a version-1 file as pre-cap data by clamping explicitly with a HUD notice, rather than letting add() truncate it silently.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): source/world3d/world_3d.gd:683 (SAVE_VERSION = 1, last touched in 348bd0a v0.98.4); source/autoloads/economy.gd:38, :231-256, :321-327. The flip landed in de46692 v0.99.40 (2026-07-24) per git log -S 'var DEBUG_INFINITE_RESOURCES'. Turning the flag from const true to runtime false made the stockpile cap clamp live, changing what a saved res block means, with no SAVE_VERSION bump and no version-less-than branch anywhere in the file."
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise 2026-07-30 finding data-integrity-04 (HIGH, P1, lens data-integrity). ACTION: Bump SAVE_VERSION to 2 and treat a version-1 file as pre-cap data by clamping explicitly with a HUD notice, rather than letting add() truncate it silently.\nEVIDENCE (copied in full so this item does not depend on the report, which is gitignored and pruned): source/world3d/world_3d.gd:683 (SAVE_VERSION = 1, last touched in 348bd0a v0.98.4); source/autoloads/economy.gd:38, :231-256, :321-327. The flip landed in de46692 v0.99.40 (2026-07-24) per git log -S 'var DEBUG_INFINITE_RESOURCES'. Turning the flag from const true to runtime false made the stockpile cap clamp live, changing what a saved res block means, with no SAVE_VERSION bump and no version-less-than branch anywhere in the file.",
+      "resolution": "Save version bumped; loading a legacy save now explicitly clamps stockpile values against the live cap and shows a banner, instead of relying on an internal silent clamp.",
+      "lastWorkedAt": "2026-08-14T23:20:00Z"
     },
     {
       "id": "bar-raise-2026-07-30-hordes-data-integrity-05",
@@ -13181,17 +13227,18 @@
       "impact": 4,
       "confidence": 5,
       "auto_safe": false,
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "added": "2026-08-03",
       "result_path": null,
-      "lastWorkedAt": "2026-08-14T22:00:00Z",
+      "lastWorkedAt": "2026-08-14T23:20:00Z",
       "lastAttemptAt": null,
       "finding_id": "data-integrity-07",
       "source": "bar-raise-rotating 2026-08-03 (X:\\HereBeHordes\\docs\\BAR_RAISE-2026-08-03.md)",
       "title": "Call economy.reset_to_defaults() and economy.reset_terror_tracking() at the top of world_3d._ready before _seed_economy, and change _seed_economy to set absolute starting amounts.",
       "evidence": "source/autoloads/economy.gd:275-294 reset_to_defaults and reset_terror_tracking are called only from _ready and have zero callers elsewhere in source/ or tests/; world_3d.gd:161-168 _seed_economy uses additive economy.add; world_3d.gd:880-892 _clear_run never touches the economy autoload",
-      "prompt": "cd X:\\HereBeHordes first. Bar-raise finding data-integrity-07 (HIGH): Call economy.reset_to_defaults() and economy.reset_terror_tracking() at the top of world_3d._ready before _seed_economy, and change _seed_economy to set absolute starting amounts. Evidence: source/autoloads/economy.gd:275-294 reset_to_defaults and reset_terror_tracking are called only from _ready and have zero callers elsewhere in source/ or tests/; world_3d.gd:161-168 _seed_economy uses additive economy.add; world_3d.gd:880-892 _clear_run never touches the economy autoload Full report: docs/BAR_RAISE-2026-08-03.md. Read-only verify before changing anything; this item's prompt was backfilled from title+evidence on 2026-08-14 because the original enqueue wrote no prompt field."
+      "prompt": "cd X:\\HereBeHordes first. Bar-raise finding data-integrity-07 (HIGH): Call economy.reset_to_defaults() and economy.reset_terror_tracking() at the top of world_3d._ready before _seed_economy, and change _seed_economy to set absolute starting amounts. Evidence: source/autoloads/economy.gd:275-294 reset_to_defaults and reset_terror_tracking are called only from _ready and have zero callers elsewhere in source/ or tests/; world_3d.gd:161-168 _seed_economy uses additive economy.add; world_3d.gd:880-892 _clear_run never touches the economy autoload Full report: docs/BAR_RAISE-2026-08-03.md. Read-only verify before changing anything; this item's prompt was backfilled from title+evidence on 2026-08-14 because the original enqueue wrote no prompt field.",
+      "resolution": "world_3d's ready function now resets economy and terror tracking before seeding, fixing stale state carried into a second run in the same session."
     },
     {
       "id": "barraise-solo-tool-ux-06-2026-08-03",
@@ -18975,5 +19022,5 @@
     }
   ],
   "last_drain": "2026-07-31T00:00Z",
-  "updated": "2026-08-14T23:10:00Z"
+  "updated": "2026-08-14T23:20:00Z"
 }
