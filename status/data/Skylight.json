@@ -4,872 +4,687 @@
   "private": true,
   "note": "Private family tool. Off the public site and status dashboard by DESIGN D9. This data file exists for the bar-raise / constellation tooling only; it is not linked from any public surface.",
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-01.md",
-    "latestReportAt": "2026-08-08T12:15:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-08-15.md",
+    "latestReportAt": "2026-08-15T13:15:00Z",
     "verdict": "needs-attention",
-    "topFinding": "Carry-forward pass; no code change since 2026-08-01 (day 7). Zero commits since the last full bar-raise (git log shows the last commit at 2026-07-30T04:48:25, 9 days of silence), working tree clean, no hard rules declared for this project so no BLOCK is possible. Per this session's routine-level cost-discipline override (Gnosis's full 19-lens pass ran first and was substantial), Skylight gets a cheap-signal recheck instead of a second full fan-out. This is also the second run in a row where Skylight's own .project-context.json declares review_cadence: weekly-constellation-only while the rotating routine still assigns it a weekly per-project slot -- that conflict is unresolved and remains its own deferred item, blocked on Kane. All 58 previously-open findings are unverified this run (carried forward, aged one run) since no code changed to re-check them against; 38 of the 58 had fallen out of the work queue and are reconciled back in below. Health and lens scores are carried unchanged from the 2026-08-01 full pass.",
-    "actionsOpen": 56,
-    "actionsClosed": 3,
+    "topFinding": "The single most important open item, two full reviews running, is reliability-01: the only off-machine backup was dropped in the 2026-07-30 routine-consolidation fold and, per tonight's canonical audit, is now 16 days stale with no git remote configured, so the entire project exists as exactly one copy on one disk. Nothing since has moved it -- the three commits since the last review are documentation realignment (marking the reverse-API driver dead, correcting stale backup claims) plus a new vitest suite, none of which touch the backup or the milestone tracker's stale scope. A second, closely related finding landed this run: the session cookie is an HMAC of the PIN itself with no separate signing secret, so a leaked cookie is an offline PIN oracle, not just a session hijack. Health moved 66 -> 67, essentially flat, but this run applied the full 19-lens set for the first time (the prior full pass only ran 15), so four new domain lenses surfaced real findings (cloud-edge-worker-cpu-budget, cloud-edge-kv-data-shape both score high and clean at this traffic level; discord-notify and gate-page-publish correctly score not-applicable, this project has neither concern by design).",
+    "actionsOpen": 46,
+    "actionsClosed": 14,
     "actions": [
       {
         "id": "reliability-01",
         "severity": "HIGH",
-        "title": "Add the off-drive repo copy that the 2026-07-30 consolidation dropped into portfolio-nightly-sweep, and take one snapshot by hand now.",
+        "title": "Re-add the nightly off-drive copy step to nightly-sweep (or a standalone task) immediately, and separately run scripts/push-to-github.ps1 to create the private origin.",
         "lens": "reliability",
         "priority": 25
       },
       {
-        "id": "architecture-01",
+        "id": "reliability-02",
         "severity": "HIGH",
-        "title": "Gate the list, chore and task routes behind an explicit capability check and hide their three tabs, so the dead driver stops being reachable from every front door.",
-        "lens": "architecture",
+        "title": "Wrap the PostalMime.parse call and the pre-try allowlist logEntry calls in their own try/catch that writes a log entry and best-effort replies on failure.",
+        "lens": "reliability",
         "priority": 20
       },
       {
-        "id": "compliance-data-steward-01",
+        "id": "security-01",
         "severity": "HIGH",
-        "title": "Exclude the local credential file from the backup step, purge the copies already sitting in the seven snapshots, and rotate the two credentials they contain.",
-        "lens": "compliance-data-steward",
+        "title": "Invert the ALLOWED_SENDERS guard so a missing/empty allowlist rejects every sender by default instead of failing open.",
+        "lens": "security",
+        "priority": 20
+      },
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "title": "Derive a deterministic id for event creation and treat a 409 (id already exists) as success instead of an error.",
+        "lens": "data-integrity",
+        "priority": 20
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "HIGH",
+        "title": "Wrap the post-res.ok res.json() call in its own try/catch and treat a parse failure on a 2xx status as a successful-but-unconfirmed write rather than throwing.",
+        "lens": "data-integrity",
         "priority": 20
       },
       {
         "id": "maintainability-01",
         "severity": "HIGH",
-        "title": "Add vitest over buildRrule, localToUtc, epochOf, resolveOwner and extractJson, and wire npm test into release.ps1 beside the typecheck.",
+        "title": "Add test/recur.test.ts and test/owners.test.ts covering buildRrule's DST/UNTIL edge cases and resolveOwner/inferOwner's word-boundary matching.",
         "lens": "maintainability",
+        "priority": 20
+      },
+      {
+        "id": "maintainability-05",
+        "severity": "HIGH",
+        "title": "Update the CLAUDE.md debugging bullet to point at DESIGN.md's actual failure mode (permanent 401 version-gate) instead of the stale 400/HAR-diff guidance.",
+        "lens": "maintainability",
+        "priority": 20
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "HIGH",
+        "title": "Wrap the fetch call in post() in its own try/catch that shows a failure message on any thrown error, so a network failure stops reading as a permanent green Sending.",
+        "lens": "solo-tool-ux",
         "priority": 20
       },
       {
         "id": "observability-01",
         "severity": "HIGH",
-        "title": "Add a cron trigger that probes the write path and posts one line to a channel Kane already reads, so the wall going quiet raises itself.",
+        "title": "Add a cron trigger that performs a real or dry-run write-path check on a schedule and reports failure somewhere Kane already reads.",
         "lens": "observability",
         "priority": 20
       },
       {
         "id": "observability-02",
         "severity": "HIGH",
-        "title": "Move the backup assertion out of the doer into portfolio-nightly-sweep as a freshness check, so the detector cannot be retired alongside the thing it watches.",
+        "title": "Add a standalone freshness check reading the last backup snapshot's timestamp and alerting on staleness, decoupled from whether the backup step itself still exists.",
         "lens": "observability",
         "priority": 20
       },
       {
         "id": "release-pipeline-ps1-stack-01",
         "severity": "HIGH",
-        "title": "Replace the stale git-guard.ps1 fork with the current portfolio copy and route every bare git call through Invoke-Git before an origin exists to abort on wrapped stderr.",
+        "title": "Replace scripts/git-guard.ps1 with the current shared portfolio copy (Invoke-Git + LASTEXITCODE-preserving Confirm-GitIntact) and route release.ps1/push-to-github.ps1's git calls through it.",
         "lens": "release-pipeline-ps1-stack",
         "priority": 20
       },
       {
-        "id": "strategic-kill-this-01",
+        "id": "cloud-edge-auth-token-hygiene-01",
         "severity": "HIGH",
-        "title": "Re-cut the v0.1 milestone around the Google event path and drop the lists/chores/tasks line, so the completion figure stops being measured against unreachable work.",
+        "title": "Mint the session cookie from a server-only signing secret over a per-session nonce and issued-at, not an HMAC of the PIN itself, so a leaked cookie stops being an offline PIN oracle.",
+        "lens": "cloud-edge-auth-token-hygiene",
+        "priority": 20
+      },
+      {
+        "id": "dependency-01",
+        "severity": "MED",
+        "title": "Bump wrangler to the v4 line, regenerate package-lock.json, and smoke-test wrangler dev + wrangler deploy before shipping.",
+        "lens": "dependency",
+        "priority": 20
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "title": "Re-cut the v0.1 milestone label and completion.remaining around the working Google-event path, drop lists/chores/tasks as dead scope, and fix README's driver description.",
         "lens": "strategic-kill-this",
         "priority": 20
       },
       {
         "id": "strategic-kill-this-02",
-        "severity": "HIGH",
-        "title": "Either enable Email Routing on the subdomain, which has no MX record at all, or cut the inbound-email path from scope and stop carrying its code and findings.",
+        "severity": "MED",
+        "title": "Either enable Cloudflare Email Routing on the subdomain now, or drop email quick-add from v0.1 scope and re-label the milestone.",
         "lens": "strategic-kill-this",
         "priority": 20
       },
       {
-        "id": "data-integrity-05",
+        "id": "data-integrity-03",
         "severity": "HIGH",
-        "title": "Shift the timed events written before 2026-07-24 forward one hour, since the timezone fix corrected new writes only and nothing has swept the old ones.",
+        "title": "Compute a stable key for each inbound message (Message-ID, or a hash fallback) and check/set it in KV with a short TTL before processing, skipping a repeat.",
         "lens": "data-integrity",
         "priority": 16
+      },
+      {
+        "id": "performance-01",
+        "severity": "HIGH",
+        "title": "Skip sky.getCategories/getLists in statePayload when CALENDAR_DRIVER is google, or at minimum run them with Promise.all so their guaranteed failures overlap instead of serializing.",
+        "lens": "performance",
+        "priority": 15
+      },
+      {
+        "id": "architecture-01",
+        "severity": "MED",
+        "title": "Add one capability gate in router.ts's quickAdd for list/chore/task requests, and hide the corresponding UI tabs / drop the types from the parser's prompt.",
+        "lens": "architecture",
+        "priority": 15
       },
       {
         "id": "reliability-03",
-        "severity": "HIGH",
-        "title": "Wrap the whole email handler in a try/catch that always writes a log entry, and attach a catch to the waitUntil, so a malformed message cannot vanish silently.",
+        "severity": "MED",
+        "title": "Add an AbortController with a short timeout to each outbound fetch (Skylight, Google, Workers AI, email reply).",
         "lens": "reliability",
-        "priority": 16
+        "priority": 15
       },
       {
-        "id": "data-integrity-01",
-        "severity": "HIGH",
-        "title": "Give event creation a deterministic client-supplied id and treat a 409 as success, so a retried quick-add cannot double-book the wall.",
+        "id": "reliability-04",
+        "severity": "MED",
+        "title": "Add a single bounded retry around the Google Calendar POST for 5xx/network-error responses, matching the 401 retry already in skylight.ts's api().",
+        "lens": "reliability",
+        "priority": 15
+      },
+      {
+        "id": "reliability-05",
+        "severity": "MED",
+        "title": "Extend the KV-log pattern from email.ts to the HTTP quick-add path so failures from any entry point are recorded, not just email.",
+        "lens": "reliability",
+        "priority": 15
+      },
+      {
+        "id": "security-06",
+        "severity": "MED",
+        "title": "Apply the existing MAX_TEXT cap to location/description, and validate or encodeURIComponent the listId before it reaches the upstream Skylight API path.",
+        "lens": "security",
+        "priority": 15
+      },
+      {
+        "id": "data-integrity-05",
+        "severity": "MED",
+        "title": "Write a one-time script listing pre-2026-07-24 timed events and correcting or flagging their wrong-timezone offset.",
         "lens": "data-integrity",
         "priority": 15
       },
       {
-        "id": "cloud-edge-auth-token-hygiene-01",
+        "id": "data-integrity-10",
         "severity": "MED",
-        "title": "Derive the session cookie from a separate signing secret over a per-session nonce and an issued-at stamp, so a leaked cookie stops being an offline verifier of the PIN.",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "priority": 15
-      },
-      {
-        "id": "compliance-data-steward-03",
-        "severity": "MED",
-        "title": "Resolve the one declared secret-exposure path that is tracked in git: either move its identifying values into secrets or drop it from the declared list with a reason.",
-        "lens": "compliance-data-steward",
-        "priority": 15
-      },
-      {
-        "id": "compliance-data-steward-04",
-        "severity": "MED",
-        "title": "Either redact the identifiers in the two files declared as public artifacts or remove both from public_artifact_globs and record that this project has none.",
-        "lens": "compliance-data-steward",
-        "priority": 15
-      },
-      {
-        "id": "dependency-03",
-        "severity": "MED",
-        "title": "Bump wrangler off the terminal v3 legacy line to v4, regenerate the lockfile, and smoke-test a deploy through release.ps1.",
-        "lens": "dependency",
+        "title": "Add a lightweight persistent ledger recording every successful write (source, owner, calendarId, googleEventId, startsAt) independent of the 30-entry display log.",
+        "lens": "data-integrity",
         "priority": 15
       },
       {
         "id": "maintainability-02",
         "severity": "MED",
-        "title": "Extract the client script out of the template literal into a typechecked source file and delete the duplicated escape helper.",
+        "title": "Generate the client-side esc() from the same source as the server-side esc(), or cross-reference both definitions in a comment.",
         "lens": "maintainability",
         "priority": 15
       },
       {
         "id": "maintainability-04",
         "severity": "MED",
-        "title": "Correct the three stale CLAUDE.md claims and replace its duplicated file table with a pointer to the canonical doc, so there is one inventory to maintain.",
+        "title": "Keep one canonical file table (DESIGN.md) and have CLAUDE.md link to it instead of maintaining a drifting second copy.",
         "lens": "maintainability",
+        "priority": 15
+      },
+      {
+        "id": "solo-tool-ux-02",
+        "severity": "MED",
+        "title": "Check for a 401 response in post() and redirect to /login instead of displaying the raw server message string.",
+        "lens": "solo-tool-ux",
+        "priority": 15
+      },
+      {
+        "id": "solo-tool-ux-03",
+        "severity": "MED",
+        "title": "Persist the last-used owner key to localStorage on selection and pre-select it on load.",
+        "lens": "solo-tool-ux",
         "priority": 15
       },
       {
         "id": "observability-03",
         "severity": "MED",
-        "title": "Log pathname and message only in the top-level fetch catch, never the request body, which is the resolution agreed three runs ago and still unlanded.",
+        "title": "Add a single console.error(pathname, message) call in the top-level fetch catch so a 500 is diagnosable from Workers Logs alone.",
+        "lens": "observability",
+        "priority": 15
+      },
+      {
+        "id": "observability-04",
+        "severity": "MED",
+        "title": "Surface a rejection/error count from the email log on the authenticated app page.",
         "lens": "observability",
         "priority": 15
       },
       {
         "id": "observability-05",
         "severity": "MED",
-        "title": "Give inbound rejections their own longer-lived key and surface a rejection count on the authenticated page, so a blocked family member is noticed without being sought.",
+        "title": "Add a computed staleness block (days-since-last-audit, days-since-last-backup) to the project's status JSON.",
         "lens": "observability",
         "priority": 15
       },
       {
-        "id": "observability-06",
+        "id": "compliance-data-steward-01",
         "severity": "MED",
-        "title": "Add audit and staleness blocks to the project's status JSON so a missing or aging nightly run is visible as data rather than only as prose in a file pruned tomorrow.",
-        "lens": "observability",
+        "title": "Move ALLOWED_SENDERS/GOOGLE_CALENDAR_ID_* to wrangler secret / a non-tracked vars file, or drop wrangler.jsonc from secret_exposure_paths with a documented reason.",
+        "lens": "compliance-data-steward",
         "priority": 15
       },
       {
-        "id": "release-pipeline-ps1-stack-05",
+        "id": "compliance-data-steward-02",
         "severity": "MED",
-        "title": "Run the user-gated push-to-github.ps1 to create the private origin, after the git-guard fix so the first push does not abort on wrapped stderr.",
-        "lens": "release-pipeline-ps1-stack",
+        "title": "Redact family emails/names to placeholders in README.md/DESIGN.md, or remove them from public_artifact_globs and mark them private-only.",
+        "lens": "compliance-data-steward",
+        "priority": 15
+      },
+      {
+        "id": "compliance-data-steward-04",
+        "severity": "MED",
+        "title": "Store only the extracted numeric verification code and drop the raw Gmail confirmation link from the logged message, or set an expirationTtl on the email-log KV write.",
+        "lens": "compliance-data-steward",
         "priority": 15
       },
       {
         "id": "release-pipeline-version-pill-drift-01",
         "severity": "MED",
-        "title": "Add a check-version-pill.ps1 comparing all three version strings and run it before the typecheck, matching the three sibling projects that already gate this.",
+        "title": "Add scripts/check-version-pill.ps1 comparing package.json, DESIGN.md, and src/version.ts, called from release.ps1 before commit/deploy.",
         "lens": "release-pipeline-version-pill-drift",
         "priority": 15
       },
       {
         "id": "release-pipeline-version-pill-drift-02",
         "severity": "MED",
-        "title": "Register the version module in version_pill_locations, since it is the only pill that reaches users and the declared list omits it.",
+        "title": "Add src/version.ts to .project-context.json's version_pill_locations since it's the only pill that reaches users.",
         "lens": "release-pipeline-version-pill-drift",
         "priority": 15
       },
       {
-        "id": "release-pipeline-version-pill-drift-03",
+        "id": "reliability-06",
         "severity": "MED",
-        "title": "Create the declared changelog seeded from git log, or drop changelog_path so no tool asserts an artifact that has never existed.",
-        "lens": "release-pipeline-version-pill-drift",
-        "priority": 15
-      },
-      {
-        "id": "reliability-05",
-        "severity": "MED",
-        "title": "Pass a timeout signal to every outbound fetch in the Google and Skylight clients, none of which currently has one.",
+        "title": "Point release.ps1's live check at /api/setup or a new dependency probe instead of '/' so it actually covers the Google Calendar and KV dependencies quick-add needs.",
         "lens": "reliability",
-        "priority": 15
-      },
-      {
-        "id": "reliability-07",
-        "severity": "MED",
-        "title": "Point the post-deploy live check at the existing health endpoint and fail unless the reported version matches, instead of asserting a 200 on the login page.",
-        "lens": "reliability",
-        "priority": 15
-      },
-      {
-        "id": "security-01",
-        "severity": "MED",
-        "title": "Make an empty sender allowlist reject all mail instead of skipping the check, or record the fail-open as an accepted-risk decision rather than leaving it undecided a fifth run.",
-        "lens": "security",
-        "priority": 15
-      },
-      {
-        "id": "security-03",
-        "severity": "MED",
-        "title": "Move the reject-path and verification-branch logging behind a sender check, since both reach a KV write before any authentication and can flush the audit ring buffer.",
-        "lens": "security",
-        "priority": 15
-      },
-      {
-        "id": "security-06",
-        "severity": "MED",
-        "title": "Apply the existing text cap to location and description and constrain the list id before it reaches an unencoded URL path.",
-        "lens": "security",
-        "priority": 15
-      },
-      {
-        "id": "solo-tool-ux-02",
-        "severity": "MED",
-        "title": "Catch a network-layer submit failure and show a red not-added message, instead of leaving the form on a green Sending forever.",
-        "lens": "solo-tool-ux",
-        "priority": 15
-      },
-      {
-        "id": "cloud-edge-auth-token-hygiene-02",
-        "severity": "MED",
-        "title": "Require a passing sender-authentication verdict from the inbound message headers before accepting its From address as identity.",
-        "lens": "cloud-edge-auth-token-hygiene",
         "priority": 12
       },
       {
-        "id": "cloud-edge-auth-token-hygiene-03",
+        "id": "data-integrity-04",
         "severity": "MED",
-        "title": "Short-circuit the dead driver so live account credentials stop being posted to a third-party host on every page load, then rotate and remove them.",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-02",
-        "severity": "MED",
-        "title": "Treat a success response with an unreadable body as success rather than throwing, since the throw invites a duplicate-creating retry.",
+        "title": "Reject or normalize requests where startsAt and endsAt are supplied in different naive/absolute forms instead of comparing their epochs as-is.",
         "lens": "data-integrity",
         "priority": 12
       },
       {
-        "id": "data-integrity-08",
+        "id": "maintainability-07",
         "severity": "MED",
-        "title": "Capture the write result before the audit log runs, so a logging failure cannot report a completed write as a failure and invite a duplicating resend.",
-        "lens": "data-integrity",
+        "title": "Add narrow response interfaces for the Google Calendar and Skylight response shapes and replace the `any` annotations in google.ts/skylight.ts/parse.ts.",
+        "lens": "maintainability",
         "priority": 12
       },
       {
-        "id": "data-integrity-09",
+        "id": "dependency-02",
         "severity": "MED",
-        "title": "Make the calendar resolver throw a configuration error rather than falling back to a calendar nothing reads, which turns a config typo into a silent total loss.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "dependency-05",
-        "severity": "MED",
-        "title": "Give the parser an ordered list of acceptable model ids and fall through on an unknown-model error, instead of hard-pinning one.",
+        "title": "Wrap the env.AI.run call in a try/catch with at least one fallback model id for the Workers AI parser.",
         "lens": "dependency",
+        "priority": 12
+      },
+      {
+        "id": "compliance-data-steward-03",
+        "severity": "MED",
+        "title": "Add a one-line private-only banner to the top of FAMILY_CALENDAR_MIGRATION.md matching DESIGN.md's header convention.",
+        "lens": "compliance-data-steward",
         "priority": 12
       },
       {
         "id": "release-pipeline-ps1-stack-02",
         "severity": "MED",
-        "title": "Wrap the typecheck and both wrangler invocations so PowerShell cannot turn a successful deploy's stderr chatter into a terminating error.",
+        "title": "Wrap the tsc and wrangler deploy calls (cmd /c ... 2>&1, checking $LASTEXITCODE) so stderr chatter can't abort a successful release.",
         "lens": "release-pipeline-ps1-stack",
         "priority": 12
       },
       {
-        "id": "reliability-04",
+        "id": "cloud-edge-auth-token-hygiene-02",
         "severity": "MED",
-        "title": "Await the email handler in the export so the sender rejection runs while the handler still owns the message.",
-        "lens": "reliability",
-        "priority": 12
-      },
-      {
-        "id": "reliability-06",
-        "severity": "MED",
-        "title": "Give the live Google path the token-invalidation retry that exists only on the dead driver, plus one bounded backoff on a transient upstream error.",
-        "lens": "reliability",
-        "priority": 12
-      },
-      {
-        "id": "reliability-08",
-        "severity": "MED",
-        "title": "Log and durably record failed quick-adds over HTTP, which today leave no trace anywhere.",
-        "lens": "reliability",
-        "priority": 12
-      },
-      {
-        "id": "cloud-edge-auth-token-hygiene-05",
-        "severity": "MED",
-        "title": "Compare the session cookie with the constant-time helper the project already implements and uses for the PIN.",
+        "title": "Check the inbound message's SPF/DKIM/DMARC verdict before trusting the From address as identity, in addition to the allowlist check.",
         "lens": "cloud-edge-auth-token-hygiene",
-        "priority": 10
+        "priority": 12
       },
       {
-        "id": "compliance-data-steward-05",
+        "id": "cost-economics-01",
         "severity": "MED",
-        "title": "Name the household runbook as private-only in the decision it belongs to and banner the file itself, which is the previous run's only compliance action and never landed.",
-        "lens": "compliance-data-steward",
-        "priority": 10
-      },
-      {
-        "id": "cost-economics-02",
-        "severity": "MED",
-        "title": "Keep a counter rather than a full log entry for senders that fail the allowlist, so unsolicited mail stops costing an uncapped write on one key.",
+        "title": "Add a lightweight per-sender or global rate limit around the rejected-sender email branch, mirroring the existing rl:<ip> pattern.",
         "lens": "cost-economics",
-        "priority": 10
+        "priority": 12
       },
       {
-        "id": "data-integrity-10",
+        "id": "maintainability-03",
         "severity": "MED",
-        "title": "Record the id of every event this app writes, so a future corrective sweep can be driven from our own records rather than reconstructed from the calendar.",
-        "lens": "data-integrity",
-        "priority": 10
-      },
-      {
-        "id": "maintainability-06",
-        "severity": "MED",
-        "title": "Fix .project-context.json: it points at a changelog that has never existed, reports a month-old completion figure, and lists already-shipped work as remaining.",
+        "title": "Add an npx vitest run step to release.ps1 alongside the existing typecheck guard so a failing test blocks the release.",
         "lens": "maintainability",
         "priority": 10
       },
       {
-        "id": "performance-01",
+        "id": "security-03",
         "severity": "MED",
-        "title": "Short-circuit the two dead-driver reads on every state load, which currently cost four KV reads and two guaranteed-failing round trips.",
-        "lens": "performance",
-        "priority": 10
-      },
-      {
-        "id": "reliability-09",
-        "severity": "MED",
-        "title": "Return an explicit upstream-unavailable field alongside the empty arrays so a dead API stops looking identical to an empty frame.",
-        "lens": "reliability",
-        "priority": 10
-      },
-      {
-        "id": "solo-tool-ux-03",
-        "severity": "MED",
-        "title": "Redirect to sign-in on an unauthorized response instead of printing the raw word inside an already-open installed app.",
-        "lens": "solo-tool-ux",
-        "priority": 10
-      },
-      {
-        "id": "solo-tool-ux-05",
-        "severity": "MED",
-        "title": "Remember the last-used owner and pre-select it, so a tool budgeted at four taps stops spending one re-answering a question that rarely changes.",
-        "lens": "solo-tool-ux",
-        "priority": 10
-      },
-      {
-        "id": "data-integrity-03",
-        "severity": "MED",
-        "title": "Record processed message ids in a short-TTL key and return early on a redelivery, so a double-forward cannot create a second entry.",
-        "lens": "data-integrity",
-        "priority": 9
-      },
-      {
-        "id": "compliance-data-steward-06",
-        "severity": "MED",
-        "title": "Put an expiry on the email log and store a captured-code boolean instead of the clickable confirmation link.",
-        "lens": "compliance-data-steward",
-        "priority": 8
-      },
-      {
-        "id": "compliance-data-steward-07",
-        "severity": "MED",
-        "title": "Store only the derived action fields rather than raw inbound text, and record in the canonical doc which third parties see that text under each parser setting.",
-        "lens": "compliance-data-steward",
-        "priority": 8
-      },
-      {
-        "id": "data-integrity-04",
-        "severity": "MED",
-        "title": "Normalise both endpoints to one time frame before comparing them, so a mixed naive and absolute pair with an inverted range cannot pass validation.",
-        "lens": "data-integrity",
-        "priority": 8
-      },
-      {
-        "id": "maintainability-07",
-        "severity": "MED",
-        "title": "Declare response interfaces for the two upstream APIs and the parser output, so the one gate that runs covers the shapes most likely to change underneath it.",
-        "lens": "maintainability",
-        "priority": 8
-      },
-      {
-        "id": "solo-tool-ux-04",
-        "severity": "MED",
-        "title": "Append the recurrence off-by-one warning to the API response, so the scripted and email paths get the notice the web form already shows.",
-        "lens": "solo-tool-ux",
+        "title": "Move the ALLOWED_SENDERS check ahead of the Gmail-verification branch and add a lightweight per-sender/IP throttle to the email handler.",
+        "lens": "security",
         "priority": 8
       }
     ],
     "deferred": [
       {
         "severity": "MED",
-        "title": "Move Skylight off the weekly per-project bar-raise slot to fortnightly or constellation-only",
+        "title": "Settle whether Skylight's weekly per-project bar-raise slot should move to fortnightly or constellation-only.",
         "lens": "cost-economics",
-        "reason": "blocked on Kane: its own .project-context.json already declares weekly-constellation-only, and the rotating routine says otherwise, so he has to settle which wins"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a canary that verifies the last hop from the calendar to the physical frame",
-        "lens": "dependency",
-        "reason": "externally gated: needs a Skylight-side surface to read back, which the dead reverse API no longer provides"
-      },
-      {
-        "severity": "LOW",
-        "title": "Close the KV-write-ceiling item as permanently accepted rather than re-raising it each run",
-        "lens": "cost-economics",
-        "reason": "blocked on Kane accepting it, which is the whole point of the item"
-      },
-      {
-        "severity": "LOW",
-        "title": "Delete the legacy audit script and its three stale logs",
-        "lens": "observability",
-        "reason": "parked: the dead path is harmless now that the audit runs inside the sweep"
-      },
-      {
-        "severity": "LOW",
-        "title": "Raise the tab and weekday tap targets past the touch minimum and weigh autofocusing the summary field",
-        "lens": "solo-tool-ux",
-        "reason": "parked: the autofocus half is a real tradeoff against the keyboard pushing the form off-screen"
-      },
-      {
-        "severity": "LOW",
-        "title": "Resync the lockfile, which still pins the initial version three minors back",
-        "lens": "release-pipeline-version-pill-drift",
-        "reason": "folds into the wrangler v4 bump; no separate step worth taking first"
-      },
-      {
-        "severity": "LOW",
-        "title": "Move to generated worker configuration types so the type surface tracks the configured runtime",
-        "lens": "dependency",
-        "reason": "folds into the same wrangler v4 bump"
-      },
-      {
-        "severity": "LOW",
-        "title": "Record that the unofficial-API surface is now scoped to lists, chores and tasks only",
-        "lens": "compliance-data-steward",
-        "reason": "no action needed: a posture note so a future reader does not re-litigate it"
+        "reason": "blocked on Kane: .project-context.json already declares weekly-constellation-only while the rotating routine assigns a weekly per-project slot -- unresolved across three runs now"
       }
     ],
-    "health": 66,
+    "health": 67,
     "lensScores": {
-      "architecture": 74,
-      "reliability": 52,
-      "security": 76,
-      "performance": 86,
-      "data-integrity": 60,
-      "maintainability": 73,
-      "solo-tool-ux": 72,
-      "cost-economics": 68,
-      "dependency": 54,
-      "observability": 58,
-      "strategic-kill-this": 68,
-      "compliance-data-steward": 54,
-      "cloud-edge-auth-token-hygiene": 66,
-      "release-pipeline-ps1-stack": 61,
-      "release-pipeline-version-pill-drift": 62
+      "architecture": 73,
+      "reliability": 42,
+      "security": 68,
+      "performance": 82,
+      "data-integrity": 45,
+      "maintainability": 64,
+      "solo-tool-ux": 58,
+      "cost-economics": 80,
+      "dependency": 50,
+      "observability": 45,
+      "strategic-kill-this": 56,
+      "compliance-data-steward": 62,
+      "release-pipeline-ps1-stack": 58,
+      "release-pipeline-discord-notify": 100,
+      "release-pipeline-version-pill-drift": 55,
+      "release-pipeline-gate-page-publish": 95,
+      "cloud-edge-worker-cpu-budget": 92,
+      "cloud-edge-kv-data-shape": 88,
+      "cloud-edge-auth-token-hygiene": 65
     },
     "openFindings": [
       {
         "id": "reliability-01",
         "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "architecture-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "compliance-data-steward-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "maintainability-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "observability-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "observability-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-ps1-stack-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "reliability-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "strategic-kill-this-01",
+        "id": "security-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "strategic-kill-this-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "data-integrity-05",
-        "severity": "HIGH",
-        "priority": 16,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-03",
-        "severity": "HIGH",
-        "priority": 16,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "data-integrity-01",
         "severity": "HIGH",
-        "priority": 15,
-        "runsOpen": 2,
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "maintainability-05",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "observability-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "observability-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "release-pipeline-ps1-stack-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "cloud-edge-auth-token-hygiene-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "compliance-data-steward-03",
+        "id": "dependency-01",
         "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "compliance-data-steward-04",
+        "id": "strategic-kill-this-02",
         "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "priority": 20,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "dependency-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "id": "data-integrity-03",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "maintainability-02",
-        "severity": "MED",
+        "id": "performance-01",
+        "severity": "HIGH",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "maintainability-04",
+        "id": "architecture-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "observability-03",
+        "id": "reliability-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "observability-05",
+        "id": "reliability-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "observability-06",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-ps1-stack-05",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-version-pill-drift-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-version-pill-drift-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-version-pill-drift-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "reliability-05",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-07",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "security-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "security-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "security-06",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "data-integrity-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "data-integrity-10",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "maintainability-04",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "solo-tool-ux-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "cloud-edge-auth-token-hygiene-02",
+        "id": "solo-tool-ux-03",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "cloud-edge-auth-token-hygiene-03",
+        "id": "observability-03",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "data-integrity-02",
+        "id": "observability-04",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "observability-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "data-integrity-08",
+        "id": "compliance-data-steward-01",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "data-integrity-09",
+        "id": "compliance-data-steward-02",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "compliance-data-steward-04",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "dependency-05",
+        "id": "release-pipeline-version-pill-drift-01",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "release-pipeline-ps1-stack-02",
+        "id": "release-pipeline-version-pill-drift-02",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "reliability-06",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-08",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-auth-token-hygiene-05",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "compliance-data-steward-05",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cost-economics-02",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "data-integrity-10",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "maintainability-06",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "performance-01",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-09",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "solo-tool-ux-03",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "solo-tool-ux-05",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "data-integrity-03",
-        "severity": "MED",
-        "priority": 9,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "compliance-data-steward-06",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "compliance-data-steward-07",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "data-integrity-04",
         "severity": "MED",
-        "priority": 8,
-        "runsOpen": 2,
+        "priority": 12,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "maintainability-07",
         "severity": "MED",
-        "priority": 8,
-        "runsOpen": 2,
+        "priority": 12,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "solo-tool-ux-04",
+        "id": "dependency-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "compliance-data-steward-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "release-pipeline-ps1-stack-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "cloud-edge-auth-token-hygiene-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "maintainability-03",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "security-03",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       }
     ],
@@ -879,33 +694,40 @@
           "security",
           "solo-tool-ux"
         ],
-        "runsSeen": 5
+        "runsSeen": 6
       },
       {
         "lenses": [
           "observability",
           "compliance-data-steward"
         ],
-        "runsSeen": 4
+        "runsSeen": 5
       },
       {
         "lenses": [
           "reliability",
           "compliance-data-steward"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "cost-economics",
           "reliability"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "strategic-kill-this",
           "architecture"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "reliability",
+          "release-pipeline-ps1-stack"
         ],
         "runsSeen": 1
       }

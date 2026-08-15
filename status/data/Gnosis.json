@@ -6,1138 +6,816 @@
     "pct": 55,
     "anchored": "2026-07-06"
   },
-  "version": "v0.3.409",
+  "version": "v0.3.437",
   "lastCommit": {
-    "message": "Morning ingest: six questions minted where the world is thinnest, each with its proposal in the same commit",
-    "at": "2026-08-08T05:56:05-05:00",
-    "sha": "fc2e730"
+    "message": "Five questions minted on the thinnest pages, each shipping with its proposed answer, and the last two unlinked Argenholm mentions wired",
+    "at": "2026-08-15T05:54:57-05:00",
+    "sha": "2bc527de"
   },
   "liveUrl": "https://gnosis.yesandeverything.com",
-  "updatedAt": "2026-08-08T05:56:45-05:00",
+  "updatedAt": "2026-08-15T05:55:44-05:00",
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-08.md",
-    "latestReportAt": "2026-08-08T11:59:12Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-08-15.md",
+    "latestReportAt": "2026-08-15T11:45:00Z",
     "verdict": "needs-attention",
-    "topFinding": "The BLOCK is open: preview.json and search-index.json are unauthenticated 200 surfaces that leak every secret entity's name, and preview.json additionally leaks spoiler subtypes (e.g. \"campaign arc\"), live-confirmed by two independent lenses today; a brand-new bold-autolink leak vector resolves gated hrefs into public prose with zero build-gate coverage, and release.ps1 never checks any data-path surface, only the DM-locked page path. Beneath the BLOCK the release pipeline is in poor shape: a missing Cloudflare token still prints \"Release complete\" after skipping deploy and every live check, the shared portfolio git-guard was never adopted, and the pre-staging git-guard bug makes the one check that would catch a leaked secret a structural no-op on every push. Both v0.5 deliverables shipped days ago but the milestone tracker still reads 55% from 2026-07-06 while a 1,710-item art batch not the declared priority absorbed most of the week's commits. Health dropped from 67 to 49 across 19 lenses, with five lenses scoring under 30.",
-    "actionsOpen": 72,
-    "actionsClosed": 3,
+    "topFinding": "The BLOCK is still open: preview.json and search-index.json ship every DM-gated entity's real name to an anonymous fetch, live-reconfirmed tonight (Kazo, The Unchained, and 11 others), and a second independent leak path surfaced this run -- bold-autolinked prose (**Kazo**) auto-resolves to a real, unblurred href on public pages with zero gate coverage. release.ps1's own leak-check comment defines the leaking name as within its 'locked contract,' so the release pipeline validates the leak instead of catching it. Genuine progress landed this week: the original subtype/blurb/image leak is fixed and hard-gated, security-01/02 (allow-list, DM-session requirement) are closed, and v0.5's two deliverables both shipped -- but the milestone tracker and dashboard were never re-anchored to say so, and 281 commits since the last review put almost all of that volume into unrelated art/description work rather than closing the leak. Health dropped from 49 to 44 across 19 lenses, driven mostly by first-time full inspection of five lenses that had gone unmeasured or under-measured before (compliance-data-steward 64->32, cloud-edge-worker-cpu-budget 27->24) rather than fresh regression.",
+    "actionsOpen": 49,
+    "actionsClosed": 8,
     "actions": [
       {
-        "id": "performance-01",
+        "id": "architecture-01",
         "severity": "HIGH",
-        "title": "Add ctx to fetch and refresh the answer snapshot in ctx.waitUntil; live-measured 6.64s stall on cache-miss reproduced today.",
-        "lens": "performance",
+        "title": "Give worker.js a second gate keyed on data-surface paths (or route preview.json/search-index.json through a handler that filters by the same DM_PATHS/secret set at request time) instead of trusting build-time redaction alone, and add a release.ps1 check that GETs those two paths anonymously and asserts no gated name appears.",
+        "lens": "architecture",
+        "priority": 25
+      },
+      {
+        "id": "security-05",
+        "severity": "HIGH",
+        "title": "Withhold the n field (or drop the record entirely) for any entity where e.secret is true in the preview.json and search-index.json builders in web/build.mjs, then add a release.ps1 assertion that the name itself is absent from both surfaces for every URL in dm-paths.mjs.",
+        "lens": "security",
         "priority": 25
       },
       {
         "id": "compliance-data-steward-01",
         "severity": "HIGH",
-        "title": "Wire the item catalog's provenance field through to a /catalog OGL 1.0a license panel; it is currently stripped before reaching the browser and zero license text exists anywhere on the site.",
+        "title": "Withhold secret entities from previewIndex entirely, or emit only a generic non-identifying stub, and add a release.ps1 check that diffs the anonymous preview.json name set against the authenticated one.",
         "lens": "compliance-data-steward",
         "priority": 25
       },
       {
-        "id": "release-pipeline-ps1-stack-04",
+        "id": "performance-01",
         "severity": "HIGH",
-        "title": "Throw instead of WARN when the Cloudflare token file is missing; a release that skips deploy and every live check still prints \"Release complete.\"",
-        "lens": "release-pipeline-ps1-stack",
+        "title": "Add ctx to the fetch handler signature and change loadAnswersCached to return the possibly-stale snapshot immediately while kicking the rebuild into ctx.waitUntil.",
+        "lens": "performance",
         "priority": 25
       },
       {
-        "id": "release-pipeline-ps1-stack-03",
+        "id": "performance-02",
         "severity": "HIGH",
-        "title": "Add live assertions to release.ps1 for /api/answers, /preview.json, and /search-index.json against secret-qids.mjs; none of the three data-path surfaces are checked today (root cause of the BLOCK).",
-        "lens": "release-pipeline-ps1-stack",
-        "priority": 25
-      },
-      {
-        "id": "release-pipeline-gate-page-publish-01",
-        "severity": "HIGH",
-        "title": "BLOCK: preview.json's `t` field is unconditional (unlike search-index.json's `st`) and exposes secret entities' spoiler subtypes (e.g. \"campaign arc\") live; gate it the same way search-index.json already does.",
-        "lens": "release-pipeline-gate-page-publish",
-        "priority": 25
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-01",
-        "severity": "HIGH",
-        "title": "Same as performance-01 (duplicate root cause, different lens): add ctx/waitUntil so the answer-snapshot rebuild never runs in-band.",
-        "lens": "cloud-edge-worker-cpu-budget",
-        "priority": 25
-      },
-      {
-        "id": "architecture-01",
-        "severity": "HIGH",
-        "title": "Extract one shared vault-reader module (parseFrontmatter, slug, qhash) and import it everywhere; 20 entities still resolve two different URLs across build.mjs/audit.mjs/site_slug.py.",
-        "lens": "architecture",
-        "priority": 20
-      },
-      {
-        "id": "architecture-04",
-        "severity": "HIGH",
-        "title": "Split web/build.mjs (now 9,717 lines, +22% in a week) along its own commented seams before it crosses 10k lines.",
-        "lens": "architecture",
-        "priority": 20
-      },
-      {
-        "id": "reliability-01",
-        "severity": "HIGH",
-        "title": "Move shop state/ledger off two single global KV keys (no CAS) onto per-key writes or a Durable Object; concurrent purchases can clobber each other.",
-        "lens": "reliability",
-        "priority": 20
-      },
-      {
-        "id": "reliability-03",
-        "severity": "HIGH",
-        "title": "Move the version-pill/CHANGELOG commit+push to after live checks pass; a mid-release failure now makes reruns silently report \"Nothing to release.\"",
-        "lens": "reliability",
-        "priority": 20
-      },
-      {
-        "id": "security-05",
-        "severity": "HIGH",
-        "title": "BLOCK: preview.json and search-index.json are unauthenticated (200) and serve every secret entity's name (both) and subtype (preview.json) to anonymous requests; release.ps1 never checks a data-path surface.",
-        "lens": "security",
-        "priority": 20
-      },
-      {
-        "id": "security-02",
-        "severity": "HIGH",
-        "title": "Reject character:\"DM\" on /api/sticky, /api/note, and non-DM-routed /api/answer unless a valid DM session/password is present.",
-        "lens": "security",
-        "priority": 20
-      },
-      {
-        "id": "performance-03",
-        "severity": "HIGH",
-        "title": "Extract the inlined page shell (CSS+menu+scripts, now ~131KB, up from 72.7KB) into hashed cached /assets files instead of repeating it on all 1,375 pages.",
+        "title": "Extract the shell CSS/menu/WHO_JS/SEARCH_JS into hashed /assets files with long-lived Cache-Control instead of inlining them on all 1,538 pages.",
         "lens": "performance",
         "priority": 20
       },
       {
         "id": "data-integrity-01",
         "severity": "HIGH",
-        "title": "Register kv-snapshot.mjs as its own scheduled task and fail the lore audit when the newest snapshot is over 36 hours old.",
+        "title": "Register tools/kv-snapshot.mjs as its own scheduled task independent of ingest-answers-gnosis, and add a staleness check failing when the newest backup is over 36 hours old.",
         "lens": "data-integrity",
         "priority": 20
       },
       {
         "id": "data-integrity-02",
         "severity": "HIGH",
-        "title": "Refuse a KV snapshot write on a >5% answer-count drop and raise KEEP past 7.",
+        "title": "Compare each count in kv-snapshot.mjs against the previous day's snapshot and refuse to write on a >5% drop; raise KEEP past 7.",
+        "lens": "data-integrity",
+        "priority": 20
+      },
+      {
+        "id": "data-integrity-03",
+        "severity": "HIGH",
+        "title": "Extend /api/answers/export (and kv-snapshot.mjs) to include the pc:, forge:, hookpins, dmdismissed, and pin: KV namespaces.",
         "lens": "data-integrity",
         "priority": 20
       },
       {
         "id": "maintainability-01",
         "severity": "HIGH",
-        "title": "Promote CODE-06 from warn to a build defect with a ratchet at today's 9,717-line count; consolidate 14+ duplicated client-side esc() copies.",
-        "lens": "maintainability",
-        "priority": 20
-      },
-      {
-        "id": "maintainability-02",
-        "severity": "HIGH",
-        "title": "Export routeQuestion from a shared module imported by build.mjs and the lore audit; the hand-copied mirror already let DM questions defect to the player board once.",
+        "title": "Add a build-time line-count defect to build.mjs's own gate mechanism now that it has crossed 10,000 lines.",
         "lens": "maintainability",
         "priority": 20
       },
       {
         "id": "observability-02",
         "severity": "HIGH",
-        "title": "Fail the release when the generated secret-qids list drops below 80% of the previously deployed count.",
+        "title": "Re-anchor .project-context.json completion.pct/remaining against the shipped changelog entries and re-run write-dashboard-status.ps1.",
         "lens": "observability",
-        "priority": 20
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "HIGH",
-        "title": "Both v0.5 deliverables (campaigns board, proficiency tracker) shipped 2026-08-03/04; re-anchor completion.pct (still reads 55%/2026-07-06) and have Kane name the next milestone.",
-        "lens": "strategic-kill-this",
         "priority": 20
       },
       {
         "id": "release-pipeline-ps1-stack-01",
         "severity": "HIGH",
-        "title": "Adopt the canonical portfolio git-guard (Assert-GitSafe/Invoke-Git/Confirm-GitIntact); Gnosis still ships only the old secret-scanner under that name.",
+        "title": "Rename Gnosis's secret scanner and adopt the shared git-guard.ps1 pattern (Assert-GitSafe/Invoke-Git/Confirm-GitIntact) in push-to-github.ps1.",
         "lens": "release-pipeline-ps1-stack",
         "priority": 20
       },
       {
         "id": "release-pipeline-ps1-stack-02",
         "severity": "HIGH",
-        "title": "Move the git-guard secret scan in push-to-github.ps1 to after `git add -A`; it currently inspects an empty staging area every push.",
+        "title": "Move the git-guard call in push-to-github.ps1 to after git add -A so the secret scan actually inspects staged content.",
         "lens": "release-pipeline-ps1-stack",
         "priority": 20
       },
       {
-        "id": "release-pipeline-discord-notify-03",
+        "id": "release-pipeline-ps1-stack-03",
         "severity": "HIGH",
-        "title": "Same git-guard pre-staging bug as release-pipeline-ps1-stack-02 (duplicate root cause, different lens): the only gate that would catch a committed webhook URL is a structural no-op.",
+        "title": "Track whether the deploy path actually ran and stop printing 'Release complete' when the Cloudflare token is missing and deploy/live-checks were skipped.",
+        "lens": "release-pipeline-ps1-stack",
+        "priority": 20
+      },
+      {
+        "id": "release-pipeline-discord-notify-01",
+        "severity": "HIGH",
+        "title": "Gate the dashboard write and Discord notify steps on a deployed flag that is only true after deploy actually ran and passed its checks.",
         "lens": "release-pipeline-discord-notify",
         "priority": 20
       },
       {
-        "id": "release-pipeline-gate-page-publish-02",
+        "id": "release-pipeline-discord-notify-02",
         "severity": "HIGH",
-        "title": "Bold-name autolinking (**Name**) resolves to real hrefs for secret entities with zero LEAK-gate coverage (only [[bracket]] syntax is scanned); live-confirmed on characters/maevyn.html linking to gated /characters/kazo.",
+        "title": "Have discord-notify.ps1 write failure state to a log/status file instead of only Write-Host so a silent notify failure is visible after the fact.",
+        "lens": "release-pipeline-discord-notify",
+        "priority": 20
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-05",
+        "severity": "HIGH",
+        "title": "Skip resolution in the bold-autolink inline() helper when the matched entity is secret (render plain text, no href), and extend the LEAK gate to scan rendered dist output for anchors pointing at dm-paths.mjs URLs, not just [[wikilink]] source syntax.",
         "lens": "release-pipeline-gate-page-publish",
         "priority": 20
       },
       {
-        "id": "release-pipeline-gate-page-publish-03",
+        "id": "cloud-edge-worker-cpu-budget-01",
         "severity": "HIGH",
-        "title": "Add a post-generation GATE build defect that re-reads every JSON/HTML under dist for gated identifiers; redaction is convention with no enforced contract.",
-        "lens": "release-pipeline-gate-page-publish",
+        "title": "Add the ctx parameter to the Worker's fetch handler and move the snapshot rebuild and non-critical KV puts behind ctx.waitUntil.",
+        "lens": "cloud-edge-worker-cpu-budget",
         "priority": 20
       },
       {
         "id": "cloud-edge-kv-data-shape-01",
         "severity": "HIGH",
-        "title": "Accept a ?qids= param on /api/answers; confirmed live today the param is silently ignored and the full store still ships every time.",
+        "title": "Validate item in /api/shop-sell against the shop's real catalog before calling itemOf(), and cap distinct shop.items keys per shop.",
+        "lens": "cloud-edge-kv-data-shape",
+        "priority": 20
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "MED",
+        "title": "Set an explicit daily or monthly LLM cost ceiling for Gnosis-attributed sessions and wire an alert when a day crosses it.",
+        "lens": "cost-economics",
+        "priority": 20
+      },
+      {
+        "id": "cloud-edge-kv-data-shape-02",
+        "severity": "MED",
+        "title": "Add the four missing KV keyspaces (pc:, hookpins, dmdismissed, forge:) to /api/answers/export's body.",
         "lens": "cloud-edge-kv-data-shape",
         "priority": 20
       },
       {
         "id": "cloud-edge-auth-token-hygiene-01",
-        "severity": "HIGH",
-        "title": "Add failed-attempt backoff shared across all 12 GATE_PASSWORD comparison sites, not just /dm-login; the DM gate password has unlimited guesses everywhere.",
+        "severity": "MED",
+        "title": "Add a KV/DO-backed failed-attempt counter with exponential backoff applied uniformly to every GATE_PASSWORD comparison site, not just /dm-login.",
         "lens": "cloud-edge-auth-token-hygiene",
         "priority": 20
       },
       {
-        "id": "performance-02",
+        "id": "architecture-02",
         "severity": "MED",
-        "title": "Stop the answer-snapshot rebuild from fanning out one KV get per stored answer; store has grown 2x past the prior ceiling.",
-        "lens": "performance",
+        "title": "Split web/build.mjs along its own existing section seams, starting with the gating/redaction sections, before the next growth cycle.",
+        "lens": "architecture",
+        "priority": 20
+      },
+      {
+        "id": "architecture-03",
+        "severity": "MED",
+        "title": "Extract parseFrontmatter into one shared module imported by both web/build.mjs and tools/lore-audit/audit.mjs.",
+        "lens": "architecture",
+        "priority": 20
+      },
+      {
+        "id": "observability-01",
+        "severity": "HIGH",
+        "title": "Add a console.error in every KV read/write catch block that currently discards the exception, at minimum on the answers/sticky/notes/shop-state/party/forge-queue paths.",
+        "lens": "observability",
         "priority": 16
       },
       {
-        "id": "reliability-02",
+        "id": "strategic-kill-this-01",
         "severity": "HIGH",
-        "title": "Register tools/kv-snapshot.mjs as its own scheduled task independent of the ingest routine, with a staleness alarm.",
-        "lens": "reliability",
+        "title": "Mark v0.5 DONE in PROJECT_SPEC.md, re-anchor completion.pct/anchored/milestone in .project-context.json, and declare or explicitly defer a v0.6 milestone.",
+        "lens": "strategic-kill-this",
         "priority": 15
       },
       {
-        "id": "security-01",
+        "id": "security-03",
         "severity": "MED",
-        "title": "Invert /api/answers filter to an allow-list from the player board so an unrecognized qid fails closed instead of being served.",
+        "title": "Add a per-IP or per-character request-rate cap in front of /api/answer, /api/sticky, and /api/note.",
         "lens": "security",
         "priority": 15
       },
       {
-        "id": "performance-04",
+        "id": "performance-03",
         "severity": "MED",
-        "title": "Gate the preview.json fetch behind first hover/touch, matching the lazy pattern already used for search-index.json.",
+        "title": "Emit per-shop asset shards at build time (or cache the parsed catalog in the Worker) so a single-shop request stops parsing the full ~976KB catalog.",
         "lens": "performance",
         "priority": 15
       },
       {
-        "id": "maintainability-03",
+        "id": "maintainability-02",
         "severity": "MED",
-        "title": "Add a package.json with node --test covering the four pure functions that encode locked decisions.",
+        "title": "Extract one canonical esc() into a shared client-JS snippet the build injects everywhere and delete the 15 divergent local copies.",
         "lens": "maintainability",
         "priority": 15
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
-        "title": "Default the DM board's unanswered-only filter to ON; a 5-10 item daily job still ships 1,281 rows and 1.1MB of HTML.",
+        "title": "Default the DM board's unanswered-only filter to on (or bake status-first grouping into the build) so a fresh /questions-dm load doesn't paint 1,246 already-answered rows.",
         "lens": "solo-tool-ux",
         "priority": 15
       },
       {
         "id": "solo-tool-ux-02",
         "severity": "MED",
-        "title": "Move the open-question guard above the proposal branch in renderDraft so a settled question can never render an Approve box.",
+        "title": "Add the same session-cookie check used by the create endpoints to /api/answer-delete, /api/sticky-delete, and /api/note-delete so a signed-in DM's delete workflow stops requiring a password prompt.",
         "lens": "solo-tool-ux",
-        "priority": 15
-      },
-      {
-        "id": "solo-tool-ux-03",
-        "severity": "MED",
-        "title": "Prune web/proposed-answers.json when a question flips to [x]; 525 of 565 entries are dead weight, growing daily.",
-        "lens": "solo-tool-ux",
-        "priority": 15
-      },
-      {
-        "id": "cost-economics-01",
-        "severity": "MED",
-        "title": "Serve /api/answers/export from the cache; three separate daily scripts each independently pay a ~1,720-read full scan (confirmed 3x worse than originally scoped, but downgraded since KV growth is flat and the free cap is not at risk).",
-        "lens": "cost-economics",
         "priority": 15
       },
       {
         "id": "cost-economics-02",
         "severity": "MED",
-        "title": "Derive BUILD_STAMP from a content hash instead of wall-clock time so an unrelated edit stops busting the 37MB globe cache.",
+        "title": "Route the globe/texture asset URLs through the assetV() content-hash helper instead of wall-clock BUILD_STAMP.",
         "lens": "cost-economics",
         "priority": 15
       },
       {
-        "id": "dependency-03",
+        "id": "dependency-01",
         "severity": "MED",
-        "title": "Record known-good wrangler/Node majors and fail loudly in release.ps1 when the installed major differs.",
+        "title": "Record the known-good wrangler and Node majors and have release.ps1 fail loudly before deploying if the installed major differs.",
         "lens": "dependency",
         "priority": 15
       },
       {
-        "id": "dependency-04",
+        "id": "dependency-02",
         "severity": "MED",
-        "title": "Add a pinned requirements.txt for Pillow/numpy/scipy; scipy gates two locked check chains and is documented nowhere.",
+        "title": "Add a pinned requirements.txt covering numpy, scipy, and Pillow at the versions verified against the locked check chains.",
         "lens": "dependency",
         "priority": 15
       },
       {
-        "id": "observability-01",
+        "id": "observability-03",
         "severity": "MED",
-        "title": "Log the KV key and operation in the ~17 remaining silent catch blocks in web/worker.js.",
+        "title": "Add the five missing status-JSON contract keys (lastReleaseAt, lastReleaseMessage, repoUrl, workTreeClean, stale) to write-dashboard-status.ps1's output.",
         "lens": "observability",
         "priority": 15
       },
       {
         "id": "observability-04",
         "severity": "MED",
-        "title": "Post lore-audit severity counts to the existing webhook on non-zero exit or rising warn count; append each run to a committed trend file.",
+        "title": "Wrap release.ps1's body in a try/catch that posts a failure summary to Discord before re-throwing, so an unattended release failure is visible outside the console.",
         "lens": "observability",
-        "priority": 15
-      },
-      {
-        "id": "compliance-data-steward-02",
-        "severity": "MED",
-        "title": "Replace CODE-07's cross-drive git-pathspec probe (always throws into a silent-pass catch) with a filesystem mtime check on K:\\~DnD.",
-        "lens": "compliance-data-steward",
-        "priority": 15
-      },
-      {
-        "id": "release-pipeline-ps1-stack-06",
-        "severity": "MED",
-        "title": "Let build/deploy/live-check always run on rerun instead of exiting on \"Nothing to release\" after a mid-release failure.",
-        "lens": "release-pipeline-ps1-stack",
-        "priority": 15
-      },
-      {
-        "id": "release-pipeline-discord-notify-01",
-        "severity": "MED",
-        "title": "Make discord-notify.ps1 exit non-zero on a missing webhook or failed POST with a visible NOTIFY FAILED line.",
-        "lens": "release-pipeline-discord-notify",
-        "priority": 15
-      },
-      {
-        "id": "release-pipeline-discord-notify-02",
-        "severity": "MED",
-        "title": "Skip the Discord release post and completion banner when deploy did not actually run.",
-        "lens": "release-pipeline-discord-notify",
-        "priority": 15
-      },
-      {
-        "id": "release-pipeline-discord-notify-07",
-        "severity": "MED",
-        "title": "Replace four stale scaffold .gitignore webhook lines with a glob; none of the five real per-topic webhook filenames are covered today.",
-        "lens": "release-pipeline-discord-notify",
         "priority": 15
       },
       {
         "id": "release-pipeline-version-pill-drift-01",
         "severity": "MED",
-        "title": "Add a commit+push block to write-dashboard-status.ps1; status/data/Gnosis.json is a full release behind and dirty in the YaE repo.",
+        "title": "Add a commit+push step scoped to status/data/Gnosis.json so the public dashboard pill updates in the same release that bumps PROJECT_SPEC.md.",
         "lens": "release-pipeline-version-pill-drift",
-        "priority": 15
-      },
-      {
-        "id": "release-pipeline-version-pill-drift-02",
-        "severity": "MED",
-        "title": "Emit the version pill into the built footer and assert it live in release.ps1, which today only checks feature markers, never the version.",
-        "lens": "release-pipeline-version-pill-drift",
-        "priority": 15
-      },
-      {
-        "id": "release-pipeline-gate-page-publish-04",
-        "severity": "MED",
-        "title": "Apply the .menu-dm hiding treatment to secret rows in type-index/directory pages (/characters/, /lore/, /adventures/), which list every secret entity in plain visible text today.",
-        "lens": "release-pipeline-gate-page-publish",
         "priority": 15
       },
       {
         "id": "cloud-edge-worker-cpu-budget-02",
         "severity": "MED",
-        "title": "Materialize a pre-serialized public-only snapshot key so anonymous /api/answers is one get with no parse/filter/stringify.",
+        "title": "Split shop-data.json into one asset per shop and fetch only the relevant shard in shopData() instead of the whole catalog.",
         "lens": "cloud-edge-worker-cpu-budget",
-        "priority": 15
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-03",
-        "severity": "MED",
-        "title": "Add a limits block to wrangler.jsonc and wrap the loadAnswers KV walk in a try/catch with a degraded fallback.",
-        "lens": "cloud-edge-worker-cpu-budget",
-        "priority": 15
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-04",
-        "severity": "MED",
-        "title": "Emit per-shop asset shards so a single-shop request stops parsing the full 517KB/2,237-item catalog.",
-        "lens": "cloud-edge-worker-cpu-budget",
-        "priority": 15
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-06",
-        "severity": "MED",
-        "title": "Replace the hand-written /api/answers/export key list with one driven by a keyspace registry; it has now missed pin/dmdismissed/hookpins AND the new pc: character-tracker keyspace.",
-        "lens": "cloud-edge-kv-data-shape",
-        "priority": 15
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-03",
-        "severity": "MED",
-        "title": "Split the shop ledger into per-event keys; the shelf/ledger writes are still two independent non-atomic puts.",
-        "lens": "cloud-edge-kv-data-shape",
         "priority": 15
       },
       {
         "id": "cloud-edge-kv-data-shape-04",
         "severity": "MED",
-        "title": "Require identity on /api/shop-sell regardless of tp; an unauthenticated npc-mode caller can grow shopstate.items without bound.",
+        "title": "Require identity validation on /api/shop-sell regardless of tp so an unauthenticated npc-mode caller can't grow shopstate.items unbounded.",
         "lens": "cloud-edge-kv-data-shape",
         "priority": 15
       },
       {
-        "id": "cloud-edge-kv-data-shape-07",
+        "id": "cloud-edge-auth-token-hygiene-02",
         "severity": "MED",
-        "title": "Adopt a versioned key prefix; the new pc: character-tracker keyspace just repeated the same unversioned pattern this finding warned about.",
-        "lens": "cloud-edge-kv-data-shape",
+        "title": "Extend the DM session-cookie check already used elsewhere to /api/shop-set, /api/answer-delete, /api/note-delete, /api/shop-rotate, and /api/gameday so the shared password isn't retyped on every mutating action.",
+        "lens": "cloud-edge-auth-token-hygiene",
         "priority": 15
       },
       {
-        "id": "architecture-02",
-        "severity": "MED",
-        "title": "Move routeQuestion into the shared vault reader and fail the build when committed secret-qids.mjs differs from a fresh computation.",
-        "lens": "architecture",
+        "id": "reliability-01",
+        "severity": "HIGH",
+        "title": "Reuse the tmp+rename+readback write() helper already implemented in mint-question.mjs in forge-drain.mjs before it calls /api/forge-clear.",
+        "lens": "reliability",
         "priority": 12
       },
       {
-        "id": "architecture-03",
+        "id": "reliability-02",
         "severity": "MED",
-        "title": "Define one gated-content helper; DM-only content still uses five different hiding mechanisms.",
-        "lens": "architecture",
+        "title": "Apply the same rev/version guard used on pc: records to shopstate writes, or serialize shop mutations through a Durable Object.",
+        "lens": "reliability",
         "priority": 12
       },
       {
-        "id": "architecture-05",
+        "id": "maintainability-03",
         "severity": "MED",
-        "title": "Stamp shop-data.json with a generation id and quarantine KV shopstate entries whose shop/item no longer exists in the current build.",
-        "lens": "architecture",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-03",
-        "severity": "MED",
-        "title": "Extend /api/answers/export to include pin moves, dmDismissed state, and hook pins, which the nightly backup currently cannot protect at all.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "maintainability-04",
-        "severity": "MED",
-        "title": "Extract parseFrontmatter into a shared module; four hand-rolled vault parsers still diverge on capability.",
+        "title": "Add a fixture-based node --test harness covering routeQuestion() and the LEAK checker.",
         "lens": "maintainability",
         "priority": 12
       },
       {
-        "id": "observability-05",
+        "id": "strategic-kill-this-02",
         "severity": "MED",
-        "title": "Surface a failure in the dashboard-status write or Discord post persistently; today it only prints to a console that disappears after an unattended run.",
-        "lens": "observability",
+        "title": "Finish the server-side withholding fix for the preview.json/lore-page leak before starting another portrait or description batch.",
+        "lens": "strategic-kill-this",
         "priority": 12
       },
       {
-        "id": "compliance-data-steward-04",
+        "id": "compliance-data-steward-02",
         "severity": "MED",
-        "title": "Add a lore-audit check failing on a SPEAKER_NN label or real-name-list hit in a published page.",
+        "title": "Give items.json a licence object (publisher/licence/url/notice) and render the OGL notice on the Catalog page, matching the SRD spells/rules treatment.",
         "lens": "compliance-data-steward",
         "priority": 12
       },
       {
-        "id": "cloud-edge-worker-cpu-budget-05",
+        "id": "release-pipeline-discord-notify-04",
         "severity": "MED",
-        "title": "Cap/chunk rotationPass by elapsed time; cost scales unbounded with tick count (up to 8) times total catalog size.",
+        "title": "Have shopOfTheDay/hookOfTheDay resolve the settlement pool against the live vault at post time instead of a hardcoded array, and skip/reroll if the resolved entity is secret.",
+        "lens": "release-pipeline-discord-notify",
+        "priority": 12
+      },
+      {
+        "id": "cloud-edge-worker-cpu-budget-03",
+        "severity": "MED",
+        "title": "Cap or paginate rotationPass so a single DM click or gameday advance processes a bounded slice of shops instead of scaling with total catalog size.",
         "lens": "cloud-edge-worker-cpu-budget",
         "priority": 12
       },
       {
-        "id": "cloud-edge-kv-data-shape-02",
+        "id": "cloud-edge-kv-data-shape-03",
         "severity": "MED",
-        "title": "Materialize a pre-filtered public projection; the anonymous path still loads 100% of DM content into memory (cheaply now, via cache, but still all of it).",
+        "title": "Combine shopstate and shopledger into one KV write for the sale path so a mid-sequence failure can't leave stock decremented with no ledger entry.",
         "lens": "cloud-edge-kv-data-shape",
         "priority": 12
       },
       {
-        "id": "security-03",
+        "id": "data-integrity-04",
         "severity": "MED",
-        "title": "Cap text length and rate-limit /api/answer, /api/sticky, /api/note POST paths.",
-        "lens": "security",
-        "priority": 10
+        "title": "Cap request body size and validate the expected shape on POST /api/pc, matching the treatment already given to /api/answer, /api/sticky, and /api/note.",
+        "lens": "data-integrity",
+        "priority": 8
       },
       {
-        "id": "solo-tool-ux-04",
+        "id": "reliability-03",
         "severity": "MED",
-        "title": "Compute the yes-and/clarity/repetition watches over open and same-day proposals only, not the full 565-entry history.",
-        "lens": "solo-tool-ux",
-        "priority": 10
-      },
-      {
-        "id": "cost-economics-04",
-        "severity": "MED",
-        "title": "Drop pretty-print from the export body and warn loudly on a zero-qid export instead of silently rendering duplicates.",
-        "lens": "cost-economics",
-        "priority": 10
-      },
-      {
-        "id": "release-pipeline-discord-notify-04",
-        "severity": "MED",
-        "title": "Add a check failing when a name in daily.mjs's hardcoded settlement pool resolves to a secret page or no page.",
-        "lens": "release-pipeline-discord-notify",
-        "priority": 10
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-08",
-        "severity": "MED",
-        "title": "Same as cloud-edge-worker-cpu-budget-06 (duplicate root cause): batch the /api/pin-moves sequential list+get loop with Promise.all like every other endpoint already does.",
-        "lens": "cloud-edge-kv-data-shape",
-        "priority": 10
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "title": "Checkpoint item-art batch save_state() per item, not once at the end of the whole batch.",
+        "title": "Route tools/statblocks/render.py and tools/route/build_route.py writes through the project's own tmp-file+os.replace helper.",
         "lens": "reliability",
-        "priority": 8
-      },
-      {
-        "id": "maintainability-05",
-        "severity": "MED",
-        "title": "Extend LORE-12's em-dash check beyond world/ to the four public artifacts and build.mjs's user-facing strings.",
-        "lens": "maintainability",
-        "priority": 8
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-05",
-        "severity": "MED",
-        "title": "Log swallowed answers:snapshot PUT failures and plan sharding before the value nears 1MB.",
-        "lens": "cloud-edge-kv-data-shape",
-        "priority": 8
+        "priority": 6
       }
     ],
     "deferred": [
       {
         "severity": "MED",
-        "title": "Replace the gate-password literal in worker.js, CLAUDE.md and PROJECT_SPEC.md with a secrets pointer and rotate the value",
-        "lens": "security",
-        "reason": "blocked on Kane: rotating the shared gate password re-keys five automated callers and his own login in lockstep"
+        "title": "Either write the missing characters/monsters/maps Discord generators or remove the unused webhook provisioning.",
+        "lens": "release-pipeline-discord-notify",
+        "reason": "blocked on Kane deciding whether the three missing content types are wanted at all"
       },
       {
         "severity": "MED",
-        "title": "Mint a separate high-entropy token for the machine header path so the gate password stops doubling as an API key",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "reason": "blocked on the same credential-rotation decision as the security item above"
+        "title": "Promote the GATED-NAME check from a console.log warning to a build defect() once Kane confirms the outstanding judgment call the code comment references.",
+        "lens": "release-pipeline-gate-page-publish",
+        "reason": "blocked on Kane per the code's own comment naming an unresolved judgment call"
       },
       {
-        "severity": "MED",
-        "title": "Fold the lore-audit steps onto the tail of ingest-answers-gnosis so the build and export walk are paid once per morning",
+        "severity": "LOW",
+        "title": "Fold the lore-audit and backup reads onto the tail of ingest-answers-gnosis so the full-store KV walk is paid once per morning instead of three times.",
         "lens": "cost-economics",
         "reason": "blocked on Kane: changes the shape of two scheduled routines, not just this repo"
       },
       {
-        "severity": "MED",
-        "title": "Move the five generated .odt conversions out of the Campaigns\\Adventures source tree into a derived-files location",
-        "lens": "compliance-data-steward",
-        "reason": "blocked on Kane: touches the hands-off source corpus that ingestion reproducibility depends on"
+        "severity": "LOW",
+        "title": "Wrap the Discord webhook poster fetch in an AbortController with a short timeout.",
+        "lens": "reliability",
+        "reason": "low priority, parked"
       },
       {
-        "severity": "MED",
-        "title": "Either schedule tools/discord/daily.mjs from an existing routine or delete the three never-used topic webhooks",
+        "severity": "LOW",
+        "title": "Add a minimal revocation mechanism (KV-backed epoch/nonce) so /dm-logout can actually invalidate outstanding tokens.",
+        "lens": "cloud-edge-auth-token-hygiene",
+        "reason": "low priority for a single-DM site, parked"
+      },
+      {
+        "severity": "LOW",
+        "title": "Mint a separate high-entropy API token for the X-DM-Password machine header path instead of reusing the human login password.",
+        "lens": "cloud-edge-auth-token-hygiene",
+        "reason": "blocked on the same credential-rotation decision as the security items above"
+      },
+      {
+        "severity": "LOW",
+        "title": "Add a recurring check surfacing the vendored three.js revision against the latest upstream release.",
+        "lens": "dependency",
+        "reason": "low priority, parked"
+      },
+      {
+        "severity": "LOW",
+        "title": "Delete the four stale scaffold .gitignore webhook lines that never matched the real per-topic files.",
         "lens": "release-pipeline-discord-notify",
-        "reason": "blocked on Kane deciding whether the daily content posts are wanted at all -- widened this run: three of five provisioned webhooks (characters/maps/monsters) have no code path at all, see release-pipeline-discord-notify-08"
+        "reason": "low priority, parked"
       },
       {
-        "severity": "MED",
-        "title": "Give the DM session token a jti and a KV revocation set so logout is server-side",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "reason": "blocked on a decision about whether a 30-day frictionless cookie is the accepted posture"
+        "severity": "LOW",
+        "title": "Write a per-day marker file so daily.mjs can't double-post on a same-day retry.",
+        "lens": "release-pipeline-discord-notify",
+        "reason": "low priority, parked"
       },
       {
-        "severity": "MED",
-        "title": "Emit the calendar shape as a generated constant and validate /api/gameday against it",
+        "severity": "LOW",
+        "title": "Fix write-dashboard-status.ps1 to write the bare version number, matching the other nine tracked projects.",
+        "lens": "release-pipeline-version-pill-drift",
+        "reason": "low priority, folds into the version-pill-drift-01 fix above"
+      },
+      {
+        "severity": "LOW",
+        "title": "Add a live version-pill assertion to release.ps1's check gate.",
+        "lens": "release-pipeline-version-pill-drift",
+        "reason": "low priority, parked"
+      },
+      {
+        "severity": "LOW",
+        "title": "Generate the client-side slug() from the same source as the server's instead of hand-copying it.",
         "lens": "architecture",
-        "reason": "no current step: the loose 7/44/6 bounds only bite if CAL_MONTHS changes"
+        "reason": "low priority, parked"
       },
       {
         "severity": "LOW",
-        "title": "Filter DM-authored records out of anonymous /api/notes and /api/sticky",
-        "lens": "security",
-        "reason": "latent: both stores measure empty today, so there is nothing to filter yet"
+        "title": "Move large regenerated map/globe binaries to Git LFS or squash their history periodically.",
+        "lens": "cost-economics",
+        "reason": "low priority, parked"
       },
       {
         "severity": "LOW",
-        "title": "Rename the DM cookie to __Host-gnosis_dm",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "reason": "cosmetic hardening with no sibling subdomain currently able to shadow it"
-      },
-      {
-        "severity": "LOW",
-        "title": "Add a .gitignore to tools/mappins and untrack its 14 committed .pyc files",
-        "lens": "maintainability",
-        "reason": "parked: cosmetic, sibling tools/globe/.gitignore is the template when picked up"
-      },
-      {
-        "severity": "LOW",
-        "title": "Delete the four orphaned Gnosis scheduled-task directories left by the consolidation",
-        "lens": "observability",
-        "reason": "portfolio-level cleanup, out of scope for a single-project session"
-      },
-      {
-        "severity": "LOW",
-        "title": "Add a fetch_three.sh mirroring scripts/fetch_icons.sh for the vendored three.js build",
-        "lens": "dependency",
-        "reason": "downgraded from open action to low-priority parked item: the licensing/documentation half is done (PROJECT_SPEC.md), only the reproducibility script remains and three.js is frozen so it is not urgent"
-      },
-      {
-        "severity": "MED",
-        "title": "Item-art batch is ~630 items short of its 1,710 target with throughput down 15x in the last 4 days; decide whether to timebox/cap daily batches or accept it as the current declared priority.",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Kane: a pacing/priority call, not a code fix"
-      },
-      {
-        "severity": "LOW",
-        "title": "Add a fetch_three.sh mirroring scripts/fetch_icons.sh to reproducibly re-fetch the vendored three.js r128 build.",
-        "lens": "dependency",
-        "reason": "downgraded from open action: licensing/documentation half is done (PROJECT_SPEC.md v0.3.401), three.js is frozen so re-fetch script is not urgent"
+        "title": "Drop pretty-print from the /api/answers/export response body.",
+        "lens": "cost-economics",
+        "reason": "low priority, parked"
       }
     ],
-    "health": 49,
+    "health": 44,
     "lensScores": {
-      "architecture": 42,
-      "reliability": 52,
-      "security": 35,
-      "performance": 46,
-      "data-integrity": 48,
-      "maintainability": 47,
-      "solo-tool-ux": 74,
-      "cost-economics": 60,
+      "architecture": 36,
+      "reliability": 58,
+      "security": 38,
+      "performance": 36,
+      "data-integrity": 38,
+      "maintainability": 40,
+      "solo-tool-ux": 70,
+      "cost-economics": 58,
       "dependency": 78,
-      "observability": 60,
-      "strategic-kill-this": 58,
-      "compliance-data-steward": 64,
-      "release-pipeline-ps1-stack": 24,
-      "release-pipeline-discord-notify": 38,
-      "release-pipeline-version-pill-drift": 55,
-      "release-pipeline-gate-page-publish": 16,
-      "cloud-edge-worker-cpu-budget": 27,
-      "cloud-edge-kv-data-shape": 42,
-      "cloud-edge-auth-token-hygiene": 58
+      "observability": 42,
+      "strategic-kill-this": 60,
+      "compliance-data-steward": 32,
+      "release-pipeline-ps1-stack": 30,
+      "release-pipeline-discord-notify": 32,
+      "release-pipeline-version-pill-drift": 48,
+      "release-pipeline-gate-page-publish": 30,
+      "cloud-edge-worker-cpu-budget": 24,
+      "cloud-edge-kv-data-shape": 40,
+      "cloud-edge-auth-token-hygiene": 46
     },
     "openFindings": [
       {
-        "id": "performance-01",
+        "id": "architecture-01",
         "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 2,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "security-05",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "compliance-data-steward-01",
         "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "release-pipeline-ps1-stack-04",
+        "id": "performance-01",
         "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "release-pipeline-ps1-stack-03",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-gate-page-publish-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "architecture-01",
+        "id": "performance-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "architecture-04",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "reliability-03",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "security-05",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "security-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "performance-03",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "data-integrity-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "data-integrity-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "data-integrity-03",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-08"
       },
       {
         "id": "maintainability-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "maintainability-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "observability-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-08"
       },
       {
         "id": "release-pipeline-ps1-stack-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "release-pipeline-ps1-stack-02",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "release-pipeline-discord-notify-03",
+        "id": "release-pipeline-ps1-stack-03",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "release-pipeline-gate-page-publish-02",
+        "id": "release-pipeline-discord-notify-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "release-pipeline-discord-notify-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-05",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 1,
-        "firstSeen": "2026-08-08"
+        "firstSeen": "2026-08-15"
       },
       {
-        "id": "release-pipeline-gate-page-publish-03",
+        "id": "cloud-edge-worker-cpu-budget-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "cloud-edge-kv-data-shape-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "cloud-edge-kv-data-shape-02",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "cloud-edge-auth-token-hygiene-01",
-        "severity": "HIGH",
+        "severity": "MED",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "performance-02",
+        "id": "architecture-02",
         "severity": "MED",
-        "priority": 16,
-        "runsOpen": 2,
+        "priority": 20,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "reliability-02",
+        "id": "architecture-03",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "observability-01",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "strategic-kill-this-01",
         "severity": "HIGH",
         "priority": 15,
         "runsOpen": 2,
+        "firstSeen": "2026-08-08"
+      },
+      {
+        "id": "security-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "security-01",
+        "id": "performance-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "performance-04",
+        "id": "maintainability-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "maintainability-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "solo-tool-ux-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "solo-tool-ux-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cost-economics-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "cost-economics-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "dependency-03",
+        "id": "dependency-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
       },
       {
-        "id": "dependency-04",
+        "id": "dependency-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
       },
       {
-        "id": "observability-01",
+        "id": "observability-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
       },
       {
         "id": "observability-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "compliance-data-steward-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-ps1-stack-06",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-discord-notify-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-discord-notify-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-discord-notify-07",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "release-pipeline-version-pill-drift-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-version-pill-drift-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "release-pipeline-gate-page-publish-04",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-08"
       },
       {
         "id": "cloud-edge-worker-cpu-budget-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-04",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-06",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "cloud-edge-kv-data-shape-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "cloud-edge-kv-data-shape-07",
+        "id": "cloud-edge-auth-token-hygiene-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "reliability-01",
+        "severity": "HIGH",
+        "priority": 12,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "architecture-02",
+        "id": "reliability-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "architecture-03",
+        "id": "maintainability-03",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "architecture-05",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "data-integrity-03",
+        "id": "strategic-kill-this-02",
         "severity": "MED",
         "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-08-08"
+        "firstSeen": "2026-08-15"
       },
       {
-        "id": "maintainability-04",
+        "id": "compliance-data-steward-02",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "observability-05",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-08"
-      },
-      {
-        "id": "compliance-data-steward-04",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cloud-edge-worker-cpu-budget-05",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-08"
-      },
-      {
-        "id": "cloud-edge-kv-data-shape-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "security-03",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "solo-tool-ux-04",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-01"
-      },
-      {
-        "id": "cost-economics-04",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
         "id": "release-pipeline-discord-notify-04",
         "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
+        "priority": 12,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "cloud-edge-kv-data-shape-08",
+        "id": "cloud-edge-worker-cpu-budget-03",
         "severity": "MED",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-08"
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-08"
-      },
-      {
-        "id": "maintainability-05",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 2,
+        "priority": 12,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       },
       {
-        "id": "cloud-edge-kv-data-shape-05",
+        "id": "cloud-edge-kv-data-shape-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-01"
+      },
+      {
+        "id": "data-integrity-04",
         "severity": "MED",
         "priority": 8,
-        "runsOpen": 2,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-15"
+      },
+      {
+        "id": "reliability-03",
+        "severity": "MED",
+        "priority": 6,
+        "runsOpen": 3,
         "firstSeen": "2026-08-01"
       }
     ],
@@ -1147,42 +825,42 @@
           "security",
           "solo-tool-ux"
         ],
-        "runsSeen": 4
+        "runsSeen": 5
       },
       {
         "lenses": [
           "security",
           "performance"
         ],
-        "runsSeen": 3
+        "runsSeen": 4
+      },
+      {
+        "lenses": [
+          "architecture",
+          "security"
+        ],
+        "runsSeen": 1
       },
       {
         "lenses": [
           "observability",
           "cost-economics"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "maintainability",
           "solo-tool-ux"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
-          "reliability",
+          "cloud-edge-worker-cpu-budget",
           "performance"
         ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "release-pipeline-ps1-stack",
-          "security"
-        ],
-        "runsSeen": 1
+        "runsSeen": 2
       }
     ]
   },
