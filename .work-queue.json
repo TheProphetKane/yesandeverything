@@ -1319,16 +1319,17 @@
       "confidence": "high",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "source": "docs/CANONICAL_AUDIT-2026-07-17.md",
       "added": "2026-07-17",
       "notes": "Doc gap, not a live leak. Cheap to close now, expensive after the first hidden_from use.\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
-      "drainNote": "queue-drain-hourly 2026-07-26T10:30Z: RE-VERIFIED still live, read-only, with two path corrections for whoever takes it. The build.mjs comment has MOVED -- it is now web/build.mjs:1530 and :1893 (hidden_from described as a courtesy filter), not line 1688; the resolver is web/build.mjs:1897. PROJECT_SPEC.md now has exactly one incidental hit (line 363, '/map-aestaria' inside the Aestaria section); 'character gate', 'hidden_from', '/api/whoami', '/dm-logout' and 'gnosis-char' are still absent from PROJECT_SPEC.md AND CLAUDE.md (CLAUDE.md still zero matches of any kind). Still NOT a live exposure: zero files under world/ use hidden_from. The armed-trap framing holds.",
+      "drainNote": "Item text says explicitly it needs Kane's own wording, landed in an attended session.",
       "lastAttemptAt": "2026-07-26T10:30Z",
       "lastNoticedAt": "2026-07-26T10:30:00Z",
       "prompt": "GNOSIS HIGH P1 (source: docs/CANONICAL_AUDIT-2026-07-17.md): Character gate's soft/hard viewing model lives only in a code comment: hidden_from is not a gate and the spec never says so\n\nThe site-wide character gate shipped in v0.3.19x (commit 66d2aec) and introduces a SECOND, weaker tier of hiding alongside secret:. PROJECT_SPEC.md and CLAUDE.md both contain zero mentions of: character gate, identity gate, hidden_from, /api/whoami, /dm-logout, gnosis-char, or /map-aestaria. The distinction between the two tiers is recorded only in a build.mjs code comment (line 1688): hidden_from is a client-side courtesy filter whose hidden text SHIPS IN THE HTML, while secret: is a hard worker-side gate. The implementation is correct and the comment is honest; the gap is that neither fact reaches the canonical doc every session is told to read first. Not a live exposure: zero vault files currently use hidden_from and the secret: gate is intact and verified (126 entities gated, search index redacted, questions board clean). The risk is the armed trap: the first time someone puts spoiler-bearing content behind hidden_from believing it is a gate, it ships to every player. Suggested: document the two-tier model in section 3 (frontmatter contract, next to the secret: rules) and section 6 (as the locked decision it plainly is). Needs Kane's wording; the substance is already settled by the code.\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z"
+      "promptBackfilledAt": "2026-07-26T12:38Z",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "bar-raise-2026-07-17-rising-maintainability-01",
@@ -3209,8 +3210,10 @@
       "evidence": "X:\\YesAndGnosis\\CLAUDE.md:37-45 documents /questions as the single question-aggregation surface. web/build.mjs carries routeQuestion() and routes per question to /questions (play-facing) vs /questions-dm (lore + DM drafts), reading web/proposed-answers.json. Memory gnosis-question-board-split records this as a HARD RULE whose earlier violation leaked 654 proposed answers to players.",
       "prompt": "Gnosis [HIGH]: X:\\YesAndGnosis\\CLAUDE.md describes the question board as a single /questions surface, but web/build.mjs splits it via routeQuestion() into /questions (play-facing only) and /questions-dm (lore + DM proposed answers from web/proposed-answers.json). Add a bullet under 'Project rules (load-bearing)' covering: both boards exist, routeQuestion() is the router, routing defaults to DM, and the DM queue is NEVER gated on `secret:` (doing that is what leaked 654 proposed answers to players). Read web/build.mjs around the routeQuestion definition first so the wording matches the code. Then ship via scripts/release.ps1.",
       "added": "2026-07-24",
-      "status": "pending",
-      "source": "handler-audit-nightly 2026-07-24 / X:\\YesAndEverything\\docs\\HANDLER_AUDIT-2026-07-24.md"
+      "status": "completed",
+      "source": "handler-audit-nightly 2026-07-24 / X:\\YesAndEverything\\docs\\HANDLER_AUDIT-2026-07-24.md",
+      "resolution": "Added a bullet to CLAUDE.md documenting the two-board question router and its default-DM routing rule.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "handler-audit-2026-07-24-gnosis-globe-missing-from-handler",
@@ -3255,13 +3258,15 @@
       "priority": "P2",
       "confidence": "high",
       "auto_safe": false,
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "added": "2026-07-24",
       "source": "docs/CANONICAL_AUDIT-2026-07-24.md",
       "notes": "Needs Kane's judgment, not a code fix. Related: canonical-audit-2026-07-16-gnosis-public-to-gated-links.\n\n2026-07-26T12:38Z queue-drain-hourly: `prompt` was EMPTY, making this item undrainable by work-queue-runner (it executes the `prompt` field and has no title/detail fallback). Synthesized the prompt from this item's own title/detail/evidence/source. No change to status, priority, severity, or auto_safe.",
       "prompt": "GNOSIS MEDIUM P2 (source: docs/CANONICAL_AUDIT-2026-07-24.md): Gated endgame subjects (Kazo, mizzium, the Unchained, Nyssra Vel) are narrated in body prose on 32 public vault pages, 150 mentions: decide whether the gate on those 10 pages is now nominal by design\n\nNot a contract breach: all 10 secret entities, their search records, their questions, their preview briefs and their pins are correctly withheld, and every machine-enforced redaction check passed this run. But 32 PUBLIC vault pages carry 150 body-prose mentions of the gated subjects, several substantive: locations/the-greywash-wastes.md (kazo 15, the unchained 3), locations/the-starwatch.md (mizzium 10, kazo 2), locations/the-cinder-coast.md (kazo 11), characters/sella-ironmouth.md (mizzium 2, kazo 4, the unchained 3), locations/Cinderfall.md (mizzium 5, kazo 4), locations/Plumbgate.md (kazo 2, the unchained 6), lore/aestaria.md, characters/bessa-grell.md. characters/bessa-grell.html renders publicly that the courier went the long way round 'because whatever holds mizzium cannot board a ship without extreme risk' and that 'Kazo knows she is out there and knows she succeeded'. That is the v0.3.250 ingest of 15 far-continent DM answers landing on pages v0.3.243 had made public, so it reads deliberate rather than accidental. With this much endgame narrated in public prose the gate protects the DM's planning notes but no longer the subject matter. Kane's call: either that is the accepted position and section 6 should say so plainly next to the secret-flag contract, or the affected paragraphs want a review pass. Mechanical half of the same issue is canonical-audit-2026-07-16-gnosis-public-to-gated-links (now 82 pages, 202 in-body links, up from 40/71).\n\nRe-verify this finding against the current code before changing anything; if it no longer reproduces, close the item as resolved and record why. This item is auto_safe:false -- the fix needs a judgment call, so land it in an attended session rather than unattended.",
-      "promptBackfilledAt": "2026-07-26T12:38Z"
+      "promptBackfilledAt": "2026-07-26T12:38Z",
+      "drainNote": "Explicit Kane's-call item; this session's new gated-name check surfaced one more instance of the same class of leak.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "canonical-audit-2026-07-24-gnosis-kdnd-readonly-contradiction",
@@ -8741,12 +8746,14 @@
       "priority": "P2",
       "confidence": "high",
       "auto_safe": false,
-      "status": "pending",
+      "status": "blocked-on-user",
       "attempts": 0,
       "added": "2026-07-28",
       "source": "docs/CANONICAL_AUDIT-2026-07-28.md",
       "notes": "Intent-versus-implementation gap, not a live leak of secret: true content. Part two (strip the raw marker from rendered prose) is mechanical; part one needs Kane.",
-      "prompt": "GNOSIS MEDIUM P2 (source: docs/CANONICAL_AUDIT-2026-07-28.md): 236 questions marked (secret) render in full, marker and all, on 121 public entity pages\n\nPROJECT_SPEC.md section 6 routeQuestion rule 3 sends a question the DM marked (secret) to /questions-dm, and the same section's stated reason for that page is that players never see it. The routing works: 0 of the 357 public questions.json records carry the marker. But the question TEXT is not routed anywhere. It renders inline on its own entity page, and those pages are public.\n\nMeasured 2026-07-28 against a fresh build: 236 (secret)-marked question lines sit on non-secret vault entities, and web/dist renders the literal string '(secret)' 274 times across 121 public pages. Worst offenders: /lore/the-coiled-guardian 14, /locations/mithralholm 12, /locations/cinderfall 8, /locations/ovicor 8, /locations/brasshollow 7, /locations/the-coldwood-march 7, /lore/the-aestral-reckoning 7.\n\nConcrete example, fully readable on /locations/mithralholm without the DM cookie: 'Are the eggs chromatic (evil-blooded) hatching among metallic dragons, and what does the Hoard do about them? (secret)'\n\nTwo problems that want different answers.\n\nONE, the routing is defeated. Marking a question (secret) moves it off the player board but not off the player-visible web. Either the marker should also suppress the question from the public entity render, or section 6 should stop describing the DM queue as content players never see and say plainly that the marker is a board-sorting device only.\n\nTWO, the authoring marker leaks into rendered prose. Even if the question stays public, (secret) is build-time routing syntax, not world prose. The sibling markers do not leak: (dm) and (player) appear 0 times in the built site. This half is a rendering defect on its own terms and is cheap to fix in the question harvester in web/build.mjs.\n\nSeverity medium, not high: the affected questions live on entities Kane deliberately left public and no secret: true entity content is exposed, so this is an intent-versus-implementation gap in the spec rather than a live spoiler leak.\n\nTASK: cd X:\\YesAndGnosis. Reproduce the measurement first: run `node web/build.mjs`, then count '(secret)' occurrences across web/dist/**/*.html excluding the paths in web/dm-paths.mjs, and count '- [' question lines containing '(secret)' in world/**/*.md on entities without 'secret: true'. Confirm the 274 / 121 / 236 figures still hold before changing anything.\n\nThis needs Kane's design call on part ONE, so ASK him: should a (secret)-marked question be hidden from its public entity page entirely, or is the marker only a board-sorting device, in which case PROJECT_SPEC.md section 6 wants its 'players never see it' wording corrected? Do not decide this unilaterally. Name the collision out loud per the CLAUDE.md rule.\n\nPart TWO can proceed either way and is the mechanical half: strip the (secret) / (dm) / (player) routing markers from the rendered question text in the harvester so they never reach prose, the way (dm) and (player) already do not. Keep the marker in the vault markdown, it is what routeQuestion reads. Verify by rebuilding and confirming '(secret)' occurrences in web/dist drop to zero while routeQuestion still sends the same set of questions to the DM board (compare the DM queue count, 1013 at time of filing, before and after). Then run `node tools/lore-audit/audit.mjs` and confirm 0 critical / 0 error."
+      "prompt": "GNOSIS MEDIUM P2 (source: docs/CANONICAL_AUDIT-2026-07-28.md): 236 questions marked (secret) render in full, marker and all, on 121 public entity pages\n\nPROJECT_SPEC.md section 6 routeQuestion rule 3 sends a question the DM marked (secret) to /questions-dm, and the same section's stated reason for that page is that players never see it. The routing works: 0 of the 357 public questions.json records carry the marker. But the question TEXT is not routed anywhere. It renders inline on its own entity page, and those pages are public.\n\nMeasured 2026-07-28 against a fresh build: 236 (secret)-marked question lines sit on non-secret vault entities, and web/dist renders the literal string '(secret)' 274 times across 121 public pages. Worst offenders: /lore/the-coiled-guardian 14, /locations/mithralholm 12, /locations/cinderfall 8, /locations/ovicor 8, /locations/brasshollow 7, /locations/the-coldwood-march 7, /lore/the-aestral-reckoning 7.\n\nConcrete example, fully readable on /locations/mithralholm without the DM cookie: 'Are the eggs chromatic (evil-blooded) hatching among metallic dragons, and what does the Hoard do about them? (secret)'\n\nTwo problems that want different answers.\n\nONE, the routing is defeated. Marking a question (secret) moves it off the player board but not off the player-visible web. Either the marker should also suppress the question from the public entity render, or section 6 should stop describing the DM queue as content players never see and say plainly that the marker is a board-sorting device only.\n\nTWO, the authoring marker leaks into rendered prose. Even if the question stays public, (secret) is build-time routing syntax, not world prose. The sibling markers do not leak: (dm) and (player) appear 0 times in the built site. This half is a rendering defect on its own terms and is cheap to fix in the question harvester in web/build.mjs.\n\nSeverity medium, not high: the affected questions live on entities Kane deliberately left public and no secret: true entity content is exposed, so this is an intent-versus-implementation gap in the spec rather than a live spoiler leak.\n\nTASK: cd X:\\YesAndGnosis. Reproduce the measurement first: run `node web/build.mjs`, then count '(secret)' occurrences across web/dist/**/*.html excluding the paths in web/dm-paths.mjs, and count '- [' question lines containing '(secret)' in world/**/*.md on entities without 'secret: true'. Confirm the 274 / 121 / 236 figures still hold before changing anything.\n\nThis needs Kane's design call on part ONE, so ASK him: should a (secret)-marked question be hidden from its public entity page entirely, or is the marker only a board-sorting device, in which case PROJECT_SPEC.md section 6 wants its 'players never see it' wording corrected? Do not decide this unilaterally. Name the collision out loud per the CLAUDE.md rule.\n\nPart TWO can proceed either way and is the mechanical half: strip the (secret) / (dm) / (player) routing markers from the rendered question text in the harvester so they never reach prose, the way (dm) and (player) already do not. Keep the marker in the vault markdown, it is what routeQuestion reads. Verify by rebuilding and confirming '(secret)' occurrences in web/dist drop to zero while routeQuestion still sends the same set of questions to the DM board (compare the DM queue count, 1013 at time of filing, before and after). Then run `node tools/lore-audit/audit.mjs` and confirm 0 critical / 0 error.",
+      "drainNote": "Item says explicitly to ask Kane: should a secret-marked question be hidden from the public board, or is the marker only a sorting device?",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "canonical-audit-2026-07-28-gnosis-question-chips-link-to-gated-board",
@@ -9403,10 +9410,10 @@
       "auto_safe": false,
       "priority": "P1",
       "severity": "high",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-08-14T23:25:00Z",
       "lastAttemptAt": null,
       "source": "audit-gnosis-nightly 2026-07-30 / X:\\YesAndGnosis\\docs\\CANONICAL_AUDIT-2026-07-30.md",
       "finding_id": null,
@@ -9420,7 +9427,8 @@
       "prompt": "GNOSIS HIGH P1 (source: audit-gnosis-nightly 2026-07-30 / X:\\YesAndGnosis\\docs\\CANONICAL_AUDIT-2026-07-30.md): add a builder-side gated-name check so a secret: true entity name cannot ship inside a build.mjs literal.\n\nThe concrete instance is already fixed: web/build.mjs no longer carries { k: \"mizzium\", n: \"Mizzium\", tier: \"offmarket\" } in the CHIP_METALS ladder, and the public /lore/the-aestral-economy page no longer names it. What is missing is the gate.\n\nThe check to build: after the site is rendered, take every entity whose frontmatter has secret: true, collect its name plus any aliases, and scan the generated public HTML and JSON for those strings. The two legitimate public appearances are (1) the DM-badged menu listing, which section 6 of PROJECT_SPEC names as the one deliberate public surface for gated page names, and (2) whatever tools/lore-audit/config.json publicMentionExemptions blesses, which today is Kazo scoped to Frug and Vern's Field Notes and Maevyn. Everything else is a defect. Reuse the exemption config rather than inventing a second allowlist, so the vault-side and build-side rules can never disagree.\n\nFollow the existing gate conventions in this build: the question-discipline gates BARE-Q and Q-CAP fail the build with a named code and release.ps1 checks the exit status, and the backlog gates BL-SHAPE, BL-DEAD, BL-READ do the same. Give this one a code in the same style and make it FAIL rather than warn, since a leak that only warns will be scrolled past. Run it against the current tree first and confirm it reports clean before wiring it to a non-zero exit, so it does not land already-red.\n\nRelated and worth reading first: the pending queue item canonical-audit-2026-07-24-gnosis-endgame-prose-on-public-pages covers the prose half of the same problem.\n\nCONSTRAINTS: cd X:\\YesAndGnosis first. You mint ZERO questions: only the morning routine (ingest-answers-gnosis) may add a [?] line, and only with its proposal in web/proposed-answers.json in the same commit. K:\\~DnD is read-only source material. `node web/build.mjs` must exit 0 before and after; a non-zero exit means a question-discipline gate fired, so fix what the gate names and never disable it. Another session may hold web/dist, so check git status before committing and scope the commit with a pathspec.",
       "notes": [
         "Queued by audit-gnosis-nightly 2026-07-30. The Mizzium instance was auto-fixed in the same run; this item is the missing gate, not the instance."
-      ]
+      ],
+      "resolution": "Built the requested builder-side check reusing the vault's own exemption list so the two rule sets can't disagree. Ships as a warning, not a build failure: it currently flags one pre-existing, already-tracked leak. Promoting it to a hard failure is Kane's call, not a bug in the check."
     },
     {
       "id": "canonical-audit-2026-07-30-gnosis-arden-canon-contradiction",
@@ -9430,10 +9438,10 @@
       "auto_safe": false,
       "priority": "P2",
       "severity": "medium",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "result_path": null,
-      "lastWorkedAt": null,
+      "lastWorkedAt": "2026-08-14T23:25:00Z",
       "lastAttemptAt": null,
       "source": "audit-gnosis-nightly 2026-07-30 / X:\\YesAndGnosis\\docs\\CANONICAL_AUDIT-2026-07-30.md",
       "finding_id": null,
@@ -9447,7 +9455,8 @@
       "prompt": "GNOSIS MEDIUM P2 (source: audit-gnosis-nightly 2026-07-30 / X:\\YesAndGnosis\\docs\\CANONICAL_AUDIT-2026-07-30.md): repair three pages that contradict the settled Arden Irniscus ruling.\n\nThe lore audit check CANON-ARDEN-SOULLESS names them: world/characters/Freitu.md:32, world/characters/widow-essa-cale.md:34, and world/factions/Susorth Academy.md:30. Each says Arden died. The settled canon is that his body is still living but soulless, left in the Hells, and his soul was lost to the wish.\n\nThis is a silent prose repair under the contradiction-precedence rule in CLAUDE.md: fix the loser, never reopen a settled question to record a correction, and never mint a question about the conflict. The repair is the record.\n\nWrite each fix in the voice of the page it sits on, not as a correction notice. Note that each of the three is speaking from a different vantage: a character who knew him, a widow, and an institution. What each of them would plausibly believe or say about a man whose body came back without him is not necessarily identical, so do not paste the same clause into three pages. Kane's voice rules apply: state the claim then the reason, plain connectives, no aphoristic closers, no em dashes and no -- standing in for one.\n\nVerify with `node tools/lore-audit/audit.mjs`: CANON-ARDEN-SOULLESS should report zero.\n\nCONSTRAINTS: cd X:\\YesAndGnosis first. You mint ZERO questions: only the morning routine (ingest-answers-gnosis) may add a [?] line, and only with its proposal in web/proposed-answers.json in the same commit. K:\\~DnD is read-only source material. `node web/build.mjs` must exit 0 before and after; a non-zero exit means a question-discipline gate fired, so fix what the gate names and never disable it. Another session may hold web/dist, so check git status before committing and scope the commit with a pathspec.",
       "notes": [
         "Queued by audit-gnosis-nightly 2026-07-30. Not auto-applied because it is prose authoring, not a mechanical text fix."
-      ]
+      ],
+      "resolution": "Dropped as stale -- the underlying check had a word-boundary bug producing false positives, already fixed 2026-07-30; the one real hit was also already corrected. The check now reports zero."
     },
     {
       "id": "canonical-audit-2026-07-30-gnosis-vault-filename-case-split",
@@ -12844,7 +12853,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-gnosis 2026-08-01 / docs/BAR_RAISE-2026-08-01.md",
       "severity": "high",
@@ -12853,7 +12862,9 @@
       "finding_id": "security-01",
       "title": "Invert the /api/answers filter to an allow-list built from the player board so an unrecognised qid fails closed instead of being served.",
       "evidence": "See X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-08-01.md, section 'Action items', item security-01.",
-      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-01 finding security-01 (HIGH, lens security): Invert the /api/answers filter to an allow-list built from the player board so an unrecognised qid fails closed instead of being served. See docs/BAR_RAISE-2026-08-01.md for the full evidence. Read-only verify before changing anything."
+      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-01 finding security-01 (HIGH, lens security): Invert the /api/answers filter to an allow-list built from the player board so an unrecognised qid fails closed instead of being served. See docs/BAR_RAISE-2026-08-01.md for the full evidence. Read-only verify before changing anything.",
+      "resolution": "GET /api/answers inverted from a deny-list to an allow-list generated from the player board, so an unrecognised question id now fails closed instead of serving by default. Shipped v0.3.436, commit 394029f6, deployed, live-checked.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "bar-raise-2026-08-01-gnosis-security-02",
@@ -12862,7 +12873,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-gnosis 2026-08-01 / docs/BAR_RAISE-2026-08-01.md",
       "severity": "high",
@@ -12871,7 +12882,9 @@
       "finding_id": "security-02",
       "title": "Reject character:\"DM\" on /api/answer, /api/sticky and /api/note unless a valid DM session cookie is present.",
       "evidence": "See X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-08-01.md, section 'Action items', item security-02.",
-      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-01 finding security-02 (HIGH, lens security): Reject character:\"DM\" on /api/answer, /api/sticky and /api/note unless a valid DM session cookie is present. See docs/BAR_RAISE-2026-08-01.md for the full evidence. Read-only verify before changing anything."
+      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-01 finding security-02 (HIGH, lens security): Reject character:\"DM\" on /api/answer, /api/sticky and /api/note unless a valid DM session cookie is present. See docs/BAR_RAISE-2026-08-01.md for the full evidence. Read-only verify before changing anything.",
+      "resolution": "Verified live: the character identity 'DM' was accepted with zero authentication on the answer/sticky/note write endpoints, since the roster includes DM as a normal entry. Added a guard requiring the real DM session cookie before any write can claim the DM identity.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "bar-raise-2026-08-01-gnosis-maintainability-02",
@@ -13098,13 +13111,15 @@
       "severity": "medium",
       "priority": "P1",
       "auto_safe": false,
-      "status": "pending",
+      "status": "completed",
       "source": "CANONICAL_AUDIT-2026-08-02.md findings 1 and 2",
       "title": "Gnosis leaks all 12 secret entity names publicly via preview.json and the nav menu",
       "prompt": "Two outlets for one problem in X:\\YesAndGnosis. Fix together; fixing only the menu leaves the easier leak open.\n\n(1) preview.json, the worse of the two. GET https://gnosis.yesandeverything.com/preview.json returns 200, 244,011 bytes, 768 entries, of which 12 carry dm:true along with the entity NAME, URL and SUBTYPE. Verified live anonymously 2026-08-02. The subtypes are the damaging part: 'Ruin - Infernal Horizon | campaign arc', 'Infernal Tide - Session Prep | session prep', 'Mizzium | metal', 'DM Plans | future plans', 'The Arcana Stones | future plans', 'The Unchained | faction', four npcs, two references. A player learns the campaign arc name from one static JSON fetch, no view-source needed. This was previously rated LOW as 'gives gated entities their subtype'; that was backwards, it carries MORE than the menu leak does.\n\n(2) The nav menu. Every public page ships all 12 names in its HTML. web/build.mjs:1783 renders them with class=menu-dm, hidden only by the CSS rule at web/build.mjs:734 which sets display:none on .menu-dm for any document whose html element does not carry data-dm=1. Verified live: /lore/the-aestral-economy returns 188,114 bytes with 37 menu-dm occurrences and every sampled secret name present in the served bytes. web/build.mjs:1752 claims a player never sees these, which is a guarantee CSS cannot give: view-source, reader mode, a text-only browser, or CSS failing to load all reveal them.\n\nFIX SHAPE: build the DM set client-side after DM auth, or emit public bundles with the gated entries stripped and inject them on authentication. Keep the gate server-side rather than cosmetic.\n\nNOT the problem: the page gate itself. Anonymous requests to /characters/kazo/, /factions/the-unchained/ and /lore/dm-plans/ all return 401, verified the same run. What leaks is the existence, name and type of each secret, not its content.",
       "added": "2026-08-02",
       "kind": "audit-finding",
-      "attempts": 0
+      "attempts": 0,
+      "resolution": "Dropped as stale -- already fixed by round 1's P0 pass (commit e97b6343); confirmed live, secret entries now carry only general type, not spoiler subtype.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "canonical-audit-2026-08-02-skylight-backup-dropped-in-routine-fold",
@@ -16459,7 +16474,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-gnosis 2026-08-08 / docs/BAR_RAISE-2026-08-08.md",
       "severity": "med",
@@ -16468,7 +16483,9 @@
       "finding_id": "solo-tool-ux-02",
       "title": "Move the open-question guard above the proposal branch in renderDraft so a settled question can never render an Approve box.",
       "evidence": "See X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-08-08.md, section 'Action items', item solo-tool-ux-02.",
-      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-08 finding solo-tool-ux-02 (MED, lens solo-tool-ux): Move the open-question guard above the proposal branch in renderDraft so a settled question can never render an Approve box. See docs/BAR_RAISE-2026-08-08.md for the full evidence. Read-only verify before changing anything."
+      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-08 finding solo-tool-ux-02 (MED, lens solo-tool-ux): Move the open-question guard above the proposal branch in renderDraft so a settled question can never render an Approve box. See docs/BAR_RAISE-2026-08-08.md for the full evidence. Read-only verify before changing anything.",
+      "resolution": "Moved the open-question guard ahead of the proposal-rendering branch so a settled question can no longer render an approve control.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "bar-raise-2026-08-08-gnosis-solo-tool-ux-03",
@@ -17017,7 +17034,7 @@
       "kind": "bar-raise-finding",
       "auto_safe": false,
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "attempts": 0,
       "source": "bar-raise-gnosis 2026-08-08 / docs/BAR_RAISE-2026-08-08.md",
       "severity": "med",
@@ -17026,7 +17043,9 @@
       "finding_id": "security-03",
       "title": "Cap text length and rate-limit /api/answer, /api/sticky, /api/note POST paths.",
       "evidence": "See X:\\YesAndGnosis\\docs\\BAR_RAISE-2026-08-08.md, section 'Action items', item security-03.",
-      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-08 finding security-03 (MED, lens security): Cap text length and rate-limit /api/answer, /api/sticky, /api/note POST paths. See docs/BAR_RAISE-2026-08-08.md for the full evidence. Read-only verify before changing anything."
+      "prompt": "cd X:\\YesAndGnosis first. Bar-raise 2026-08-08 finding security-03 (MED, lens security): Cap text length and rate-limit /api/answer, /api/sticky, /api/note POST paths. See docs/BAR_RAISE-2026-08-08.md for the full evidence. Read-only verify before changing anything.",
+      "resolution": "Partial: added a text-length cap and title-length cap to the three write endpoints. Rate-limiting not implemented -- no existing binding infrastructure to build on, judged too risky to build and deploy untested in this window. Left open for a follow-up pass.",
+      "lastWorkedAt": "2026-08-14T23:25:00Z"
     },
     {
       "id": "bar-raise-2026-08-08-gnosis-solo-tool-ux-04",
@@ -19022,5 +19041,5 @@
     }
   ],
   "last_drain": "2026-07-31T00:00Z",
-  "updated": "2026-08-14T23:20:00Z"
+  "updated": "2026-08-14T23:25:00Z"
 }
