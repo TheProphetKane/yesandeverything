@@ -14,8 +14,12 @@
 //
 // Zone width (front zones only) is one of 25/33/50/66/75/100; ignored on back.
 
-import { autofitText } from './util/autofit.js';
-import { resolveSize } from '../data/label-templates.js';
+// v1.1.6: autofitText and resolveSize travel through ctx, not static imports.
+// main.js owns the versioned dynamic-import graph (v0.8.0 cache-bust contract);
+// a static import here would fetch an un-versioned URL Cloudflare's edge cache
+// could serve stale after a deploy, and would double-instantiate the module
+// against main.js's own versioned copy (label-templates.js was affected both
+// ways at once). See ctx.autofitText / ctx.resolveSize, forwarded from main.js.
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({
@@ -516,7 +520,7 @@ export function render(state, mounts, ctx) {
   const theme = ctx.themes[tmpl.theme];
   const fullCtx = { ...ctx, theme };
 
-  const phys = resolveSize(tmpl, state.sizeId);
+  const phys = ctx.resolveSize(tmpl, state.sizeId);
   const previewScale = previewScaleFor(phys.wIn);
 
   const frontZones = zonesForSide(state, tmpl, 'front');
@@ -580,8 +584,8 @@ export function render(state, mounts, ctx) {
 
   const fits = mounts.preview.querySelectorAll('[data-autofit]');
   if (fontsReady) {
-    fits.forEach(el => autofitText(el));
-    fitPrintStage(mounts);
+    fits.forEach(el => ctx.autofitText(el));
+    fitPrintStage(mounts, ctx.autofitText);
   } else {
     // Every render before the fonts land queues its own .then holding that
     // render's NodeList. A later render replaces the preview's innerHTML, so
@@ -589,8 +593,8 @@ export function render(state, mounts, ctx) {
     // the render that owns the live nodes autofits them itself.
     document.fonts.ready.then(() => {
       fontsReady = true;
-      fits.forEach(el => { if (el.isConnected) autofitText(el); });
-      fitPrintStage(mounts);
+      fits.forEach(el => { if (el.isConnected) ctx.autofitText(el); });
+      fitPrintStage(mounts, ctx.autofitText);
     });
   }
 }
@@ -602,7 +606,7 @@ export function render(state, mounts, ctx) {
 // mirroring the preview's fitted size, the v1.0.4 approach) keeps the printed
 // name fitted even when its preview section is collapsed and needs no
 // node-pairing between the two trees.
-function fitPrintStage(mounts) {
+function fitPrintStage(mounts, autofitFn) {
   const stage = mounts.printStage;
   if (!stage) return;
   const fits = stage.querySelectorAll('[data-autofit]');
@@ -610,7 +614,7 @@ function fitPrintStage(mounts) {
   const prev = stage.getAttribute('style') || '';
   stage.style.cssText = `${prev};display:flex !important;position:fixed !important;left:-10000px !important;top:0 !important;z-index:-1;`;
   try {
-    fits.forEach(el => autofitText(el));
+    fits.forEach(el => autofitFn(el));
   } finally {
     if (prev) stage.setAttribute('style', prev);
     else stage.removeAttribute('style');

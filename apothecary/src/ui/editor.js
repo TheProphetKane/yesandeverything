@@ -7,13 +7,14 @@
 // visibility, user-defined custom items, per-zone alignment, border style
 // picker, layout presets.
 
-import { printLabel } from '../util/print.js';
-import { truncateAtWordBoundary } from '../util/truncate.js';
 // v0.11.1: cross-module references for cache-bust safety travel through ctx,
 // not static imports. main.js owns the versioned dynamic-import graph; any
 // static import here would fetch an un-versioned URL that Cloudflare may
 // serve stale, breaking the editor whenever the upstream module ships new
 // exports. So we destructure from ctx in mountEditor instead.
+// v1.1.6: printLabel and truncateAtWordBoundary used to violate this exact
+// rule via a stray static import (bar-raise 2026-08-12 architecture-01);
+// they're destructured from ctx below now, same as everything else here.
 
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
@@ -53,6 +54,8 @@ export function mountEditor(root, ctx) {
     illustrations = [], herbAutoMatch = {}, herbCategoryFallback = {},
     // v1.0.4: PNG export of the print-stage (lazy-loads html2canvas).
     exportPng,
+    // v1.1.6: forwarded from main.js's versioned dynamic imports.
+    printLabel, truncateAtWordBoundary,
   } = ctx;
   const tmpl = templates[state.get().templateId];
 

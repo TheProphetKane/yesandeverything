@@ -21,6 +21,9 @@ const [
   themesMod,
   texturesMod,
   templatesMod,
+  autofitMod,
+  printMod,
+  truncateMod,
 ] = await Promise.all([
   import("./state.js" + V),
   import("./render.js" + V),
@@ -35,6 +38,14 @@ const [
   import("../data/themes.js" + V),
   import("../data/textures.js" + V),
   import("../data/label-templates.js" + V),
+  // v1.1.6: these three used to be reached only via static imports inside
+  // render.js/editor.js, so they never got a ?v= URL and (label-templates.js's
+  // resolveSize export) doubled as a second, un-versioned module instance
+  // alongside this dynamic one. Loading them here and forwarding via ctx
+  // closes that gap (bar-raise 2026-08-12 architecture-01).
+  import("./util/autofit.js" + V),
+  import("./util/print.js" + V),
+  import("./util/truncate.js" + V),
 ]);
 
 const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
@@ -49,7 +60,10 @@ const { normalizeState } = migrateMod;
 const { SYMBOL_LABELS, SYMBOL_ALIASES } = symbolsMod;
 const { THEMES } = themesMod;
 const { PARCHMENT_TEXTURES } = texturesMod;
-const { TEMPLATES, DEFAULT_TEMPLATE_ID } = templatesMod;
+const { TEMPLATES, DEFAULT_TEMPLATE_ID, resolveSize } = templatesMod;
+const { autofitText } = autofitMod;
+const { printLabel } = printMod;
+const { truncateAtWordBoundary } = truncateMod;
 
 async function loadJson(path) {
   const res = await fetch(path + V);
@@ -105,6 +119,9 @@ async function main() {
     illustrations, herbAutoMatch, herbCategoryFallback,
     // v1.1.0: PNG export handler, forwarded per the cache-bust contract.
     exportPng,
+    // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
+    // architecture-01). Do not add these back as static imports in editor.js.
+    printLabel, truncateAtWordBoundary,
     onReset: () => {
       clearState();
       state.set(defaultState());
@@ -126,6 +143,9 @@ async function main() {
     setPreviewCollapse(next) {
       state.set({ previewCollapse: next });
     },
+    // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
+    // architecture-01). Do not add these back as static imports in render.js.
+    autofitText, resolveSize,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);
