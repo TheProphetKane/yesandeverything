@@ -1,1160 +1,1153 @@
 {
-    "project": "Chains",
-    "displayName": "Yes& Chains",
-    "version": "1.6.0",
-    "lastReleaseAt": "2026-08-02T09:39:17-05:00",
-    "lastReleaseMessage": "code update",
-    "milestone": {
-        "id": "1.0-launch-prep",
-        "label": "Launch checklist (docs/launch-checklist-1.0.md)",
-        "status": "in-progress"
-    },
-    "completion": {
-        "pct": 94,
-        "anchored": "2026-07-27"
-    },
-    "itemsLeft": {
-        "open": 33,
-        "queue": 19,
-        "backlog": 12,
-        "gates": 2,
-        "items": [
-            "Launch on app sites (store listings)",
-            "Flip CHAINS_VISIBLE to enable the AI caddy (blocked on N6 fairway-data threshold)"
-        ]
-    },
-    "backlog": {
-        "count": 12,
-        "items": [
-            "Voice input",
-            "Photo identification",
-            "private_courses Supabase table + manual-add path",
-            "Tester documentation",
-            "Cloud sync of chat threads (post-launch)",
-            "Best-shot logic",
-            "Alt-shot logic",
-            "Push notifications on invite",
-            "Add players to round, score-tracking only",
-            "Doubles / teams format",
-            "React Native port",
-            "Spec maintenance"
-        ]
-    },
-    "repoUrl": "https://github.com/TheProphetKane/yesandchains",
-    "workTreeClean": true,
-    "audit": {
-        "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-17.md",
-        "latestReportAt": "2026-08-17T06:10:39Z",
-        "findings": {
-            "critical": 0,
-            "high": 0,
-            "medium": 0,
-            "low": 0
-        }
-    },
-    "barRaise": {
-        "latestReportPath": "docs/BAR_RAISE-2026-08-04.md",
-        "latestReportAt": "2026-08-04T13:00:00Z",
-        "verdict": "needs-attention",
-        "topFinding": "A live, unauthenticated billing-endpoint bypass and a user-id leak on an unauthenticated endpoint remain unpatched after 25 consecutive audit passes (see the project's own bar-raise report for remediation detail, withheld here since this file is public). This sits alongside two stored-XSS findings and a still-missing billing incident runbook. The good news: a 16-commit burst from 0.58.3 to 1.6.0, crossing the 1.0 launch on 2026-08-01, closed 18 chronic findings including several open 24-27 consecutive passes. The bad news is concentrated in the automation layer: three orchestration lenses scored in the 30s this run after finding a batch queue closure on 2026-08-01 that marked two findings completed with a copy-pasted note from an unrelated fix, neither of which actually landed.",
-        "actionsOpen": 62,
-        "actionsClosed": 25,
-        "actions": [
-            {
-                "severity": "HIGH",
-                "title": "Add server-side session verification to two billing endpoints that currently trust a client-supplied user id, and lock down an unauthenticated endpoint that leaks real user ids. Full remediation detail lives in the project's own bar-raise report, not in this public status file. [CHRONIC x25]",
-                "lens": "auth-token-hygiene",
-                "priority": 25,
-                "id": "auth-token-hygiene-01",
-                "redacted": true
-            },
-            {
-                "severity": "HIGH",
-                "title": "Shard course-index:by-name (state or prefix), add short-TTL in-worker memoization, set Cache-Control on library/lookup responses, and stop handleCoursesNearby from rewriting the full 13,000+-entry index on the public path. [CHRONIC x6]",
-                "lens": "kv-data-shape",
-                "priority": 25,
-                "id": "kv-data-shape-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Persist state.starredSlugs to localStorage on every toggleStar, and persist courseCanonicals entries for starred + recently-played slugs so fetchCanonicalCourse can fall back to a cached record when offline. [CHRONIC x25]",
-                "lens": "install-and-offline",
-                "priority": 25,
-                "id": "install-offline-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Write docs/RUNBOOK-billing.md covering double charge, refund, webhook outage, stuck entitlement, and Supabase outage, including the checkout/portal userId-trust gap as a known incident trigger. [CHRONIC x6]",
-                "lens": "incident-runbook-currency",
-                "priority": 25,
-                "id": "incident-runbook-currency-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Regenerate both runtime plugin copies of project-canonical-audit from source with an atomic write plus read-back length AND tail-character check, and add an automated diff-against-source check. [CHRONIC x6]",
-                "lens": "skill-suite-health",
-                "priority": 25,
-                "id": "skill-suite-health-02"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Add the five legal/*.md files to preship.sh's DOCS array and release.ps1's $canonDocs array, and route legal/ edits through tools/safe_write.py -- legal/terms.md already suffered one real mid-write truncation that shipped.",
-                "lens": "fuse-truncation-defense",
-                "priority": 25,
-                "id": "fuse-truncation-defense-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Make discord-notify.ps1 return a real failure signal on POST failure (a persisted log file, not just console text) and have release.ps1 append the drift banner to a durable log. [CHRONIC x6]",
-                "lens": "discord-notify-wiring",
-                "priority": 20,
-                "id": "discord-notify-wiring-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Delete the duplicate bar-raise/handler-audit/project-canonical-audit copies from the anthropic-skills plugin snapshot and qualify the invocation lines in nightly-sweep/SKILL.md and bar-raise-rotating/SKILL.md. [CHRONIC x6]",
-                "lens": "skill-suite-health",
-                "priority": 20,
-                "id": "skill-suite-health-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Uninstall or overwrite the personal-skills handler-audit copy with the current anthropic-skills version; its hard-coded HBH/Scheduler paths no longer exist on disk.",
-                "lens": "skill-trigger-collisions",
-                "priority": 20,
-                "id": "skill-trigger-collisions-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Add the .work-queue-archive.json read-back step to 05_meta_synthesis.md's auto-enqueue section and per_project.md's carry-forward path before the next bar-raise run. [CHRONIC x6]",
-                "lens": "skill-chain-handoff-integrity",
-                "priority": 20,
-                "id": "skill-chain-handoff-integrity-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Re-verify every queue item closed by the 2026-08-01 batch against its own title/evidence, reopen the two falsely-closed items (preship gate labels, CLAUDE.md routing table), and require a completion's cited commit to actually touch the file(s) named.",
-                "lens": "skill-chain-handoff-integrity",
-                "priority": 20,
-                "id": "skill-chain-handoff-integrity-02"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Get counsel sign-off and register the DMCA agent, or clearly mark the current terms as provisional -- legal/terms.md and legal/privacy.md are already live and enforced against paying customers.",
-                "lens": "compliance-data-steward",
-                "priority": 20,
-                "id": "compliance-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Switch the course-data scraper to the identifying user-agent and robots.txt/Crawl-Delay check ADR 0005 committed to, or formally supersede that ADR section.",
-                "lens": "compliance-data-steward",
-                "priority": 20,
-                "id": "compliance-02"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Exclude app.js.map from the Pages build (add to _config.yml exclude) or strip sourcesContent from the production esbuild config -- it currently ships 15 'per Nick' hits and AI model-name comments live.",
-                "lens": "ai-tell-concealment-currency",
-                "priority": 20,
-                "id": "ai-tell-concealment-currency-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Rewrite the README intro to match the 'built but hidden' framing, drop the pre-public-release license line, and state the Yes& Chains Pro paywall exists. [CHRONIC x5]",
-                "lens": "brand-consistency",
-                "priority": 20,
-                "id": "brand-consistency-02"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Apply the same tombstone fix already used for bags/discs/collection to course_favorites (cloudSyncCoursesAndOverlays), or gate the delete block on a per-session loaded flag.",
-                "lens": "sync",
-                "priority": 20,
-                "id": "sync-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Call cloudSyncRoundHistory() at the end of cloudLoadAll, same place persist()/persistCourses() already push their tables, so local-only round history reaches the cloud immediately.",
-                "lens": "sync",
-                "priority": 20,
-                "id": "sync-02"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Add an _rev integer to COURSE_FIELDS, increment on every canonical write, and have each of the five write sites retry or fail on a stale _rev. [CHRONIC x6]",
-                "lens": "data-integrity",
-                "priority": 20,
-                "id": "dataint-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Add a node:test file mirroring billing_webhook.test.mjs that imports subscription.ts and asserts flag-gating behaviour under all states, wired into npm test + preship Gate 8d. [CHRONIC x6]",
-                "lens": "maintainability",
-                "priority": 20,
-                "id": "maintainability-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Capture the wrangler deploy exit code and annotate or skip the Discord 'shipped' post when it's non-zero.",
-                "lens": "gate-page-publish",
-                "priority": 20,
-                "id": "gate-page-publish-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a real post-push verification that curls the live site or worker /api/config for the just-shipped BUILD_VERSION, gate the Discord post on it, and fail loud on mismatch.",
-                "lens": "gate-page-publish",
-                "priority": 20,
-                "id": "gate-page-publish-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Reopen the mis-closed queue item asking to widen the CLAUDE.md routing table, actually add README.md/KNOWN_ISSUES.md/.project-context.json to it, and add a completion-verification step so a partial fix can't self-report as done.",
-                "lens": "audit-loop-integrity",
-                "priority": 20,
-                "id": "audit-loop-integrity-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Apply the same res.error check + throw pattern already used for the bags upsert to the discs/collection_discs/course_favorites/course_overlays upserts, so a rejected write keeps the outbox dirty for retry.",
-                "lens": "reliability",
-                "priority": 20,
-                "id": "reliability-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Filter refreshCourseMapPins() to the current viewport bounds plus margin, and switch to a lazy popup built on popupopen -- the course library has grown to 13,015+ records since this was first flagged.",
-                "lens": "performance",
-                "priority": 16,
-                "id": "performance-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Rewrite em dashes in legal/terms.md and legal/privacy.md, including both document titles -- the two artifacts with the highest current real-customer exposure.",
-                "lens": "solo-dev-voice-portfolio",
-                "priority": 15,
-                "id": "solo-dev-voice-portfolio-01"
-            },
-            {
-                "severity": "HIGH",
-                "title": "Update .project-context.json's milestone block to shipped/closed status (or a real post-1.0 milestone), replacing completion.remaining with the actual open N3-N6 items -- 1.0.0 shipped six versions ago and the doc still shows 94% in-progress.",
-                "lens": "strategic-kill-this",
-                "priority": 15,
-                "id": "strategic-kill-this-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Persist scrub progress server-side or block deletion until the attribution scrub genuinely completes, and add the admin sweep script the code comment already promises. [CHRONIC x28]",
-                "lens": "data-integrity",
-                "priority": 15,
-                "id": "data-integrity-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Port discord-notify.ps1's two-step title extraction into push-to-github.ps1; every release since 0.58.3 has landed as the generic 'code update' fallback.",
-                "lens": "maintainability",
-                "priority": 15,
-                "id": "maintainability-02"
-            },
-            {
-                "severity": "MED",
-                "title": "File kv-data-shape-01 as a tracked BACKLOG.md / launch-checklist item and replace the whole-index KV read-modify-write with a paginated or spatially-sharded index before the 13,015-course index approaches its 30000 ceiling again.",
-                "lens": "dataset-size",
-                "priority": 15,
-                "id": "dataset-size-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Delete course_data.json from the repo (or exclude it) and repoint the dashboard's course-data-mb metric at a live measurement of the KV course-index size -- it's an 11.6MB dead artifact still published to the public site.",
-                "lens": "dataset-size",
-                "priority": 15,
-                "id": "dataset-size-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a CI job to deploy-pages.yml that runs tools/preship.sh as a needs: dependency of the deploy job, and remove the -SkipPreship recommendation from scripts/README.md.",
-                "lens": "gate-page-publish",
-                "priority": 15,
-                "id": "gate-page-publish-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Provision .discord_audit_webhook.txt pointing at a correctly-named webhook and align post-audit-digests.ps1's identity/channel to the CLAUDE.md table -- this report will not surface in Discord otherwise.",
-                "lens": "discord-notify-wiring",
-                "priority": 15,
-                "id": "discord-notify-wiring-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Either build the two missing notify scripts (announcements + backlog) or strike those two rows from the CLAUDE.md webhook table.",
-                "lens": "discord-notify-wiring",
-                "priority": 15,
-                "id": "discord-notify-wiring-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Add the missing model/tool names (Sonnet/Opus/Haiku/Gemini/Copilot/Cursor) to the Phase 3 regex and stamp patterns_verified: 2026-08-04.",
-                "lens": "ai-tell-concealment-currency",
-                "priority": 15,
-                "id": "ai-tell-concealment-currency-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Standardize every user-facing string on 'Yes& Chains' -- three spellings currently coexist, including two within the same Settings screen and one in outbound share text.",
-                "lens": "brand-consistency",
-                "priority": 15,
-                "id": "brand-consistency-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Pull homepage and the full topic list from the live GitHub About panel into tools/repo_metadata.json before ever running update_repo_metadata.py again.",
-                "lens": "brand-consistency",
-                "priority": 15,
-                "id": "brand-consistency-05"
-            },
-            {
-                "severity": "MED",
-                "title": "Confirm whether queue-drain-hourly actually processes YaC's judgment-tier items, and work the two oldest non-blocked items (dataint-02, install-offline-01, both 15-18 days untouched) in the next burndown pass.",
-                "lens": "work-queue-hygiene",
-                "priority": 15,
-                "id": "work-queue-hygiene-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Rewrite the yac-subscriptions-enable-ai queue item's prompt to read as a pure N6 fairway-data gate with no billing-implementation language -- billing shipped five weeks ago.",
-                "lens": "work-queue-hygiene",
-                "priority": 15,
-                "id": "work-queue-hygiene-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a warn-past-36h/fail-past-72h freshness assertion to audit_dashboard.py's sync() path comparing audit.latestReportAt to now().",
-                "lens": "audit-loop-integrity",
-                "priority": 15,
-                "id": "audit-loop-integrity-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Wrap the four Sync-*Version WriteAllText calls in release.ps1 in the same write-verify-retry loop already implemented in write-dashboard-status.ps1.",
-                "lens": "fuse-truncation-defense",
-                "priority": 15,
-                "id": "fuse-truncation-defense-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Backfill the 1.6.0 fail-open subscription-gate incident and the 0.58.0 billing-portal-cancel incident into docs/KNOWN_ISSUES.md under Resolved.",
-                "lens": "incident-runbook-currency",
-                "priority": 15,
-                "id": "incident-runbook-currency-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Batch the per-key KV gets in handleAdminCaddyUsage with Promise.all in fixed-size chunks, matching the pattern already used elsewhere in billing.js.",
-                "lens": "performance",
-                "priority": 15,
-                "id": "performance-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Add defer to the three unpkg script tags and a preconnect/dns-prefetch pair for unpkg.com.",
-                "lens": "performance",
-                "priority": 15,
-                "id": "performance-04"
-            },
-            {
-                "severity": "MED",
-                "title": "Add integrity hashes and crossorigin to the markercluster and geoman script/link tags, matching the pattern already used for Leaflet core.",
-                "lens": "dependency",
-                "priority": 15,
-                "id": "dependency-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Merge the Step 3 and Step 3.5 PDGA fetch loops in handlePdgaCourseResearch into one pass, cutting ~420 subrequests roughly in half.",
-                "lens": "worker-cpu-budget",
-                "priority": 15,
-                "id": "worker-cpu-budget-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a pushServerError helper and call it from each billing.js catch block so server-side money-path failures reach the admin errors panel.",
-                "lens": "observability",
-                "priority": 15,
-                "id": "observability-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add lightweight paywall_shown / checkout_started / subscription_activated emitters in subscription.ts -- the live paywall funnel has zero client-side drop-off visibility.",
-                "lens": "observability",
-                "priority": 15,
-                "id": "observability-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Re-derive the per-user AI-recommender caps in CONTEXT.md against the real $1/mo price before CHAINS_VISIBLE flips to true; a maxed-out subscriber could cost 4-6x their subscription revenue at the current cap.",
-                "lens": "cost-economics",
-                "priority": 15,
-                "id": "cost-economics-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Port the anthropic-skills copy's Phase 8 auto-enqueue block into the personal-skills project-canonical-audit copy, or strike the queue-these claim from its description.",
-                "lens": "skill-trigger-collisions",
-                "priority": 15,
-                "id": "skill-trigger-collisions-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Collapse both admin-token localStorage keys (yac_admin_token vs caddyAdminToken) onto one and delete the other's read/write sites.",
-                "lens": "solo-tool-ux",
-                "priority": 15,
-                "id": "solo-tool-ux-01"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a worker test that statically diffs every field a handler assigns against COURSE_FIELDS/HOLE_FIELDS/PIN_FIELDS and fails on any missing field -- this whitelist-drift class already caused one silent data-loss incident.",
-                "lens": "data-integrity",
-                "priority": 12,
-                "id": "data-integrity-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Add an explicit exemption for legal/*.md and src/legal-view.ts from AI-tool-name flagging and auto-fix; those files now legitimately name Anthropic/Claude as required subprocessor disclosures.",
-                "lens": "ai-tell-concealment-currency",
-                "priority": 12,
-                "id": "ai-tell-concealment-currency-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a 'Rolling back a bad worker deploy' section to scripts/README.md documenting wrangler deployments list / wrangler rollback and a post-rollback health check.",
-                "lens": "incident-runbook-currency",
-                "priority": 12,
-                "id": "incident-runbook-currency-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Extend audit_dashboard.py's sync() to compare live version/release state against the dashboard JSON and exit non-zero on disagreement.",
-                "lens": "scheduled-task-firing-state",
-                "priority": 12,
-                "id": "scheduled-task-firing-state-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Update the live project-canonical-audit and drift-auto-fix skill copies to always emit the literal '## Auto-enqueued: N' receipt line, per the skill's own Phase-8 spec.",
-                "lens": "skill-chain-handoff-integrity",
-                "priority": 12,
-                "id": "skill-chain-handoff-integrity-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Add an explicit age/eligibility checkbox or equivalent affirmative step to the sign-in modal -- there is still no active age-attestation mechanism.",
-                "lens": "compliance-data-steward",
-                "priority": 12,
-                "id": "compliance-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Update the billing.js 402 message and the Stripe product display name from the retired 'Chains AI' to 'Yes& Chains Pro'.",
-                "lens": "brand-consistency",
-                "priority": 10,
-                "id": "brand-consistency-04"
-            },
-            {
-                "severity": "MED",
-                "title": "Fix the hazard_catalog path template in PERSONAL_CLAUDE_ARCHITECTURE.md and add a billing/subscription section to hazards/per-project/YaC.md.",
-                "lens": "skill-suite-health",
-                "priority": 10,
-                "id": "skill-suite-health-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Have the dashboard-sync script count blocked-on-user items alongside pending in itemsLeft.queue so the headline metric reflects all open work.",
-                "lens": "work-queue-hygiene",
-                "priority": 10,
-                "id": "work-queue-hygiene-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a real admin-token input field under Settings > Admin, or rewrite the strategy-admin toast to point at the actual dev-console command.",
-                "lens": "solo-tool-ux",
-                "priority": 10,
-                "id": "solo-tool-ux-02"
-            },
-            {
-                "severity": "MED",
-                "title": "Widen voice_scope to explicitly cover src/ UI strings and run a dedicated prose-voice-sweep pass, or explicitly document the em-dash rule as docs-only -- ~203 em-dash hits exist across 28 of ~29 source files, outside the project's own declared enforcement boundary.",
-                "lens": "solo-dev-voice-portfolio",
-                "priority": 8,
-                "id": "solo-dev-voice-portfolio-03"
-            },
-            {
-                "severity": "MED",
-                "title": "Remove the app-store-listings line from .project-context.json's completion.remaining, or record it explicitly as cut -- it's absent from every real roadmap/backlog doc already.",
-                "lens": "strategic-kill-this",
-                "priority": 8,
-                "id": "strategic-kill-this-02"
-            }
-        ],
-        "deferred": [
-            {
-                "severity": "HIGH",
-                "title": "Counsel sign-off on the 19-state privacy subsections (drafted, mechanism live).",
-                "lens": "compliance-data-steward",
-                "reason": "needs external counsel"
-            },
-            {
-                "severity": "MED",
-                "title": "Stop shipping feature/polish minors and send the counsel engagement out; every non-code 1.0 gate has sat still since 2026-06-11.",
-                "lens": "strategic-kill-this",
-                "reason": "externally gated on counsel engagement"
-            },
-            {
-                "severity": "MED",
-                "title": "BACKLOG 2.2.7 disposition: row titled DONE 2026-05-02 but body and code both say the retired-terminology work is deferred.",
-                "lens": "audit-loop-integrity",
-                "reason": "blocked on Nick decision"
-            },
-            {
-                "severity": "MED",
-                "title": "Serialize concurrent same-slug canonical course mutations behind a Durable Object per slug to close the last-write-wins loss window.",
-                "lens": "data-integrity",
-                "reason": "post-1.0 rearchitect; the _rev guard (dataint-01, this run's actions) is the pre-1.0 step"
-            },
-            {
-                "severity": "MED",
-                "title": "Standardize the caddy/chat entitlement gate on _requireEntitledUser to close the latent fail-open.",
-                "lens": "cost-economics",
-                "reason": "latent until CHAINS_VISIBLE flips; couple with that decision"
-            },
-            {
-                "severity": "MED",
-                "title": "Type the highest-traffic window.* cross-module hops via a typed app facade so tsc catches signature drift.",
-                "lens": "architecture",
-                "reason": "post-1.0 hardening refactor"
-            },
-            {
-                "severity": "MED",
-                "title": "Add an in-app billing=ok success and receipt confirmation after checkout.",
-                "lens": "compliance-data-steward",
-                "reason": "post-1.0 polish"
-            },
-            {
-                "severity": "MED",
-                "title": "Give the nightly doc pass a narrow doc-only commit allowlist, no version bump, no Discord post.",
-                "lens": "audit-loop-integrity",
-                "reason": "blocked on Nick decision"
-            },
-            {
-                "severity": "MED",
-                "title": "Add a doc-staleness gate to tools/preship.sh: fail when a routing-table doc has not been touched in N releases while the code it describes has.",
-                "lens": "audit-loop-integrity",
-                "reason": "blocked on Nick decision"
-            },
-            {
-                "severity": "MED",
-                "title": "Set a concrete checkpoint at which to either self-seed N6 and soft-launch CHAINS_VISIBLE to testers, or formally kill the caddy/chat-panel surfaces.",
-                "lens": "strategic-kill-this",
-                "reason": "blocked on Nick decision"
-            },
-            {
-                "severity": "MED",
-                "title": "Decide whether docs/KNOWN_ISSUES.md's append-only policy is live: backfill defects or tombstone the file explicitly.",
-                "lens": "audit-loop-integrity",
-                "reason": "blocked on Nick decision; queued 2026-07-27, unresolved 4 passes"
-            }
-        ],
-        "health": 63,
-        "lensScores": {
-            "architecture": 80,
-            "reliability": 71,
-            "security": 47,
-            "performance": 70,
-            "data-integrity": 68,
-            "maintainability": 81,
-            "solo-tool-ux": 78,
-            "cost-economics": 84,
-            "dependency": 86,
-            "observability": 83,
-            "strategic-kill-this": 80,
-            "compliance-data-steward": 61,
-            "worker-cpu-budget": 76,
-            "kv-data-shape": 58,
-            "auth-token-hygiene": 47,
-            "install-and-offline": 50,
-            "sync": 58,
-            "dataset-size": 60,
-            "per-project-ps1-stack": 89,
-            "discord-notify-wiring": 33,
-            "version-pill-drift": 90,
-            "gate-page-publish": 62,
-            "solo-dev-voice-portfolio": 50,
-            "ai-tell-concealment-currency": 52,
-            "brand-consistency": 55,
-            "skill-suite-health": 35,
-            "work-queue-hygiene": 58,
-            "audit-loop-integrity": 61,
-            "fuse-truncation-defense": 55,
-            "incident-runbook-currency": 58,
-            "scheduled-task-firing-state": 78,
-            "skill-trigger-collisions": 35,
-            "skill-chain-handoff-integrity": 30
-        },
-        "openFindings": [
-            {
-                "id": "auth-token-hygiene-01",
-                "severity": "HIGH",
-                "priority": 25,
-                "runsOpen": 25,
-                "firstSeen": "2026-07-04"
-            },
-            {
-                "id": "kv-data-shape-01",
-                "severity": "HIGH",
-                "priority": 25,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "install-offline-01",
-                "severity": "HIGH",
-                "priority": 25,
-                "runsOpen": 25,
-                "firstSeen": "2026-07-04"
-            },
-            {
-                "id": "incident-runbook-currency-01",
-                "severity": "HIGH",
-                "priority": 25,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "skill-suite-health-02",
-                "severity": "HIGH",
-                "priority": 25,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "fuse-truncation-defense-01",
-                "severity": "HIGH",
-                "priority": 25,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "discord-notify-wiring-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "skill-suite-health-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "skill-trigger-collisions-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "skill-chain-handoff-integrity-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "skill-chain-handoff-integrity-02",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "compliance-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "compliance-02",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "ai-tell-concealment-currency-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "brand-consistency-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "brand-consistency-02",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 5,
-                "firstSeen": "2026-07-26"
-            },
-            {
-                "id": "sync-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "sync-02",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "dataint-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "maintainability-01",
-                "severity": "HIGH",
-                "priority": 20,
-                "runsOpen": 6,
-                "firstSeen": "2026-07-25"
-            },
-            {
-                "id": "gate-page-publish-01",
-                "severity": "MED",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "gate-page-publish-02",
-                "severity": "MED",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "audit-loop-integrity-01",
-                "severity": "MED",
-                "priority": 20,
-                "runsOpen": 4,
-                "firstSeen": "2026-07-27"
-            },
-            {
-                "id": "reliability-01",
-                "severity": "MED",
-                "priority": 20,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "security-03",
-                "severity": "HIGH",
-                "priority": 16,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "performance-01",
-                "severity": "MED",
-                "priority": 16,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "solo-dev-voice-portfolio-01",
-                "severity": "HIGH",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "solo-dev-voice-portfolio-02",
-                "severity": "HIGH",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "strategic-kill-this-01",
-                "severity": "HIGH",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "data-integrity-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 28,
-                "firstSeen": "2026-07-01"
-            },
-            {
-                "id": "maintainability-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "dataset-size-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "dataset-size-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "gate-page-publish-03",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "discord-notify-wiring-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "discord-notify-wiring-03",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "ai-tell-concealment-currency-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "brand-consistency-03",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "brand-consistency-05",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "work-queue-hygiene-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 3,
-                "firstSeen": "2026-07-28"
-            },
-            {
-                "id": "work-queue-hygiene-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "audit-loop-integrity-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 2,
-                "firstSeen": "2026-07-30"
-            },
-            {
-                "id": "fuse-truncation-defense-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "incident-runbook-currency-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "scheduled-task-firing-state-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "performance-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "performance-04",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "dependency-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "worker-cpu-budget-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "observability-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "observability-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "cost-economics-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "skill-trigger-collisions-02",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "solo-tool-ux-01",
-                "severity": "MED",
-                "priority": 15,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "data-integrity-03",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "ai-tell-concealment-currency-03",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "incident-runbook-currency-03",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "scheduled-task-firing-state-02",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "skill-chain-handoff-integrity-03",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "compliance-03",
-                "severity": "MED",
-                "priority": 12,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "brand-consistency-04",
-                "severity": "MED",
-                "priority": 10,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "skill-suite-health-03",
-                "severity": "MED",
-                "priority": 10,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "work-queue-hygiene-03",
-                "severity": "MED",
-                "priority": 10,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "solo-tool-ux-02",
-                "severity": "MED",
-                "priority": 10,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "solo-dev-voice-portfolio-03",
-                "severity": "MED",
-                "priority": 8,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            },
-            {
-                "id": "strategic-kill-this-02",
-                "severity": "MED",
-                "priority": 8,
-                "runsOpen": 1,
-                "firstSeen": "2026-08-04"
-            }
-        ],
-        "tensionsOpen": [
-            {
-                "lenses": [
-                    "reliability",
-                    "solo-tool-ux"
-                ],
-                "runsSeen": 30
-            },
-            {
-                "lenses": [
-                    "security",
-                    "solo-tool-ux"
-                ],
-                "runsSeen": 27
-            },
-            {
-                "lenses": [
-                    "data-integrity",
-                    "cost-economics"
-                ],
-                "runsSeen": 24
-            },
-            {
-                "lenses": [
-                    "security",
-                    "data-integrity"
-                ],
-                "runsSeen": 6
-            },
-            {
-                "lenses": [
-                    "install-and-offline",
-                    "dependency"
-                ],
-                "runsSeen": 6
-            },
-            {
-                "lenses": [
-                    "solo-dev-voice-portfolio",
-                    "ai-tell-concealment-currency"
-                ],
-                "runsSeen": 6
-            },
-            {
-                "lenses": [
-                    "strategic-kill-this",
-                    "cost-economics"
-                ],
-                "runsSeen": 6
-            },
-            {
-                "lenses": [
-                    "audit-loop-integrity",
-                    "gate-page-publish"
-                ],
-                "runsSeen": 4
-            },
-            {
-                "lenses": [
-                    "compliance-data-steward",
-                    "brand-consistency"
-                ],
-                "runsSeen": 1
-            }
-        ]
-    },
-    "metrics": [
-        {
-            "k": "1.0 checklist",
-            "v": "21/21"
-        },
-        {
-            "k": "bundle kb",
-            "v": "1239"
-        },
-        {
-            "k": "course data mb",
-            "v": "11.6"
-        },
-        {
-            "k": "tools",
-            "v": "14"
-        }
-    ],
-    "workQueueDepth": 19,
-    "stale": false,
-    "tags": [
-        "cloud-edge",
-        "PWA",
-        "orchestration",
-        "release-pipeline",
-        "public-voice"
+  "project": "Chains",
+  "displayName": "Yes& Chains",
+  "version": "1.6.0",
+  "lastReleaseAt": "2026-08-02T09:39:17-05:00",
+  "lastReleaseMessage": "code update",
+  "milestone": {
+    "id": "1.0-launch-prep",
+    "label": "Launch checklist (docs/launch-checklist-1.0.md)",
+    "status": "in-progress"
+  },
+  "completion": {
+    "pct": 94,
+    "anchored": "2026-07-27"
+  },
+  "itemsLeft": {
+    "open": 33,
+    "queue": 19,
+    "backlog": 12,
+    "gates": 2,
+    "items": [
+      "Launch on app sites (store listings)",
+      "Flip CHAINS_VISIBLE to enable the AI caddy (blocked on N6 fairway-data threshold)"
     ]
+  },
+  "backlog": {
+    "count": 12,
+    "items": [
+      "Voice input",
+      "Photo identification",
+      "private_courses Supabase table + manual-add path",
+      "Tester documentation",
+      "Cloud sync of chat threads (post-launch)",
+      "Best-shot logic",
+      "Alt-shot logic",
+      "Push notifications on invite",
+      "Add players to round, score-tracking only",
+      "Doubles / teams format",
+      "React Native port",
+      "Spec maintenance"
+    ]
+  },
+  "repoUrl": "https://github.com/TheProphetKane/yesandchains",
+  "workTreeClean": true,
+  "audit": {
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-17.md",
+    "latestReportAt": "2026-08-17T06:10:39Z",
+    "findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    }
+  },
+  "barRaise": {
+    "latestReportPath": "docs/BAR_RAISE-2026-08-04.md",
+    "latestReportAt": "2026-08-04T13:00:00Z",
+    "verdict": "needs-attention",
+    "topFinding": "A live, unauthenticated billing-endpoint bypass and a user-id leak on an unauthenticated endpoint remain unpatched after 25 consecutive audit passes (see the project's own bar-raise report for remediation detail, withheld here since this file is public). This sits alongside two stored-XSS findings and a still-missing billing incident runbook. The good news: a 16-commit burst from 0.58.3 to 1.6.0, crossing the 1.0 launch on 2026-08-01, closed 18 chronic findings including several open 24-27 consecutive passes. The bad news is concentrated in the automation layer: three orchestration lenses scored in the 30s this run after finding a batch queue closure on 2026-08-01 that marked two findings completed with a copy-pasted note from an unrelated fix, neither of which actually landed.",
+    "actionsOpen": 61,
+    "actionsClosed": 26,
+    "actions": [
+      {
+        "severity": "HIGH",
+        "title": "Add server-side session verification to two billing endpoints that currently trust a client-supplied user id, and lock down an unauthenticated endpoint that leaks real user ids. Full remediation detail lives in the project's own bar-raise report, not in this public status file. [CHRONIC x25]",
+        "lens": "auth-token-hygiene",
+        "priority": 25,
+        "id": "auth-token-hygiene-01",
+        "redacted": true
+      },
+      {
+        "severity": "HIGH",
+        "title": "Shard course-index:by-name (state or prefix), add short-TTL in-worker memoization, set Cache-Control on library/lookup responses, and stop handleCoursesNearby from rewriting the full 13,000+-entry index on the public path. [CHRONIC x6]",
+        "lens": "kv-data-shape",
+        "priority": 25,
+        "id": "kv-data-shape-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Persist state.starredSlugs to localStorage on every toggleStar, and persist courseCanonicals entries for starred + recently-played slugs so fetchCanonicalCourse can fall back to a cached record when offline. [CHRONIC x25]",
+        "lens": "install-and-offline",
+        "priority": 25,
+        "id": "install-offline-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Write docs/RUNBOOK-billing.md covering double charge, refund, webhook outage, stuck entitlement, and Supabase outage, including the checkout/portal userId-trust gap as a known incident trigger. [CHRONIC x6]",
+        "lens": "incident-runbook-currency",
+        "priority": 25,
+        "id": "incident-runbook-currency-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Regenerate both runtime plugin copies of project-canonical-audit from source with an atomic write plus read-back length AND tail-character check, and add an automated diff-against-source check. [CHRONIC x6]",
+        "lens": "skill-suite-health",
+        "priority": 25,
+        "id": "skill-suite-health-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add the five legal/*.md files to preship.sh's DOCS array and release.ps1's $canonDocs array, and route legal/ edits through tools/safe_write.py -- legal/terms.md already suffered one real mid-write truncation that shipped.",
+        "lens": "fuse-truncation-defense",
+        "priority": 25,
+        "id": "fuse-truncation-defense-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Make discord-notify.ps1 return a real failure signal on POST failure (a persisted log file, not just console text) and have release.ps1 append the drift banner to a durable log. [CHRONIC x6]",
+        "lens": "discord-notify-wiring",
+        "priority": 20,
+        "id": "discord-notify-wiring-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Delete the duplicate bar-raise/handler-audit/project-canonical-audit copies from the anthropic-skills plugin snapshot and qualify the invocation lines in nightly-sweep/SKILL.md and bar-raise-rotating/SKILL.md. [CHRONIC x6]",
+        "lens": "skill-suite-health",
+        "priority": 20,
+        "id": "skill-suite-health-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Uninstall or overwrite the personal-skills handler-audit copy with the current anthropic-skills version; its hard-coded HBH/Scheduler paths no longer exist on disk.",
+        "lens": "skill-trigger-collisions",
+        "priority": 20,
+        "id": "skill-trigger-collisions-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add the .work-queue-archive.json read-back step to 05_meta_synthesis.md's auto-enqueue section and per_project.md's carry-forward path before the next bar-raise run. [CHRONIC x6]",
+        "lens": "skill-chain-handoff-integrity",
+        "priority": 20,
+        "id": "skill-chain-handoff-integrity-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Re-verify every queue item closed by the 2026-08-01 batch against its own title/evidence, reopen the two falsely-closed items (preship gate labels, CLAUDE.md routing table), and require a completion's cited commit to actually touch the file(s) named.",
+        "lens": "skill-chain-handoff-integrity",
+        "priority": 20,
+        "id": "skill-chain-handoff-integrity-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Get counsel sign-off and register the DMCA agent, or clearly mark the current terms as provisional -- legal/terms.md and legal/privacy.md are already live and enforced against paying customers.",
+        "lens": "compliance-data-steward",
+        "priority": 20,
+        "id": "compliance-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Switch the course-data scraper to the identifying user-agent and robots.txt/Crawl-Delay check ADR 0005 committed to, or formally supersede that ADR section.",
+        "lens": "compliance-data-steward",
+        "priority": 20,
+        "id": "compliance-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Exclude app.js.map from the Pages build (add to _config.yml exclude) or strip sourcesContent from the production esbuild config -- it currently ships 15 'per Nick' hits and AI model-name comments live.",
+        "lens": "ai-tell-concealment-currency",
+        "priority": 20,
+        "id": "ai-tell-concealment-currency-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Rewrite the README intro to match the 'built but hidden' framing, drop the pre-public-release license line, and state the Yes& Chains Pro paywall exists. [CHRONIC x5]",
+        "lens": "brand-consistency",
+        "priority": 20,
+        "id": "brand-consistency-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Apply the same tombstone fix already used for bags/discs/collection to course_favorites (cloudSyncCoursesAndOverlays), or gate the delete block on a per-session loaded flag.",
+        "lens": "sync",
+        "priority": 20,
+        "id": "sync-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Call cloudSyncRoundHistory() at the end of cloudLoadAll, same place persist()/persistCourses() already push their tables, so local-only round history reaches the cloud immediately.",
+        "lens": "sync",
+        "priority": 20,
+        "id": "sync-02"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add an _rev integer to COURSE_FIELDS, increment on every canonical write, and have each of the five write sites retry or fail on a stale _rev. [CHRONIC x6]",
+        "lens": "data-integrity",
+        "priority": 20,
+        "id": "dataint-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add a node:test file mirroring billing_webhook.test.mjs that imports subscription.ts and asserts flag-gating behaviour under all states, wired into npm test + preship Gate 8d. [CHRONIC x6]",
+        "lens": "maintainability",
+        "priority": 20,
+        "id": "maintainability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Capture the wrangler deploy exit code and annotate or skip the Discord 'shipped' post when it's non-zero.",
+        "lens": "gate-page-publish",
+        "priority": 20,
+        "id": "gate-page-publish-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a real post-push verification that curls the live site or worker /api/config for the just-shipped BUILD_VERSION, gate the Discord post on it, and fail loud on mismatch.",
+        "lens": "gate-page-publish",
+        "priority": 20,
+        "id": "gate-page-publish-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Reopen the mis-closed queue item asking to widen the CLAUDE.md routing table, actually add README.md/KNOWN_ISSUES.md/.project-context.json to it, and add a completion-verification step so a partial fix can't self-report as done.",
+        "lens": "audit-loop-integrity",
+        "priority": 20,
+        "id": "audit-loop-integrity-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Apply the same res.error check + throw pattern already used for the bags upsert to the discs/collection_discs/course_favorites/course_overlays upserts, so a rejected write keeps the outbox dirty for retry.",
+        "lens": "reliability",
+        "priority": 20,
+        "id": "reliability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Filter refreshCourseMapPins() to the current viewport bounds plus margin, and switch to a lazy popup built on popupopen -- the course library has grown to 13,015+ records since this was first flagged.",
+        "lens": "performance",
+        "priority": 16,
+        "id": "performance-01"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Update .project-context.json's milestone block to shipped/closed status (or a real post-1.0 milestone), replacing completion.remaining with the actual open N3-N6 items -- 1.0.0 shipped six versions ago and the doc still shows 94% in-progress.",
+        "lens": "strategic-kill-this",
+        "priority": 15,
+        "id": "strategic-kill-this-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Persist scrub progress server-side or block deletion until the attribution scrub genuinely completes, and add the admin sweep script the code comment already promises. [CHRONIC x28]",
+        "lens": "data-integrity",
+        "priority": 15,
+        "id": "data-integrity-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Port discord-notify.ps1's two-step title extraction into push-to-github.ps1; every release since 0.58.3 has landed as the generic 'code update' fallback.",
+        "lens": "maintainability",
+        "priority": 15,
+        "id": "maintainability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "File kv-data-shape-01 as a tracked BACKLOG.md / launch-checklist item and replace the whole-index KV read-modify-write with a paginated or spatially-sharded index before the 13,015-course index approaches its 30000 ceiling again.",
+        "lens": "dataset-size",
+        "priority": 15,
+        "id": "dataset-size-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Delete course_data.json from the repo (or exclude it) and repoint the dashboard's course-data-mb metric at a live measurement of the KV course-index size -- it's an 11.6MB dead artifact still published to the public site.",
+        "lens": "dataset-size",
+        "priority": 15,
+        "id": "dataset-size-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a CI job to deploy-pages.yml that runs tools/preship.sh as a needs: dependency of the deploy job, and remove the -SkipPreship recommendation from scripts/README.md.",
+        "lens": "gate-page-publish",
+        "priority": 15,
+        "id": "gate-page-publish-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Provision .discord_audit_webhook.txt pointing at a correctly-named webhook and align post-audit-digests.ps1's identity/channel to the CLAUDE.md table -- this report will not surface in Discord otherwise.",
+        "lens": "discord-notify-wiring",
+        "priority": 15,
+        "id": "discord-notify-wiring-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Either build the two missing notify scripts (announcements + backlog) or strike those two rows from the CLAUDE.md webhook table.",
+        "lens": "discord-notify-wiring",
+        "priority": 15,
+        "id": "discord-notify-wiring-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add the missing model/tool names (Sonnet/Opus/Haiku/Gemini/Copilot/Cursor) to the Phase 3 regex and stamp patterns_verified: 2026-08-04.",
+        "lens": "ai-tell-concealment-currency",
+        "priority": 15,
+        "id": "ai-tell-concealment-currency-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Standardize every user-facing string on 'Yes& Chains' -- three spellings currently coexist, including two within the same Settings screen and one in outbound share text.",
+        "lens": "brand-consistency",
+        "priority": 15,
+        "id": "brand-consistency-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Pull homepage and the full topic list from the live GitHub About panel into tools/repo_metadata.json before ever running update_repo_metadata.py again.",
+        "lens": "brand-consistency",
+        "priority": 15,
+        "id": "brand-consistency-05"
+      },
+      {
+        "severity": "MED",
+        "title": "Confirm whether queue-drain-hourly actually processes YaC's judgment-tier items, and work the two oldest non-blocked items (dataint-02, install-offline-01, both 15-18 days untouched) in the next burndown pass.",
+        "lens": "work-queue-hygiene",
+        "priority": 15,
+        "id": "work-queue-hygiene-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Rewrite the yac-subscriptions-enable-ai queue item's prompt to read as a pure N6 fairway-data gate with no billing-implementation language -- billing shipped five weeks ago.",
+        "lens": "work-queue-hygiene",
+        "priority": 15,
+        "id": "work-queue-hygiene-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a warn-past-36h/fail-past-72h freshness assertion to audit_dashboard.py's sync() path comparing audit.latestReportAt to now().",
+        "lens": "audit-loop-integrity",
+        "priority": 15,
+        "id": "audit-loop-integrity-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap the four Sync-*Version WriteAllText calls in release.ps1 in the same write-verify-retry loop already implemented in write-dashboard-status.ps1.",
+        "lens": "fuse-truncation-defense",
+        "priority": 15,
+        "id": "fuse-truncation-defense-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Backfill the 1.6.0 fail-open subscription-gate incident and the 0.58.0 billing-portal-cancel incident into docs/KNOWN_ISSUES.md under Resolved.",
+        "lens": "incident-runbook-currency",
+        "priority": 15,
+        "id": "incident-runbook-currency-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Batch the per-key KV gets in handleAdminCaddyUsage with Promise.all in fixed-size chunks, matching the pattern already used elsewhere in billing.js.",
+        "lens": "performance",
+        "priority": 15,
+        "id": "performance-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Add defer to the three unpkg script tags and a preconnect/dns-prefetch pair for unpkg.com.",
+        "lens": "performance",
+        "priority": 15,
+        "id": "performance-04"
+      },
+      {
+        "severity": "MED",
+        "title": "Add integrity hashes and crossorigin to the markercluster and geoman script/link tags, matching the pattern already used for Leaflet core.",
+        "lens": "dependency",
+        "priority": 15,
+        "id": "dependency-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Merge the Step 3 and Step 3.5 PDGA fetch loops in handlePdgaCourseResearch into one pass, cutting ~420 subrequests roughly in half.",
+        "lens": "worker-cpu-budget",
+        "priority": 15,
+        "id": "worker-cpu-budget-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a pushServerError helper and call it from each billing.js catch block so server-side money-path failures reach the admin errors panel.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add lightweight paywall_shown / checkout_started / subscription_activated emitters in subscription.ts -- the live paywall funnel has zero client-side drop-off visibility.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Re-derive the per-user AI-recommender caps in CONTEXT.md against the real $1/mo price before CHAINS_VISIBLE flips to true; a maxed-out subscriber could cost 4-6x their subscription revenue at the current cap.",
+        "lens": "cost-economics",
+        "priority": 15,
+        "id": "cost-economics-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Port the anthropic-skills copy's Phase 8 auto-enqueue block into the personal-skills project-canonical-audit copy, or strike the queue-these claim from its description.",
+        "lens": "skill-trigger-collisions",
+        "priority": 15,
+        "id": "skill-trigger-collisions-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Collapse both admin-token localStorage keys (yac_admin_token vs caddyAdminToken) onto one and delete the other's read/write sites.",
+        "lens": "solo-tool-ux",
+        "priority": 15,
+        "id": "solo-tool-ux-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a worker test that statically diffs every field a handler assigns against COURSE_FIELDS/HOLE_FIELDS/PIN_FIELDS and fails on any missing field -- this whitelist-drift class already caused one silent data-loss incident.",
+        "lens": "data-integrity",
+        "priority": 12,
+        "id": "data-integrity-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add an explicit exemption for legal/*.md and src/legal-view.ts from AI-tool-name flagging and auto-fix; those files now legitimately name Anthropic/Claude as required subprocessor disclosures.",
+        "lens": "ai-tell-concealment-currency",
+        "priority": 12,
+        "id": "ai-tell-concealment-currency-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a 'Rolling back a bad worker deploy' section to scripts/README.md documenting wrangler deployments list / wrangler rollback and a post-rollback health check.",
+        "lens": "incident-runbook-currency",
+        "priority": 12,
+        "id": "incident-runbook-currency-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Extend audit_dashboard.py's sync() to compare live version/release state against the dashboard JSON and exit non-zero on disagreement.",
+        "lens": "scheduled-task-firing-state",
+        "priority": 12,
+        "id": "scheduled-task-firing-state-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Update the live project-canonical-audit and drift-auto-fix skill copies to always emit the literal '## Auto-enqueued: N' receipt line, per the skill's own Phase-8 spec.",
+        "lens": "skill-chain-handoff-integrity",
+        "priority": 12,
+        "id": "skill-chain-handoff-integrity-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add an explicit age/eligibility checkbox or equivalent affirmative step to the sign-in modal -- there is still no active age-attestation mechanism.",
+        "lens": "compliance-data-steward",
+        "priority": 12,
+        "id": "compliance-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Update the billing.js 402 message and the Stripe product display name from the retired 'Chains AI' to 'Yes& Chains Pro'.",
+        "lens": "brand-consistency",
+        "priority": 10,
+        "id": "brand-consistency-04"
+      },
+      {
+        "severity": "MED",
+        "title": "Fix the hazard_catalog path template in PERSONAL_CLAUDE_ARCHITECTURE.md and add a billing/subscription section to hazards/per-project/YaC.md.",
+        "lens": "skill-suite-health",
+        "priority": 10,
+        "id": "skill-suite-health-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Have the dashboard-sync script count blocked-on-user items alongside pending in itemsLeft.queue so the headline metric reflects all open work.",
+        "lens": "work-queue-hygiene",
+        "priority": 10,
+        "id": "work-queue-hygiene-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a real admin-token input field under Settings > Admin, or rewrite the strategy-admin toast to point at the actual dev-console command.",
+        "lens": "solo-tool-ux",
+        "priority": 10,
+        "id": "solo-tool-ux-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Widen voice_scope to explicitly cover src/ UI strings and run a dedicated prose-voice-sweep pass, or explicitly document the em-dash rule as docs-only -- ~203 em-dash hits exist across 28 of ~29 source files, outside the project's own declared enforcement boundary.",
+        "lens": "solo-dev-voice-portfolio",
+        "priority": 8,
+        "id": "solo-dev-voice-portfolio-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Remove the app-store-listings line from .project-context.json's completion.remaining, or record it explicitly as cut -- it's absent from every real roadmap/backlog doc already.",
+        "lens": "strategic-kill-this",
+        "priority": 8,
+        "id": "strategic-kill-this-02"
+      }
+    ],
+    "deferred": [
+      {
+        "severity": "HIGH",
+        "title": "Counsel sign-off on the 19-state privacy subsections (drafted, mechanism live).",
+        "lens": "compliance-data-steward",
+        "reason": "needs external counsel"
+      },
+      {
+        "severity": "MED",
+        "title": "Stop shipping feature/polish minors and send the counsel engagement out; every non-code 1.0 gate has sat still since 2026-06-11.",
+        "lens": "strategic-kill-this",
+        "reason": "externally gated on counsel engagement"
+      },
+      {
+        "severity": "MED",
+        "title": "BACKLOG 2.2.7 disposition: row titled DONE 2026-05-02 but body and code both say the retired-terminology work is deferred.",
+        "lens": "audit-loop-integrity",
+        "reason": "blocked on Nick decision"
+      },
+      {
+        "severity": "MED",
+        "title": "Serialize concurrent same-slug canonical course mutations behind a Durable Object per slug to close the last-write-wins loss window.",
+        "lens": "data-integrity",
+        "reason": "post-1.0 rearchitect; the _rev guard (dataint-01, this run's actions) is the pre-1.0 step"
+      },
+      {
+        "severity": "MED",
+        "title": "Standardize the caddy/chat entitlement gate on _requireEntitledUser to close the latent fail-open.",
+        "lens": "cost-economics",
+        "reason": "latent until CHAINS_VISIBLE flips; couple with that decision"
+      },
+      {
+        "severity": "MED",
+        "title": "Type the highest-traffic window.* cross-module hops via a typed app facade so tsc catches signature drift.",
+        "lens": "architecture",
+        "reason": "post-1.0 hardening refactor"
+      },
+      {
+        "severity": "MED",
+        "title": "Add an in-app billing=ok success and receipt confirmation after checkout.",
+        "lens": "compliance-data-steward",
+        "reason": "post-1.0 polish"
+      },
+      {
+        "severity": "MED",
+        "title": "Give the nightly doc pass a narrow doc-only commit allowlist, no version bump, no Discord post.",
+        "lens": "audit-loop-integrity",
+        "reason": "blocked on Nick decision"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a doc-staleness gate to tools/preship.sh: fail when a routing-table doc has not been touched in N releases while the code it describes has.",
+        "lens": "audit-loop-integrity",
+        "reason": "blocked on Nick decision"
+      },
+      {
+        "severity": "MED",
+        "title": "Set a concrete checkpoint at which to either self-seed N6 and soft-launch CHAINS_VISIBLE to testers, or formally kill the caddy/chat-panel surfaces.",
+        "lens": "strategic-kill-this",
+        "reason": "blocked on Nick decision"
+      },
+      {
+        "severity": "MED",
+        "title": "Decide whether docs/KNOWN_ISSUES.md's append-only policy is live: backfill defects or tombstone the file explicitly.",
+        "lens": "audit-loop-integrity",
+        "reason": "blocked on Nick decision; queued 2026-07-27, unresolved 4 passes"
+      }
+    ],
+    "health": 63,
+    "lensScores": {
+      "architecture": 80,
+      "reliability": 71,
+      "security": 47,
+      "performance": 70,
+      "data-integrity": 68,
+      "maintainability": 81,
+      "solo-tool-ux": 78,
+      "cost-economics": 84,
+      "dependency": 86,
+      "observability": 83,
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 61,
+      "worker-cpu-budget": 76,
+      "kv-data-shape": 58,
+      "auth-token-hygiene": 47,
+      "install-and-offline": 50,
+      "sync": 58,
+      "dataset-size": 60,
+      "per-project-ps1-stack": 89,
+      "discord-notify-wiring": 33,
+      "version-pill-drift": 90,
+      "gate-page-publish": 62,
+      "solo-dev-voice-portfolio": 50,
+      "ai-tell-concealment-currency": 52,
+      "brand-consistency": 55,
+      "skill-suite-health": 35,
+      "work-queue-hygiene": 58,
+      "audit-loop-integrity": 61,
+      "fuse-truncation-defense": 55,
+      "incident-runbook-currency": 58,
+      "scheduled-task-firing-state": 78,
+      "skill-trigger-collisions": 35,
+      "skill-chain-handoff-integrity": 30
+    },
+    "openFindings": [
+      {
+        "id": "auth-token-hygiene-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 25,
+        "firstSeen": "2026-07-04"
+      },
+      {
+        "id": "kv-data-shape-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "install-offline-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 25,
+        "firstSeen": "2026-07-04"
+      },
+      {
+        "id": "incident-runbook-currency-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "skill-suite-health-02",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "fuse-truncation-defense-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "discord-notify-wiring-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "skill-suite-health-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "skill-trigger-collisions-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "skill-chain-handoff-integrity-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "skill-chain-handoff-integrity-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "compliance-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "compliance-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "ai-tell-concealment-currency-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "brand-consistency-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "brand-consistency-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 5,
+        "firstSeen": "2026-07-26"
+      },
+      {
+        "id": "sync-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "sync-02",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "dataint-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-25"
+      },
+      {
+        "id": "gate-page-publish-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "gate-page-publish-02",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "audit-loop-integrity-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 4,
+        "firstSeen": "2026-07-27"
+      },
+      {
+        "id": "reliability-01",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "security-03",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "performance-01",
+        "severity": "MED",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "solo-dev-voice-portfolio-01",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "solo-dev-voice-portfolio-02",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 28,
+        "firstSeen": "2026-07-01"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "dataset-size-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "dataset-size-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "gate-page-publish-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "discord-notify-wiring-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "discord-notify-wiring-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "ai-tell-concealment-currency-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "brand-consistency-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "brand-consistency-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "work-queue-hygiene-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-28"
+      },
+      {
+        "id": "work-queue-hygiene-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "audit-loop-integrity-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "fuse-truncation-defense-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "incident-runbook-currency-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "scheduled-task-firing-state-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "performance-04",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "dependency-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "worker-cpu-budget-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "skill-trigger-collisions-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "data-integrity-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "ai-tell-concealment-currency-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "incident-runbook-currency-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "scheduled-task-firing-state-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "skill-chain-handoff-integrity-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "compliance-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "brand-consistency-04",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "skill-suite-health-03",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "work-queue-hygiene-03",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "solo-tool-ux-02",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "solo-dev-voice-portfolio-03",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      },
+      {
+        "id": "strategic-kill-this-02",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-04"
+      }
+    ],
+    "tensionsOpen": [
+      {
+        "lenses": [
+          "reliability",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 30
+      },
+      {
+        "lenses": [
+          "security",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 27
+      },
+      {
+        "lenses": [
+          "data-integrity",
+          "cost-economics"
+        ],
+        "runsSeen": 24
+      },
+      {
+        "lenses": [
+          "security",
+          "data-integrity"
+        ],
+        "runsSeen": 6
+      },
+      {
+        "lenses": [
+          "install-and-offline",
+          "dependency"
+        ],
+        "runsSeen": 6
+      },
+      {
+        "lenses": [
+          "solo-dev-voice-portfolio",
+          "ai-tell-concealment-currency"
+        ],
+        "runsSeen": 6
+      },
+      {
+        "lenses": [
+          "strategic-kill-this",
+          "cost-economics"
+        ],
+        "runsSeen": 6
+      },
+      {
+        "lenses": [
+          "audit-loop-integrity",
+          "gate-page-publish"
+        ],
+        "runsSeen": 4
+      },
+      {
+        "lenses": [
+          "compliance-data-steward",
+          "brand-consistency"
+        ],
+        "runsSeen": 1
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "k": "1.0 checklist",
+      "v": "21/21"
+    },
+    {
+      "k": "bundle kb",
+      "v": "1239"
+    },
+    {
+      "k": "course data mb",
+      "v": "11.6"
+    },
+    {
+      "k": "tools",
+      "v": "14"
+    }
+  ],
+  "workQueueDepth": 19,
+  "stale": false,
+  "tags": [
+    "cloud-edge",
+    "PWA",
+    "orchestration",
+    "release-pipeline",
+    "public-voice"
+  ]
 }
