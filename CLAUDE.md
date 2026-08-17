@@ -1,6 +1,6 @@
 # Claude Primer — YesAndEverything
 
-**Command rule (always):** Any git, push, release, deploy, or script command provided in chat must lead with `cd X:\YesAndEverything` so it never runs against the wrong repo. This repo is `X:\YesAndEverything`. (Cross-project standard; see `X:\YesAndEverything\CLAUDE_SETTINGS.md` § "Script standard: self-locating cwd".)
+**Command rule (always):** Any git, push, release, deploy, or script command provided in chat must lead with `cd X:\YesAndEverything` so it never runs against the wrong repo. This repo is `X:\YesAndEverything`. (Cross-project standard; see `X:\CLAUDE.md` (the script standard is in `X:\ARCHITECTURE.md` section 6).)
 
 
 You are working on **YesAndEverything** — the public-facing static site at <https://yesandeverything.com>. It is a single-page landing page listing Kane's projects, plus per-project sub-pages, plus a password-gated mirror of the HBH GDD.
@@ -34,8 +34,8 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
 | `scripts/` | Release tooling. `release.ps1` runs the integrity guards then commit + push + Discord; `push-to-github.ps1`, `discord-notify.ps1`, plus repo-parity and branch-protection helpers. `update-project-pages.mjs` stamps live version/milestone data from `status/data/*.json` into the homepage cards and project pages (runs in the Pages deploy workflow and locally). `collect-usage.ps1` drops `$PUBLIC_EXCLUDE` projects at the publish boundary; the list is currently empty (Agents was restored to the usage feed on 2026-07-08). |
-| `CLAUDE_SETTINGS.md` | Cross-project personal-Claude settings doc (the how-to-work-with-Nick rules). Source of truth for tone, pushback, voice. |
-| `PERSONAL_CLAUDE_ARCHITECTURE.md` | The handler-and-canonical pattern spec applied to all fourteen personal projects. Companion to CLAUDE_SETTINGS. |
+| `CLAUDE_SETTINGS.md` | SUPERSEDED 2026-08-16, kept for recovery. Voice lives in the user-level handler; the script standards are in `X:\ARCHITECTURE.md` section 6. |
+| `PERSONAL_CLAUDE_ARCHITECTURE.md` | SUPERSEDED 2026-08-16. The machine-readable project context schema it carried is in `X:\ARCHITECTURE.md` section 4.3. Companion to CLAUDE_SETTINGS. |
 | `IMPLEMENTATION_GUIDE.md` | How-to for the personal-Claude setup. Pairs with `CLAUDE_SETTINGS.md` (the rules) and `PERSONAL_CLAUDE_ARCHITECTURE.md` (the why). |
 | `DISCORD_WEBHOOK_NAMING.md` | Portfolio-standard naming convention for every project's Discord webhooks (display name format `<identifier> <Role> Bot`, keyed off the `project` field in each `status/data/<Project>.json`). The New Project Template references it; every existing project's webhooks must match it. |
 | `docs/` | Per-project audit findings live here as `CANONICAL_AUDIT-YYYY-MM-DD.md` (written by the scheduled audit tasks). Handler audits land here too as `HANDLER_AUDIT-YYYY-MM-DD.md`. Cross-portfolio CONSTELLATION bar-raise reports also land here once Phase 3 of the bar-raise buildout ships. |
@@ -106,7 +106,7 @@ The Edit tool truncates files mid-write on this mount with non-trivial frequency
 
 ### Cross-project consistency
 
-CLAUDE_SETTINGS.md is the load-bearing how-to-work-with-Nick doc. PERSONAL_CLAUDE_ARCHITECTURE.md is the handler-and-canonical pattern spec. Both live at the YaE root because YaE is the cross-project hub. Per-project CLAUDE.md files (HBH, Rising, Budget, Chains, Scheduler, Apothecary, Agents, Ring, Cattery, Gnosis, Skylight, Counselor, Architecture, YaE) inherit from these two and add project-local hazards. When updating cross-project rules, update them HERE first, then propagate to the per-project CLAUDE.md files.
+CLAUDE_SETTINGS.md and PERSONAL_CLAUDE_ARCHITECTURE.md are SUPERSEDED as of 2026-08-16 by `X:\ARCHITECTURE.md`, `X:\HAZARDS.md` and `X:\DECISIONS.md`. Both live at the YaE root because YaE is the cross-project hub. Per-project CLAUDE.md files (HBH, Rising, Budget, Chains, Scheduler, Apothecary, Agents, Ring, Cattery, Gnosis, Skylight, Counselor, Architecture, YaE) inherit from these two and add project-local hazards. When updating cross-project rules, update them HERE first, then propagate to the per-project CLAUDE.md files.
 
 
 ## Turn-ending behavior
