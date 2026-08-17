@@ -47,8 +47,8 @@
     "latestReportAt": "2026-08-14T11:45:00Z",
     "verdict": "needs-attention",
     "topFinding": "Health moved 73 to 64 this run, the sharpest single-week drop yet, and it's real rather than an artifact of running more lenses: twelve of last week's open findings turned five runs old simultaneously (data-integrity-01/02, compliance-01, pwa-sync-01, cost-economics-01, architecture-01, observability-02, compliance-02, security-02, reliability-04, dependency-02, auth-token-hygiene-02), meaning nothing from the very first bar-raise on 2026-07-07 has been touched in a month, and none of last week's 27 open actions closed this run. The state-sync bug is the one with real teeth: mergeStates() still replaces decisionsList/judgeStatus/myVotes/catTargets wholesale instead of merging them, now confirmed to drop edits on a single-device reboot (not just cross-device), and it pairs with a dual-write path (KV plus Postgres) that discards pgStateWrite's failure result -- with STATE_READ=pg now live in production, a lost Postgres write silently reverts a user's latest decision with nothing surfaced anywhere. Two new HIGH findings landed in the same window a HIGH voice finding was fixed: an em dash still reaches the public status/data/Ring.json through .project-context.json, the same defect shape as the index.html fix from a week ago, and auth-token-hygiene got measurably worse (GET /api/state now pays two serial live Supabase round-trips per request instead of one KV read). Commit history for the past two weeks is almost entirely release-tooling and voice hardening -- strategic-kill-this-01 already called this out a week ago asking for a product-decision session instead; that session still hasn't happened, and six of those days had zero commits at all.",
-    "actionsOpen": 37,
-    "actionsClosed": 1,
+    "actionsOpen": 36,
+    "actionsClosed": 2,
     "actions": [
       {
         "severity": "HIGH",
@@ -70,13 +70,6 @@
         "lens": "pwa-sync",
         "priority": 20,
         "id": "pwa-sync-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Bump public/sw.js's VERSION constant on every release (it's still yar-v0.17.17, 7+ releases stale) so the cache namespace rotates and orphaned entries get pruned; wire it into scripts/release.ps1 alongside the __RING_BUILD stamp.",
-        "lens": "reliability",
-        "priority": 20,
-        "id": "reliability-06"
       },
       {
         "severity": "HIGH",
