@@ -1,6 +1,6 @@
 # How to actually use all this
 
-> Personal Claude implementation guide written 2026-05-15. Pairs with `CLAUDE_SETTINGS.md` (the rules) and `PERSONAL_CLAUDE_ARCHITECTURE.md` (the why). This doc is the how-to.
+> SUPERSEDED 2026-08-19, kept for history. Written 2026-05-15 as the how-to for a setup whose rules and why docs both retired to `X:\_archive-2026-08-17\` on 2026-08-17. Nothing follows these steps any more; the live layer is `X:\ARCHITECTURE.md`, `X:\HAZARDS.md` and `X:\DECISIONS.md`, delivered by the session-start hook.
 
 ## The 5-minute setup
 

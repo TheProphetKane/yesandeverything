@@ -34,9 +34,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |
 | `unstick-git.ps1` | Recovery script if git lock or remote desync. |
 | `scripts/` | Release tooling. `release.ps1` runs the integrity guards then commit + push + Discord; `push-to-github.ps1`, `discord-notify.ps1`, plus repo-parity and branch-protection helpers. `update-project-pages.mjs` stamps live version/milestone data from `status/data/*.json` into the homepage cards and project pages (runs in the Pages deploy workflow and locally). `collect-usage.ps1` drops `$PUBLIC_EXCLUDE` projects at the publish boundary; the list is currently empty (Agents was restored to the usage feed on 2026-07-08). |
-| `CLAUDE_SETTINGS.md` | SUPERSEDED 2026-08-16, kept for recovery. Voice lives in the user-level handler; the script standards are in `X:\ARCHITECTURE.md` section 6. |
-| `PERSONAL_CLAUDE_ARCHITECTURE.md` | SUPERSEDED 2026-08-16. The machine-readable project context schema it carried is in `X:\ARCHITECTURE.md` section 4.3. Companion to CLAUDE_SETTINGS. |
-| `IMPLEMENTATION_GUIDE.md` | How-to for the personal-Claude setup. Pairs with `CLAUDE_SETTINGS.md` (the rules) and `PERSONAL_CLAUDE_ARCHITECTURE.md` (the why). |
+| `IMPLEMENTATION_GUIDE.md` | SUPERSEDED. How-to for the 2026-05-era personal-Claude setup whose two companion docs retired to `X:\_archive-2026-08-17\` on 2026-08-17. Kept for history; the live layer is `X:\ARCHITECTURE.md` + `X:\HAZARDS.md` + `X:\DECISIONS.md`. |
 | `DISCORD_WEBHOOK_NAMING.md` | Portfolio-standard naming convention for every project's Discord webhooks (display name format `<identifier> <Role> Bot`, keyed off the `project` field in each `status/data/<Project>.json`). The New Project Template references it; every existing project's webhooks must match it. |
 | `docs/` | Per-project audit findings live here as `CANONICAL_AUDIT-YYYY-MM-DD.md` (written by the scheduled audit tasks). Handler audits land here too as `HANDLER_AUDIT-YYYY-MM-DD.md`. Cross-portfolio CONSTELLATION bar-raise reports also land here once Phase 3 of the bar-raise buildout ships. |
 | `docs/BAR_RAISE_ROADMAP.md` | Active build plan for the periodic-review skill + status dashboard. Multi-session; check phase status table before resuming. Source of truth for the JSON contract and URL slugs. |
@@ -94,7 +92,7 @@ These are bug patterns that have eaten 5+ patch cycles each on Nick's projects. 
 
 ### Two-failed-fix rule
 
-After two failed fix attempts on the same symptom, stop shipping fixes. Add instrumentation. Trace code paths. Speculation past attempt two costs more than diagnosis would. Full rule in `CLAUDE_SETTINGS.md` "Debugging discipline" section and memory `debugging-discipline`.
+After two failed fix attempts on the same symptom, stop shipping fixes. Add instrumentation. Trace code paths. Speculation past attempt two costs more than diagnosis would. That IS the full rule; memory `debugging-discipline` carries the history.
 
 ### Parallel implementations
 
@@ -106,7 +104,7 @@ The Edit tool truncates files mid-write on this mount with non-trivial frequency
 
 ### Cross-project consistency
 
-CLAUDE_SETTINGS.md and PERSONAL_CLAUDE_ARCHITECTURE.md are SUPERSEDED as of 2026-08-16 by `X:\ARCHITECTURE.md`, `X:\HAZARDS.md` and `X:\DECISIONS.md`. Both live at the YaE root because YaE is the cross-project hub. Per-project CLAUDE.md files (HBH, Rising, Budget, Chains, Scheduler, Apothecary, Agents, Ring, Cattery, Gnosis, Skylight, Counselor, Architecture, YaE) inherit from these two and add project-local hazards. When updating cross-project rules, update them HERE first, then propagate to the per-project CLAUDE.md files.
+Cross-project rules live in `X:\ARCHITECTURE.md`, `X:\HAZARDS.md` and `X:\DECISIONS.md` (the two old governance docs retired to `X:\_archive-2026-08-17\` on 2026-08-17 and no longer sit at this root). Per-project CLAUDE.md files inherit from that root layer and add project-local hazards. When updating a cross-project rule, update the root layer first, then propagate to the per-project handlers.
 
 
 ## Turn-ending behavior
