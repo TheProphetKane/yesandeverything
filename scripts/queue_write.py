@@ -101,10 +101,30 @@ def _read():
         return json.load(f)
 
 
+def _warn_mismatched_completions(q):
+    """A prior incident (2026-07-25/26) closed several agents/scheduler/ring
+    items with a Chains session's completedBy/completionNote pasted in
+    verbatim. Not a hard block -- a legitimate portfolio-wide session's
+    completedBy text won't always name every project it touched -- but a
+    mismatch is worth a loud warning so it doesn't go unnoticed a second time."""
+    for it in q.get("items", []):
+        project = it.get("project")
+        completed_by = it.get("completedBy")
+        if not project or not completed_by:
+            continue
+        if project.lower() not in completed_by.lower():
+            print(
+                "queue_write: WARNING completedBy does not name project %r for %s "
+                "(completedBy=%r) -- check for a mis-attributed batch close"
+                % (project, it.get("id"), completed_by)
+            )
+
+
 def _write(q):
     """Atomic write with readback, retried. The FUSE mount can land a truncated
     file or serve a stale read straight after a rename, so a write is not done
     until the file on disk reads back byte-identical AND parses."""
+    _warn_mismatched_completions(q)
     q["updated"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ")
     body = json.dumps(q, indent=2, ensure_ascii=False) + "\n"
     tmp = QUEUE_PATH + ".tmp"

@@ -104,10 +104,26 @@ function ConvertTo-CanonicalQueueJson($q) {
     foreach ($t in @($inTmp, $outTmp)) { if (Test-Path -LiteralPath $t) { Remove-Item -Force -LiteralPath $t -ErrorAction SilentlyContinue } }
   }
 }
+# A prior incident (2026-07-25/26) closed several agents/scheduler/ring items
+# with a Chains session's completedBy/completionNote pasted in verbatim. Not a
+# hard block -- a legitimate portfolio-wide session's completedBy text won't
+# always name every project it touched -- but a mismatch is worth a loud
+# warning so it doesn't go unnoticed a second time.
+function Warn-MismatchedCompletions($q) {
+  foreach ($it in @($q.items)) {
+    $project = $null; if ($it.PSObject.Properties['project']) { $project = $it.project }
+    $completedBy = $null; if ($it.PSObject.Properties['completedBy']) { $completedBy = $it.completedBy }
+    if (-not $project -or -not $completedBy) { continue }
+    if ($completedBy.ToLower() -notmatch [regex]::Escape($project.ToLower())) {
+      Write-Host "queue-edit: WARNING completedBy does not name project '$project' for $($it.id) (completedBy='$completedBy') -- check for a mis-attributed batch close" -ForegroundColor Yellow
+    }
+  }
+}
 function Write-QueueAtomic($q) {
   # Same stamp shape the python writers use, so the field does not flap format
   # between writers and show up as noise in every diff.
   $q.updated = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm\Z')
+  Warn-MismatchedCompletions $q
   Rotate-DrainLog $q
   $json = ConvertTo-CanonicalQueueJson $q
   # Atomic write + read-back verify, retried. The tmp is parse-validated before
