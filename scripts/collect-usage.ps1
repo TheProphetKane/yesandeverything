@@ -1092,7 +1092,11 @@ try {
 # scripts (push-to-github / publish-gdd / write-dashboard-status).
 $ErrorActionPreference = "Continue"
 $KV_NS = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"
-foreach ($pair in @(@{ k = "usage"; f = $OutPath }, @{ k = "queue"; f = (Join-Path $DataDir "queue.json") })) {
+# PRIVATIZED 2026-08-19: the queue pair is gone from this loop. Findings content
+# stopped being published to the live dashboard key; queue.json is still generated
+# into dashboard\data\ for a locally served dashboard, never pushed. The "queue"
+# KV key holds a stub. See the .gitignore block and X:\DECISIONS.md.
+foreach ($pair in @(@{ k = "usage"; f = $OutPath })) {
   # NOTE: use simple local vars in the wrangler call. A bareword like "--path=$pair.f"
   # expands only $pair (-> "System.Collections.Hashtable") and keeps ".f" literal, so
   # wrangler gets a garbage path. Simple $vars expand correctly; property access does not.
@@ -1153,7 +1157,7 @@ foreach ($lockName in @("index.lock", "HEAD.lock")) {
 # a console nobody reads. Every failure path now exits non-zero so the routine
 # that calls it can actually tell.
 Assert-GitSafe
-Invoke-Git add dashboard/data/usage.json dashboard/data/queue.json usage-log | Out-Null
+Invoke-Git add dashboard/data/usage.json usage-log | Out-Null
 $staged = git diff --cached --name-only 2>$null
 if ([string]::IsNullOrWhiteSpace($staged)) { Write-Host "Nothing changed; no push." -ForegroundColor DarkGray; exit 0 }
 Assert-GitSafe
