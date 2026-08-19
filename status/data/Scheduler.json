@@ -1,600 +1,549 @@
 {
-    "project":  "Scheduler",
-    "displayName":  "Yes\u0026 Scheduler",
-    "version":  "0.7.3",
-    "lastReleaseAt":  "2026-08-08T00:01:58-05:00",
-    "lastReleaseMessage":  "Security + concurrency pass from the bar-raise backlog bu...",
-    "milestone":  {
-                      "id":  "M8",
-                      "label":  "Shift options + holidays",
-                      "status":  "shipped"
-                  },
-    "completion":  {
-                       "pct":  60,
-                       "anchored":  "2026-06-28"
-                   },
-    "itemsLeft":  {
-                      "open":  39,
-                      "queue":  37,
-                      "backlog":  0,
-                      "gates":  2,
-                      "items":  [
-                                    "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
-                                    "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
-                                ]
-                  },
-    "backlog":  {
-                    "count":  0,
-                    "items":  [
-
-                              ]
-                },
-    "repoUrl":  "https://github.com/TheProphetKane/yesandscheduler",
-    "workTreeClean":  true,
-    "audit":  {
-                  "latestReportPath":  "docs/CANONICAL_AUDIT-2026-08-18.md",
-                  "latestReportAt":  "2026-08-18T06:11:00Z",
-                  "findings":  {
-                                   "critical":  0,
-                                   "high":  0,
-                                   "medium":  0,
-                                   "low":  1
-                               }
-              },
-    "barRaise":  {
-                     "latestReportPath":  "docs/BAR_RAISE-2026-08-12.md",
-                     "latestReportAt":  "2026-08-12T11:33:20Z",
-                     "verdict":  "needs-attention",
-                     "topFinding":  "The v0.7.2/v0.7.3 releases closed real ground since the last review: both HIGH dependency CVEs are patched, the three unbatched multi-statement D1 writes that drove reliability to 44 are fixed with db.batch() and migration 0012\u0027s UNIQUE(shift_id,user_id) constraint, and two chronic doc-drift findings are resolved. But the same bug class recurred one level down: the time-off-approval day_unavailability cascade is still an unbatched per-day loop, so an interruption mid-approval can leave a request marked approved with only part of its date range blocked from scheduling -- this alone keeps the verdict at needs-attention. The strategic-kill-this findings are now chronic at 8 runs: the drive-to-first-real-user-vs-payment-integration decision has sat unmade since 2026-06-28 while four releases of adjacent quality work shipped instead. Two skill-suite findings surfaced as HIGH and are portfolio-level rather than Scheduler-specific, but they block clean automated review going forward.",
-                     "actionsOpen":  33,
-                     "actionsClosed":  11,
-                     "actions":  [
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Force the drive-to-first-real-user-vs-payment-integration decision this week; both gate items have had zero movement in 8 runs / 6+ weeks.",
-                                         "lens":  "strategic-kill-this",
-                                         "id":  "strategic-kill-this-01",
-                                         "priority":  25
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Batch the day_unavailability cascade write after a time-off approval so an interruption can\u0027t leave approved leave half-blocked.",
-                                         "lens":  "reliability",
-                                         "id":  "reliability-01",
-                                         "priority":  20
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Log request context (route, method, user id, org id) in the global error handler.",
-                                         "lens":  "observability",
-                                         "id":  "observability-01",
-                                         "priority":  20
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Re-publish the personal-skills plugin from current source; reconcile the two divergent runtime copies.",
-                                         "lens":  "skill-suite-health",
-                                         "id":  "skill-suite-health-01",
-                                         "priority":  20
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Fold prune + stale-triage from queue-drain-hourly into backlog-burndown-daily, or re-enable it; manually close the now-resolved stale item.",
-                                         "lens":  "work-queue-hygiene",
-                                         "id":  "work-queue-hygiene-01",
-                                         "priority":  20
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Create the Scheduler Resources Bot Discord webhook and repoint post-audit-digests.ps1 at it.",
-                                         "lens":  "discord-notify-wiring",
-                                         "id":  "discord-notify-wiring-01",
-                                         "priority":  20
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Batch instantiateShiftsForWeek\u0027s insert loop and add an existence short-circuit.",
-                                         "lens":  "performance",
-                                         "id":  "performance-01",
-                                         "priority":  20
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Batch notifyMany\u0027s per-recipient serial notify() calls.",
-                                         "lens":  "kv-data-shape",
-                                         "id":  "kv-data-shape-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Pick one canonical namespace per skill and delete the duplicate bar-raise/handler-audit/project-canonical-audit registrations.",
-                                         "lens":  "skill-suite-health",
-                                         "id":  "skill-suite-health-02",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "HIGH",
-                                         "title":  "Add the reciprocal do-not-trigger clause to project-canonical-audit pointing deep-audit/raise-the-bar phrasing to bar-raise.",
-                                         "lens":  "skill-trigger-collisions",
-                                         "id":  "skill-trigger-collisions-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Update git-unstick to check for a live git process before removing locks.",
-                                         "lens":  "incident-runbook-currency",
-                                         "id":  "incident-runbook-currency-01",
-                                         "priority":  16
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Schedule a coordinated vitest / vitest-pool-workers major bump to clear the CRITICAL CVE.",
-                                         "lens":  "dependency",
-                                         "id":  "dependency-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Wire a scheduled poll on GET /api/health that alerts on failure.",
-                                         "lens":  "observability",
-                                         "id":  "observability-02",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Escalate silent audit-log/notification write failures beyond console.warn.",
-                                         "lens":  "observability",
-                                         "id":  "observability-03",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add an admin purge/anonymize path for archived users.",
-                                         "lens":  "compliance-data-steward",
-                                         "id":  "compliance-data-steward-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Wire frontend test coverage (apps/web) or scope CLAUDE.md to say it\u0027s out of v1 scope.",
-                                         "lens":  "maintainability",
-                                         "id":  "maintainability-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add a queue-status lookup step to project-canonical-audit before it restates a carried finding.",
-                                         "lens":  "skill-chain-handoff-integrity",
-                                         "id":  "skill-chain-handoff-integrity-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Reorder release.ps1 so the Worker deploy runs before the GitHub push, or add a skew warning.",
-                                         "lens":  "per-project-ps1-stack",
-                                         "id":  "per-project-ps1-stack-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Build the documented Backlog Bot webhook, or strike it from CLAUDE.md.",
-                                         "lens":  "discord-notify-wiring",
-                                         "id":  "discord-notify-wiring-02",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Drop the dead server.ts entry from critical_files_for_python_atomic_write and wire a real readback check.",
-                                         "lens":  "fuse-truncation-defense",
-                                         "id":  "fuse-truncation-defense-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Repoint git-guard.ps1\u0027s corruption-recovery message at a script that actually exists in this repo.",
-                                         "lens":  "incident-runbook-currency",
-                                         "id":  "incident-runbook-currency-02",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Hold further non-gate commits until real-use testing or payment integration moves, or explicitly overrule the freeze.",
-                                         "lens":  "strategic-kill-this",
-                                         "id":  "strategic-kill-this-02",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Extend per-project meta description/og/twitter tags with the live-marker pattern.",
-                                         "lens":  "gate-page-publish",
-                                         "id":  "gate-page-publish-01",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Refresh the what\u0027s-new/roadmap prose on the project pages; add a staleness check against the pill.",
-                                         "lens":  "gate-page-publish",
-                                         "id":  "gate-page-publish-02",
-                                         "priority":  15
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Confirm Scheduler\u0027s queue items are getting picked up in backlog-burndown\u0027s rotation.",
-                                         "lens":  "work-queue-hygiene",
-                                         "id":  "work-queue-hygiene-02",
-                                         "priority":  12
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add retention/expiry for notification rows.",
-                                         "lens":  "compliance-data-steward",
-                                         "id":  "compliance-data-steward-02",
-                                         "priority":  10
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add an in-app warning when all shifts in a week are marked Unavailable against a nonzero hours-min.",
-                                         "lens":  "solo-tool-ux",
-                                         "id":  "solo-tool-ux-01",
-                                         "priority":  10
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Build the documented magic-link-revoke capability, or correct DESIGN.md to say Archive is the sole mechanism.",
-                                         "lens":  "auth-token-hygiene",
-                                         "id":  "auth-token-hygiene-01",
-                                         "priority":  10
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Switch post-audit-digests.ps1 to ErrorActionPreference Stop, matching the rest of the stack.",
-                                         "lens":  "per-project-ps1-stack",
-                                         "id":  "per-project-ps1-stack-02",
-                                         "priority":  10
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Extend update-project-pages.mjs\u0027s per-project meta-tag stamping.",
-                                         "lens":  "version-pill-drift",
-                                         "id":  "version-pill-drift-01",
-                                         "priority":  10
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Fold shifts.ts\u0027s remove-path DELETEs into the existing db.batch() call alongside the adds.",
-                                         "lens":  "reliability",
-                                         "id":  "reliability-02",
-                                         "priority":  8
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Add lightweight rate limiting on invite/org-creation routes to blunt enumeration and spam abuse.",
-                                         "lens":  "security",
-                                         "id":  "security-01",
-                                         "priority":  10
-                                     },
-                                     {
-                                         "severity":  "MED",
-                                         "title":  "Rewrite sync-audit-dashboard.ps1\u0027s severity parser to match the numbered-list format project-canonical-audit actually emits.",
-                                         "lens":  "audit-loop-integrity",
-                                         "id":  "audit-loop-integrity-01",
-                                         "priority":  15
-                                     }
-                                 ],
-                     "deferred":  [
-                                      {
-                                          "severity":  "MED",
-                                          "title":  "Per-seat billing entitlement plumbing remains fully built and unmonetized with no payment provider wired.",
-                                          "lens":  "cost-economics",
-                                          "reason":  "blocked on Nick\u0027s Stripe milestone commitment"
-                                      }
-                                  ],
-                     "health":  69,
-                     "lensScores":  {
-                                        "architecture":  84,
-                                        "reliability":  64,
-                                        "security":  93,
-                                        "performance":  62,
-                                        "data-integrity":  88,
-                                        "maintainability":  77,
-                                        "solo-tool-ux":  84,
-                                        "cost-economics":  91,
-                                        "dependency":  78,
-                                        "observability":  74,
-                                        "strategic-kill-this":  35,
-                                        "compliance-data-steward":  68,
-                                        "worker-cpu-budget":  85,
-                                        "kv-data-shape":  66,
-                                        "auth-token-hygiene":  80,
-                                        "skill-suite-health":  40,
-                                        "work-queue-hygiene":  40,
-                                        "audit-loop-integrity":  60,
-                                        "fuse-truncation-defense":  58,
-                                        "incident-runbook-currency":  61,
-                                        "scheduled-task-firing-state":  93,
-                                        "skill-trigger-collisions":  60,
-                                        "skill-chain-handoff-integrity":  78,
-                                        "per-project-ps1-stack":  55,
-                                        "discord-notify-wiring":  40,
-                                        "version-pill-drift":  80,
-                                        "gate-page-publish":  65
-                                    },
-                     "openFindings":  [
-                                          {
-                                              "id":  "strategic-kill-this-01",
-                                              "severity":  "high",
-                                              "priority":  25,
-                                              "runsOpen":  8,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "reliability-01",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "observability-01",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "skill-suite-health-01",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "work-queue-hygiene-01",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "discord-notify-wiring-01",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "performance-01",
-                                              "severity":  "high",
-                                              "priority":  20,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "kv-data-shape-01",
-                                              "severity":  "high",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "skill-suite-health-02",
-                                              "severity":  "high",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "skill-trigger-collisions-01",
-                                              "severity":  "high",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "incident-runbook-currency-01",
-                                              "severity":  "med",
-                                              "priority":  16,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "dependency-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "observability-02",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "observability-03",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "compliance-data-steward-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "maintainability-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "skill-chain-handoff-integrity-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "per-project-ps1-stack-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "discord-notify-wiring-02",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "fuse-truncation-defense-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "incident-runbook-currency-02",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "strategic-kill-this-02",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "gate-page-publish-01",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "gate-page-publish-02",
-                                              "severity":  "med",
-                                              "priority":  15,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "work-queue-hygiene-02",
-                                              "severity":  "med",
-                                              "priority":  12,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "compliance-data-steward-02",
-                                              "severity":  "med",
-                                              "priority":  10,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "solo-tool-ux-01",
-                                              "severity":  "med",
-                                              "priority":  10,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "auth-token-hygiene-01",
-                                              "severity":  "med",
-                                              "priority":  10,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "per-project-ps1-stack-02",
-                                              "severity":  "med",
-                                              "priority":  10,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "version-pill-drift-01",
-                                              "severity":  "med",
-                                              "priority":  10,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "reliability-02",
-                                              "severity":  "med",
-                                              "priority":  8,
-                                              "runsOpen":  1,
-                                              "firstSeen":  "2026-08-12"
-                                          },
-                                          {
-                                              "id":  "security-01",
-                                              "severity":  "medium",
-                                              "priority":  10,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          },
-                                          {
-                                              "id":  "audit-loop-integrity-01",
-                                              "severity":  "medium",
-                                              "priority":  15,
-                                              "runsOpen":  2,
-                                              "firstSeen":  "2026-08-05"
-                                          }
-                                      ],
-                     "tensionsOpen":  [
-                                          {
-                                              "lenses":  [
-                                                             "strategic-kill-this",
-                                                             "reliability"
-                                                         ],
-                                              "runsSeen":  1
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "dependency",
-                                                             "maintainability"
-                                                         ],
-                                              "runsSeen":  1
-                                          },
-                                          {
-                                              "lenses":  [
-                                                             "gate-page-publish",
-                                                             "version-pill-drift"
-                                                         ],
-                                              "runsSeen":  1
-                                          }
-                                      ]
-                 },
-    "metrics":  [
-                    {
-                        "k":  "api routes",
-                        "v":  "57"
-                    },
-                    {
-                        "k":  "migrations",
-                        "v":  "12"
-                    },
-                    {
-                        "k":  "test files",
-                        "v":  "22"
-                    }
+    "project": "Scheduler",
+    "displayName": "Yes& Scheduler",
+    "version": "0.7.3",
+    "lastReleaseAt": "2026-08-08T00:01:58-05:00",
+    "lastReleaseMessage": "Security + concurrency pass from the bar-raise backlog bu...",
+    "milestone": {
+        "id": "M8",
+        "label": "Shift options + holidays",
+        "status": "shipped"
+    },
+    "completion": {
+        "pct": 60,
+        "anchored": "2026-06-28"
+    },
+    "itemsLeft": {
+        "open": 39,
+        "queue": 37,
+        "backlog": 0,
+        "gates": 2,
+        "items": [
+            "Real-use testing and iterate cycles still pending (demo-seed harness now exists to unblock it: scripts/seed-demo.ps1)",
+            "Live payment integration on top of the v0.6.0 per-seat entitlement plumbing (Stripe checkout + webhooks; entitlement is computed but nothing is gated yet)"
+        ]
+    },
+    "backlog": {
+        "count": 0,
+        "items": []
+    },
+    "repoUrl": "https://github.com/TheProphetKane/yesandscheduler",
+    "workTreeClean": true,
+    "audit": {
+        "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-18.md",
+        "latestReportAt": "2026-08-18T06:11:00Z",
+        "findings": {
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 1
+        }
+    },
+    "barRaise": {
+        "latestReportPath": "docs/BAR_RAISE-2026-08-19.md",
+        "latestReportAt": "2026-08-19T11:52:00Z",
+        "verdict": "in-progress",
+        "topFinding": "The reliability and performance work actually moved: 14 commits (2026-08-14 to 2026-08-16) verifiably fixed 10 of the last review's findings, including the two real bug-risk items (the day_unavailability cascade and the shifts.ts remove/add batching) that were the main reason the last verdict was needs-attention. Reliability jumped 64 to 80, performance 62 to 82, kv-data-shape 66 to 90, auth-token-hygiene 80 to 92, audit-loop-integrity 60 to 95. But none of that work touched the actual gate: strategic-kill-this cratered from 35 to 15 because a full release cycle had the capacity to move either the real-use-testing or the payment-integration gate item and spent all of it on bar-raise backlog instead, while the freeze recommendation from the last run was silently ignored rather than honored or overruled. Separately, this run surfaced that the personal-skills plugin runtime copy is NUL-truncated, which explains a live bug in git-unstick's repo-path table and drags several orchestration-lens scores down with it. Health is flat at 68 (was 69) because real code fixes were offset almost exactly by newly-discovered orchestration and strategic debt.",
+        "actionsOpen": 30,
+        "actionsClosed": 10,
+        "actions": [
+            {
+                "severity": "HIGH",
+                "title": "Spend the next work session exclusively on either Stripe checkout+webhooks or a real-use test with scripts/seed-demo.ps1 and an actual user.",
+                "lens": "strategic-kill-this",
+                "id": "strategic-kill-this-01",
+                "priority": 25
+            },
+            {
+                "severity": "HIGH",
+                "title": "Republish the personal-skills plugin from current source; verify rewritten files end cleanly with a byte-diff against source.",
+                "lens": "skill-suite-health",
+                "id": "skill-suite-health-01",
+                "priority": 25
+            },
+            {
+                "severity": "HIGH",
+                "title": "Bump @cloudflare/vitest-pool-workers to 0.13.0 and vitest to 4.1.0+ together.",
+                "lens": "dependency",
+                "id": "dependency-01",
+                "priority": 20
+            },
+            {
+                "severity": "HIGH",
+                "title": "Write an explicit dated decision overruling the commit freeze with a reason, or actually honor it.",
+                "lens": "strategic-kill-this",
+                "id": "strategic-kill-this-02",
+                "priority": 20
+            },
+            {
+                "severity": "HIGH",
+                "title": "Pick one canonical skill namespace and delete the personal-skills/anthropic-skills duplicates.",
+                "lens": "skill-suite-health",
+                "id": "skill-suite-health-02",
+                "priority": 20
+            },
+            {
+                "severity": "HIGH",
+                "title": "Fold prune plus stale-triage into backlog-burndown-daily, or re-enable queue-drain-hourly.",
+                "lens": "work-queue-hygiene",
+                "id": "work-queue-hygiene-01",
+                "priority": 20
+            },
+            {
+                "severity": "HIGH",
+                "title": "Republish the personal-skills plugin so git-unstick's runtime copy carries the corrected repo-detection table.",
+                "lens": "incident-runbook-currency",
+                "id": "incident-runbook-currency-03",
+                "priority": 20
+            },
+            {
+                "severity": "HIGH",
+                "title": "Create the Resources Bot webhook and repoint post-audit-digests.ps1 at it.",
+                "lens": "discord-notify-wiring",
+                "id": "discord-notify-wiring-01",
+                "priority": 20
+            },
+            {
+                "severity": "MED",
+                "title": "Add Vitest + Testing Library coverage for apps/web, or scope CLAUDE.md to say it's untested by design.",
+                "lens": "maintainability",
+                "id": "maintainability-01",
+                "priority": 20
+            },
+            {
+                "severity": "HIGH",
+                "title": "Suspend or de-prioritize the Scheduler bar-raise cadence until a gate item moves.",
+                "lens": "strategic-kill-this",
+                "id": "strategic-kill-this-03",
+                "priority": 16
+            },
+            {
+                "severity": "HIGH",
+                "title": "Add the reciprocal do-not-trigger clause to project-canonical-audit's SKILL.md.",
+                "lens": "skill-trigger-collisions",
+                "id": "skill-trigger-collisions-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Delete format12h and isToday if unused, or wire them to their intended call site.",
+                "lens": "maintainability",
+                "id": "maintainability-02",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Add an explicit inline warning when a week is fully Unavailable against a nonzero hours-min.",
+                "lens": "solo-tool-ux",
+                "id": "solo-tool-ux-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Re-run pnpm audit after the vitest-pool-workers bump to confirm the transitive tree cleared.",
+                "lens": "dependency",
+                "id": "dependency-02",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Add a Cloudflare cron trigger (or uptime check) on /api/health with Discord alerting on failure.",
+                "lens": "observability",
+                "id": "observability-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Add an admin purge/anonymize path for archived users.",
+                "lens": "compliance-data-steward",
+                "id": "compliance-data-steward-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Add a scheduled purge for read notifications older than N days.",
+                "lens": "compliance-data-steward",
+                "id": "compliance-data-steward-02",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Confirm Scheduler's queue items are rotating through backlog-burndown; manually work the oldest HIGH item.",
+                "lens": "work-queue-hygiene",
+                "id": "work-queue-hygiene-02",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Wire an actual atomic-write-with-readback check against critical_files_for_python_atomic_write.",
+                "lens": "fuse-truncation-defense",
+                "id": "fuse-truncation-defense-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Add a Get-Process git check to git-unstick and unstick-git.ps1 before lock removal.",
+                "lens": "incident-runbook-currency",
+                "id": "incident-runbook-currency-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Reorder deploy-worker.ps1 before push-to-github.ps1, or add a skew-window warning.",
+                "lens": "per-project-ps1-stack",
+                "id": "per-project-ps1-stack-01",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Refresh the what's-new/roadmap prose on the Scheduler project pages to cover v0.7.2 and v0.7.3.",
+                "lens": "gate-page-publish",
+                "id": "gate-page-publish-02",
+                "priority": 15
+            },
+            {
+                "severity": "MED",
+                "title": "Fold the status UPDATE and its cascade/apply write into one db.batch() call in time-off and change-request decision routes.",
+                "lens": "reliability",
+                "id": "reliability-01",
+                "priority": 12
+            },
+            {
+                "severity": "MED",
+                "title": "Check each add statement's meta.changes after db.batch() in the assignments PATCH and surface partial failures.",
+                "lens": "data-integrity",
+                "id": "data-integrity-01",
+                "priority": 12
+            },
+            {
+                "severity": "MED",
+                "title": "Run an actual seed-demo.ps1-backed session with a real user this week and record the outcome.",
+                "lens": "strategic-kill-this",
+                "id": "strategic-kill-this-04",
+                "priority": 12
+            },
+            {
+                "severity": "MED",
+                "title": "Add a queue-status lookup step to project-canonical-audit before it restates a carried finding.",
+                "lens": "skill-chain-handoff-integrity",
+                "id": "skill-chain-handoff-integrity-01",
+                "priority": 12
+            },
+            {
+                "severity": "MED",
+                "title": "Add rate limiting on invite and org-creation routes.",
+                "lens": "security",
+                "id": "security-01",
+                "priority": 10
+            },
+            {
+                "severity": "MED",
+                "title": "Build the Backlog Bot webhook, or strike it from CLAUDE.md.",
+                "lens": "discord-notify-wiring",
+                "id": "discord-notify-wiring-02",
+                "priority": 10
+            },
+            {
+                "severity": "MED",
+                "title": "Extend update-project-pages.mjs's meta-tag stamping to per-project pages.",
+                "lens": "version-pill-drift",
+                "id": "version-pill-drift-01",
+                "priority": 10
+            },
+            {
+                "severity": "MED",
+                "title": "Extend the Scheduler project pages' meta description/og/twitter content with the live-marker pattern.",
+                "lens": "gate-page-publish",
+                "id": "gate-page-publish-01",
+                "priority": 10
+            }
+        ],
+        "deferred": [
+            {
+                "severity": "MED",
+                "title": "Per-seat billing entitlement plumbing remains fully built and unmonetized with no payment provider wired.",
+                "lens": "cost-economics",
+                "reason": "blocked on Nick's Stripe milestone commitment"
+            }
+        ],
+        "health": 68,
+        "lensScores": {
+            "architecture": 89,
+            "reliability": 80,
+            "security": 92,
+            "performance": 82,
+            "data-integrity": 87,
+            "maintainability": 75,
+            "solo-tool-ux": 82,
+            "cost-economics": 93,
+            "dependency": 58,
+            "observability": 78,
+            "strategic-kill-this": 15,
+            "compliance-data-steward": 66,
+            "worker-cpu-budget": 87,
+            "kv-data-shape": 90,
+            "auth-token-hygiene": 92,
+            "skill-suite-health": 28,
+            "work-queue-hygiene": 35,
+            "audit-loop-integrity": 95,
+            "fuse-truncation-defense": 55,
+            "incident-runbook-currency": 38,
+            "scheduled-task-firing-state": 88,
+            "skill-trigger-collisions": 35,
+            "skill-chain-handoff-integrity": 52,
+            "per-project-ps1-stack": 70,
+            "discord-notify-wiring": 32,
+            "version-pill-drift": 78,
+            "gate-page-publish": 50
+        },
+        "openFindings": [
+            {
+                "id": "strategic-kill-this-01",
+                "severity": "high",
+                "priority": 25,
+                "runsOpen": 9,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "skill-suite-health-01",
+                "severity": "high",
+                "priority": 25,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "dependency-01",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "strategic-kill-this-02",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "skill-suite-health-02",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "work-queue-hygiene-01",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "incident-runbook-currency-03",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 1,
+                "firstSeen": "2026-08-19"
+            },
+            {
+                "id": "discord-notify-wiring-01",
+                "severity": "high",
+                "priority": 20,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "maintainability-01",
+                "severity": "medium",
+                "priority": 20,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "strategic-kill-this-03",
+                "severity": "high",
+                "priority": 16,
+                "runsOpen": 1,
+                "firstSeen": "2026-08-19"
+            },
+            {
+                "id": "skill-trigger-collisions-01",
+                "severity": "high",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "maintainability-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-08-19"
+            },
+            {
+                "id": "solo-tool-ux-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "dependency-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 1,
+                "firstSeen": "2026-08-19"
+            },
+            {
+                "id": "observability-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "compliance-data-steward-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "compliance-data-steward-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "work-queue-hygiene-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "fuse-truncation-defense-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "incident-runbook-currency-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "per-project-ps1-stack-01",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "gate-page-publish-02",
+                "severity": "medium",
+                "priority": 15,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "reliability-01",
+                "severity": "medium",
+                "priority": 12,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "data-integrity-01",
+                "severity": "medium",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-08-19"
+            },
+            {
+                "id": "strategic-kill-this-04",
+                "severity": "medium",
+                "priority": 12,
+                "runsOpen": 1,
+                "firstSeen": "2026-08-19"
+            },
+            {
+                "id": "skill-chain-handoff-integrity-01",
+                "severity": "medium",
+                "priority": 12,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "security-01",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "discord-notify-wiring-02",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 3,
+                "firstSeen": "2026-08-05"
+            },
+            {
+                "id": "version-pill-drift-01",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            },
+            {
+                "id": "gate-page-publish-01",
+                "severity": "medium",
+                "priority": 10,
+                "runsOpen": 2,
+                "firstSeen": "2026-08-12"
+            }
+        ],
+        "tensionsOpen": [
+            {
+                "lenses": [
+                    "version-pill-drift",
+                    "gate-page-publish"
                 ],
-    "workQueueDepth":  37,
-    "stale":  false,
-    "tags":  [
-                 "cloud-edge",
-                 "orchestration",
-                 "release-pipeline"
-             ]
+                "runsSeen": 2
+            },
+            {
+                "lenses": [
+                    "skill-suite-health",
+                    "incident-runbook-currency"
+                ],
+                "runsSeen": 1
+            }
+        ]
+    },
+    "metrics": [
+        {
+            "k": "api routes",
+            "v": "57"
+        },
+        {
+            "k": "migrations",
+            "v": "12"
+        },
+        {
+            "k": "test files",
+            "v": "22"
+        }
+    ],
+    "workQueueDepth": 37,
+    "stale": false,
+    "tags": [
+        "cloud-edge",
+        "orchestration",
+        "release-pipeline"
+    ]
 }
