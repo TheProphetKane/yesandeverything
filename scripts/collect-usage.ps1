@@ -43,7 +43,7 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
-$ATTRIB_VERSION = 20  # v20 (2026-07-19): adds counselor-talk-ingest routine pattern -> Counselor.
+$ATTRIB_VERSION = 21  # v21 (2026-08-19): adds rd-weekly-log -> SignalRD and routine-health -> Everything.
 # v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project —
 # kayak search; never publicly listed, same tier as Counselor/Skylight): kayak-scout task
 # name + folder patterns + REPO_PATHS + QUEUE_ALIAS entries.
@@ -117,6 +117,8 @@ $PRICE_DEFAULT = @{ in = 3.0; out = 15.0; cacheRead = 0.30; cacheWrite = 3.75 }
 $PROJECT_PATTERNS = @(
   # scheduled-task names first: a task session belongs to its project even when
   # its prompt also mentions the YaE queue or other repos
+  @{ pat = "rd-weekly-log";     id = "SignalRD" },   # v21: the Friday tax-record prep, re-enabled 2026-08-19
+  @{ pat = "routine-health";    id = "Everything" }, # v21: the watchdog reads the whole portfolio, bill it to the hub
   @{ pat = "bar-raise-yaag";      id = "Agents" },     # BEFORE bar-raise-yaa: yaa is a substring of yaag
   @{ pat = "audit-agents";        id = "Agents" },
   @{ pat = "bar-raise-ring";      id = "Ring" },
