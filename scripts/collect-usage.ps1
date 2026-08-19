@@ -989,7 +989,7 @@ Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; a
 # Live "queued" counts per project, refreshed every collect run, so the
 # dashboard never shows release-stale work counts. queued = status pending
 # (set to be picked up by the next sweeps); waiting = blocked / blocked-on-user.
-$QueuePath = Join-Path $RepoRoot ".work-queue.json"
+$QueuePath = 'X:\PortfolioOps\queue\.work-queue.json'  # moved to PortfolioOps 2026-08-19
 $QUEUE_ALIAS = @{
   htbh = "Hordes"; hbh = "Hordes"; herebehordes = "Hordes"; hordes = "Hordes"
   br = "Rising"; brackishrising = "Rising"; brackish = "Rising"; rising = "Rising"

@@ -97,7 +97,7 @@ Three signals.
 
 1. **A `CANONICAL_AUDIT-YYYY-MM-DD.md` file lands in each project's `docs/` on the audit cadence.** If you don't see one for HBH within 24 hours, the scheduled task isn't firing.
 
-2. **`X:\YesAndEverything\.work-queue.json` gains items and then drains them.** Read the file or open the artifact. After a morning audit, expect 2-8 new items. By the next day, the auto-safe ones should be done.
+2. **`X:\PortfolioOps\queue\.work-queue.json` gains items and then drains them.** Read the file or open the artifact. After a morning audit, expect 2-8 new items. By the next day, the auto-safe ones should be done.
 
 3. **GDD changelog entries from `htbh-changelog-entry` show up on commits where you said `bump`.** If you say `bump GDD` and the entry doesn't land at the top of the changelog footer, the skill isn't installed or isn't triggering. Check the skill is enabled in your Cowork plugins panel.
 
@@ -106,9 +106,9 @@ If all three are happening, the loop is alive and you can mostly forget about it
 ## How to stop or pause
 
 - **Disable a scheduled task.** Cowork Scheduled sidebar, click the task, toggle off. The task stays defined but won't fire until re-enabled.
-- **Empty the queue.** Edit `X:\YesAndEverything\.work-queue.json` directly. Set status to `done` or `skipped` on items you don't want processed. The drain task respects status.
+- **Empty the queue.** Edit `X:\PortfolioOps\queue\.work-queue.json` directly. Set status to `done` or `skipped` on items you don't want processed. The drain task respects status.
 - **Override a skill on a specific request.** Say `don't trigger the skill, just do X directly`. The trigger description allows opt-out.
-- **Roll the whole thing back.** `git rm X:\YesAndEverything\.work-queue.json` and delete the scheduled tasks. The handler `CLAUDE.md` files in each repo are independently useful and worth keeping even if you turn off the audit cadence.
+- **Roll the whole thing back.** `git rm X:\PortfolioOps\queue\.work-queue.json` and delete the scheduled tasks. The handler `CLAUDE.md` files in each repo are independently useful and worth keeping even if you turn off the audit cadence.
 
 ## Troubleshooting
 
