@@ -20,656 +20,766 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-13.md",
-    "latestReportAt": "2026-08-13T11:33:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-08-20.md",
+    "latestReportAt": "2026-08-20T11:55:00Z",
     "verdict": "needs-attention",
-    "topFinding": "Compliance-data-steward is now the weakest dimension in the whole portfolio (score 22, down from 35): the exact live billing-bypass exploit detail for Chains and the credential-exposure language for the private Skylight status file, both flagged in the 2026-08-06 run, are still shipping unfixed in the public GitHub Pages artifact a week later, and this run independently reconfirmed the root cause from a second angle (security). This is also the first bar-raise to run the full 33-lens set (orchestration, release-pipeline, and public-voice domains joined static-site), and that new coverage surfaced the weakest cluster in the run: work-queue-hygiene (30), skill-chain-handoff-integrity (28), and scheduled-task-firing-state (35) all point at the same story, a work queue with 28 permanently-stuck promptless items and doubling pending depth, an audit-pointer handoff that is confirmed broken right now for YaE's own project, and a scheduled-task registry (.project-context.json) that names nine tasks which no longer exist under those names. Health drops from 70 to 64 and the verdict stays needs-attention. None of this is a hard-rule breach, but the live public exposure of another project's exploit detail is the one item that should not wait for the routine queue.",
-    "actionsOpen": 39,
-    "actionsClosed": 7,
+    "topFinding": "The 2026-08-19 privacy restructure genuinely worked: data stewardship, the weakest dimension in the portfolio last week at 22, is up to 38 with both driving findings closed, and strategic fit rose 12 points because the scope question was executed rather than argued. Health still falls from 64 to 60 because the plumbing around the reviews degraded while the reviews sharpened. Four lenses independently traced one root cause: the nightly retention step deletes generated reports and nothing refreshes the pointer naming them, so this project own audit pointer has been dangling 13 days, the public status page understates its audit currency by that much, and the fix has sat queued since 2026-08-01 under two separate identifiers and been worked zero times. The same step has now destroyed the sole surviving copy of a report three nights running across three projects, all gitignored and unrecoverable. Underneath it, the numbers this portfolio governs itself with are wrong: the backlog trend ledger logs a pending count about 280 items above the real file because it is typed by hand, and two live public project pages contradict their own status data, with Budget claiming a milestone is in progress that its data calls done and Cattery claiming no payments are in the loop when escrow has run for months. No hard rule is breached. The most useful single change is a rule change, not a fix: make the step that deletes a report the same step that rewrites the pointer to it, and make it refuse to delete when only one file of a type exists.",
+    "actionsOpen": 46,
+    "actionsClosed": 21,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Split public status-JSON summary from full bar-raise finding detail so Chains.json stops shipping exact billing-bypass file:line exploit detail in the public Pages artifact.",
-        "lens": "compliance-data-steward",
-        "priority": 25,
-        "id": "yae-chains-json-exposes-live-exploit-detail"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Move the hordes/ and brackish-rising/ gate check off a client-visible plaintext constant, or correct CLAUDE.md's claim the phrase never lives in this repo.",
-        "lens": "security",
-        "priority": 25,
-        "id": "yae-hordes-br-password-plaintext-and-doc-mismatch"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Exclude private:true status JSONs (Skylight) from the Pages artifact entirely instead of relying on an unlinked path.",
-        "lens": "compliance-data-steward",
-        "priority": 20,
-        "id": "yae-private-status-json-publicly-fetchable"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Stop reusing one literal editor password across 10+ gated design pages; per-page phrases or a real auth mechanism.",
-        "lens": "security",
-        "priority": 20,
-        "id": "yae-shared-gate-password-reused-11-files"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Add required-field validation to the queue add path; promptless items doubled to 28 this run and sit permanently stuck.",
-        "lens": "data-integrity",
-        "priority": 20,
-        "id": "yae-queue-add-no-field-validation"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Record measured token cost per scheduled run and set an explicit spend ceiling; usage.json is 9+ days stale with no cap defined anywhere. [CHRONIC x15]",
-        "lens": "cost-economics",
-        "priority": 20,
-        "id": "yae-barraise-run-cost-unmeasured"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Add an automated existence check for audit/barRaise latestReportPath after retention runs; YaE's own pointer is confirmed dangling 6 days stale right now.",
+        "title": "Fold the audit-pointer refresh into the same step that runs report retention; Everything.json still names a 2026-08-07 report that no longer exists, now 13 days stale. [CHRONIC x4]",
         "lens": "observability",
         "priority": 20,
         "id": "yae-audit-pointer-plumbing-unchecked"
       },
       {
         "severity": "HIGH",
-        "title": "Fold the audit-pointer refresh into the same step that runs report retention, or write both atomically, so the two cannot drift apart.",
+        "title": "Reword the nightly retention step so it can only prune the second-newest and older of a prefix; it has destroyed the sole surviving report three nights running (Chains 08-18, Scheduler 08-19, Budget 08-20).",
+        "lens": "audit-loop-integrity",
+        "priority": 20,
+        "id": "yae-retention-deletes-sole-report"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Identify which shared script owns report retention and make it write the audit pointer atomically; the fix sits queued twice, once pending since 2026-08-01 and once blocked-on-user.",
         "lens": "skill-chain-handoff-integrity",
         "priority": 20,
         "id": "yae-skill-chain-handoff-pointer-refresh-uncoordinated"
       },
       {
         "severity": "HIGH",
-        "title": "Add live:milestone markers to the 8 project pages still shipping hand-written milestone prose; Budget has disagreed with its own status JSON for 40+ days across 12 cycles.",
-        "lens": "release-pipeline",
+        "title": "Delete the blind git-lock removal at collect-usage.ps1:1152-1155; it runs headless every 30 minutes and defeats the Assert-GitSafe live-process check five lines below it.",
+        "lens": "reliability",
+        "priority": 20,
+        "id": "yae-collect-usage-blind-lock-delete"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Rewrite unstick-git.ps1 to call Assert-GitSafe instead of a raw lock delete, and stop git-guard.ps1 pointing recovery at the unsafe script.",
+        "lens": "incident-runbook-currency",
+        "priority": 20,
+        "id": "yae-git-unstick-blind-lock-delete"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Compute queuePending from the queue file instead of hand-typing it; the logged figure is about 280 above the real pending count and three digests drew conclusions from it.",
+        "lens": "data-integrity",
+        "priority": 20,
+        "id": "yae-backlog-trend-queuepending-hand-entered"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Retire propagate-git-guard.ps1 or repoint it at the PortfolioOps canonical copy; an apply run would overwrite every sibling repo git guard from this repo local copy.",
+        "lens": "per-project-ps1-stack",
+        "priority": 20,
+        "id": "yae-propagate-git-guard-wrong-canonical"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Retire queue-drain-hourly from the registry or accept it reports nothing to do; 0 of 372 pending items are auto-safe, so re-enabling it would process nothing.",
+        "lens": "work-queue-hygiene",
+        "priority": 20,
+        "id": "yae-work-queue-drain-structurally-undrainable"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add live milestone markers to the 8 project pages still shipping hand-written prose; the Budget page says milestone six is in progress when its data says done, and the Cattery page says no payments when escrow has been live for months. [CHRONIC x7]",
+        "lens": "version-pill-drift",
         "priority": 20,
         "id": "yae-project-page-milestone-not-live-stamped"
       },
       {
         "severity": "HIGH",
-        "title": "Rewrite .project-context.json's scheduled_tasks to the live task registry; all 9 currently-listed names are retired or renamed, none exist under those names. Severity raised from MED to HIGH this run. [CHRONIC x16]",
-        "lens": "observability",
+        "title": "Rewrite the Budget privacy policy out of corporate collective voice; the most trust-sensitive public page in the portfolio reads as if a team stands behind a one-person finance app.",
+        "lens": "solo-dev-voice-portfolio",
+        "priority": 20,
+        "id": "yae-budget-privacy-policy-collective-voice"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Give Gnosis a tags array so domain lenses run against it; it currently has none, so no voice or concealment lens has ever scanned its public project page.",
+        "lens": "ai-tell-concealment-currency",
+        "priority": 20,
+        "id": "yae-gnosis-no-domain-tags"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Rewrite the scheduled task list in .project-context.json to the live registry; all nine named tasks are gone, two lost their folders entirely since last week, and the new routine-health-watch is unlisted. [CHRONIC x17]",
+        "lens": "scheduled-task-firing-state",
         "priority": 20,
         "id": "yae-project-context-stale-and-v1"
       },
       {
         "severity": "HIGH",
-        "title": "Size backlog-burndown capacity to the real arrival rate or reduce bar-raise fan-out; pending queue depth has roughly doubled in two weeks (374 to 762 of 903 items).",
-        "lens": "data-integrity",
-        "priority": 16,
-        "id": "yae-work-queue-depth-doubling-uncontrolled"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Add a concurrency test for queue-edit.ps1's lock acquisition; it has a documented history of corrupting the queue and zero automated test coverage.",
-        "lens": "maintainability",
-        "priority": 16,
-        "id": "yae-queue-lock-script-untested"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Decide explicitly whether portfolio meta-tooling volume (88 status/ touches vs 2 index.html touches in a week) is this repo's intended long-term shape, or split it out now.",
-        "lens": "strategic-kill-this",
+        "title": "Record measured token cost per scheduled run and set a spend ceiling; 2026-08-19 alone burned about 6 percent of this project entire two-month spend with nothing to flag it. [CHRONIC x16]",
+        "lens": "cost-economics",
         "priority": 20,
-        "id": "yae-hub-scope-creep-meta-tooling-dominant"
+        "id": "yae-barraise-run-cost-unmeasured"
       },
       {
-        "severity": "MED",
-        "title": "Promote one projects.json source of truth with per-surface visibility flags; extend parity to the GitHub repo description. [CHRONIC x16]",
-        "lens": "architecture",
-        "priority": 15,
-        "id": "yae-four-project-registries"
+        "severity": "HIGH",
+        "title": "Add Counselor and Skylight to the usage collector public-exclude list and gitignore their usage ledgers; the 2026-08-19 privacy work covered status data only, and full cost and token telemetry for both still ships.",
+        "lens": "compliance-data-steward",
+        "priority": 16,
+        "id": "yae-usage-telemetry-exposes-private-projects"
       },
       {
-        "severity": "MED",
-        "title": "Add schemaVersion and a required-key assertion to check-status-json.ps1; reconcile Gnosis.json onto the shared shape. [CHRONIC x22]",
-        "lens": "architecture",
-        "priority": 15,
-        "id": "yae-statusjson-contract-unversioned"
+        "severity": "HIGH",
+        "title": "Make the projector withhold exploit-shaped security findings by default; the Chains redaction was a one-off manual edit and Cattery.json now carries an equally specific live money-path description.",
+        "lens": "compliance-data-steward",
+        "priority": 16,
+        "id": "yae-status-findings-redaction-not-systemic"
       },
       {
-        "severity": "MED",
-        "title": "Split a lean per-project usage summary out of the 600KB+ usage.json for the status page; reserve the full payload for the usage dashboard.",
-        "lens": "performance",
-        "priority": 15,
-        "id": "yae-status-dashboard-overfetch-unused-json"
+        "severity": "HIGH",
+        "title": "Confirm the real skill load path and install every skill the nightly routines invoke by name; 18 of 19 staged packages have no folder in the directory this project own docs name as the runtime path. [CHRONIC x16]",
+        "lens": "skill-suite-health",
+        "priority": 16,
+        "id": "yae-skill-artifacts-stale-vs-source"
       },
       {
-        "severity": "MED",
-        "title": "Move .work-queue.json toward an append/compact log format so a single write does not rewrite the whole ~1.9MB file.",
-        "lens": "performance",
-        "priority": 15,
-        "id": "yae-queue-near-full-rewrite-bloats-git"
-      },
-      {
-        "severity": "MED",
-        "title": "Constrain the queue status field to an enum at both write paths. [CHRONIC x15]",
-        "lens": "data-integrity",
-        "priority": 15,
-        "id": "yae-queue-no-enum-validation"
-      },
-      {
-        "severity": "MED",
-        "title": "Port the Budget and Scheduler project pages onto the current template. [CHRONIC x16]",
-        "lens": "maintainability",
-        "priority": 15,
-        "id": "yae-budget-scheduler-off-template"
-      },
-      {
-        "severity": "MED",
-        "title": "Retire BAR_RAISE_ROADMAP.md as complete and delete BAR_RAISE_HANDOVER.md. [CHRONIC x22]",
+        "severity": "HIGH",
+        "title": "Rewrite or retire BAR_RAISE_HANDOVER.md and BAR_RAISE_ROADMAP.md; both describe a task-scheduler shim architecture that no longer exists, in the docs meant to guide incident response. [CHRONIC x23]",
         "lens": "maintainability",
         "priority": 15,
         "id": "yae-handover-roadmap-stale-scheduling"
       },
       {
         "severity": "MED",
-        "title": "Add -Project/-Status/-Priority filters, and honor -Id, on the queue get/read path. [CHRONIC x15]",
-        "lens": "solo-tool-ux",
+        "title": "Promote one project registry with per-surface visibility flags; the roster is still enumerated in four places. [CHRONIC x17]",
+        "lens": "architecture",
         "priority": 15,
-        "id": "yae-queue-get-returns-unfiltered-blob"
+        "id": "yae-four-project-registries"
       },
       {
         "severity": "MED",
-        "title": "Reset the stuck GitHub Pages ACME authorization for yesandeverything.com before the next cert renewal window.",
-        "lens": "build-config",
+        "title": "Add a schema version and a required-key assertion to check-status-json.ps1 and reconcile Gnosis.json, which ships 10 of the 14 contract keys. [CHRONIC x23]",
+        "lens": "architecture",
         "priority": 15,
-        "id": "yae-gh-pages-cert-acme-stuck"
+        "id": "yae-statusjson-contract-unversioned"
       },
       {
         "severity": "MED",
-        "title": "Route Apothecary's 3 statically-imported util modules (autofit.js, print.js, saved-labels.js) through the existing cache-bust scheme.",
-        "lens": "gh-pages-quirks",
+        "title": "Trim the public status projection to the fields the cards actually render; over 8,100 lines of project data plus a two-month usage history refetch uncached every five minutes.",
+        "lens": "performance",
         "priority": 15,
-        "id": "yae-apothecary-static-imports-not-cachebusted"
+        "id": "yae-status-dashboard-overfetch-unused-json"
       },
       {
         "severity": "MED",
-        "title": "Decide whether /dashboard/ and /status/ are public, then make robots.txt and the homepage links agree.",
-        "lens": "compliance-data-steward",
-        "priority": 15,
-        "id": "yae-homepage-links-robots-disallowed-paths"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a pack script that rebuilds packaged .skill artifacts from source on release, or delete the stale ones. [CHRONIC x15]",
-        "lens": "maintainability",
-        "priority": 12,
-        "id": "yae-skill-artifacts-stale-vs-source"
-      },
-      {
-        "severity": "MED",
-        "title": "Pin the wrangler CLI version used for dashboard-api deploys and KV usage-pushes; stop swallowing KV-put failures.",
-        "lens": "dependency",
-        "priority": 12,
-        "id": "yae-wrangler-unpinned-kv-writes"
-      },
-      {
-        "severity": "MED",
-        "title": "Extend the gate-payload integrity guard to the Brackish Rising gate as well. [CHRONIC x16]",
-        "lens": "reliability",
-        "priority": 10,
-        "id": "yae-gate-payload-decode-guard-residual"
-      },
-      {
-        "severity": "MED",
-        "title": "Dedupe duplicate archive ids; make the queue drop path archive rather than delete. [CHRONIC x15]",
-        "lens": "data-integrity",
-        "priority": 6,
-        "id": "yae-archive-not-clean-terminal-store"
-      },
-      {
-        "severity": "MED",
-        "title": "Reject or warn on a duplicate queue item id at add time.",
-        "lens": "data-integrity",
-        "priority": 6,
-        "id": "yae-queue-id-uniqueness-not-enforced"
-      },
-      {
-        "severity": "MED",
-        "title": "Give a failed self-status write a durable record (or a client-visible writeFailed flag the dashboard's stale-detection can read) instead of console-only output; Discord notify is intentionally off for YaE.",
-        "lens": "reliability",
-        "priority": 6,
-        "id": "yae-status-write-failure-silent"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a single aggregate endpoint (or build-time bundle) returning all project statuses in one response; request count currently scales 1:1 with portfolio size.",
+        "title": "Point status/index.html at the aggregate bundle the sibling usage dashboard already uses; the endpoint exists and works, the status page was never wired to it.",
         "lens": "performance",
         "priority": 15,
         "id": "yae-status-dashboard-no-aggregate-endpoint"
       },
       {
         "severity": "MED",
-        "title": "Enforce the openFindings-list contract (it was stored as a dict, not the spec'd list) and delete the matching openFindings entry in the same write that closes an action, so closed actions cannot orphan.",
+        "title": "Extend the payload-marker and closing-tag checks in push-to-github.ps1 to brackish-rising/index.html; only the Hordes mirror is guarded.",
+        "lens": "fuse-truncation-defense",
+        "priority": 15,
+        "id": "yae-push-guard-omits-brackish-rising"
+      },
+      {
+        "severity": "MED",
+        "title": "Same guard asymmetry tracked from the gate-publishing side; the two mirrors have also structurally diverged in their decode paths. [CHRONIC x17]",
+        "lens": "gate-page-publish",
+        "priority": 15,
+        "id": "yae-gate-payload-decode-guard-residual"
+      },
+      {
+        "severity": "MED",
+        "title": "Add docs/ROUTINE_HEALTH.md to .gitignore before the next commit sweep; it names the private projects and every other report type here is already ignored.",
+        "lens": "compliance-data-steward",
+        "priority": 15,
+        "id": "yae-routine-health-md-not-gitignored"
+      },
+      {
+        "severity": "MED",
+        "title": "Stop reusing one editor phrase across gated design pages; the count is now 12 files, up from 11.",
+        "lens": "security",
+        "priority": 15,
+        "id": "yae-shared-gate-password-reused-11-files"
+      },
+      {
+        "severity": "MED",
+        "title": "Cache-bust the four Apothecary modules reached only by bare static import; a deploy can serve stale copies of them.",
+        "lens": "dependency",
+        "priority": 15,
+        "id": "yae-apothecary-static-imports-not-cachebusted"
+      },
+      {
+        "severity": "MED",
+        "title": "Record the working wrangler version and write a durable failure marker when a key-value push exits non-zero; a failed push only prints a console warning.",
+        "lens": "dependency",
+        "priority": 15,
+        "id": "yae-wrangler-unpinned-kv-writes"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a required-field check to the queue add path in both sanctioned writers.",
         "lens": "data-integrity",
         "priority": 15,
-        "id": "yae-openfindings-not-list-and-orphans-not-pruned"
+        "id": "yae-queue-add-no-field-validation"
       },
       {
         "severity": "MED",
-        "title": "Fix the em dash in the queue-drain hourly commit-message template; it has shipped in 8.6% of the last 500 commits, all from one generated pattern.",
-        "lens": "maintainability",
-        "priority": 10,
-        "id": "yae-queue-drain-commit-em-dash-template"
-      },
-      {
-        "severity": "MED",
-        "title": "Make release.ps1's -Path effectively mandatory (or diff against a pre-recorded snapshot); the unscoped-commit footgun the script's own comments warn about has bitten twice in the last week.",
-        "lens": "solo-tool-ux",
-        "priority": 15,
-        "id": "yae-release-unscoped-commit-recurred"
-      },
-      {
-        "severity": "MED",
-        "title": "Surface a promptless-item count on the status dashboard or in queue-edit.ps1's get summary; the only way to notice the 28 stuck items today was a raw-JSON query.",
-        "lens": "solo-tool-ux",
-        "priority": 8,
-        "id": "yae-promptless-items-not-surfaced-in-dashboard"
-      },
-      {
-        "severity": "MED",
-        "title": "Delete the queue-drain-hourly task entry or document in .project-context.json that its function moved to backlog-burndown-daily; it has been disabled 13 days and reads identically to a silent failure.",
-        "lens": "observability",
-        "priority": 15,
-        "id": "yae-queue-drain-hourly-disabled-13-days"
-      },
-      {
-        "severity": "MED",
-        "title": "Verify queue-drain-hourly's Step 0 archive-prune actually runs; 71 completed items are sitting in the live queue in violation of its own spec.",
+        "title": "Constrain the status value to its enum on write; a dead blocked value already had to be hand-normalised once. [CHRONIC x16]",
         "lens": "data-integrity",
+        "priority": 15,
+        "id": "yae-queue-no-enum-validation"
+      },
+      {
+        "severity": "MED",
+        "title": "Reject or auto-suffix a duplicate item id on the queue add path.",
+        "lens": "data-integrity",
+        "priority": 15,
+        "id": "yae-queue-id-uniqueness-not-enforced"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a queue-depth term to the daily governor; depth control currently depends on Kane scheduling a manual cull.",
+        "lens": "work-queue-hygiene",
+        "priority": 15,
+        "id": "yae-work-queue-depth-doubling-uncontrolled"
+      },
+      {
+        "severity": "MED",
+        "title": "Retire self-reprompt-loop and its breadcrumb file, or rewrite the breadcrumb to the documented shape and wire a trigger; it has no live task and the file was last written 21 days ago by a retired routine in an incompatible shape.",
+        "lens": "skill-chain-handoff-integrity",
+        "priority": 15,
+        "id": "yae-self-reprompt-loop-orphaned-breadcrumb"
+      },
+      {
+        "severity": "MED",
+        "title": "Fix the drain task code sample to import the queue writer from PortfolioOps; it still points at the deprecated shim one line below an instruction saying not to.",
+        "lens": "skill-chain-handoff-integrity",
+        "priority": 15,
+        "id": "yae-queue-drain-hourly-stale-import-path"
+      },
+      {
+        "severity": "MED",
+        "title": "Update the hazard catalog path in .project-context.json and both bar-raise docs; they still name a skill-source path that moved out of this repo on 2026-08-19.",
+        "lens": "skill-suite-health",
+        "priority": 15,
+        "id": "yae-skill-suite-source-path-stale-in-docs"
+      },
+      {
+        "severity": "MED",
+        "title": "Make the always-on top navigation on the homepage a real navigation landmark with a label.",
+        "lens": "accessibility",
+        "priority": 15,
+        "id": "yae-homepage-nav-not-landmark"
+      },
+      {
+        "severity": "MED",
+        "title": "Add entity-encoded dash patterns to the voice checks; the encoded form is confirmed shipping in both hand-authored gate shells right now.",
+        "lens": "ai-tell-concealment-currency",
+        "priority": 15,
+        "id": "yae-gdd-voice-checkers-missing-entity-dash-coverage"
+      },
+      {
+        "severity": "MED",
+        "title": "Route the writes in update-project-pages.mjs through write-to-temp, rename and readback; it writes index.html, a file this project names as needing the atomic pattern.",
+        "lens": "reliability",
         "priority": 12,
+        "id": "yae-update-project-pages-nonatomic-write"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a freshness or provenance assertion to check-status-json.ps1; every published status file now originates in a separate local-only repo with nothing here checking the projection is current.",
+        "lens": "dependency",
+        "priority": 12,
+        "id": "yae-portfolioops-projection-freshness-unchecked"
+      },
+      {
+        "severity": "MED",
+        "title": "Give the usage-attribution engine automated regression cover; its own header documents 21 successive attribution bug fixes and it has no tests.",
+        "lens": "maintainability",
+        "priority": 12,
+        "id": "yae-usage-attribution-untested"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a same-day threshold check against the trailing weekly average once per-run cost exists.",
+        "lens": "cost-economics",
+        "priority": 12,
+        "id": "yae-daily-spend-anomaly-unflagged"
+      },
+      {
+        "severity": "MED",
+        "title": "Settle whether completed items ever leave the hot queue file; 230 of 718 rows are completed history and the runner spec forbids deleting them, so the spec and this finding contradict each other.",
+        "lens": "data-integrity",
+        "priority": 10,
         "id": "yae-completed-queue-items-not-pruned"
       },
       {
         "severity": "MED",
-        "title": "Rewrite unstick-git.ps1 to dot-source git-guard.ps1 and call Assert-GitSafe instead of a raw Remove-Item on .git/index.lock; the blind delete is exactly what the documented safety rule next to it warns against.",
-        "lens": "reliability",
-        "priority": 15,
-        "id": "yae-git-unstick-blind-lock-delete"
+        "title": "Teach the completion-attribution guard to tolerate a routine name as the closer; it fires falsely on at least six legitimate closures on every queue write.",
+        "lens": "work-queue-hygiene",
+        "priority": 10,
+        "id": "yae-queue-completedby-guard-false-positives"
       },
       {
         "severity": "MED",
-        "title": "Add &mdash;/&ndash;/entity-code dash patterns to HereBeHordes's check_gdd_voice.py and BrackishRising's check_voice.py; the exact blind spot already bit YaE once on 2026-08-02 and was fixed there only.",
-        "lens": "ai-tell-concealment-currency",
-        "priority": 12,
-        "id": "yae-gdd-voice-checkers-missing-entity-dash-coverage"
+        "title": "Stamp per-project meta and social tags from status data; the Scheduler page carries v0.7.1 in three meta tags and a heading while its own pill reads v0.7.3.",
+        "lens": "version-pill-drift",
+        "priority": 10,
+        "id": "yae-scheduler-page-meta-frozen"
+      },
+      {
+        "severity": "MED",
+        "title": "Restamp the homepage cards; Brackish Rising and Here Be Hordes currently show literal placeholder versions on the live public page.",
+        "lens": "brand-consistency-cross-artifact",
+        "priority": 10,
+        "id": "yae-brand-version-placeholder-on-homepage"
+      },
+      {
+        "severity": "MED",
+        "title": "Scope release commits to an explicit path list. Not independently re-verified this run.",
+        "lens": "per-project-ps1-stack",
+        "priority": 9,
+        "id": "yae-release-unscoped-commit-recurred"
+      },
+      {
+        "severity": "MED",
+        "title": "Port the Budget and Scheduler project pages onto the current template, or write down that hand-authored drift is accepted and stop tracking it. [CHRONIC x17]",
+        "lens": "maintainability",
+        "priority": 8,
+        "id": "yae-budget-scheduler-off-template"
       }
     ],
     "deferred": [
       {
         "severity": "MED",
-        "title": "Queue arrivals keep outpacing the drain: pending depth now 762 of 903 items (up from 596 on 2026-08-06, 374 on 2026-07-30).",
+        "title": "The GitHub Pages certificate authorization for the custom domain is still flagged stuck.",
+        "lens": "build-config",
+        "reason": "Externally gated: four runs have now carried it without a live check. Needs a session that can open the Pages settings page."
+      },
+      {
+        "severity": "HIGH",
+        "title": "Queue arrivals outpace the drain and every pending item is now structural.",
         "lens": "cost-economics",
-        "reason": "Blocked on Kane's throughput decision; auto-safe pool is exhausted by design and backlog-burndown already owns the judgment work."
-      },
-      {
-        "severity": "LOW",
-        "title": "dashboard-api/wrangler.toml publishes the Cloudflare account id and KV namespace id.",
-        "lens": "security",
-        "reason": "Accepted exposure; neither value is usable without separate API auth."
-      },
-      {
-        "severity": "LOW",
-        "title": "terms/index.html carries no Open Graph, Twitter card, or canonical tag.",
-        "lens": "seo-open-graph",
-        "reason": "Low polish; rides along with future terms-page work rather than earning its own pass."
-      },
-      {
-        "severity": "LOW",
-        "title": "hordes/ and brackish-rising/ password gates are client-side obscurity only, not real access control.",
-        "lens": "security",
-        "reason": "Documented, deliberate tradeoff per CLAUDE.md; revisit only if the GDD confidentiality bar changes."
+        "reason": "Blocked on the throughput decision, and the trend metric that measured it is untrustworthy until the hand-entered queue count is computed in code."
       },
       {
         "severity": "MED",
-        "title": "YaE's discord-notify.ps1 reads its webhook from a local scripts/ path instead of the portfolio's centralized X:\\.secrets\\<Project>\\scripts\\ convention every sibling project uses.",
-        "lens": "release-pipeline",
-        "reason": "Discord notify is intentionally off for YaE (2026-06-22 decision); only matters if it is ever re-enabled."
+        "title": "The dashboard worker config publishes the Cloudflare account and namespace identifiers.",
+        "lens": "security",
+        "reason": "Accepted exposure; neither value is usable without separate authentication."
+      },
+      {
+        "severity": "MED",
+        "title": "The two design-doc mirrors are client-side obscurity, not access control.",
+        "lens": "security",
+        "reason": "Documented deliberate tradeoff. The payload sits in the same page as the phrase."
+      },
+      {
+        "severity": "LOW",
+        "title": "The terms page carries no social or canonical tags.",
+        "lens": "seo-open-graph",
+        "reason": "Low polish; rides along with future terms-page work."
+      },
+      {
+        "severity": "MED",
+        "title": "Discord notification reads its webhook from a local path rather than the central secrets folder.",
+        "lens": "per-project-ps1-stack",
+        "reason": "Notification is intentionally off for this project, so it cannot bite until that changes."
+      },
+      {
+        "severity": "MED",
+        "title": "Acronyms appear as common nouns in hand-authored project page prose across most pages.",
+        "lens": "solo-dev-voice-portfolio",
+        "reason": "Systemic rather than a single slip; needs one deliberate sweep rather than a per-page fix."
       }
     ],
-    "health": 64,
+    "health": 60,
     "lensScores": {
-      "architecture": 70,
-      "reliability": 78,
-      "security": 46,
-      "performance": 68,
-      "data-integrity": 60,
-      "maintainability": 63,
-      "solo-tool-ux": 66,
-      "cost-economics": 48,
-      "dependency": 78,
-      "observability": 55,
-      "strategic-kill-this": 48,
-      "compliance-data-steward": 22,
-      "build-config": 84,
-      "page-weight": 91,
-      "link-rot": 68,
-      "gh-pages-quirks": 78,
-      "seo-open-graph": 82,
-      "accessibility": 90,
-      "skill-suite-health": 76,
-      "work-queue-hygiene": 30,
-      "audit-loop-integrity": 55,
-      "fuse-truncation-defense": 80,
-      "incident-runbook-currency": 58,
-      "scheduled-task-firing-state": 35,
-      "skill-trigger-collisions": 78,
-      "skill-chain-handoff-integrity": 28,
-      "per-project-ps1-stack": 74,
+      "architecture": 68,
+      "reliability": 60,
+      "security": 52,
+      "performance": 66,
+      "data-integrity": 57,
+      "maintainability": 68,
+      "solo-tool-ux": 70,
+      "cost-economics": 44,
+      "dependency": 64,
+      "observability": 52,
+      "strategic-kill-this": 60,
+      "compliance-data-steward": 38,
+      "build-config": 85,
+      "page-weight": 80,
+      "link-rot": 92,
+      "gh-pages-quirks": 76,
+      "seo-open-graph": 84,
+      "accessibility": 80,
+      "skill-suite-health": 45,
+      "work-queue-hygiene": 27,
+      "audit-loop-integrity": 42,
+      "fuse-truncation-defense": 62,
+      "incident-runbook-currency": 42,
+      "scheduled-task-firing-state": 38,
+      "skill-trigger-collisions": 70,
+      "skill-chain-handoff-integrity": 24,
+      "per-project-ps1-stack": 70,
       "discord-notify-wiring": 85,
-      "version-pill-drift": 52,
-      "gate-page-publish": 42,
-      "solo-dev-voice-portfolio": 76,
-      "ai-tell-concealment-currency": 58,
-      "brand-consistency-cross-artifact": 84
+      "version-pill-drift": 45,
+      "gate-page-publish": 60,
+      "solo-dev-voice-portfolio": 66,
+      "ai-tell-concealment-currency": 42,
+      "brand-consistency-cross-artifact": 80
     },
     "openFindings": [
-      {
-        "id": "yae-chains-json-exposes-live-exploit-detail",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-hordes-br-password-plaintext-and-doc-mismatch",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-private-status-json-publicly-fetchable",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 4,
-        "firstSeen": "2026-07-30"
-      },
-      {
-        "id": "yae-shared-gate-password-reused-11-files",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-queue-add-no-field-validation",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-barraise-run-cost-unmeasured",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 15,
-        "firstSeen": "2026-07-17"
-      },
       {
         "id": "yae-audit-pointer-plumbing-unchecked",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "yae-retention-deletes-sole-report",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
       },
       {
         "id": "yae-skill-chain-handoff-pointer-refresh-uncoordinated",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "yae-collect-usage-blind-lock-delete",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-git-unstick-blind-lock-delete",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "yae-backlog-trend-queuepending-hand-entered",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-propagate-git-guard-wrong-canonical",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-work-queue-drain-structurally-undrainable",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
       },
       {
         "id": "yae-project-page-milestone-not-live-stamped",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-27"
+        "runsOpen": 7,
+        "firstSeen": "2026-07-24"
+      },
+      {
+        "id": "yae-budget-privacy-policy-collective-voice",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-gnosis-no-domain-tags",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
       },
       {
         "id": "yae-project-context-stale-and-v1",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 17,
+        "firstSeen": "2026-07-17"
+      },
+      {
+        "id": "yae-barraise-run-cost-unmeasured",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 16,
         "firstSeen": "2026-07-17"
       },
       {
-        "id": "yae-work-queue-depth-doubling-uncontrolled",
+        "id": "yae-usage-telemetry-exposes-private-projects",
         "severity": "HIGH",
         "priority": 16,
         "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "firstSeen": "2026-08-20"
       },
       {
-        "id": "yae-queue-lock-script-untested",
+        "id": "yae-status-findings-redaction-not-systemic",
         "severity": "HIGH",
         "priority": 16,
         "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "firstSeen": "2026-08-20"
       },
       {
-        "id": "yae-hub-scope-creep-meta-tooling-dominant",
+        "id": "yae-skill-artifacts-stale-vs-source",
         "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "priority": 16,
+        "runsOpen": 16,
+        "firstSeen": "2026-07-17"
+      },
+      {
+        "id": "yae-handover-roadmap-stale-scheduling",
+        "severity": "HIGH",
+        "priority": 15,
+        "runsOpen": 23,
+        "firstSeen": "2026-07-10"
       },
       {
         "id": "yae-four-project-registries",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 16,
+        "runsOpen": 17,
         "firstSeen": "2026-07-17"
       },
       {
         "id": "yae-statusjson-contract-unversioned",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 22,
-        "firstSeen": "2026-07-17"
+        "runsOpen": 23,
+        "firstSeen": "2026-07-10"
       },
       {
         "id": "yae-status-dashboard-overfetch-unused-json",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-queue-near-full-rewrite-bloats-git",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-queue-no-enum-validation",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 15,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-budget-scheduler-off-template",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 16,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-handover-roadmap-stale-scheduling",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 22,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-queue-get-returns-unfiltered-blob",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 15,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-gh-pages-cert-acme-stuck",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-apothecary-static-imports-not-cachebusted",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-homepage-links-robots-disallowed-paths",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-07-28"
-      },
-      {
-        "id": "yae-skill-artifacts-stale-vs-source",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 15,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-wrangler-unpinned-kv-writes",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-gate-payload-decode-guard-residual",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 16,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-archive-not-clean-terminal-store",
-        "severity": "MED",
-        "priority": 6,
-        "runsOpen": 15,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "yae-queue-id-uniqueness-not-enforced",
-        "severity": "MED",
-        "priority": 6,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yae-status-write-failure-silent",
-        "severity": "MED",
-        "priority": 6,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-08-06"
       },
       {
         "id": "yae-status-dashboard-no-aggregate-endpoint",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-13"
       },
       {
-        "id": "yae-openfindings-not-list-and-orphans-not-pruned",
+        "id": "yae-push-guard-omits-brackish-rising",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "firstSeen": "2026-08-20"
       },
       {
-        "id": "yae-queue-drain-commit-em-dash-template",
+        "id": "yae-gate-payload-decode-guard-residual",
         "severity": "MED",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "priority": 15,
+        "runsOpen": 17,
+        "firstSeen": "2026-07-17"
       },
       {
-        "id": "yae-release-unscoped-commit-recurred",
+        "id": "yae-routine-health-md-not-gitignored",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "firstSeen": "2026-08-20"
       },
       {
-        "id": "yae-promptless-items-not-surfaced-in-dashboard",
+        "id": "yae-shared-gate-password-reused-11-files",
         "severity": "MED",
-        "priority": 8,
-        "runsOpen": 1,
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "yae-apothecary-static-imports-not-cachebusted",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "yae-wrangler-unpinned-kv-writes",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "yae-queue-add-no-field-validation",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "yae-queue-no-enum-validation",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 16,
+        "firstSeen": "2026-07-17"
+      },
+      {
+        "id": "yae-queue-id-uniqueness-not-enforced",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "yae-work-queue-depth-doubling-uncontrolled",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-08-13"
       },
       {
-        "id": "yae-queue-drain-hourly-disabled-13-days",
+        "id": "yae-self-reprompt-loop-orphaned-breadcrumb",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "firstSeen": "2026-08-20"
       },
       {
-        "id": "yae-completed-queue-items-not-pruned",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-13"
-      },
-      {
-        "id": "yae-git-unstick-blind-lock-delete",
+        "id": "yae-queue-drain-hourly-stale-import-path",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-13"
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-skill-suite-source-path-stale-in-docs",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-homepage-nav-not-landmark",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
       },
       {
         "id": "yae-gdd-voice-checkers-missing-entity-dash-coverage",
         "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "yae-update-project-pages-nonatomic-write",
+        "severity": "MED",
         "priority": 12,
         "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-portfolioops-projection-freshness-unchecked",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-usage-attribution-untested",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-daily-spend-anomaly-unflagged",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-completed-queue-items-not-pruned",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 2,
         "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "yae-queue-completedby-guard-false-positives",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-scheduler-page-meta-frozen",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-brand-version-placeholder-on-homepage",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-20"
+      },
+      {
+        "id": "yae-release-unscoped-commit-recurred",
+        "severity": "MED",
+        "priority": 9,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "yae-budget-scheduler-off-template",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 17,
+        "firstSeen": "2026-07-17"
       }
     ],
     "tensionsOpen": [
       {
         "lenses": [
-          "security",
-          "solo-tool-ux"
+          "compliance-data-steward",
+          "observability"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "cost-economics",
           "strategic-kill-this"
         ],
-        "runsSeen": 21
+        "runsSeen": 22
       },
       {
         "lenses": [
           "architecture",
           "solo-tool-ux"
         ],
-        "runsSeen": 15
+        "runsSeen": 16
       },
       {
         "lenses": [
-          "compliance-data-steward",
-          "observability"
+          "work-queue-hygiene",
+          "strategic-kill-this"
         ],
         "runsSeen": 2
       },
@@ -678,14 +788,14 @@
           "performance",
           "observability"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
-          "work-queue-hygiene",
-          "strategic-kill-this"
+          "security",
+          "solo-tool-ux"
         ],
-        "runsSeen": 1
+        "runsSeen": 3
       }
     ]
   },
