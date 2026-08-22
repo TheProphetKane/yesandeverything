@@ -858,7 +858,10 @@ if ($Audit) {
 # here. Counselor and Skylight added 2026-08-21 (Kane): their raw ledgers are
 # private, and this list was empty so their full cost/token telemetry was
 # flowing into usage.json and queue.json on the public site.
-$PUBLIC_EXCLUDE = @("Counselor", "Skylight")
+# SignalRD added 2026-08-22 (nightly sweep): it is the federal research-credit
+# tax-evidence folder, deliberately kept outside version control, and its
+# telemetry had already reached the working-tree usage.json uncommitted.
+$PUBLIC_EXCLUDE = @("Counselor", "Skylight", "SignalRD")
 foreach ($x in $PUBLIC_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
 
 # ----- Build usage.json ------------------------------------------------------
