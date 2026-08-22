@@ -111,6 +111,21 @@ for (const [slug, id] of Object.entries(SLUGS)) {
     ]) {
       const r = stamp(t, key, value); t = r.text; if (r.hit) stamped++;
     }
+    // Meta/social description tags and any "what's new" heading hand-embed
+    // the version as plain text ("... at v0.7.1.") rather than a <!--live-->
+    // marker, because HTML comments can't sit inside an attribute value. A
+    // version bump then stamps the pill but leaves these frozen (Scheduler
+    // carried v0.7.1 in three meta tags and a heading while its own pill read
+    // v0.7.3). Rewrite any bare vX.Y.Z run inside the description/og/twitter
+    // content attributes and any <h2> heading so a release can't freeze them
+    // again; skip entirely if the version string isn't already present so an
+    // unrelated number elsewhere in the page is never touched.
+    if (page === "index.html" && vfmt(d.version)) {
+      const metaRe = /(<meta (?:name="(?:description|twitter:description)"|property="og:description") content="[^"]*?)v\d+(?:\.\d+){1,3}(?:\.x)?([^"]*")/g;
+      t = t.replace(metaRe, (_, a, b) => { stamped++; return a + vfmt(d.version) + b; });
+      const h2Re = /(<h2>)v\d+(?:\.\d+){1,3}(?:\.x)?( - what's new<\/h2>)/;
+      t = t.replace(h2Re, (_, a, b) => { stamped++; return a + vfmt(d.version) + b; });
+    }
     if (t !== before) {
       if (!t.trimEnd().endsWith("</html>")) throw new Error(`${slug}/${page} lost its tail; refusing to write`);
       writeFileSync(p, t); changed++;
