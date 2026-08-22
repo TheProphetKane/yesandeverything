@@ -855,8 +855,10 @@ if ($Audit) {
 # it's tracked on the robots-gated dashboard/status analytics tier again, so its
 # usage attribution flows through. It stays off the public homepage grid, which
 # is enforced in index.html + update-project-pages.mjs (no Agents card/slug), not
-# here. Empty = nothing excluded.
-$PUBLIC_EXCLUDE = @()
+# here. Counselor and Skylight added 2026-08-21 (Kane): their raw ledgers are
+# private, and this list was empty so their full cost/token telemetry was
+# flowing into usage.json and queue.json on the public site.
+$PUBLIC_EXCLUDE = @("Counselor", "Skylight")
 foreach ($x in $PUBLIC_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
 
 # ----- Build usage.json ------------------------------------------------------
