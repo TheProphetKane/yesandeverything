@@ -3,9 +3,11 @@
 // Renders a small panel with a "Save Current" row and a list of saved labels.
 // Each list item has Load / Duplicate / Rename / Delete actions.
 
-import {
-  listSaved, saveLabel, loadLabel, deleteLabel, duplicateLabel, renameLabel,
-} from '../util/saved-labels.js';
+// Deliberately no static import of ../util/saved-labels.js. main.js loads
+// that module dynamically with a cache-busted URL; a static import here would
+// pull in a second, un-versioned instance that can serve stale code after a
+// deploy (cache-bust contract, PROJECT_SPEC 3.1, bar-raise architecture-01).
+// The CRUD functions arrive via the ctx param instead.
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({
@@ -19,10 +21,14 @@ function fmt(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// normalize is main.js's normalizeState bound to the data registries; recalled
-// snapshots may predate the current schema (e.g. pre-v0.9, no state.layout)
-// and must migrate exactly like a boot restore.
-export function mountSavedLabels(root, state, normalize = (s) => s) {
+// ctx.normalize is main.js's normalizeState bound to the data registries;
+// recalled snapshots may predate the current schema (e.g. pre-v0.9, no
+// state.layout) and must migrate exactly like a boot restore.
+export function mountSavedLabels(root, state, ctx) {
+  const {
+    listSaved, saveLabel, loadLabel, deleteLabel, duplicateLabel, renameLabel,
+    normalize = (s) => s,
+  } = ctx;
   root.innerHTML = `
     <div class="saved-panel">
       <div class="saved-header">

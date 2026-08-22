@@ -5,13 +5,15 @@
 
 const STORAGE_KEY = 'yesandapothecary.v1.state';
 
-// Broadcast a storage write failure so the editor can show a status line.
-// Detail carries which store failed and the error name (QuotaExceededError,
-// SecurityError when storage is disabled, etc).
-export function notifyStorageError(key, err) {
+// Broadcast a storage failure so the editor can show a status line. Detail
+// carries which store failed, the error name (QuotaExceededError,
+// SecurityError when storage is disabled, etc), and which operation failed:
+// 'read' (a corrupted or unparseable entry, data is lost) vs 'write' (best
+// effort, quota exceeded) get different on-screen wording.
+export function notifyStorageError(key, err, op = 'write') {
   if (typeof document === 'undefined') return;
   document.dispatchEvent(new CustomEvent('yaa:storage-error', {
-    detail: { key, error: err && err.name ? err.name : 'StorageError' },
+    detail: { key, op, error: err && err.name ? err.name : 'StorageError' },
   }));
 }
 
@@ -22,7 +24,11 @@ export function loadState() {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return null;
     return parsed;
-  } catch {
+  } catch (err) {
+    // A corrupted or unparseable entry silently discarded the user's
+    // autosaved label with no on-screen warning before this call
+    // (bar-raise reliability-01). Surface it; the app still boots clean.
+    notifyStorageError('state', err, 'read');
     return null;
   }
 }

@@ -46,7 +46,7 @@ const TITLE_FIELDS = [
 
 export function mountEditor(root, ctx) {
   const {
-    state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, parchmentTextures,
+    state, lookupHerb, runes, symbolLabels, herbDB, aliasMap, templates, defaultTemplateId, parchmentTextures,
     // v0.11.1: forwarded from main.js's versioned dynamic imports.
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
@@ -65,14 +65,14 @@ export function mountEditor(root, ctx) {
     {
       id: 'preset-standard',
       name: 'Standard (two-sided)',
-      layout: () => defaultLayout(),
+      layout: () => defaultLayout(undefined, templates, defaultTemplateId),
       sectionTitles: { ...DEFAULT_SECTION_TITLES },
     },
     {
       id: 'preset-three-col',
       name: 'Three-column back',
       layout: () => {
-        const l = defaultLayout();
+        const l = defaultLayout(undefined, templates, defaultTemplateId);
         const bb = l.back.find(z => z.id === 'back-bottom');
         if (bb) {
           bb.items = ['compounds', 'cautions', 'pairings'];
@@ -87,19 +87,24 @@ export function mountEditor(root, ctx) {
     {
       id: 'preset-minimal-front',
       name: 'Front-only minimal',
-      layout: () => ({
-        front: [
-          makeZone({ id: 'front-left',   layoutMode: 'stack', width: 25, items: ['symbol'] }),
-          makeZone({ id: 'front-center', layoutMode: 'stack', width: 50, items: [
-            'herb-name', 'latin', 'divider-bot', 'description',
-          ]}),
-          makeZone({ id: 'front-right',  layoutMode: 'stack', width: 25, items: ['botanical'] }),
-        ],
-        back: [],
-        hidden: ['shop', 'props', 'divider-top', 'rune-1', 'rune-2', 'rune-3',
-                 'back-name', 'back-latin', 'back-divider', 'back-desc-full',
-                 'historic', 'notes', 'compounds', 'cautions', 'pairings'],
-      }),
+      // Zone geometry (id/layoutMode/width/align) is derived from the
+      // template descriptor via defaultLayout() instead of hand-written, so
+      // it can't drift from data/label-templates.js the way preset-standard
+      // and preset-three-col already don't (bar-raise
+      // generative-art-schema-driven-correctness-01). Only the per-zone item
+      // curation below is this preset's own choice.
+      layout: () => {
+        const baseline = defaultLayout(undefined, templates, defaultTemplateId);
+        const MINIMAL_ITEMS = {
+          'front-left':   ['symbol'],
+          'front-center': ['herb-name', 'latin', 'divider-bot', 'description'],
+          'front-right':  ['botanical'],
+        };
+        const front = baseline.front.map(z => ({ ...z, items: [...(MINIMAL_ITEMS[z.id] ?? [])] }));
+        const placed = new Set(Object.values(MINIMAL_ITEMS).flat());
+        const hidden = ALL_ITEM_KEYS.filter(k => !placed.has(k));
+        return { front, back: [], hidden };
+      },
       sectionTitles: { ...DEFAULT_SECTION_TITLES },
     },
   ];
@@ -288,10 +293,15 @@ export function mountEditor(root, ctx) {
   const exportBtn  = $('btn-export-png');
   const resetBtn   = $('btn-reset');
 
-  // localStorage write failures (quota exceeded, storage disabled) raised by
-  // persist.js / saved-labels.js land here as a one-line warning.
-  document.addEventListener('yaa:storage-error', () => {
-    statusMsg.textContent = 'Storage is full. Changes may not save. Delete unused saved labels.';
+  // localStorage failures raised by persist.js / saved-labels.js land here as
+  // a one-line warning. 'read' (a corrupted entry, data is lost) and 'write'
+  // (quota exceeded, best effort) get different wording so the user knows
+  // whether something they had is gone versus something they're about to
+  // lose (bar-raise reliability-01).
+  document.addEventListener('yaa:storage-error', (e) => {
+    statusMsg.textContent = e.detail?.op === 'read'
+      ? 'Could not read your saved data. It may be corrupted; starting fresh.'
+      : 'Storage is full. Changes may not save. Delete unused saved labels.';
     statusMsg.className = 'status-msg warn';
   });
   const runeChar = [$('r1Char'), $('r2Char'), $('r3Char')];
@@ -687,7 +697,7 @@ export function mountEditor(root, ctx) {
     state.set({
       latin: found.latin,
       props: found.props,
-      description: found.desc.slice(0, tmpl.descMaxChars),
+      description: truncateAtWordBoundary(found.desc, tmpl.descMaxChars),
       accent: found.accent,
       symbol: found.symbol,
       botanical: found.botanical,
@@ -695,10 +705,10 @@ export function mountEditor(root, ctx) {
       icon: found.icon ?? null,
       runes: found.runes.map(r => ({ c: r.c, m: r.m })),
       descFull:     truncateAtWordBoundary(found.descFull ?? found.desc, tmpl.descFullMaxChars),
-      historicUses: (found.historicUses ?? '').slice(0, tmpl.historicMaxChars),
-      compounds:    (found.compounds    ?? '').slice(0, tmpl.compoundsMaxChars),
-      cautions:     (found.cautions     ?? '').slice(0, tmpl.cautionsMaxChars),
-      pairings:     (found.pairings     ?? '').slice(0, tmpl.pairingsMaxChars),
+      historicUses: truncateAtWordBoundary(found.historicUses ?? '', tmpl.historicMaxChars),
+      compounds:    truncateAtWordBoundary(found.compounds    ?? '', tmpl.compoundsMaxChars),
+      cautions:     truncateAtWordBoundary(found.cautions     ?? '', tmpl.cautionsMaxChars),
+      pairings:     truncateAtWordBoundary(found.pairings     ?? '', tmpl.pairingsMaxChars),
     });
     syncFromState();
     statusMsg.textContent = 'Found. Customize freely.';

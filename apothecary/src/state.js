@@ -15,7 +15,12 @@
 // `state.notesSplit` flag are retired. main.js migrates old saved state forward
 // by reading those plus the template's seed zones to build state.layout.
 
-import { TEMPLATES, DEFAULT_TEMPLATE_ID } from '../data/label-templates.js';
+// Deliberately no static import of data/label-templates.js. main.js loads
+// that module dynamically with a cache-busted URL; a static import here would
+// pull in a second, un-versioned instance that can serve stale data after a
+// deploy (cache-bust contract, PROJECT_SPEC 3.1, bar-raise architecture-01).
+// Every function below that needs the template registry takes it as a param
+// instead, sourced from a caller who already holds the versioned copy.
 
 export function createState(initial) {
   let state = structuredClone(initial);
@@ -87,8 +92,9 @@ export function makeZone({ id, layoutMode = 'stack', width = 100, align = 'cente
 // the apothecary zones and the descriptor arrays were a dead fallback that had
 // to be kept mirrored by hand; deriving makes the descriptor the single source,
 // so a second template is a registry-only add.
-export function defaultLayout(templateId = DEFAULT_TEMPLATE_ID) {
-  const tmpl = TEMPLATES[templateId] ?? TEMPLATES[DEFAULT_TEMPLATE_ID];
+export function defaultLayout(templateId, templates, defaultTemplateId) {
+  const id = templateId && templates[templateId] ? templateId : defaultTemplateId;
+  const tmpl = templates[id] ?? templates[defaultTemplateId];
   const seedZones = (seeds) => (seeds ?? []).map(z => makeZone({
     id: z.id, layoutMode: z.layoutMode, width: z.width, align: z.align, items: z.items,
   }));
@@ -115,10 +121,10 @@ export function defaultLayout(templateId = DEFAULT_TEMPLATE_ID) {
 // template ships (PROJECT_SPEC section 9, M3); covered by test-migration.mjs
 // TEST 7 until then. Not used during normalizeState on purpose: re-seeding
 // layout there would clobber a pre-v0.9 migration signal.
-export function templatePatch(templateId) {
-  const tmpl = TEMPLATES[templateId];
+export function templatePatch(templateId, templates) {
+  const tmpl = templates[templateId];
   if (!tmpl) return null;
-  return { templateId, sizeId: tmpl.defaultSize, layout: defaultLayout(templateId) };
+  return { templateId, sizeId: tmpl.defaultSize, layout: defaultLayout(templateId, templates, templateId) };
 }
 
 // --- Section title defaults (v0.11) ----------------------------------------
@@ -139,7 +145,7 @@ export const DEFAULT_SECTION_TITLES = {
 
 // --- Default state ---------------------------------------------------------
 
-export function defaultState() {
+export function defaultState(templates, defaultTemplateId) {
   return {
     __schemaVersion: 1,
     templateId: 'apothecary-3x1.5',
@@ -168,7 +174,7 @@ export function defaultState() {
     pairings: 'Honey · Lavender · Lemon balm · Vanilla',
 
     // v0.9: zone layout owned by state, not template.
-    layout: defaultLayout(),
+    layout: defaultLayout(undefined, templates, defaultTemplateId),
 
     // v0.11: per-section title overrides + user-defined custom items +
     // border ornament style + saved layout presets.

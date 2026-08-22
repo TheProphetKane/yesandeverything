@@ -1,17 +1,31 @@
 // saved-labels.js - localStorage list of named label snapshots.
-
-import { notifyStorageError } from './persist.js';
 //
 // Schema per entry: { id, name, createdAt, updatedAt, state }
 // state is a full state snapshot from the main store.
+//
+// Deliberately no static import of ./persist.js. main.js loads that module
+// dynamically with a cache-busted URL and this module runs the same way; a
+// static import here would pull in a second, un-versioned instance that can
+// serve stale code after a deploy (cache-bust contract, PROJECT_SPEC 3.1,
+// bar-raise architecture-01). notifyStorageError arrives via configure()
+// instead, called once from main.js right after the dynamic import resolves.
 
 const KEY = 'yesandapothecary.v1.saved';
+
+let notifyStorageError = () => {};
+export function configure({ notifyStorageError: fn } = {}) {
+  if (typeof fn === 'function') notifyStorageError = fn;
+}
 
 function read() {
   try {
     const v = JSON.parse(localStorage.getItem(KEY));
     return Array.isArray(v) ? v : [];
-  } catch {
+  } catch (err) {
+    // A corrupted entry used to silently discard the user's entire
+    // saved-label library with no on-screen warning (bar-raise
+    // reliability-01). Surface it; the panel still renders empty-but-safe.
+    notifyStorageError('saved-labels', err, 'read');
     return [];
   }
 }

@@ -13,6 +13,7 @@ const [
   editorMod,
   shopMod,
   savedMod,
+  savedLabelsMod,
   lookupMod,
   persistMod,
   exportPngMod,
@@ -30,6 +31,12 @@ const [
   import("./ui/editor.js" + V),
   import("./ui/shop-name.js" + V),
   import("./ui/saved-labels-ui.js" + V),
+  // v1.1.9: saved-labels.js used to be reached only via a static import inside
+  // saved-labels-ui.js, so it never got a ?v= URL. Loading it here and
+  // forwarding its exports via ctx closes that gap, along with migrate.js's
+  // static import of state.js and state.js's static import of
+  // label-templates.js (bar-raise 2026-08-12/08-19 architecture-01).
+  import("./util/saved-labels.js" + V),
   import("./util/lookup.js" + V),
   import("./util/persist.js" + V),
   import("./util/export-png.js" + V),
@@ -53,8 +60,9 @@ const { render, ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS }
 const { mountEditor } = editorMod;
 const { mountShopName } = shopMod;
 const { mountSavedLabels } = savedMod;
+const { listSaved, saveLabel, loadLabel, deleteLabel, duplicateLabel, renameLabel, configure: configureSavedLabels } = savedLabelsMod;
 const { makeLookup } = lookupMod;
-const { loadState, saveState, clearState, debounce } = persistMod;
+const { loadState, saveState, clearState, debounce, notifyStorageError } = persistMod;
 const { exportPng } = exportPngMod;
 const { normalizeState } = migrateMod;
 const { SYMBOL_LABELS, SYMBOL_ALIASES } = symbolsMod;
@@ -64,6 +72,11 @@ const { TEMPLATES, DEFAULT_TEMPLATE_ID, resolveSize } = templatesMod;
 const { autofitText } = autofitMod;
 const { printLabel } = printMod;
 const { truncateAtWordBoundary } = truncateMod;
+
+// v1.1.9: inject persist.js's notifyStorageError into saved-labels.js instead
+// of letting saved-labels.js statically import persist.js itself (same
+// cache-bust reasoning as above).
+configureSavedLabels({ notifyStorageError });
 
 async function loadJson(path) {
   const res = await fetch(path + V);
@@ -93,9 +106,12 @@ async function main() {
     templates: TEMPLATES,
     defaultTemplateId: DEFAULT_TEMPLATE_ID,
     parchmentTextures: PARCHMENT_TEXTURES,
+    // v1.1.9: forwarded so migrate.js doesn't need a static import of
+    // state.js. Keeps the v0.8.0 cache-bust contract intact.
+    defaultState, defaultLayout, DEFAULT_SECTION_TITLES,
   };
   const persisted = loadState();
-  const initial = normalizeState(persisted ?? defaultState(), migrateCtx);
+  const initial = normalizeState(persisted ?? defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID), migrateCtx);
 
   const state = createState(initial);
 
@@ -104,12 +120,19 @@ async function main() {
   const savedMount = document.querySelector('[data-saved-labels]');
   // v1.1.0: recalled snapshots run through the same normalizeState as boot,
   // so a label saved before v0.9 (no state.layout) no longer loads blank.
-  if (savedMount) mountSavedLabels(savedMount, state, (snap) => normalizeState(snap, migrateCtx));
+  // v1.1.9: the saved-labels CRUD functions are forwarded here too, so
+  // saved-labels-ui.js doesn't need a static import of saved-labels.js
+  // (cache-bust contract, bar-raise architecture-01).
+  if (savedMount) mountSavedLabels(savedMount, state, {
+    listSaved, saveLabel, loadLabel, deleteLabel, duplicateLabel, renameLabel,
+    normalize: (snap) => normalizeState(snap, migrateCtx),
+  });
 
   mountEditor(document.querySelector('[data-editor]'), {
     state, lookupHerb, runes, herbDB, aliasMap, runeMeanings,
     symbolLabels: SYMBOL_LABELS,
     templates: TEMPLATES,
+    defaultTemplateId: DEFAULT_TEMPLATE_ID,
     parchmentTextures: PARCHMENT_TEXTURES,
     // v0.11.1: forwarded so editor.js doesn't need static imports of upstream
     // modules. Keeps the v0.8.0 cache-bust contract intact.
@@ -124,7 +147,7 @@ async function main() {
     printLabel, truncateAtWordBoundary,
     onReset: () => {
       clearState();
-      state.set(defaultState());
+      state.set(defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID));
     },
   });
 

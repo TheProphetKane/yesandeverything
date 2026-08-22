@@ -9,14 +9,20 @@
 // ctx carries the data registries so this module needs no imports outside
 // src/ (cache-bust contract): { templates, defaultTemplateId, parchmentTextures }.
 
-import { defaultState, defaultLayout, DEFAULT_SECTION_TITLES } from '../state.js';
+// Deliberately no static import of ../state.js. main.js loads state.js
+// dynamically with a cache-busted URL and this module runs the same way; a
+// static import here would pull a second, un-versioned instance that can
+// serve stale code after a deploy (cache-bust contract, PROJECT_SPEC 3.1,
+// bar-raise architecture-01). defaultState/defaultLayout/DEFAULT_SECTION_TITLES
+// arrive via the ctx param instead, forwarded from main.js's own versioned
+// import of state.js.
 
 // Build a v0.9 layout from a pre-v0.9 saved state. Reads state.placement
 // (per-item front/back booleans) and state.notesSplit (combined vs three-col
 // back-bottom-row) to reconstruct what the user had, then maps onto the new
 // zone shape. Anything not in placement defaults to its canonical home.
-export function migrateLayoutFrom(old, defaults) {
-  const baseline = defaultLayout();
+export function migrateLayoutFrom(old, defaults, ctx) {
+  const baseline = ctx.defaultLayout(undefined, ctx.templates, ctx.defaultTemplateId);
   const placement = old.placement;
 
   // No old placement to honor -> just hand back the baseline.
@@ -155,8 +161,9 @@ export function splitNotesZone(layout) {
 // current schema in place and return it. Mirrors the historical migration
 // order main.js accreted from v0.8 through v1.0; keep additions appended and
 // dated so the sequence stays readable as a history.
-export function normalizeState(initial, { templates, defaultTemplateId, parchmentTextures = [] }) {
-  const defaults = defaultState();
+export function normalizeState(initial, ctx) {
+  const { templates, defaultTemplateId, parchmentTextures = [] } = ctx;
+  const defaults = ctx.defaultState(templates, defaultTemplateId);
 
   // Template + size validation. An unknown or missing templateId (retired
   // template) falls back to the default. Only the id is corrected here; the
@@ -185,7 +192,7 @@ export function normalizeState(initial, { templates, defaultTemplateId, parchmen
   // instead. Build state.layout from those signals + the canonical default,
   // then drop the retired fields.
   if (!initial.layout || !Array.isArray(initial.layout.front)) {
-    initial.layout = migrateLayoutFrom(initial, defaults);
+    initial.layout = migrateLayoutFrom(initial, defaults, ctx);
   } else {
     // Already on v0.9 shape - just ensure hidden array exists.
     if (!Array.isArray(initial.layout.hidden)) initial.layout.hidden = [];
@@ -195,11 +202,11 @@ export function normalizeState(initial, { templates, defaultTemplateId, parchmen
 
   // v0.11 backfill: section titles, custom items, layout presets, border style.
   if (!initial.sectionTitles || typeof initial.sectionTitles !== 'object') {
-    initial.sectionTitles = { ...DEFAULT_SECTION_TITLES };
+    initial.sectionTitles = { ...ctx.DEFAULT_SECTION_TITLES };
   } else {
     // Add any new default keys that didn't exist when this state was saved.
-    for (const k of Object.keys(DEFAULT_SECTION_TITLES)) {
-      if (!(k in initial.sectionTitles)) initial.sectionTitles[k] = DEFAULT_SECTION_TITLES[k];
+    for (const k of Object.keys(ctx.DEFAULT_SECTION_TITLES)) {
+      if (!(k in initial.sectionTitles)) initial.sectionTitles[k] = ctx.DEFAULT_SECTION_TITLES[k];
     }
   }
   if (!Array.isArray(initial.customItems))   initial.customItems = [];
