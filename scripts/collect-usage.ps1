@@ -1232,6 +1232,40 @@ $KV_NS = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"
 # non-zero exit at the end of the script.
 $publishFailed = @()
 
+# Version floor on the tool doing the writing (bar-raise yae-wrangler-unpinned-kv-writes).
+#
+# There is no package manifest here, and there should not be: this is a static site, and
+# adding a node project to it so one script can pin one CLI is a worse trade than the
+# problem. What is worth removing is the SURPRISE: a globally installed tool can be
+# upgraded, downgraded or removed by something entirely unrelated to this repository, and
+# the first anyone would know is a publish failing in a way nobody attributes to a version.
+#
+# So the version is read and checked rather than assumed, and the floor is stated as a
+# number in this file, which is what makes it a pin someone can reason about. Below the
+# floor or absent entirely, this stops here rather than discovering it mid-publish.
+$WRANGLER_MIN_MAJOR = 4
+$wranglerVersion = $null
+try {
+  $wranglerVersion = ((& wrangler --version 2>&1 | Out-String) -split "`n" |
+    Where-Object { $_ -match "\d+\.\d+\.\d+" } | Select-Object -First 1).Trim()
+} catch {
+  $wranglerVersion = $null
+}
+if (-not $wranglerVersion) {
+  Write-Host "wrangler is not on PATH. The dashboard publish needs it; refusing to continue" -ForegroundColor Red
+  Write-Host "and report success on a run that cannot publish." -ForegroundColor Red
+  exit 1
+}
+$wranglerMajor = 0
+if ($wranglerVersion -match "(\d+)\.\d+\.\d+") { $wranglerMajor = [int]$Matches[1] }
+if ($wranglerMajor -lt $WRANGLER_MIN_MAJOR) {
+  Write-Host "wrangler is $wranglerVersion; this script needs major $WRANGLER_MIN_MAJOR or newer." -ForegroundColor Red
+  Write-Host "A globally installed tool can be changed by something unrelated to this repo," -ForegroundColor Red
+  Write-Host "which is why the floor is checked rather than assumed. Run: npm i -g wrangler@latest" -ForegroundColor Red
+  exit 1
+}
+Write-Host "KV publish using wrangler $wranglerVersion (floor: major $WRANGLER_MIN_MAJOR)." -ForegroundColor DarkGray
+
 function Push-KvKey([string]$key, [string]$file, [int]$attempts = 3) {
   for ($i = 1; $i -le $attempts; $i++) {
     $out = & wrangler kv key put --namespace-id=$KV_NS $key --path=$file --remote 2>&1
