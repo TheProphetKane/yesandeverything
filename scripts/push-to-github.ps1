@@ -146,9 +146,14 @@ $count = $paths.Count
 $summary = "yae: update $count file" + $(if ($count -eq 1) { "" } else { "s" })
 
 # If a single project subdir was touched, name it.
-$projectDirs = $paths | ForEach-Object {
+# @() around the pipeline matters. Without it a single match comes back as a bare
+# string, .Count on a string is 1, and $projectDirs[0] then indexes the STRING and
+# returns its first character: every release touching exactly one project directory
+# committed "yae: update p" instead of "yae: update projects/scheduler". Two commits
+# in this history carry that message.
+$projectDirs = @($paths | ForEach-Object {
     if ($_ -match '^(apothecary|hordes|projects/[^/]+)/') { $matches[1] } else { $null }
-} | Where-Object { $_ } | Select-Object -Unique
+} | Where-Object { $_ } | Select-Object -Unique)
 
 if ($projectDirs.Count -eq 1) {
     $summary = "yae: update $($projectDirs[0])"
