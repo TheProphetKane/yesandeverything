@@ -80,7 +80,7 @@
   @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
   a { color: var(--accent-hot); text-decoration: none; border-bottom: 1px dashed var(--accent-dim); }
   a:hover { color: var(--fg-0); border-bottom-color: var(--fg-2); }
-  .wrap { max-width: 1880px; margin: 0 auto; padding: 7px 18px 8px; }
+  .wrap { max-width: 1880px; margin: 0 auto; padding: 5px 18px 4px; }
 
   .panel {
     position: relative;
@@ -105,7 +105,7 @@
   .panel:hover { box-shadow: 0 0 30px rgba(255, 0, 255, 0.06); }
   .panel .ptitle {
     font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--fg-3); margin: 0 0 6px;
+    color: var(--fg-3); margin: 0 0 4px;
   }
   .panel .ptitle .tick { color: var(--accent-dim); margin-right: 6px; }
 
@@ -196,7 +196,7 @@
     border: 1px solid var(--ink-3); border-radius: 4px;
     background: rgba(13, 17, 23, 0.88);
     font-size: 12px; color: var(--fg-2);
-    padding: 3px 0; margin-bottom: 7px;
+    padding: 2px 0; margin-bottom: 6px;
     mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
     -webkit-mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
   }
@@ -223,45 +223,63 @@
   }
 
   /* Portfolio band: the weekly cross-project rollup (status/data/constellation.json).
-     Sits directly under the ticker because it answers "what do I do today", which every
-     number below it only supports. */
-  .band { display: grid; grid-template-columns: 190px 1fr; gap: 14px; padding: 9px 14px; margin-bottom: 8px; align-items: start; }
+     Sits under the ticker because it answers "what do I do today", which every number
+     below it only supports.
+
+     Height is the whole design constraint. This page has one hard rule: it fits a
+     1920x1080 screen with no scrolling. So the band is three fixed columns on one row,
+     every action is a single line that ellipses (the full text is in the title and in the
+     rollup overlay), and the at-risk list is chips in the third column rather than a
+     wrapping block under the actions.
+
+     The corner-bracket span every .panel carries is absolutely positioned here on
+     purpose: as a normal grid child it claimed the first column, which pushed the verdict
+     into the wide column and the actions into a 190px one, and the band rendered 1298px
+     tall on a screen that has room for 90. */
+  .band { display: grid; grid-template-columns: 150px auto minmax(0, 1fr) auto; gap: 12px; padding: 4px 12px; margin-bottom: 6px; align-items: center; }
+  .band > .ck { position: absolute; inset: 0; pointer-events: none; }
   .band-verdict { border-right: 1px solid var(--ink-3); padding-right: 12px; }
-  .band-h { font-size: 30px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
-  .band-h .unit { font-size: 11px; color: var(--fg-3); font-weight: 400; margin-left: 4px; }
-  .band-v { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
-  .band-sub { font-size: 10.5px; color: var(--fg-3); margin-top: 5px; line-height: 1.45; }
+  .band-h { font-size: 23px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .band-h .unit { font-size: 10px; color: var(--fg-3); font-weight: 400; margin-left: 3px; }
+  .band-v { font-size: 9px; text-transform: uppercase; letter-spacing: 1.1px; margin-top: 2px; }
+  .band-sub { font-size: 9.5px; color: var(--fg-3); margin-top: 2px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* The four health numbers live in the band, not in a second totals row. Same values,
+     same click targets, no extra band of page height: the one-screen rule at 1920x1080 is
+     the constraint this whole layout is built around. */
+  .band-nums { display: grid; grid-template-columns: repeat(2, auto); gap: 2px 14px; border-right: 1px solid var(--ink-3); padding-right: 12px; }
+  .band-num { display: flex; align-items: baseline; gap: 5px; cursor: pointer; white-space: nowrap; }
+  .band-num:hover .bn-k { color: var(--fg-1); }
+  .band-num .bn-v { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.25; }
+  .band-num .bn-k { font-size: 9px; text-transform: uppercase; letter-spacing: .9px; color: var(--fg-3); }
   .band-right { min-width: 0; }
-  .band-title { font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--fg-3); margin-bottom: 5px; }
-  .band-act { display: flex; gap: 9px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--ink-2); cursor: pointer; }
-  .band-act:first-of-type { border-top: none; }
+  .band-title { font-size: 9px; text-transform: uppercase; letter-spacing: 1.1px; color: var(--fg-3); }
+  .band-act { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; cursor: pointer; min-width: 0; }
   .band-act:hover .ba-label { color: var(--fg-0); }
-  .band-act .ba-sev { font-size: 9.5px; font-weight: 700; letter-spacing: .5px; min-width: 34px; }
-  .band-act .ba-pj { font-size: 11px; color: var(--cyan-hot); min-width: 78px; white-space: nowrap; }
-  .band-act .ba-label { font-size: 11.5px; color: var(--fg-2); line-height: 1.45; min-width: 0; }
-  .band-risk { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-  .band-risk .chip { font-size: 10.5px; padding: 2px 8px; }
-  .band-more { font-size: 10.5px; color: var(--fg-3); margin-top: 6px; cursor: pointer; }
+  .band-act .ba-sev { font-size: 9px; font-weight: 700; letter-spacing: .5px; flex: 0 0 30px; }
+  .band-act .ba-pj { font-size: 10.5px; color: var(--cyan-hot); flex: 0 0 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .band-act .ba-label { font-size: 11px; color: var(--fg-2); line-height: 1.4; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .band-risk { display: flex; flex-wrap: wrap; gap: 4px; max-width: 300px; justify-content: flex-end; align-items: center; }
+  .band-risk .chip { font-size: 10px; padding: 1px 7px; }
+  .band-more { font-size: 10px; color: var(--fg-3); cursor: pointer; white-space: nowrap; }
   .band-more:hover { color: var(--cyan-hot); }
+  @media (max-width: 1500px) {
+    .band { grid-template-columns: 150px auto minmax(0, 1fr); }
+    .band-risk { grid-column: 1 / -1; justify-content: flex-start; max-width: none; }
+  }
+  @media (max-width: 1100px) {
+    .band { grid-template-columns: 150px minmax(0, 1fr); }
+    .band-nums { grid-column: 1 / -1; grid-template-columns: repeat(4, auto); border-right: none; padding-right: 0; }
+  }
   @media (max-width: 900px) {
     .band { grid-template-columns: 1fr; }
+    .band-nums { grid-template-columns: repeat(2, auto); }
     .band-verdict { border-right: none; border-bottom: 1px solid var(--ink-3); padding: 0 0 8px; }
-    /* The band is the top of the page on a phone, so it must not eat the whole first
-       screen: each action keeps two lines and the at-risk list keeps two rows. */
-    .band-act .ba-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .band-act { flex-wrap: wrap; }
-    .band-risk { max-height: 56px; overflow: hidden; }
+    .band-risk { max-height: 44px; overflow: hidden; }
   }
 
-  /* Row one is the eight token and cost cells, unchanged. Row two is the health cells,
-     each spanning two columns of the same eight-column grid so the two rows line up. */
-  .totals { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 8px; }
-  /* The health cells double up only on the full eight-column grid, so the two rows line
-     up. Below that the grid is already four across or fewer and a span would go ragged. */
-  @media (min-width: 1501px) { .total.health { grid-column: span 2; } }
-  .total.health .num { font-size: 19px; }
+  .totals { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 6px; }
   @media (max-width: 1500px) { .totals { grid-template-columns: repeat(4, 1fr); } }
-  .total { padding: 7px 14px; }
+  .total { padding: 5px 14px; }
   .total .num.bump { animation: numBump 0.5s ease; }
   @keyframes numBump { 0% { filter: brightness(1.7); } 100% { filter: none; } }
   .total .num { font-size: 21px; font-weight: 700; color: var(--fg-0); font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.25; }
@@ -272,10 +290,26 @@
   .total .num .up { color: var(--ok); font-size: 14px; }
   .total .num .dn { color: var(--bad); font-size: 14px; }
 
-  .layout { display: grid; grid-template-columns: 340px 52px 1fr 52px; gap: 10px; align-items: stretch; margin-bottom: 6px; }
+  .layout { display: grid; grid-template-columns: 340px 52px 1fr 52px; gap: 10px; align-items: stretch; margin-bottom: 4px; }
   @media (max-width: 1280px) { .layout { grid-template-columns: 1fr; } .navarrow { display: none; } }
   .side { display: flex; flex-direction: column; gap: 10px; }
-  .core-box svg { display: block; width: 100%; height: auto; max-height: 232px; margin: 0 auto; }
+  /* 232px was the cap while the side column held two panels. The column now carries the
+     same two views in one panel plus the donut, and the whole page has to land inside one
+     1920x1080 screen, so the drawing gets a tighter ceiling.
+
+     The viewport-relative half of the cap is what keeps the rule true on a shorter window
+     than the one this was measured against: the side column sets the height of the whole
+     middle row, so shrinking these two drawings shrinks the page rather than pushing the
+     strip below the fold. */
+  .core-box svg { display: block; width: 100%; height: auto; max-height: min(184px, 18vh); margin: 0 auto; }
+  .ptabs { float: right; display: flex; gap: 4px; }
+  .ptab {
+    background: var(--ink-2); border: 1px solid var(--ink-3); color: var(--fg-3);
+    font: inherit; font-size: 9px; letter-spacing: .8px; text-transform: uppercase;
+    border-radius: 999px; padding: 0 8px; cursor: pointer; line-height: 15px;
+  }
+  .ptab.on { color: var(--cyan-hot); border-color: var(--cyan); }
+  .ptab:hover { color: var(--fg-0); }
   .core-box svg circle { transition: opacity 0.35s ease; }
   .ring-spin { transform-origin: 150px 150px; animation: spin 40s linear infinite; }
   .ring-spin2 { transform-origin: 150px 150px; animation: spinr 70s linear infinite; }
@@ -283,10 +317,12 @@
   @keyframes spinr { to { transform: rotate(-360deg); } }
   /* two fixed columns so the color swatches align; an odd trailing item
      spans both columns and centers itself */
-  .core-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 11px; color: var(--fg-2); margin-top: 5px; }
+  .core-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 8px; font-size: 10px; color: var(--fg-2); margin-top: 4px; }
+  #radar-legend { grid-template-columns: repeat(2, 1fr); font-size: 11px; }
   .core-legend > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .core-legend > span:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; }
+  #radar-legend > span:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; }
   .core-legend .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .core-legend .rosternote { font-size: 9px; letter-spacing: .02em; cursor: help; }
 
   /* Lens grid: the twelve core review lenses against every project. Every one of these
      scores was written to status/data nightly and read only in markdown reports. */
@@ -365,7 +401,7 @@
   .spot-head .usage-line .cost { color: var(--accent-hot); }
   .spot-pos { font-size: 11px; color: var(--fg-3); letter-spacing: 2px; margin-left: 12px; }
 
-  .wdots { display: flex; justify-content: center; gap: 8px; padding: 2px 0 5px; }
+  .wdots { display: flex; justify-content: center; gap: 8px; padding: 1px 0 3px; }
   .wdots button {
     width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-5);
     background: var(--ink-3); cursor: pointer; padding: 0;
@@ -1006,12 +1042,12 @@
       <div class="band-v" id="band-verdict-word"></div>
       <div class="band-sub" id="band-sub"></div>
     </div>
+    <div class="band-nums" id="band-nums"></div>
     <div class="band-right">
       <div class="band-title">do these first</div>
       <div id="band-actions"></div>
-      <div class="band-risk" id="band-risk"></div>
-      <div class="band-more" id="band-more" role="button" tabindex="0" title="read the whole rollup"></div>
     </div>
+    <div class="band-risk" id="band-risk"></div>
   </div>
 
   <div class="totals" id="totals"></div>
@@ -1023,15 +1059,23 @@
         <div id="core"></div>
         <div class="core-legend" id="core-legend"></div>
       </div>
-      <div class="panel core-box clickable" id="panel-radar" title="solid = complete, dashed = review health; click to enlarge with the full key"><span class="ck"></span>
-        <p class="ptitle"><span class="tick">//</span>project radar &middot; complete against health</p>
-        <div id="radar"></div>
-        <div class="core-legend" id="radar-legend"></div>
-      </div>
-      <div class="panel core-box clickable" id="panel-lens" title="click for every lens, including the domain lenses"><span class="ck"></span>
-        <p class="ptitle"><span class="tick">//</span>lens grid &middot; where the score is lost</p>
-        <div id="lensgrid"></div>
-        <div class="lenskey" id="lens-key"></div>
+      <div class="panel core-box" id="panel-radar"><span class="ck"></span>
+        <p class="ptitle"><span class="tick">//</span><span id="side2-title">project radar &middot; complete against health</span>
+          <span class="ptabs">
+            <button type="button" class="ptab on" data-v="radar" title="completion against review health, one axis per project">radar</button>
+            <button type="button" class="ptab" data-v="lens" title="every project against the twelve core review lenses">lenses</button>
+          </span>
+        </p>
+        <div id="side2-body" class="clickable" title="click to enlarge with the full key">
+          <div id="radar-view">
+            <div id="radar"></div>
+            <div class="core-legend" id="radar-legend"></div>
+          </div>
+          <div id="lens-view" hidden>
+            <div id="lensgrid"></div>
+            <div class="lenskey" id="lens-key"></div>
+          </div>
+        </div>
       </div>
     </div>
     <button class="navarrow" id="nav-prev" type="button" aria-label="previous" aria-keyshortcuts="ArrowLeft" title="spin the wheel back">&lsaquo;</button>
@@ -1043,10 +1087,8 @@
 
   <div class="strip" id="strip"></div>
 
-  <div id="usage-orphans" role="status" style="display:none;max-width:1400px;margin:6px auto 0;padding:0 18px;font-size:11px;letter-spacing:.04em;color:var(--fg-2, #8b95a3);"></div>
-
   <footer class="page-foot">
-    Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; costs at published API rates, frozen at collection &middot; progress, review health, lens scores and audit findings from <a href="/status/">status</a> JSON, refreshed by every release, nightly audit and weekly review pass &middot; &larr; &rarr; spin the wheel, v cycles the wave, click any widget to enlarge &middot; <a href="/sitemap/">sitemap</a> &middot; no backend, no analytics, no tracking.
+Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; costs at published API rates, frozen at collection &middot; progress, review health, lens scores and audit findings from <a href="/status/">status</a> JSON, refreshed by every release, nightly audit and weekly review pass &middot; &larr; &rarr; spin the wheel, v cycles the wave, click any widget to enlarge &middot; <a href="/sitemap/">sitemap</a> &middot; no backend, no analytics, no tracking.
   </footer>
 </div>
 
@@ -1072,10 +1114,11 @@
   //   totals, but it takes no wheel slot, no strip card and no legend row, because a
   //   permanent zero on twelve widgets is noise, not history. Named in the footnote.
   //
-  // Counselor and Skylight were carried here until 2026-08-24 and could never hold a
-  // number: the collector strips both (and SignalRD) from every public payload, so they
-  // rendered as permanent zeroes on the wheel, the strip and the donut legend. They are
-  // listed in PRIVATE_IDS instead, which keeps them out of the "not charted" warning.
+  // Counselor and Skylight were both carried here while the collector stripped both from
+  // every public payload, so each rendered as a permanent zero on the wheel, the strip and
+  // the donut legend. Skylight is back with real numbers as of 2026-08-24; the Counselor
+  // app is the one project that stays off, and it is named in PRIVATE_IDS so its absence
+  // reads as deliberate rather than as a gap.
   var PROJECTS = [
     { id: "Agents",       tag: "Agents",       displayName: "Yes& Agents",       hue: "#2f5fd0" },
     { id: "Apothecary",   tag: "Apothecary",   displayName: "Yes& Apothecary",   hue: "#c2b24a" },
@@ -1089,11 +1132,14 @@
     { id: "Lexi",         tag: "Lexi",         displayName: "Yes& Lexi",         hue: "#9aa4b2", usageOnly: true, retired: "2026-07-12" },
     { id: "Ring",         tag: "Ring",         displayName: "Yes& Ring",         hue: "#ff5e7e" },
     { id: "Rising",       tag: "Rising",       displayName: "Brackish Rising",   hue: "#5fd6ff" },
-    { id: "Scheduler",    tag: "Scheduler",    displayName: "Yes& Scheduler",    hue: "#b88aff" }
+    { id: "Scheduler",    tag: "Scheduler",    displayName: "Yes& Scheduler",    hue: "#b88aff" },
+    { id: "Skylight",     tag: "Skylight",     displayName: "Yes& Skylight",     hue: "#82aaff", usageOnly: true }
   ];
-  // Excluded from every public payload by the collector ($PUBLIC_EXCLUDE in
-  // collect-usage.ps1). Named so an absent number reads as private, not as missing.
-  var PRIVATE_IDS = ["Counselor", "Skylight", "SignalRD"];
+  // Excluded from the usage payload by the collector ($USAGE_EXCLUDE in
+  // collect-usage.ps1), so it can never have a card. Named so an absent number reads as
+  // private rather than as missing. Skylight came off this list on 2026-08-24: it now
+  // gets tokens and cost like any other project and still publishes no status file.
+  var PRIVATE_IDS = ["Counselor"];
   var LIVE_PROJECTS = PROJECTS.filter(function (p) { return !p.retired; });
   var ALL_META = { id: "ALL", tag: "All Projects", displayName: "All Projects", hue: "#ff66ff" };
   var CYCLE = ["ALL"].concat(LIVE_PROJECTS.map(function (p) { return p.id; }));
@@ -1646,6 +1692,32 @@
       li.appendChild(txt(p.tag + " " + fmt(r.val) + " · " + share + "%"));
       legend.appendChild(li);
     });
+    var note = rosterNote();
+    if (note) legend.appendChild(el("span", { className: "dim rosternote", text: note.short, title: note.full }));
+  }
+  // Which projects are deliberately absent, and why. Three separate facts that used to
+  // read as one apology line ("not charted"): a project burning tokens with no entry here
+  // is a bug, a retired project is history, and a private one is a decision. It lives in
+  // the legend spare cell because the footer is hidden on any screen under 1160px tall,
+  // which is the whole fleet, and because the page must not grow a line to say it.
+  function rosterNote() {
+    var bits = [], full = [];
+    var orphans = unregisteredIds();
+    if (orphans.length) {
+      bits.push(orphans.join(", ") + " uncharted");
+      full.push("burning tokens with no entry in this page project list, so they get no card: " + orphans.join(", "));
+    }
+    var ret = PROJECTS.filter(function (pp) { return pp.retired; });
+    if (ret.length) {
+      bits.push(ret.map(function (pp) { return pp.tag; }).join(", ") + " retired");
+      full.push("retired, lifetime totals still counted, no slot on the wheel: " + ret.map(function (pp) { return pp.tag + " (" + pp.retired + ")"; }).join(", "));
+    }
+    if (PRIVATE_IDS.length) {
+      bits.push(PRIVATE_IDS.join(", ") + " private");
+      full.push("held out of every public payload by the collector: " + PRIVATE_IDS.join(", "));
+    }
+    if (!bits.length) return null;
+    return { short: bits.join(" · "), full: full.join(". ") };
   }
   function updateCoreFocus() {
     var rows = CORE.rows;
@@ -2474,9 +2546,9 @@
     });
     if (!TOT) {
       TOT = [];
-      // Cells 0-7 are the token and cost row, unchanged. Cells 8-11 are the health row
-      // added 2026-08-24: every one of those four numbers was already collected nightly
-      // and had nowhere to land, so the page reported spend in six ways and rot in none.
+      // Eight cells, one row: tokens and cost. The four health numbers this page was
+      // missing live in the band above instead of in a second row here, because a second
+      // row costs 42px of page height and this page has to fit one 1920x1080 screen.
       [
         { cls: "today", tip: TIPS.tokensToday },
         { cls: "cost", tip: TIPS.costToday },
@@ -2485,11 +2557,7 @@
         { cls: "cost", tip: TIPS.allTimeCost },
         { cls: "", tip: TIPS.burnRate },
         { cls: "", tip: TIPS.reviewActions, go: function () { openLists("found"); } },
-        { cls: "", tip: TIPS.lastCollected },
-        { cls: "health", tip: TIPS.portfolioHealth, go: function () { if (LAST.constellation) openSummary(LAST.constellation); else openStats(); } },
-        { cls: "health", tip: TIPS.closed, go: function () { openLists("found"); } },
-        { cls: "health", tip: TIPS.oldest, go: function () { openLists("found"); } },
-        { cls: "health", tip: TIPS.auditFindings, go: function () { openLists("found"); } }
+        { cls: "", tip: TIPS.lastCollected }
       ].forEach(function (d, i) {
         var t = el("div", { className: "panel total clickable " + d.cls }, [el("span", { className: "ck" })]);
         t.title = d.tip + (d.go ? " · click for the detail behind it" : " · click for the full stats view");
@@ -2545,47 +2613,6 @@
     setCell(6, actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag);
     setCell(7, usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected");
 
-    // ---- health row ----
-    var con = LAST.constellation;
-    var ph = con && con.portfolioHealth != null ? con.portfolioHealth : null;
-    var meanH = null, nH = 0, sumH = 0;
-    Object.keys(statuses).forEach(function (k) {
-      if (!inFilter(k)) return;
-      var h = statuses[k] && statuses[k].barRaise && statuses[k].barRaise.health;
-      if (h != null) { sumH += h; nH++; }
-    });
-    if (nH) meanH = Math.round(sumH / nH);
-    // The rollup score is portfolio-wide, so it only answers for the portfolio view. Under
-    // a project filter the mean of that scope's review health is the honest substitute.
-    var showH = FILTER === "ALL" && ph != null ? ph : meanH;
-    setCell(8, showH != null ? showH : 0, function (n) { return String(Math.round(n)); }, "/100",
-      (FILTER === "ALL" && ph != null ? "portfolio health" : "review health" + scopeTag));
-    var usingRollup = FILTER === "ALL" && ph != null;
-    TOT[8].n.style.color = showH == null ? "" : (usingRollup ? verdictColor(con.portfolioVerdict) : completionColor(showH));
-    var closed = closedFor(FILTER);
-    setCell(9, closed != null ? closed : 0, function (n) { return String(Math.round(n)); }, "closed", "findings closed" + scopeTag);
-    var oldest = oldestOpenFor(FILTER);
-    setCell(10, oldest != null ? oldest : 0, function (n) { return String(Math.round(n)); }, "days", "oldest open finding" + scopeTag);
-    TOT[10].n.style.color = oldest == null ? "" : (oldest >= 30 ? "#ff5b6e" : oldest >= 14 ? "#cc8400" : "#00d68f");
-    var aud = auditFor(FILTER);
-    setCell(11, aud ? aud.total : 0, function (n) { return String(Math.round(n)); }, "found", "nightly audit" + scopeTag);
-    if (aud) {
-      TOT[11].n.style.color = aud.critical > 0 ? "#ff5b6e" : aud.high > 0 ? "#cc5500" : aud.medium > 0 ? "#cc8400" : "#00d68f";
-      TOT[11].n.parentNode.title = aud.critical + " critical, " + aud.high + " high, " + aud.medium + " medium, " + aud.low + " low · click for the detail behind it";
-    }
-    // Anything in usage.json with no PROJECTS entry gets no bar and is excluded
-    // from ALL, so say so rather than letting it vanish. Empty in the normal case.
-    var orphans = unregisteredIds();
-    var orphanEl = $("usage-orphans");
-    if (orphanEl) {
-      var notes = [];
-      if (orphans.length) notes.push("not charted: " + orphans.join(", ") + " (no PROJECTS entry)");
-      var ret = PROJECTS.filter(function (pp) { return pp.retired; });
-      if (ret.length) notes.push("retired, lifetime totals still counted: " + ret.map(function (pp) { return pp.tag + " (" + pp.retired + ")"; }).join(", "));
-      notes.push("private, withheld from every public payload: " + PRIVATE_IDS.join(", "));
-      orphanEl.textContent = notes.join("  \u00b7  ");
-      orphanEl.style.display = "";
-    }
     document.title = "dashboard · " + (FILTER === "ALL" ? "" : metaFor(FILTER).tag + " · ") + fmtUSD(tToday.cost) + " today";
   }
 
@@ -2593,9 +2620,37 @@
   // constellation.json carries a portfolio health score, a verdict, a written weekly
   // summary, three ranked top actions, and the at-risk list. All of it was already being
   // generated and none of it was on this page.
+  function bandNums() {
+    var wrap = $("band-nums");
+    wrap.innerHTML = "";
+    var scopeTag = FILTER === "ALL" ? "" : " (" + metaFor(FILTER).tag + ")";
+    function num(label, value, color, tip, go) {
+      var n = el("div", { className: "band-num", title: tip + " · click for the detail behind it" });
+      var v = el("span", { className: "bn-v", text: value });
+      if (color) v.style.color = color;
+      n.appendChild(v);
+      n.appendChild(el("span", { className: "bn-k", text: label }));
+      n.addEventListener("click", go);
+      wrap.appendChild(n);
+      return n;
+    }
+    var closed = closedFor(FILTER);
+    if (closed != null) num("closed", String(closed), "#00d68f", TIPS.closed + scopeTag, function () { openLists("found"); });
+    var oldest = oldestOpenFor(FILTER);
+    if (oldest != null) num("oldest open", oldest + "d", oldest >= 30 ? "#ff5b6e" : oldest >= 14 ? "#cc8400" : "#00d68f", TIPS.oldest + scopeTag, function () { openLists("found"); });
+    var aud = auditFor(FILTER);
+    if (aud) {
+      num("audit", String(aud.total), aud.critical > 0 ? "#ff5b6e" : aud.high > 0 ? "#cc5500" : aud.medium > 0 ? "#cc8400" : "#00d68f",
+        aud.critical + " critical, " + aud.high + " high, " + aud.medium + " medium, " + aud.low + " low, from the nightly canonical audit",
+        function () { openLists("found"); });
+    }
+    var st = LAST && LAST.statuses ? staleFor(FILTER) : null;
+    if (st != null) num("stale", String(st), st > 0 ? "#cc8400" : "#00d68f", "projects publishing no fresh status" + scopeTag, function () { openStats(); });
+  }
   function renderBand() {
     var c = LAST && LAST.constellation;
     var box = $("band");
+    bandNums();
     if (!c || (c.portfolioHealth == null && !(c.topActions || []).length)) { box.style.display = "none"; return; }
     box.style.display = "";
     var col = verdictColor(c.portfolioVerdict);
@@ -2608,14 +2663,12 @@
     var vEl = $("band-verdict-word");
     vEl.textContent = c.portfolioVerdict || "";
     vEl.style.color = col;
-    var opened = c.totalOpenActions, closed = c.totalClosedSinceLastConstellation;
+    var opened = c.totalOpenActions, closedC = c.totalClosedSinceLastConstellation;
     var sub = $("band-sub");
     sub.innerHTML = "";
-    if (opened != null) sub.appendChild(txt(opened + " open, " + (closed != null ? closed + " closed" : "") + " since the previous rollup"));
-    if (c.generatedAt) {
-      sub.appendChild(el("br"));
-      sub.appendChild(txt("rolled up " + fmtAgo(c.generatedAt)));
-    }
+    if (opened != null) sub.appendChild(txt(opened + " open / " + (closedC != null ? closedC : "?") + " closed"));
+    sub.title = (opened != null ? opened + " open against " + closedC + " closed since the previous rollup. " : "") +
+      (c.generatedAt ? "Rolled up " + fmtAgo(c.generatedAt) + "." : "");
     var acts = $("band-actions");
     acts.innerHTML = "";
     (c.topActions || []).slice(0, 3).forEach(function (a) {
@@ -2627,7 +2680,7 @@
       var pm = projByLoose(a.project);
       row.appendChild(el("span", { className: "ba-pj", text: pm.tag }));
       row.appendChild(el("span", { className: "ba-label", text: String(a.label || "") }));
-      row.title = "jump to " + pm.tag;
+      row.title = String(a.label || "") + "  (click to jump to " + pm.tag + ")";
       row.addEventListener("click", function () {
         var i = CYCLE.indexOf(pm.id);
         if (i >= 0) jumpTo(i); else openLists("found", "ALL");
@@ -2647,14 +2700,18 @@
       });
     }
     if ((c.atRiskProjects || []).length) risk.appendChild(el("span", { className: "band-title", text: "at risk" }));
+
     riskChips(c.atRiskProjects, "at-risk", "flagged at risk by the latest rollup");
     if ((c.stalledProjects || []).length) risk.appendChild(el("span", { className: "band-title", text: "stalled" }));
     riskChips(c.stalledProjects, "stalled", "flagged stalled by the latest rollup");
-    var more = $("band-more");
-    more.textContent = c.summary ? "read the full rollup" : "";
-    more.style.display = c.summary ? "" : "none";
-    more.onclick = function () { openSummary(c); };
-    more.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSummary(c); } };
+    if (c.summary) {
+      var more = el("span", { className: "band-more", text: "full rollup", title: "read the whole weekly rollup" });
+      more.setAttribute("role", "button");
+      more.setAttribute("tabindex", "0");
+      more.addEventListener("click", function () { openSummary(c); });
+      more.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSummary(c); } });
+      risk.appendChild(more);
+    }
   }
   function openSummary(c) {
     var wrap = el("div", { className: "lists" });
@@ -4029,8 +4086,25 @@
   $("overlay").addEventListener("click", function (e) { if (e.target === $("overlay")) closeOverlay(); });
   $("glass-close").addEventListener("click", closeOverlay);
   $("panel-core").addEventListener("click", openCoreBig);
-  $("panel-radar").addEventListener("click", openRadarBig);
-  $("panel-lens").addEventListener("click", openLensBig);
+  // One panel, two views. Both were worth a panel each and the page has room for one.
+  var SIDE2 = "radar";
+  try { SIDE2 = localStorage.getItem("dashSide2") || "radar"; } catch (e) {}
+  if (SIDE2 !== "lens") SIDE2 = "radar";
+  function setSide2(v) {
+    SIDE2 = v;
+    try { localStorage.setItem("dashSide2", v); } catch (e) {}
+    $("radar-view").hidden = v !== "radar";
+    $("lens-view").hidden = v !== "lens";
+    $("side2-title").innerHTML = "";
+    $("side2-title").appendChild(txt(v === "radar" ? "project radar \u00b7 complete against health" : "lens grid \u00b7 where the score is lost"));
+    var tabs = document.querySelectorAll("#panel-radar .ptab");
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle("on", tabs[i].getAttribute("data-v") === v);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#panel-radar .ptab"), function (b) {
+    b.addEventListener("click", function (e) { e.stopPropagation(); setSide2(b.getAttribute("data-v")); });
+  });
+  $("side2-body").addEventListener("click", function () { if (SIDE2 === "radar") openRadarBig(); else openLensBig(); });
+  setSide2(SIDE2);
   $("ticker").classList.add("clickable");
   $("ticker").addEventListener("click", openReleases);
   addEventListener("keydown", function (e) {

@@ -861,8 +861,23 @@ if ($Audit) {
 # SignalRD added 2026-08-22 (nightly sweep): it is the federal research-credit
 # tax-evidence folder, deliberately kept outside version control, and its
 # telemetry had already reached the working-tree usage.json uncommitted.
+# Two lists, not one, since 2026-08-24 (Kane: Skylight belongs on the dashboard, the
+# Counselor app is the only project that does not).
+#
+#   $PUBLIC_EXCLUDE   nothing about these reaches a public surface. Governs the queue
+#                     counts and the status side, where the sensitive material actually
+#                     lives: the 2026-08-21 privatisation was about a bar-raise action
+#                     ledger full of exploitable-weakness prose and the raw session
+#                     ledgers, not about a token count.
+#   $USAGE_EXCLUDE    kept out of the usage payload as well, so they have no card at all.
+#
+# Skylight sits on the first list and off the second: it gets a card with tokens and cost
+# like any other project, and still publishes no status file and no queue rows. That is
+# the same shape Architecture already has. SignalRD is not a project, it is the research
+# and development evidence folder, so it stays off both.
 $PUBLIC_EXCLUDE = @("Counselor", "Skylight", "SignalRD")
-foreach ($x in $PUBLIC_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
+$USAGE_EXCLUDE  = @("Counselor", "SignalRD")
+foreach ($x in $USAGE_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
 
 # ----- Build usage.json ------------------------------------------------------
 $payload = [ordered]@{

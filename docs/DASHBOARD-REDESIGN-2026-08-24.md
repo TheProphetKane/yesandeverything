@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-24
 **Target:** `dashboard/index.html` (the gated portfolio dashboard)
-**Status:** built and verified 2026-08-24, see section 7 for what shipped against what was proposed
+**Status:** built 2026-08-24, refitted to the one-screen rule the same afternoon. Section 7 is what shipped, section 8 is the refit.
 
 Read against the live page, the eleven per-project status files in `status/data/`, the
 constellation rollup, the live data worker feeds, and `scripts/collect-usage.ps1`.
@@ -157,10 +157,8 @@ that jump the wheel to that project, the at-risk and stalled lists as chips (fol
 their short codes to the canonical project word), and the full weekly summary behind one
 click.
 
-**Totals.** Eight cells became twelve. Row one is the token and cost cells, untouched. Row
-two is portfolio health, findings closed, oldest open finding in days, and nightly audit
-findings, each colour-coded and each opening the detail behind it. The health cells double
-up only on the full eight-column grid so the two rows line up.
+**Totals.** Eight cells became twelve for the first pass, then went back to eight in the
+refit: the four health numbers moved into the band instead. See section 8.
 
 **Radar.** Two rings now: the completion polygon in magenta and a dashed review-health
 polygon in cyan. Where they diverge the gap is the story, and three projects currently read
@@ -217,3 +215,70 @@ now.
 - **Gnosis publishes no `lastReleaseAt`**, so the biggest consumer in the portfolio has no
   push pulse and no ticker row. That field is written from the Gnosis repo, which is out of
   scope for a session working in this one.
+
+---
+
+## 8. The refit, same afternoon
+
+Kane, on seeing the first pass: the dashboard has one hard rule, it fits a 1920x1080 screen
+with no scrolling, and the band broke it.
+
+He was right, and worse than it looked. Measured at a 955px viewport:
+
+| | height |
+|---|---|
+| before any of this work (commit `89551bd9`) | 1038px |
+| after the first pass | 1432px |
+| after the refit | 955px, with 64px of slack below the strip |
+
+**The 1298px band.** Every `.panel` carries a `<span class="ck">` that draws its corner
+brackets. The band was the first panel on this page built as a grid, so that span became
+grid child number one and took the 190px column. The verdict block was pushed into the wide
+column, the actions into the narrow one, and three sentences of finding text wrapped down a
+190px column into a block taller than the screen. The span is absolutely positioned inside
+the band now, which takes it out of grid flow and leaves its pseudo-elements where they
+were.
+
+**What actually bought the height back**, since fixing that bug alone still left the page
+127px over its old size:
+
+- **The four health numbers moved out of a second totals row and into the band**, as
+  compact number-and-label pairs in their own column. Same values, same click targets, and
+  the totals grid is one row of eight again. Saved 42px.
+- **The radar and the lens grid share one panel**, switched by a small pill control in the
+  panel title, remembered in local storage. Two panels of information in one panel of
+  height. Saved 247px, the single largest cut.
+- **The donut and radar drawings cap at `min(184px, 18vh)`** rather than a flat 232px. The
+  side column sets the height of the whole middle row, so on a shorter window the drawings
+  shrink and the page shrinks with them instead of pushing the project strip out of view.
+- **The donut legend runs three columns at 10px** rather than two at 11px. Fourteen
+  projects in two columns is seven rows of page height for a colour key.
+- **A tightening pass on paddings, gaps and the title margin**, roughly 30px across the
+  whole column, nothing removed.
+- **The band itself is one row**: each top action is a single line that ellipses, with the
+  full text in its tooltip and in the rollup overlay behind "full rollup".
+
+**One thing the refit caught.** `@media (max-height: 1160px) { footer.page-foot { display:
+none } }` has been in this page all along, which is the same one-screen discipline. The
+roster note about retired and private projects had been folded into that footer, so it was
+invisible on every screen anyone actually uses. It lives in the donut legend spare cell
+now, where a three-column grid of fourteen projects leaves exactly one gap.
+
+### Roster, second pass
+
+Kane: the Counselor app is the only project that should not be on the dashboard.
+
+Skylight was pulled from every public payload on 2026-08-21 along with Counselor. Reading
+the reason for that decision, it was about a bar-raise action ledger full of
+exploitable-weakness prose and the raw session ledgers, not about a token count. So the
+collector now keeps two lists rather than one: `$PUBLIC_EXCLUDE` still governs the status
+side and the queue rows, and a narrower `$USAGE_EXCLUDE` governs the usage payload.
+Skylight sits on the first and off the second, so it gets a card with tokens and cost like
+any other project and still publishes no status file and no queue rows. That is the same
+shape Architecture already had. SignalRD stays off both: it is the research and development
+evidence folder, not a project.
+
+Checked against the folders on the drive, the dashboard now carries every project that
+burns tokens except the Counselor app: Agents, Apothecary, Architecture, Budget, Cattery,
+Chains, Everything, Gnosis, Hordes, Ring, Rising, Scheduler, Skylight, plus Lexi as
+retired. Fourteen wheel slots including the portfolio view.
