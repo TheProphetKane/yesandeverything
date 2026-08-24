@@ -43,7 +43,34 @@ try {
         $global:LASTEXITCODE = 0
         & (Join-Path $here "write-dashboard-status.ps1")
     } catch {
-        Write-Host "WARN: YaE status write failed ($_). Dashboard card may be stale." -ForegroundColor Yellow
+        # A console-only warning is a record that exists until the window closes, and this
+        # step runs unattended constantly, so nobody is reading that window (bar-raise
+        # yae-status-write-failure-silent). The card then sits at whatever it last said,
+        # which looks exactly like a project that has not changed.
+        #
+        # Two durable records instead. `stale` on the canonical status file is the field the
+        # dashboard already understands, so the failure shows up where someone is looking
+        # rather than where they are not. Still non-fatal: a stale card must not unship a
+        # release that is otherwise fine.
+        $msg = "$_"
+        Write-Host "WARN: YaE status write failed ($msg). Dashboard card may be stale." -ForegroundColor Yellow
+        try {
+            $canon = "X:\PortfolioOps\status\data\Everything.json"
+            if (Test-Path $canon) {
+                $j = Get-Content -Encoding utf8 -Raw $canon | ConvertFrom-Json
+                $stamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+                $note = "status write FAILED at $stamp -- this card is stale: $msg"
+                if ($j.PSObject.Properties["stale"]) { $j.stale = $note }
+                else { $j | Add-Member -NotePropertyName stale -NotePropertyValue $note }
+                $out = ($j | ConvertTo-Json -Depth 30) -replace "`r`n", "`n"
+                [System.IO.File]::WriteAllText($canon, $out, [System.Text.UTF8Encoding]::new($false))
+                Write-Host "Recorded the failure on the canonical status file so the card says so." -ForegroundColor Yellow
+            }
+        } catch {
+            # The durable record is itself best effort. If even this cannot be written the
+            # console line is all there is, which is where this started.
+            Write-Host "WARN: could not record the status-write failure durably either ($_)." -ForegroundColor Yellow
+        }
     }
 
     # Step 2 is itself a writer, so re-run the guard over its output. Checking
