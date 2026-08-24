@@ -50,7 +50,7 @@ $REPOS = @(
 
 $UsagePath = Join-Path $RepoRoot "dashboard\data\usage.json"
 if (-not (Test-Path $UsagePath)) { throw "usage.json not found; run collect-usage.ps1 first." }
-$usage = Get-Content -Raw $UsagePath | ConvertFrom-Json
+$usage = Get-Content -Encoding utf8 -Raw $UsagePath | ConvertFrom-Json
 
 $todayKey = (Get-Date).ToString("yyyy-MM-dd")
 
@@ -176,7 +176,7 @@ $json = ($payload | ConvertTo-Json -Depth 6) -replace "`r`n", "`n"
 if (-not $json.EndsWith("`n")) { $json += "`n" }
 $tmp = "$OutPath.tmp"
 [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
-$null = (Get-Content -Raw $tmp | ConvertFrom-Json)
+$null = (Get-Content -Encoding utf8 -Raw $tmp | ConvertFrom-Json)
 Move-Item -Force $tmp $OutPath
 $back = [System.IO.File]::ReadAllText($OutPath)
 if ($back.Contains([char]0)) { throw "NUL bytes in $OutPath after write" }

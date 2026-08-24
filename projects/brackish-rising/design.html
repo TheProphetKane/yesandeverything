@@ -192,10 +192,17 @@ footer{max-width:900px;margin:40px auto 0;padding:20px 22px;border-top:1px dashe
   var gate=document.getElementById('gate'),doc=document.getElementById('doc');
   function open(){gate.classList.add('hidden');doc.classList.remove('hidden');}
   try{if(sessionStorage.getItem(KEY)==='1')open();}catch(e){}
-  document.getElementById('gateForm').addEventListener('submit',function(e){
+  var GATE_SHA = "6e6bd0e08aeaf9947f3e15d70d306e4eb6b981741bda73bd1bfe4193b2018624";
+  async function sha256hex(s){
+    // Comparing a hash rather than the phrase itself: a literal in the page source
+    // is readable by anyone who opens view-source, which made the gate worth nothing.
+    var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('');
+  }
+  document.getElementById('gateForm').addEventListener('submit',async function(e){
     e.preventDefault();
     var v=document.getElementById('pw').value.trim();
-    if(v==='KanesChosen'){try{sessionStorage.setItem(KEY,'1')}catch(e){}open();}
+    if(await sha256hex(v)===GATE_SHA){document.getElementById('err').textContent='';try{sessionStorage.setItem(KEY,'1')}catch(e){}open();}
     else{document.getElementById('err').textContent='Incorrect phrase.';document.getElementById('pw').select();}
   });
   var tabs=Array.prototype.slice.call(document.querySelectorAll('.tab'));

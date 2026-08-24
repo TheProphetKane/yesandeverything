@@ -54,7 +54,7 @@ foreach ($repo in $repos) {
 
   foreach ($f in $files) {
     $path = $f.FullName
-    $text = Get-Content -LiteralPath $path -Raw
+    $text = Get-Content -Encoding utf8 -LiteralPath $path -Raw
     if (Test-AlreadySelfLocating $text) { $skipped.Add($path); continue }
 
     # Parse to find a script-level param() block (must insert AFTER it).

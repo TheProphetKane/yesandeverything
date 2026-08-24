@@ -52,7 +52,7 @@ if (Test-Path $indexPath) {
 
 $cnamePath = Join-Path $repoRoot "CNAME"
 if (Test-Path $cnamePath) {
-    $cname = (Get-Content $cnamePath -Raw).Trim()
+    $cname = (Get-Content -Encoding utf8 $cnamePath -Raw).Trim()
     if ($cname -ne "yesandeverything.com") {
         Write-Host "INTEGRITY FAIL: CNAME should be 'yesandeverything.com' but contains: '$cname'" -ForegroundColor Red
         exit 1
@@ -61,7 +61,7 @@ if (Test-Path $cnamePath) {
 
 $hordesPath = Join-Path $repoRoot "hordes\index.html"
 if (Test-Path $hordesPath) {
-    $hordesContent = Get-Content $hordesPath -Raw
+    $hordesContent = Get-Content -Encoding utf8 $hordesPath -Raw
     if ($hordesContent -notmatch '(?:var|let|const)\s+ENCODED\s*=') {
         Write-Host "INTEGRITY FAIL: hordes/index.html no longer has the var ENCODED line." -ForegroundColor Red
         Write-Host "HBH's publish-gdd.ps1 needs this line to inject the GDD payload." -ForegroundColor Yellow

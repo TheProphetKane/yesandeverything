@@ -54,7 +54,7 @@ function Test-Parses([string]$text) {
 }
 
 function Patch-Script([string]$path) {
-  $orig = Get-Content -Raw $path
+  $orig = Get-Content -Encoding utf8 -Raw $path
   if ($orig -match 'git-guard\.ps1') { return @{ changed=$false; note="already guarded" } }
   # only touch scripts that actually run git writes
   if ($orig -notmatch '(?m)^\s*(&\s*)?git\s+(add|commit|push)\b') { return @{ changed=$false; note="no git writes" } }

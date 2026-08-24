@@ -35,7 +35,7 @@ if (-not (Test-Path $webhookFile)) {
     exit 0
 }
 
-$webhookUrl = (Get-Content $webhookFile -Raw).Trim()
+$webhookUrl = (Get-Content -Encoding utf8 $webhookFile -Raw).Trim()
 if ([string]::IsNullOrWhiteSpace($webhookUrl)) {
     Write-Host "Discord webhook file is empty - skipping." -ForegroundColor Yellow
     exit 0
@@ -77,7 +77,7 @@ $payload = $payloadObj | ConvertTo-Json -Compress -Depth 5
 # YaE has no version concept; commit SHA is the unique key. Override via
 # $env:DISCORD_FORCE = "1".
 $lastPostedFile = Join-Path $here ".discord_last_posted.txt"
-$lastPosted = if (Test-Path $lastPostedFile) { (Get-Content $lastPostedFile -Raw).Trim() } else { "" }
+$lastPosted = if (Test-Path $lastPostedFile) { (Get-Content -Encoding utf8 $lastPostedFile -Raw).Trim() } else { "" }
 if ($lastPosted -eq $commitSha -and $env:DISCORD_FORCE -ne "1") {
     Write-Host "Skipping Discord post: commit $commitSha was already posted last run. Set `$env:DISCORD_FORCE = `"1`" to force." -ForegroundColor Yellow
     exit 0

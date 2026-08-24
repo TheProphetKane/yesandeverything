@@ -272,7 +272,7 @@ if (Test-Path $pkgRoot) {
 # extra roots can be pinned here once discovered (one path per line):
 $ExtraRootsFile = Join-Path $PSScriptRoot ".usage-scan-roots.txt"
 if (Test-Path $ExtraRootsFile) {
-  Get-Content $ExtraRootsFile | ForEach-Object { if ($_.Trim()) { $SCAN_ROOTS += $_.Trim() } }
+  Get-Content -Encoding utf8 $ExtraRootsFile | ForEach-Object { if ($_.Trim()) { $SCAN_ROOTS += $_.Trim() } }
 }
 $SCAN_ROOTS = @($SCAN_ROOTS | Select-Object -Unique)
 
@@ -355,7 +355,7 @@ $AggCache = @{} # project -> date -> @{ gain/ttlLoss/switchLoss/subagent/session
 $PrevOldest = $null   # oldest record ever seen across runs (the log horizon)
 if (-not $FreshScan -and (Test-Path $StatePath)) {
   try {
-    $state = Get-Content -Raw $StatePath | ConvertFrom-Json
+    $state = Get-Content -Encoding utf8 -Raw $StatePath | ConvertFrom-Json
     if (-not $state.pricingVersion) { throw "state predates pricing versioning; full re-scan" }
     if ([int]$state.attribVersion -ne $ATTRIB_VERSION) {
       throw "state attribution v$($state.attribVersion) != v$ATTRIB_VERSION; full re-scan with vote-based attribution + dedupe"
@@ -681,7 +681,7 @@ function Get-LedgerHighWater([string]$proj) {
   # the post-migration word-id total. Per-field MAX, so no tokens are ever lost.
   foreach ($lf in (Get-ChildItem -Path $dir -Filter *.jsonl -File -ErrorAction SilentlyContinue)) {
     if ((Resolve-ProjectId ([System.IO.Path]::GetFileNameWithoutExtension($lf.Name))) -ne $proj) { continue }
-    foreach ($l in (Get-Content $lf.FullName)) {
+    foreach ($l in (Get-Content -Encoding utf8 $lf.FullName)) {
       if (-not $l -or -not $l.Trim()) { continue }
       try { $e = $l | ConvertFrom-Json } catch { continue }
       if (-not $e.allTime) { continue }
@@ -800,7 +800,7 @@ foreach ($proj in $Agg.Keys) {
 # ----- Audit mode: report + compare, write nothing else --------------------
 if ($Audit) {
   $live = $null
-  if (Test-Path $OutPath) { try { $live = Get-Content -Raw $OutPath | ConvertFrom-Json } catch { $live = $null } }
+  if (Test-Path $OutPath) { try { $live = Get-Content -Encoding utf8 -Raw $OutPath | ConvertFrom-Json } catch { $live = $null } }
   $today = Get-CentralDay (Get-Date)
   $reportPath = Join-Path $RepoRoot "docs\USAGE_AUDIT-$today.md"
   $L = New-Object System.Collections.Generic.List[string]
@@ -893,7 +893,7 @@ function Write-ValidatedJson([string]$path, $obj) {
   if (-not $json.EndsWith("`n")) { $json += "`n" }
   $tmp = "$path.tmp"
   [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
-  $null = (Get-Content -Raw $tmp | ConvertFrom-Json)   # must parse before it may replace the live file
+  $null = (Get-Content -Encoding utf8 -Raw $tmp | ConvertFrom-Json)   # must parse before it may replace the live file
   Move-Item -Force $tmp $path
   $back = [System.IO.File]::ReadAllText($path)
   if ($back.Contains([char]0)) { throw "NUL bytes in $path after write" }
@@ -936,11 +936,11 @@ foreach ($proj in $projects.Keys) {
     $rp = $REPO_PATHS[$proj]
     if ($rp -and (Test-Path $rp)) {
       $pkg = Join-Path $rp "package.json"
-      if (Test-Path $pkg) { try { $ver = (Get-Content -Raw $pkg | ConvertFrom-Json).version } catch {} }
+      if (Test-Path $pkg) { try { $ver = (Get-Content -Encoding utf8 -Raw $pkg | ConvertFrom-Json).version } catch {} }
       if (-not $ver) {
         $pg = Join-Path $rp "project.godot"
         if (Test-Path $pg) {
-          $mv = [regex]::Match((Get-Content -Raw $pg), 'config/version="([^"]+)"')
+          $mv = [regex]::Match((Get-Content -Encoding utf8 -Raw $pg), 'config/version="([^"]+)"')
           if ($mv.Success) { $ver = $mv.Groups[1].Value }
         }
       }
@@ -1029,7 +1029,7 @@ $QUEUE_ALIAS = @{
 }
 try {
   if (Test-Path $QueuePath) {
-    # Read as UTF-8 explicitly. PS 5.1's `Get-Content -Raw` decodes a BOM-less file as
+    # Read as UTF-8 explicitly. PS 5.1's `Get-Content -Encoding utf8 -Raw` decodes a BOM-less file as
     # cp1252, which turns an em-dash (E2 80 94) into three chars and re-emits them as the
     # C3 A2 E2 82 AC ... mojibake when the rows are written back as UTF-8 -- exactly the
     # corruption check-status-json.ps1 aborts the release on. ReadAllText decodes UTF-8
@@ -1243,7 +1243,7 @@ try {
       if ($sf.Name -eq "constellation.json") { continue }   # rollup, not a project card
       if ($sf.Name -eq "backlog-trend.json") { continue }   # daily backlog-governor trend ledger, not a project
       $sid = [System.IO.Path]::GetFileNameWithoutExtension($sf.Name)
-      # UTF-8 read (see queue note above): Get-Content -Raw would cp1252-mojibake any
+      # UTF-8 read (see queue note above): Get-Content -Encoding utf8 -Raw would cp1252-mojibake any
       # em-dash / smart punctuation in a status field before it reaches the KV bundle.
       try { $bundle[$sid] = ([System.IO.File]::ReadAllText($sf.FullName, [System.Text.UTF8Encoding]::new($false)) | ConvertFrom-Json) }
       catch { Write-Host "KV statuses: skipped $($sf.Name) (parse error)" -ForegroundColor Yellow }
@@ -1266,7 +1266,7 @@ try {
 # a day, instead of waiting on a once-daily watchdog.
 if ($publishFailed -notcontains "usage") {
   try {
-    $written = (Get-Content -Raw $OutPath | ConvertFrom-Json).generatedAt
+    $written = (Get-Content -Encoding utf8 -Raw $OutPath | ConvertFrom-Json).generatedAt
     $live = (Invoke-RestMethod -Uri "https://usage.yesandeverything.com/usage.json" -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 45).generatedAt
     if ($live -eq $written) { Write-Host "Live dashboard verified: serving $live." -ForegroundColor Green }
     else {
