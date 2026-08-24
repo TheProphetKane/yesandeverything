@@ -901,6 +901,38 @@ function Write-ValidatedJson([string]$path, $obj) {
 }
 
 Write-ValidatedJson $OutPath $payload
+
+# Lean companion for the status page (bar-raise yae-status-dashboard-overfetch).
+#
+# status/index.html fetched the full usage.json, 590 KB and growing, with caching off,
+# on every load, and used exactly one thing from it: today total per project. Every
+# previous day for every project since logging began was downloaded and discarded.
+#
+# Written here rather than derived on the page, and written in the SAME pass from the
+# same numbers, so there is nothing for it to drift from. Same validated writer, so it
+# gets the same parse-before-replace and NUL check as everything else.
+try {
+  $todayIso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+  $leanProjects = [ordered]@{}
+  foreach ($k in ($payload.projects.Keys | Sort-Object)) {
+    $daily = $payload.projects[$k].daily
+    $inToday = 0; $outToday = 0
+    foreach ($d in @($daily)) {
+      if ($d.d -eq $todayIso) { $inToday += [int64]$d.input; $outToday += [int64]$d.output }
+    }
+    $leanProjects[$k] = [ordered]@{ input = $inToday; output = $outToday }
+  }
+  Write-ValidatedJson (Join-Path $DataDir "usage-today.json") ([ordered]@{
+    generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    day = $todayIso
+    projects = $leanProjects
+  })
+  Write-Host "Wrote usage-today.json (lean summary for the status page)." -ForegroundColor Green
+} catch {
+  # Non-fatal on purpose: the page falls back to the full file, so a failure here costs
+  # bandwidth rather than a blank dashboard.
+  Write-Host "WARN: usage-today.json not written ($_). The status page will fall back to the full file." -ForegroundColor Yellow
+}
 Write-Host "Wrote $OutPath ($([math]::Round((Get-Item $OutPath).Length / 1kb, 1)) KB)." -ForegroundColor Green
 
 # ----- Per-project usage log (lives ONLY in this repo) ---------------------

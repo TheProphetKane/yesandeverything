@@ -467,7 +467,15 @@
       // Central calendar day, matching the collector's buckets
       var todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
       var tt = 0;
-      (USAGE.projects[proj.id].daily || []).forEach(function (d) { if (d.d === todayIso) tt += (d.input || 0) + (d.output || 0); });
+      // Two shapes, because of the fallback above: the lean file is already today, and
+      // the full one carries every day and has to be filtered. Reading whichever arrived
+      // keeps one code path instead of two loaders.
+      var u = USAGE.projects[proj.id];
+      if (u.daily) {
+        (u.daily || []).forEach(function (d) { if (d.d === todayIso) tt += (d.input || 0) + (d.output || 0); });
+      } else {
+        tt += (u.input || 0) + (u.output || 0);
+      }
       var tk = el("div");
       tk.setAttribute("title", "tokens burned on this project today");
       tk.appendChild(el("span", { className: "k", text: "tokens today" }));
@@ -633,7 +641,15 @@
     $("error-banner").style.display = "none";
     var grid = $("grid");
 
-    var jobs = [fetchJson("data/constellation.json"), fetchJson("../dashboard/data/usage.json")].concat(
+    // The lean file first. The full usage.json is 590 KB and growing, fetched with
+    // caching off on every load, and the only thing read from it is today total per
+    // project, which is all the lean one carries. The fallback keeps the page working
+    // before the collector next runs and on a checkout without the file; a fallback that
+    // silently costs 590 KB is worth having when the alternative is a blank dashboard.
+    var jobs = [fetchJson("data/constellation.json"),
+      fetchJson("../dashboard/data/usage-today.json").then(function (lean) {
+        return lean || fetchJson("../dashboard/data/usage.json");
+      })].concat(
       PROJECTS.map(function (p) { return fetchJson("data/" + p.id + ".json"); })
     );
 
