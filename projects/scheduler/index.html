@@ -252,6 +252,27 @@
 
   <h2>v0.7.3 - what's new</h2>
   <p class="blurb">
+    <em>Security and concurrency (v0.7.3).</em> Two dependency bumps close CVEs
+    flagged against the old pinned ranges. Three write paths that used to read
+    and then write now do both inside one statement or one transaction, so a
+    failure between the halves cannot leave the schedule in a state no retry
+    reaches: a user's sub-department assignments can no longer be half-replaced,
+    a swapped shift can no longer end up with neither person on it, and an
+    open-shift claim enforces capacity inside the insert rather than in a select
+    the write could race behind. Migration 0012 adds a uniqueness constraint as a
+    database-level backstop and de-duplicates anything an earlier race produced.
+  </p>
+  <p class="blurb">
+    <em>Reliability and doc accuracy (v0.7.2).</em> The list endpoint's per-user
+    query is batched and chunked to the database's bind-parameter cap, and
+    migration 0011 adds the composite index the org-scoped audit-log read was
+    always meant to use. The release scripts stopped deleting a git lock before
+    the guard could look at it, which is how a config file got truncated once
+    before, and stopped titling a commit as a release when the version had not
+    moved. The design document now states plainly that six of the seven policy
+    knobs are inert rather than implying all seven work.
+  </p>
+  <p class="blurb">
     <em>Per-seat billing entitlement, onboarding, and demo data (v0.6.0).</em>
     Migration 0009 adds a per-org billing row (plan, status, seat limit, exempt
     flag) and a per-user seat-exemption flag. A billable seat is one active,

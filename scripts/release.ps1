@@ -29,7 +29,7 @@ $here = $PSScriptRoot
 Push-Location
 
 try {
-    Write-Host "==== Step 1/4: dashboard JSON integrity guard ====" -ForegroundColor Magenta
+    Write-Host "==== Step 1/5: dashboard JSON integrity guard ====" -ForegroundColor Magenta
     & (Join-Path $here "check-status-json.ps1")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Aborting release: corrupt status JSON would ship to the live dashboard." -ForegroundColor Red
@@ -37,7 +37,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 2/4: write YaE's own dashboard status JSON ====" -ForegroundColor Magenta
+    Write-Host "==== Step 2/5: write YaE's own dashboard status JSON ====" -ForegroundColor Magenta
     # Non-fatal: a failed status write never unships a release.
     try {
         $global:LASTEXITCODE = 0
@@ -55,8 +55,23 @@ try {
         exit 1
     }
 
+    Write-Host "==== Step 3/5: project-page prose staleness guard ====" -ForegroundColor Magenta
+    # Prose-staleness guard. The version pill on every project page is stamped from that
+    # project status JSON, so it is right the moment a release pushes, while the prose
+    # underneath it is hand-written and nothing updates it. That is how the Scheduler page
+    # sat at a v0.7.1 story under a v0.7.3 pill: it named the right number and described
+    # work from two releases earlier, and the pill being automatic is what hid it, because
+    # the one thing a reader checks was correct. Only pages that organise a section BY
+    # release are in scope, so a page describing the product without naming one is not
+    # dragged in. Fatal: shipping a page that reads current and is not is the whole defect.
+    & node (Join-Path $here "check-page-prose-staleness.mjs") --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: a project page promises a version its prose does not describe." -ForegroundColor Red
+        exit 1
+    }
+
     Write-Host ""
-    Write-Host "==== Step 3/4: push YaE to GitHub ====" -ForegroundColor Magenta
+    Write-Host "==== Step 4/5: push YaE to GitHub ====" -ForegroundColor Magenta
     if ($Path.Count -gt 0) {
         Write-Host "Scoped to: $($Path -join ', ')" -ForegroundColor DarkGray
         & (Join-Path $here "push-to-github.ps1") -Path $Path
@@ -69,7 +84,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 4/4: post to #yae-dev-log on Discord ====" -ForegroundColor Magenta
+    Write-Host "==== Step 5/5: post to #yae-dev-log on Discord ====" -ForegroundColor Magenta
     # If scripts\.discord_webhook.txt is missing, discord-notify.ps1 logs a
     # warning and exits 0. Release is unaffected; Discord is optional.
     & (Join-Path $here "discord-notify.ps1")
