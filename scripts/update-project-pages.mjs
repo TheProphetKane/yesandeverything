@@ -102,12 +102,19 @@ for (const [slug, id] of Object.entries(SLUGS)) {
     // Keyed markers preferred (a copied page template cannot silently take
     // another project's numbers); bare version marker still honored.
     // Detail-page milestone prose carries the M-number too ("M4, Pre-Production
-    // Lock"); homepage cards keep the bare label.
-    const mid = (d.milestone && typeof d.milestone === "object" && d.milestone.id) ? `${d.milestone.id}, ` : "";
+    // Lock"); homepage cards keep the bare label. Skip the prefix when the label
+    // already says the id: several projects use the version or a slug as the
+    // milestone id, and prefixing gave "v1.0, v1.0 - core label designer complete"
+    // and "phase-2-built, Phase 2 built (...)". Compare with separators and case
+    // stripped so "phase-2-built" matches "Phase 2 built".
+    const flat = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const mlabel = mfmt(d.milestone);
+    const midRaw = (d.milestone && typeof d.milestone === "object" && d.milestone.id) ? d.milestone.id : "";
+    const mid = (midRaw && !flat(mlabel).startsWith(flat(midRaw))) ? `${midRaw}, ` : "";
     for (const [key, value] of [
       [`version:${id}`, vfmt(d.version)],
       ["version", vfmt(d.version)],
-      [`milestone:${id}`, mid + mfmt(d.milestone)],
+      [`milestone:${id}`, mid + mlabel],
     ]) {
       const r = stamp(t, key, value); t = r.text; if (r.hit) stamped++;
     }

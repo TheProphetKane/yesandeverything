@@ -57,9 +57,9 @@ cd X:\YesAndEverything
 .\scripts\release.ps1
 ```
 
-`release.ps1` first runs the dashboard JSON integrity guard (Step 0: `check-status-json.ps1`, aborting if a corrupt `status/data/*.json` would ship), clears any stale `.git\index.lock`, runs the integrity guards (`index.html` must end with `</html>`; `CNAME` must read `yesandeverything.com`), auto-detects what changed and writes a matching commit, pushes to `main`, then posts the changelog line to `#yae-dev-log` on Discord. GitHub Pages auto-deploys from `main` root within ~30s. Hard-refresh (Ctrl+Shift+R) to bust the CDN cache if a change doesn't appear.
+`release.ps1` runs four numbered steps. Step 1 is the dashboard JSON integrity guard (`check-status-json.ps1`), which aborts if a corrupt `status/data/*.json` would ship. Step 2 writes this project's own status JSON and then re-runs that same guard over its output, because checking only before the write let a corrupt file written in Step 2 sail into the push. Step 3 pushes through `push-to-github.ps1`. Step 4 posts to the development-log channel. It does NOT clear a git lock, and nothing here should: `Assert-GitSafe` in `scripts/git-guard.ps1` is the only sanctioned lock handling, and it waits out a live git process rather than deleting the lock under one.
 
-Raw git (`git add . && git commit && git push`) is the escape hatch only. It skips the integrity guards and the `index.lock` clear, so reserve it for one-off recovery when the release script itself is the thing being fixed.
+Raw git is the escape hatch only. It skips every integrity guard above, so reserve it for one-off recovery when the release script itself is the thing being fixed. Scope it with an explicit pathspec even then: an unscoped commit here sweeps another session's staged work, which is decision D5 and has already happened.
 
 For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHordes\scripts\publish-gdd.ps1` and it'll push the injection here for you.
 
