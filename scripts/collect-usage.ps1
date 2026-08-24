@@ -1083,6 +1083,79 @@ try {
   Write-Host "WARN: queue summary failed ($_)" -ForegroundColor Yellow
 }
 
+# ----- Health trend ledger ---------------------------------------------------
+# Until 2026-08-24 nothing about project HEALTH had a time series. Tokens and cost got
+# thirty days of curve on the dashboard; open findings, closed findings, review health and
+# completion got a single current value, so a project could rot for a month and the page
+# would look the same on the last day as on the first.
+#
+# One row per project per calendar day, appended here from the same status files the
+# statuses bundle is built from. Numbers only, no titles and no finding text, so this file
+# carries nothing the per-project status JSON does not already publish. Held to a rolling
+# 90 days: the dashboard charts 30 and the extra tail is there for week-over-week maths.
+try {
+  $trendPath = Join-Path $DataDir "health-trend.json"
+  $trend = $null
+  if (Test-Path $trendPath) {
+    try { $trend = [System.IO.File]::ReadAllText($trendPath, [System.Text.UTF8Encoding]::new($false)) | ConvertFrom-Json }
+    catch { Write-Host "health-trend.json unreadable, starting a fresh ledger." -ForegroundColor Yellow }
+  }
+  $rows = @()
+  if ($trend -and $trend.rows) { $rows = @($trend.rows) }
+  $today = (Get-Date).ToString("yyyy-MM-dd")
+  # Today gets rewritten in place on every run, so the last row of the day is the one that
+  # stands rather than one row per collect tick.
+  $rows = @($rows | Where-Object { $_.d -ne $today })
+  $statusDir2 = Join-Path $RepoRoot "status\data"
+  $perProject = [ordered]@{}
+  if (Test-Path $statusDir2) {
+    foreach ($sf in (Get-ChildItem -Path $statusDir2 -Filter *.json -File)) {
+      if ($sf.Name -eq "constellation.json") { continue }
+      if ($sf.Name -eq "backlog-trend.json") { continue }
+      $sid = [System.IO.Path]::GetFileNameWithoutExtension($sf.Name)
+      if ($PUBLIC_EXCLUDE -contains $sid) { continue }
+      try { $st = [System.IO.File]::ReadAllText($sf.FullName, [System.Text.UTF8Encoding]::new($false)) | ConvertFrom-Json }
+      catch { continue }
+      $br2 = $st.barRaise
+      $oldest = $null
+      if ($br2 -and $br2.openFindings) {
+        foreach ($f in $br2.openFindings) {
+          if (-not $f.firstSeen) { continue }
+          try { $age = [int]((Get-Date) - [datetime]::Parse($f.firstSeen)).TotalDays } catch { continue }
+          if ($null -eq $oldest -or $age -gt $oldest) { $oldest = $age }
+        }
+      }
+      $aud2 = $null
+      if ($st.audit -and $st.audit.findings) {
+        $aud2 = ([int]$st.audit.findings.critical) + ([int]$st.audit.findings.high) + ([int]$st.audit.findings.medium) + ([int]$st.audit.findings.low)
+      }
+      $perProject[$sid] = [ordered]@{
+        health     = $(if ($br2 -and $null -ne $br2.health) { [int]$br2.health } else { $null })
+        open       = $(if ($br2 -and $null -ne $br2.actionsOpen) { [int]$br2.actionsOpen } else { $null })
+        closed     = $(if ($br2 -and $null -ne $br2.actionsClosed) { [int]$br2.actionsClosed } else { $null })
+        completion = $(if ($st.completion -and $null -ne $st.completion.pct) { [int]$st.completion.pct } else { $null })
+        gates      = $(if ($st.itemsLeft -and $null -ne $st.itemsLeft.gates) { [int]$st.itemsLeft.gates } else { $null })
+        backlog    = $(if ($st.backlog -and $null -ne $st.backlog.count) { [int]$st.backlog.count } else { $null })
+        oldestOpen = $oldest
+        audit      = $aud2
+      }
+    }
+  }
+  if ($perProject.Count -gt 0) {
+    $rows += [ordered]@{ d = $today; projects = $perProject }
+    $rows = @($rows | Sort-Object { "" + $_.d })
+    if ($rows.Count -gt 90) { $rows = @($rows[($rows.Count - 90)..($rows.Count - 1)]) }
+    Write-ValidatedJson $trendPath ([ordered]@{
+      generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+      days        = $rows.Count
+      rows        = $rows
+    })
+    Write-Host "Wrote health-trend.json ($($rows.Count) days, $($perProject.Count) projects)." -ForegroundColor Green
+  }
+} catch {
+  Write-Host "WARN: health trend ledger failed ($_)" -ForegroundColor Yellow
+}
+
 # ----- Push to the live dashboard (Cloudflare KV) ----------------------------
 # The dashboard reads usage.json + queue.json from the usage-yesandeverything
 # Worker (KV-backed) so the live page updates in seconds on every run, with NO

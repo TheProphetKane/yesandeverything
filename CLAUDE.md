@@ -28,7 +28,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `brackish-rising/` | Password-gated Brackish Rising GDD mirror. Same base64-inlined gate pattern as `hordes/`; generated from the BR repo, not hand-edited. |
 | `budget/` | Budget project landing page. Single self-contained file; project mirror. |
 | `terms/` | Terms / legal page. Single self-contained file. |
-| `dashboard/` | Private usage dashboard (robots-gated). Reads `dashboard/data/usage.json`. |
+| `dashboard/` | Private portfolio dashboard (robots-gated). Reads `dashboard/data/usage.json` (tokens and cost), `dashboard/data/health-trend.json` (one row per project per day: review health, open and closed findings, completion, gates, backlog, oldest open finding, audit count, written by `collect-usage.ps1`, rolling 90 days), the live worker feeds, every `status/data/<Project>.json`, and `status/data/constellation.json` for the portfolio band. Reworked 2026-08-24, see `docs/DASHBOARD-REDESIGN-2026-08-24.md`. |
 | `sitemap/` | Private site map page (robots-gated). |
 | `work/` | Private work page (robots-gated). |
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |

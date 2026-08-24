@@ -222,7 +222,44 @@
     font-family: var(--mono); font-size: 11px; padding: 2px 10px; border-radius: 3px; cursor: pointer;
   }
 
+  /* Portfolio band: the weekly cross-project rollup (status/data/constellation.json).
+     Sits directly under the ticker because it answers "what do I do today", which every
+     number below it only supports. */
+  .band { display: grid; grid-template-columns: 190px 1fr; gap: 14px; padding: 9px 14px; margin-bottom: 8px; align-items: start; }
+  .band-verdict { border-right: 1px solid var(--ink-3); padding-right: 12px; }
+  .band-h { font-size: 30px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .band-h .unit { font-size: 11px; color: var(--fg-3); font-weight: 400; margin-left: 4px; }
+  .band-v { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+  .band-sub { font-size: 10.5px; color: var(--fg-3); margin-top: 5px; line-height: 1.45; }
+  .band-right { min-width: 0; }
+  .band-title { font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--fg-3); margin-bottom: 5px; }
+  .band-act { display: flex; gap: 9px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--ink-2); cursor: pointer; }
+  .band-act:first-of-type { border-top: none; }
+  .band-act:hover .ba-label { color: var(--fg-0); }
+  .band-act .ba-sev { font-size: 9.5px; font-weight: 700; letter-spacing: .5px; min-width: 34px; }
+  .band-act .ba-pj { font-size: 11px; color: var(--cyan-hot); min-width: 78px; white-space: nowrap; }
+  .band-act .ba-label { font-size: 11.5px; color: var(--fg-2); line-height: 1.45; min-width: 0; }
+  .band-risk { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .band-risk .chip { font-size: 10.5px; padding: 2px 8px; }
+  .band-more { font-size: 10.5px; color: var(--fg-3); margin-top: 6px; cursor: pointer; }
+  .band-more:hover { color: var(--cyan-hot); }
+  @media (max-width: 900px) {
+    .band { grid-template-columns: 1fr; }
+    .band-verdict { border-right: none; border-bottom: 1px solid var(--ink-3); padding: 0 0 8px; }
+    /* The band is the top of the page on a phone, so it must not eat the whole first
+       screen: each action keeps two lines and the at-risk list keeps two rows. */
+    .band-act .ba-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .band-act { flex-wrap: wrap; }
+    .band-risk { max-height: 56px; overflow: hidden; }
+  }
+
+  /* Row one is the eight token and cost cells, unchanged. Row two is the health cells,
+     each spanning two columns of the same eight-column grid so the two rows line up. */
   .totals { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 8px; }
+  /* The health cells double up only on the full eight-column grid, so the two rows line
+     up. Below that the grid is already four across or fewer and a span would go ragged. */
+  @media (min-width: 1501px) { .total.health { grid-column: span 2; } }
+  .total.health .num { font-size: 19px; }
   @media (max-width: 1500px) { .totals { grid-template-columns: repeat(4, 1fr); } }
   .total { padding: 7px 14px; }
   .total .num.bump { animation: numBump 0.5s ease; }
@@ -250,6 +287,24 @@
   .core-legend > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .core-legend > span:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; }
   .core-legend .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+  /* Lens grid: the twelve core review lenses against every project. Every one of these
+     scores was written to status/data nightly and read only in markdown reports. */
+  .lensgrid { display: grid; gap: 2px; margin-top: 4px; }
+  .lensgrid .lg-lab { font-size: 9px; color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: center; padding-right: 4px; }
+  .lensgrid .lg-cell { height: 13px; border-radius: 2px; cursor: pointer; transition: transform .12s, outline-color .12s; outline: 1px solid transparent; }
+  .lensgrid .lg-cell:hover { transform: scale(1.35); outline-color: var(--fg-0); position: relative; z-index: 2; }
+  .lensgrid .lg-cell.void { background: var(--ink-2); cursor: default; }
+  .lensgrid .lg-cell.void:hover { transform: none; outline-color: transparent; }
+  .lensgrid.dimrow .lg-lab.off, .lensgrid.dimrow .lg-cell.off { opacity: 0.28; }
+  .lenskey { display: flex; gap: 10px; flex-wrap: wrap; font-size: 10px; color: var(--fg-3); margin-top: 6px; }
+  .lenskey i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; font-style: normal; }
+  .lenscols { display: flex; gap: 2px; margin-top: 8px; }
+  .lenscol-lab { font-size: 10px; color: var(--fg-2); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; height: 132px; text-align: right; }
+  .lensdomain { margin-top: 14px; }
+  .lensdomain .ld-row { border-top: 1px solid var(--ink-2); padding: 6px 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .lensdomain .ld-pj { font-size: 11.5px; font-weight: 600; min-width: 96px; }
+  .lensdomain .chip { font-size: 10.5px; padding: 2px 7px; }
 
   .navarrow {
     background: var(--ink-1); color: var(--fg-2);
@@ -389,7 +444,9 @@
   .readout .rv { font-size: 16px; font-weight: 700; color: var(--cyan-hot); font-variant-numeric: tabular-nums; }
   .readout .rk { font-size: 9px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 1px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  .chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 10px; overflow: hidden; min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; overflow: hidden; min-width: 0; max-height: 52px; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .tag { font-size: 9.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--fg-3); border: 1px solid var(--ink-3); border-radius: 999px; padding: 1px 8px; }
   .chip {
     font-size: 11.5px; color: var(--fg-2);
     background: var(--ink-2); border: 1px solid var(--ink-3);
@@ -932,7 +989,7 @@
       <button class="auto-btn" id="auto-btn" type="button" title="auto-spin the wheel: off / drift 25s / jump 12s">auto: off</button>
       <span class="last-refreshed" id="last-refreshed" title="when this page last fetched data">never refreshed</span>
       <button class="refresh" id="refresh-btn" type="button" title="re-fetch all dashboard data now">refresh</button>
-      <button class="refresh" id="lists-btn" type="button" title="open the lists behind the numbers: actions, milestones, queued, items left">lists</button>
+      <button class="refresh" id="lists-btn" type="button" title="open the lists behind the numbers: to done, found, queued">lists</button>
     </div>
   </header>
 
@@ -943,6 +1000,20 @@
 
   <div class="ticker" id="ticker" style="display:none" title="latest pushes across the portfolio; click for the readable list"><span class="tk" id="ticker-track"></span></div>
 
+  <div class="panel band" id="band" style="display:none"><span class="ck"></span>
+    <div class="band-verdict">
+      <div class="band-h" id="band-health"></div>
+      <div class="band-v" id="band-verdict-word"></div>
+      <div class="band-sub" id="band-sub"></div>
+    </div>
+    <div class="band-right">
+      <div class="band-title">do these first</div>
+      <div id="band-actions"></div>
+      <div class="band-risk" id="band-risk"></div>
+      <div class="band-more" id="band-more" role="button" tabindex="0" title="read the whole rollup"></div>
+    </div>
+  </div>
+
   <div class="totals" id="totals"></div>
 
   <div class="layout">
@@ -952,10 +1023,15 @@
         <div id="core"></div>
         <div class="core-legend" id="core-legend"></div>
       </div>
-      <div class="panel core-box clickable" id="panel-radar" title="click to enlarge with the full key"><span class="ck"></span>
-        <p class="ptitle"><span class="tick">//</span>completion radar &middot; distance to done</p>
+      <div class="panel core-box clickable" id="panel-radar" title="solid = complete, dashed = review health; click to enlarge with the full key"><span class="ck"></span>
+        <p class="ptitle"><span class="tick">//</span>project radar &middot; complete against health</p>
         <div id="radar"></div>
         <div class="core-legend" id="radar-legend"></div>
+      </div>
+      <div class="panel core-box clickable" id="panel-lens" title="click for every lens, including the domain lenses"><span class="ck"></span>
+        <p class="ptitle"><span class="tick">//</span>lens grid &middot; where the score is lost</p>
+        <div id="lensgrid"></div>
+        <div class="lenskey" id="lens-key"></div>
       </div>
     </div>
     <button class="navarrow" id="nav-prev" type="button" aria-label="previous" aria-keyshortcuts="ArrowLeft" title="spin the wheel back">&lsaquo;</button>
@@ -970,7 +1046,7 @@
   <div id="usage-orphans" role="status" style="display:none;max-width:1400px;margin:6px auto 0;padding:0 18px;font-size:11px;letter-spacing:.04em;color:var(--fg-2, #8b95a3);"></div>
 
   <footer class="page-foot">
-    Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; costs at published API rates, frozen at collection &middot; progress data from <a href="/status/">status</a> JSON, refreshed by every release and review pass &middot; &larr; &rarr; spin the wheel, v cycles the wave, click any widget to enlarge &middot; <a href="/sitemap/">sitemap</a> &middot; no backend, no analytics, no tracking.
+    Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; costs at published API rates, frozen at collection &middot; progress, review health, lens scores and audit findings from <a href="/status/">status</a> JSON, refreshed by every release, nightly audit and weekly review pass &middot; &larr; &rarr; spin the wheel, v cycles the wave, click any widget to enlarge &middot; <a href="/sitemap/">sitemap</a> &middot; no backend, no analytics, no tracking.
   </footer>
 </div>
 
@@ -992,23 +1068,35 @@
   // dashboard - usage + completion - but stays OFF the public homepage grid
   // (index.html) per Kane (2026-07-08, revising the 2026-07-06 full delist).
   // usageOnly: token usage/cost only; no status JSON, excluded from completion/progress.
+  // retired: shipped and stood down. Its lifetime tokens still count in the all-time
+  //   totals, but it takes no wheel slot, no strip card and no legend row, because a
+  //   permanent zero on twelve widgets is noise, not history. Named in the footnote.
+  //
+  // Counselor and Skylight were carried here until 2026-08-24 and could never hold a
+  // number: the collector strips both (and SignalRD) from every public payload, so they
+  // rendered as permanent zeroes on the wheel, the strip and the donut legend. They are
+  // listed in PRIVATE_IDS instead, which keeps them out of the "not charted" warning.
   var PROJECTS = [
-    { id: "Agents",     tag: "Agents",     displayName: "Yes& Agents",      hue: "#2f5fd0" },
-    { id: "Apothecary", tag: "Apothecary", displayName: "Yes& Apothecary",  hue: "#c2b24a" },
-    { id: "Budget",     tag: "Budget",     displayName: "Yes& Budget",      hue: "#ffd23a" },
-    { id: "Cattery",    tag: "Cattery",    displayName: "Yes& Cattery",     hue: "#2dd4bf" },
-    { id: "Chains",     tag: "Chains",     displayName: "Yes& Chains",      hue: "#2e8b57" },
-    { id: "Counselor",  tag: "Counselor",  displayName: "Counselor",        hue: "#e0609a", usageOnly: true },
-    { id: "Everything", tag: "Everything", displayName: "Yes& Everything",  hue: "#eef2f8" },
-    { id: "Gnosis",     tag: "Gnosis",     displayName: "Gnosis",           hue: "#d43d3d" },
-    { id: "Hordes",     tag: "Hordes",     displayName: "Here Be Hordes",   hue: "#cc5500" },
-    { id: "Ring",       tag: "Ring",       displayName: "Yes& Ring",        hue: "#ff5e7e" },
-    { id: "Rising",     tag: "Rising",     displayName: "Brackish Rising",  hue: "#5fd6ff" },
-    { id: "Scheduler",  tag: "Scheduler",  displayName: "Yes& Scheduler",   hue: "#b88aff" },
-    { id: "Skylight",   tag: "Skylight",   displayName: "Skylight",         hue: "#82aaff", usageOnly: true }
+    { id: "Agents",       tag: "Agents",       displayName: "Yes& Agents",       hue: "#2f5fd0" },
+    { id: "Apothecary",   tag: "Apothecary",   displayName: "Yes& Apothecary",   hue: "#c2b24a" },
+    { id: "Architecture", tag: "Architecture", displayName: "Yes& Architecture", hue: "#7fd1ae", usageOnly: true },
+    { id: "Budget",       tag: "Budget",       displayName: "Yes& Budget",       hue: "#ffd23a" },
+    { id: "Cattery",      tag: "Cattery",      displayName: "Yes& Cattery",      hue: "#2dd4bf" },
+    { id: "Chains",       tag: "Chains",       displayName: "Yes& Chains",       hue: "#2e8b57" },
+    { id: "Everything",   tag: "Everything",   displayName: "Yes& Everything",   hue: "#eef2f8" },
+    { id: "Gnosis",       tag: "Gnosis",       displayName: "Gnosis",            hue: "#d43d3d" },
+    { id: "Hordes",       tag: "Hordes",       displayName: "Here Be Hordes",    hue: "#cc5500" },
+    { id: "Lexi",         tag: "Lexi",         displayName: "Yes& Lexi",         hue: "#9aa4b2", usageOnly: true, retired: "2026-07-12" },
+    { id: "Ring",         tag: "Ring",         displayName: "Yes& Ring",         hue: "#ff5e7e" },
+    { id: "Rising",       tag: "Rising",       displayName: "Brackish Rising",   hue: "#5fd6ff" },
+    { id: "Scheduler",    tag: "Scheduler",    displayName: "Yes& Scheduler",    hue: "#b88aff" }
   ];
+  // Excluded from every public payload by the collector ($PUBLIC_EXCLUDE in
+  // collect-usage.ps1). Named so an absent number reads as private, not as missing.
+  var PRIVATE_IDS = ["Counselor", "Skylight", "SignalRD"];
+  var LIVE_PROJECTS = PROJECTS.filter(function (p) { return !p.retired; });
   var ALL_META = { id: "ALL", tag: "All Projects", displayName: "All Projects", hue: "#ff66ff" };
-  var CYCLE = ["ALL"].concat(PROJECTS.map(function (p) { return p.id; }));
+  var CYCLE = ["ALL"].concat(LIVE_PROJECTS.map(function (p) { return p.id; }));
   var DAYS = 30;
   var W = 640, H = 130, MID = 58, AMP = 48;
   var SCAN_MS = 7000;
@@ -1035,10 +1123,17 @@
     queue: "items waiting in the shared work queue",
     readout: "computed from the repo at release time",
     spark: "30 days of daily token totals",
-    sums: "token totals over the last 7 and 30 days"
+    sums: "token totals over the last 7 and 30 days",
+    portfolioHealth: "weighted portfolio score from the latest weekly rollup",
+    closed: "review findings closed since the previous review run",
+    oldest: "age of the oldest finding still open, from its first-seen date",
+    auditFindings: "open findings from the nightly canonical audit",
+    lens: "per-lens score from the latest review pass; below 50 is failing",
+    waiting: "queue items blocked on Kane, the only bucket he alone can clear",
+    tensions: "lens pairs pulling against each other, and how many runs they have stood"
   };
 
-  var VIEWS = { flow: "in/out tokens", cost: "est cost per day", cache: "cache read/write" };
+  var VIEWS = { flow: "in/out tokens", cost: "est cost per day", cache: "cache read/write", health: "findings + health" };
   var FILTER = "ALL", VIEW = "flow", LAST = null;
   var SEL = 0, DIR = 1, spinning = false;
   var AUTO = "off";
@@ -1140,6 +1235,92 @@
     if (st.itemsLeft && st.itemsLeft.backlog != null) return st.itemsLeft.backlog;   // legacy: backlog lived inside itemsLeft
     return null;
   }
+  // True when the queue feed answered "private" and no local copy stood in for it. The
+  // queued surfaces then say so instead of rendering a silent zero, which is what they
+  // did from 2026-08-19 (the day the feed went private) until 2026-08-24.
+  function queuePrivate() {
+    var q = LAST && LAST.queue;
+    return !!(q && q.private && !q.queued);
+  }
+  function waitingFor(scope) {
+    var q = LAST && LAST.queue;
+    if (!q || !q.waiting) return null;
+    if (scope !== "ALL") return q.waiting[scope] || 0;
+    var s = 0;
+    Object.keys(q.waiting).forEach(function (k) { s += q.waiting[k] || 0; });
+    return s;
+  }
+  /* Review findings, the other half of the open count. actionsOpen alone cannot tell a
+     project that closed 66 while opening 63 from one that closed 1 while opening 24. */
+  function closedFor(scope) {
+    var st = LAST && LAST.statuses; if (!st) return null;
+    var n = 0, seen = false;
+    Object.keys(st).forEach(function (k) {
+      if (scope !== "ALL" && k !== scope) return;
+      var c = st[k] && st[k].barRaise && st[k].barRaise.actionsClosed;
+      if (c != null) { n += c; seen = true; }
+    });
+    return seen ? n : null;
+  }
+  function auditOf(st) {
+    var f = st && st.audit && st.audit.findings;
+    if (!f) return null;
+    var total = (f.critical || 0) + (f.high || 0) + (f.medium || 0) + (f.low || 0);
+    return { critical: f.critical || 0, high: f.high || 0, medium: f.medium || 0, low: f.low || 0, total: total };
+  }
+  function auditFor(scope) {
+    var st = LAST && LAST.statuses; if (!st) return null;
+    var acc = { critical: 0, high: 0, medium: 0, low: 0, total: 0 }, seen = false;
+    Object.keys(st).forEach(function (k) {
+      if (scope !== "ALL" && k !== scope) return;
+      var a = auditOf(st[k]); if (!a) return;
+      seen = true;
+      acc.critical += a.critical; acc.high += a.high; acc.medium += a.medium; acc.low += a.low; acc.total += a.total;
+    });
+    return seen ? acc : null;
+  }
+  // Age of the oldest finding still open, in days, from openFindings[].firstSeen. The
+  // single most damning number the review loop produces and it was collected nightly for
+  // weeks without ever reaching a screen.
+  function ageDays(iso) {
+    if (!iso) return null;
+    var t = new Date(iso.length <= 10 ? iso + "T00:00:00" : iso).getTime();
+    if (!isFinite(t)) return null;
+    return Math.max(0, Math.floor((Date.now() - t) / 86400000));
+  }
+  function oldestOpenOf(st) {
+    var of = st && st.barRaise && st.barRaise.openFindings;
+    if (!Array.isArray(of) || !of.length) return null;
+    var best = null;
+    of.forEach(function (f) {
+      var d = ageDays(f.firstSeen);
+      if (d != null && (best == null || d > best)) best = d;
+    });
+    return best;
+  }
+  function oldestOpenFor(scope) {
+    var st = LAST && LAST.statuses; if (!st) return null;
+    var best = null;
+    Object.keys(st).forEach(function (k) {
+      if (scope !== "ALL" && k !== scope) return;
+      var d = oldestOpenOf(st[k]);
+      if (d != null && (best == null || d > best)) best = d;
+    });
+    return best;
+  }
+  function staleFor(scope) {
+    var st = LAST && LAST.statuses; if (!st) return null;
+    var n = 0;
+    Object.keys(st).forEach(function (k) {
+      if (scope !== "ALL" && k !== scope) return;
+      if (st[k] && st[k].stale === true) n++;
+    });
+    return n;
+  }
+  function tensionsOf(st) {
+    var t = st && st.barRaise && st.barRaise.tensionsOpen;
+    return Array.isArray(t) ? t : null;
+  }
   function deferredCountFor(scope) {
     var n = 0;
     var st = LAST && LAST.statuses;
@@ -1213,9 +1394,21 @@
   var DATA_API = "https://usage.yesandeverything.com";
   function fetchData(name) {
     return fetchJson(DATA_API + "/" + name + ".json").then(function (j) {
-      return j != null ? j : fetchJson("data/" + name + ".json");
+      // A feed can answer {"private":true}: the queue data was pulled off every public
+      // surface on 2026-08-19 and the endpoint now says so rather than 404ing. That is a
+      // real answer, not a miss, so it must not be treated as one -- but the locally
+      // served copy under data/ still holds the full rows when the dashboard is opened
+      // from the working tree, so try it before giving up and reporting the feed private.
+      if (j != null && !j.private) return j;
+      return fetchJson("data/" + name + ".json").then(function (local) {
+        return local != null ? local : j;
+      });
     });
   }
+  // The weekly cross-portfolio rollup. Public, Pages-served, and never fetched by this
+  // page until now: portfolio health, the verdict, the top actions and the at-risk list
+  // all lived only inside a markdown report.
+  function fetchConstellation() { return fetchJson("../status/data/constellation.json"); }
   // Per-project status (version, completion, milestone, queued, bar-raise) comes from the
   // Worker as one "statuses" bundle keyed by project id. Fall back to the static per-project
   // status files served by the site if the Worker is unreachable.
@@ -1261,9 +1454,12 @@
   var REGISTERED_IDS = {};
   PROJECTS.forEach(function (p) { REGISTERED_IDS[p.id] = true; });
   function unregisteredIds() {
+    // PRIVATE_IDS never reach a public payload, so they can never appear here. Listing
+    // them as "not charted" would read as a bug rather than as the deliberate exclusion
+    // it is.
     if (!LAST || !LAST.usage || !LAST.usage.projects) return [];
     return Object.keys(LAST.usage.projects).filter(function (pid) {
-      return pid !== "unattributed" && !REGISTERED_IDS[pid];
+      return pid !== "unattributed" && !REGISTERED_IDS[pid] && PRIVATE_IDS.indexOf(pid) < 0;
     });
   }
 
@@ -1404,7 +1600,14 @@
   }
   function coreRows(usage) {
     var todayK = dayKey(0);
-    return PROJECTS.map(function (p) {
+    if (VIEW === "health") {
+      return LIVE_PROJECTS.map(function (p) {
+        var st = LAST && LAST.statuses ? LAST.statuses[p.id] : null;
+        var open = st && st.barRaise && st.barRaise.actionsOpen != null ? st.barRaise.actionsOpen : 0;
+        return { id: p.id, tag: p.tag, hue: p.hue, inT: 0, outT: 0, val: open };
+      }).filter(function (r) { return r.val > 0; });
+    }
+    return LIVE_PROJECTS.map(function (p) {
       var u = usage && usage.projects ? usage.projects[p.id] : null;
       var t = { id: p.id, tag: p.tag, hue: p.hue, inT: 0, outT: 0, val: 0 };
       if (u) (u.daily || []).forEach(function (d) {
@@ -1425,14 +1628,15 @@
     var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
     var byId = {};
     rows.forEach(function (r) { byId[r.id] = r; });
-    // Always list every project so the legend's row count -- and therefore the
+    // Always list every live project so the legend's row count -- and therefore the
     // panel height -- never changes. Projects outside the active filter (or with
-    // nothing burned today) are greyed, not removed.
-    PROJECTS.forEach(function (p) {
+    // nothing burned today) are greyed, not removed. Retired projects are left out:
+    // a row that can only ever read zero teaches nothing.
+    LIVE_PROJECTS.forEach(function (p) {
       var r = byId[p.id] || { id: p.id, tag: p.tag, hue: p.hue, val: 0 };
       var dim = (FILTER !== "ALL" && !inFilter(p.id)) || r.val <= 0;
       var share = sum > 0 ? Math.round((r.val / sum) * 100) : 0;
-      var li = el("span", { title: p.tag + " share of today", className: dim ? "dim" : "" });
+      var li = el("span", { title: p.tag + (VIEW === "health" ? " share of the open findings" : " share of today"), className: dim ? "dim" : "" });
       var sw = el("span", { className: "sw" }); sw.style.background = r.hue;
       li.appendChild(sw);
       li.appendChild(txt(p.tag + " " + fmt(r.val) + " · " + share + "%"));
@@ -1451,7 +1655,7 @@
     });
     if (CORE.centerT) countUp(CORE.centerT, FILTER === "ALL" ? sum : focusSum, fmt, "");
     if (CORE.centerL) {
-      var unitLabel = VIEW === "cost" ? "EST COST TODAY" : VIEW === "cache" ? "CACHE TODAY" : "TOKENS TODAY";
+      var unitLabel = VIEW === "cost" ? "EST COST TODAY" : VIEW === "cache" ? "CACHE TODAY" : VIEW === "health" ? "FINDINGS OPEN" : "TOKENS TODAY";
       CORE.centerL.textContent = (FILTER === "ALL" ? "" : metaFor(FILTER).tag.toUpperCase() + " ") + unitLabel;
     }
     coreLegend(rows, sum);
@@ -1464,7 +1668,9 @@
     var box = $("core"), legend = $("core-legend");
     box.innerHTML = ""; legend.innerHTML = "";
     var fmt = VIEW === "cost" ? fmtUSD : fmtTok;
-    $("core-title").textContent = (VIEW === "cost" ? "cost core" : VIEW === "cache" ? "cache core" : "token core") + " · today by project";
+    $("core-title").textContent = VIEW === "health"
+      ? "finding core \u00b7 open by project"
+      : (VIEW === "cost" ? "cost core" : VIEW === "cache" ? "cache core" : "token core") + " \u00b7 today by project";
     var sum = rows.reduce(function (s, r) { return s + r.val; }, 0);
     var focusSum = rows.reduce(function (s, r) { return s + (inFilter(r.id) ? r.val : 0); }, 0);
 
@@ -1527,7 +1733,7 @@
     var centerT = svgEl("text", { x: 150, y: 146, "text-anchor": "middle", fill: "#ecf0f5", "font-size": 24, "font-weight": 700, "font-family": "inherit" });
     centerT.textContent = "0";
     svg.appendChild(centerT);
-    var unitLabel = VIEW === "cost" ? "EST COST TODAY" : VIEW === "cache" ? "CACHE TODAY" : "TOKENS TODAY";
+    var unitLabel = VIEW === "cost" ? "EST COST TODAY" : VIEW === "cache" ? "CACHE TODAY" : VIEW === "health" ? "FINDINGS OPEN" : "TOKENS TODAY";
     var centerL = svgEl("text", { x: 150, y: 165, "text-anchor": "middle", fill: "#8b95a3", "font-size": 9, "letter-spacing": 2, "font-family": "inherit" });
     centerL.textContent = (FILTER === "ALL" ? "" : metaFor(FILTER).tag.toUpperCase() + " ") + unitLabel;
     svg.appendChild(centerL);
@@ -1540,15 +1746,21 @@
   var VERDICT_APPROX = { working: 90, healthy: 87, "in-progress": 70, "needs-attention": 55, "at-risk": 57, stalled: 40 };
   function radarVals(statuses) {
     var axes = PROJECTS.filter(function (p) { return p.id !== "Everything" && !p.usageOnly; });
-    var vals = [], haveCompletion = false;
+    var vals = [], health = [], haveCompletion = false, haveHealth = false;
     axes.forEach(function (p) {
       var st = statuses[p.id];
       var c = st && st.completion ? st.completion.pct : null;
       if (c != null) haveCompletion = true;
       else if (st && st.barRaise && st.barRaise.verdict) c = VERDICT_APPROX[st.barRaise.verdict];
       vals.push(c == null ? 0 : c);
+      // Second ring: review health. Completion answers "how much is built", health answers
+      // "how well". Three projects currently read 100 percent complete against health in
+      // the sixties, and with one ring that gap was invisible.
+      var h = st && st.barRaise && st.barRaise.health;
+      if (h != null) haveHealth = true;
+      health.push(h == null ? 0 : h);
     });
-    return { axes: axes, vals: vals, haveCompletion: haveCompletion };
+    return { axes: axes, vals: vals, health: health, haveCompletion: haveCompletion, haveHealth: haveHealth };
   }
   function radarSvg(statuses, size, labelMode) {
     var rv = radarVals(statuses);
@@ -1574,6 +1786,32 @@
       lt.textContent = labelMode === "big" ? (p.tag + " · " + (vals[i] || "?") + "%") : p.tag;
       svg.appendChild(lt);
     });
+    if (rv.haveHealth) {
+      var hpoly = axes.map(function (_, i) {
+        var a = (Math.PI * 2 * i / axes.length) - Math.PI / 2;
+        var f = Math.max(0.04, Math.min(1, rv.health[i] / 100));
+        return (CX + Math.cos(a) * R * f).toFixed(1) + "," + (CY + Math.sin(a) * R * f).toFixed(1);
+      }).join(" ");
+      var hshape = svgEl("polygon", {
+        points: hpoly, fill: "rgba(2,164,211,0.10)", stroke: "#02a4d3", "stroke-width": 1.3
+      });
+      hshape.setAttribute("stroke-dasharray", "4 3");
+      hshape.style.filter = "drop-shadow(0 0 5px rgba(2,164,211,0.30))";
+      hshape.appendChild(svgEl("title"));
+      hshape.lastChild.textContent = "review health per project";
+      svg.appendChild(hshape);
+      if (labelMode === "big") {
+        axes.forEach(function (p, i) {
+          if (rv.health[i] == null) return;
+          var a = (Math.PI * 2 * i / axes.length) - Math.PI / 2;
+          var f = Math.max(0.04, Math.min(1, rv.health[i] / 100));
+          svg.appendChild(svgEl("circle", {
+            cx: CX + Math.cos(a) * R * f, cy: CY + Math.sin(a) * R * f, r: 3,
+            fill: "none", stroke: "#02a4d3", "stroke-width": 1.4, opacity: inFilter(p.id) ? 1 : 0.3
+          }));
+        });
+      }
+    }
     var poly = axes.map(function (_, i) {
       var a = (Math.PI * 2 * i / axes.length) - Math.PI / 2;
       var f = Math.max(0.04, Math.min(1, vals[i] / 100));
@@ -1601,7 +1839,7 @@
         fill: p.hue, opacity: inFilter(p.id) ? 1 : 0.3
       });
       dot.appendChild(svgEl("title"));
-      dot.lastChild.textContent = p.tag + " " + (vals[i] || "?") + "% complete";
+      dot.lastChild.textContent = p.tag + " " + (vals[i] || "?") + "% complete" + (rv.health[i] ? ", health " + rv.health[i] : "");
       svg.appendChild(dot);
       if (labelMode !== "big") {
         var vt = svgEl("text", {
@@ -1621,20 +1859,250 @@
       mt.appendChild(ti);
       svg.appendChild(mt);
     }
-    return { svg: svg, haveCompletion: rv.haveCompletion };
+    return { svg: svg, haveCompletion: rv.haveCompletion, haveHealth: rv.haveHealth };
   }
   function renderRadar(statuses) {
     var box = $("radar"), legend = $("radar-legend");
     box.innerHTML = ""; legend.innerHTML = "";
     var r = radarSvg(statuses, 300, "small");
     box.appendChild(r.svg);
-    legend.appendChild(el("span", { text: r.haveCompletion
-      ? "owner-anchored % to done, conditions in each repo's .project-context.json"
-      : "dashed = approximated from review verdicts until completion anchors ship" }));
+    var l1 = el("span", { title: "owner-anchored percent to done, conditions in each repo's .project-context.json" });
+    var sw1 = el("span", { className: "sw" }); sw1.style.background = "#ff66ff";
+    l1.appendChild(sw1); l1.appendChild(txt(r.haveCompletion ? "complete" : "complete (approximated)"));
+    legend.appendChild(l1);
+    if (r.haveHealth) {
+      var l2 = el("span", { title: "weighted mean of the review lenses, from the latest bar-raise pass" });
+      var sw2 = el("span", { className: "sw" }); sw2.style.background = "#02a4d3";
+      l2.appendChild(sw2); l2.appendChild(txt("review health"));
+      legend.appendChild(l2);
+    }
+  }
+
+  /* ---------- Lens grid ---------- */
+  // The twelve lenses every project is scored against on every review pass. Domain lenses
+  // (payments, cloud-edge, release-pipeline and the rest) vary by project tag and are
+  // listed per project in the enlarged view rather than forced into a ragged grid.
+  var CORE_LENSES = [
+    ["architecture", "architecture"],
+    ["reliability", "reliability"],
+    ["security", "security"],
+    ["performance", "performance"],
+    ["data-integrity", "data integrity"],
+    ["maintainability", "maintainability"],
+    ["solo-tool-ux", "solo tool experience"],
+    ["cost-economics", "cost economics"],
+    ["dependency", "dependencies"],
+    ["observability", "observability"],
+    ["compliance-data-steward", "compliance"],
+    ["strategic-kill-this", "strategic value"]
+  ];
+  function lensColor(v) {
+    if (v == null) return "var(--ink-2)";
+    return v >= 80 ? "#00d68f" : v >= 65 ? "#5fd6ff" : v >= 50 ? "#cc8400" : v >= 35 ? "#cc5500" : "#ff5b6e";
+  }
+  function lensProjects() {
+    return PROJECTS.filter(function (p) {
+      var st = LAST && LAST.statuses[p.id];
+      return st && st.barRaise && st.barRaise.lensScores;
+    });
+  }
+  function scoresOf(pid) {
+    var st = LAST && LAST.statuses[pid];
+    return (st && st.barRaise && st.barRaise.lensScores) || null;
+  }
+  function renderLensGrid() {
+    var box = $("lensgrid"), key = $("lens-key");
+    box.innerHTML = ""; key.innerHTML = "";
+    var rows = lensProjects();
+    if (!rows.length) { box.appendChild(el("div", { className: "list-meta", text: "no lens scores collected yet" })); return; }
+    box.className = "lensgrid" + (FILTER === "ALL" ? "" : " dimrow");
+    box.style.gridTemplateColumns = "74px repeat(" + CORE_LENSES.length + ", 1fr)";
+    rows.forEach(function (p) {
+      var sc = scoresOf(p.id) || {};
+      var off = !inFilter(p.id) ? " off" : "";
+      box.appendChild(el("span", { className: "lg-lab" + off, text: p.tag, title: p.displayName }));
+      CORE_LENSES.forEach(function (L) {
+        var v = sc[L[0]];
+        var c = el("span", { className: "lg-cell" + (v == null ? " void" : "") + off });
+        c.style.background = lensColor(v);
+        c.title = p.tag + " · " + L[1] + ": " + (v == null ? "not scored" : v);
+        if (v != null) c.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var i = CYCLE.indexOf(p.id);
+          if (i >= 0) jumpTo(i);
+        });
+        box.appendChild(c);
+      });
+    });
+    [["80+", "#00d68f"], ["65+", "#5fd6ff"], ["50+", "#cc8400"], ["35+", "#cc5500"], ["under 35", "#ff5b6e"]].forEach(function (k) {
+      var sp = el("span", { title: TIPS.lens });
+      var i = el("i"); i.style.background = k[1];
+      sp.appendChild(i); sp.appendChild(txt(k[0]));
+      key.appendChild(sp);
+    });
+  }
+  function openLensBig() {
+    if (!LAST) return;
+    var rows = lensProjects();
+    var outer = el("div");
+    outer.appendChild(el("div", { className: "list-meta", text: "each cell is one lens score from that project's latest review pass. Twelve core lenses run on every project; the domain lenses below are matched to each project's tags." }));
+    var grid = el("div", { className: "lensgrid" });
+    grid.style.gridTemplateColumns = "132px repeat(" + CORE_LENSES.length + ", 1fr)";
+    grid.style.gap = "3px";
+    grid.appendChild(el("span"));
+    CORE_LENSES.forEach(function (L) {
+      grid.appendChild(el("span", { className: "lenscol-lab", text: L[1] }));
+    });
+    rows.forEach(function (p) {
+      var sc = scoresOf(p.id) || {};
+      var lab = el("span", { className: "lg-lab", text: p.displayName });
+      lab.style.fontSize = "11px";
+      lab.style.color = p.hue;
+      grid.appendChild(lab);
+      CORE_LENSES.forEach(function (L) {
+        var v = sc[L[0]];
+        var c = el("span", { className: "lg-cell" + (v == null ? " void" : "") });
+        c.style.background = lensColor(v);
+        c.style.height = "22px";
+        c.title = p.tag + " · " + L[1] + ": " + (v == null ? "not scored" : v);
+        if (v != null) c.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(p.id)); });
+        grid.appendChild(c);
+      });
+    });
+    outer.appendChild(grid);
+    var dom = el("div", { className: "lensdomain" });
+    dom.appendChild(el("div", { className: "band-title", text: "domain lenses, worst first" }));
+    var coreSet = {};
+    CORE_LENSES.forEach(function (L) { coreSet[L[0]] = true; });
+    rows.forEach(function (p) {
+      var sc = scoresOf(p.id) || {};
+      var extra = Object.keys(sc).filter(function (k) { return !coreSet[k]; })
+        .sort(function (a, b) { return sc[a] - sc[b]; });
+      if (!extra.length) return;
+      var row = el("div", { className: "ld-row" });
+      var pj = el("span", { className: "ld-pj", text: p.tag }); pj.style.color = p.hue;
+      row.appendChild(pj);
+      extra.forEach(function (k) {
+        var ch = el("span", { className: "chip", title: TIPS.lens });
+        ch.appendChild(el("span", { className: "k", text: k.replace(/-/g, " ") }));
+        ch.appendChild(txt(String(sc[k])));
+        ch.style.color = lensColor(sc[k]);
+        row.appendChild(ch);
+      });
+      dom.appendChild(row);
+    });
+    if (dom.children.length > 1) outer.appendChild(dom);
+    var tens = el("div", { className: "lensdomain" });
+    tens.appendChild(el("div", { className: "band-title", text: "open tensions, longest standing first" }));
+    var anyT = false;
+    rows.forEach(function (p) {
+      var t = tensionsOf(LAST.statuses[p.id]);
+      if (!t || !t.length) return;
+      anyT = true;
+      var row = el("div", { className: "ld-row" });
+      var pj = el("span", { className: "ld-pj", text: p.tag }); pj.style.color = p.hue;
+      row.appendChild(pj);
+      t.slice().sort(function (a, b) { return (b.runsSeen || 0) - (a.runsSeen || 0); }).forEach(function (x) {
+        var ch = el("span", { className: "chip", title: TIPS.tensions });
+        ch.appendChild(txt((x.lenses || []).join(" against ").replace(/-/g, " ")));
+        var rs = x.runsSeen || 0;
+        ch.appendChild(el("span", { className: "k", text: " " + rs + " run" + (rs === 1 ? "" : "s") }));
+        row.appendChild(ch);
+      });
+      tens.appendChild(row);
+    });
+    if (anyT) outer.appendChild(tens);
+    openOverlay("lens grid · where the score is lost", outer);
+  }
+
+  /* ---------- Health chart ---------- */
+  // Reads dashboard/data/health-trend.json, one row per project per day, appended by
+  // collect-usage.ps1. Open findings ride above the midline, review health below it, on
+  // the same geometry as the token wave so the two views read the same way.
+  function trendSeries(projId) {
+    var t = LAST && LAST.trend;
+    if (!t || !Array.isArray(t.rows) || !t.rows.length) return null;
+    var rows = t.rows.slice(-DAYS);
+    return rows.map(function (r) {
+      var open = 0, health = 0, nH = 0, closed = 0, oldest = 0, audit = 0, any = false;
+      Object.keys(r.projects || {}).forEach(function (pid) {
+        if (projId !== "ALL" && pid !== projId) return;
+        var v = r.projects[pid] || {};
+        any = true;
+        if (v.open != null) open += v.open;
+        if (v.closed != null) closed += v.closed;
+        if (v.audit != null) audit += v.audit;
+        if (v.oldestOpen != null && v.oldestOpen > oldest) oldest = v.oldestOpen;
+        if (v.health != null) { health += v.health; nH++; }
+      });
+      return { d: r.d, open: open, closed: closed, audit: audit, oldest: oldest, health: nH ? health / nH : null, any: any };
+    }).filter(function (r) { return r.any; });
+  }
+  function buildHealth(projId) {
+    var wrap = el("div", { className: "flow" });
+    var rows = trendSeries(projId);
+    if (!rows || !rows.length) {
+      var empty = el("div", { className: "list-meta" });
+      empty.style.padding = "34px 4px";
+      empty.style.textAlign = "center";
+      empty.textContent = "no health history yet for this scope. The ledger starts the first time the collector runs after 2026-08-24 and fills one row per day from there.";
+      wrap.appendChild(empty);
+      return wrap;
+    }
+    var maxOpen = 1;
+    rows.forEach(function (r) { maxOpen = Math.max(maxOpen, r.open); });
+    var n = rows.length;
+    var step = n > 1 ? W / (n - 1) : 0;
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "none", "aria-label": "health history for " + projId });
+    svg.appendChild(svgEl("line", { x1: 0, y1: MID, x2: W, y2: MID, stroke: "rgba(44,53,67,0.9)", "stroke-width": 1 }));
+    function pts(get, top) {
+      return rows.map(function (r, i) {
+        var f = get(r);
+        var y = top ? MID - f * AMP : MID + f * AMP;
+        return [n > 1 ? i * step : W / 2, y];
+      });
+    }
+    var openPts = pts(function (r) { return r.open / maxOpen; }, true);
+    var healthPts = pts(function (r) { return r.health == null ? 0 : r.health / 100; }, false);
+    function draw(points, color, dash, fillOpacity, baseY) {
+      if (points.length === 1) {
+        svg.appendChild(svgEl("circle", { cx: points[0][0], cy: points[0][1], r: 3, fill: color }));
+        return;
+      }
+      var d = smoothPath(points, 6, H - 6);
+      var area = svgEl("path", { d: d + " L" + points[points.length - 1][0] + "," + baseY + " L" + points[0][0] + "," + baseY + " Z", fill: color, opacity: fillOpacity, stroke: "none" });
+      svg.appendChild(area);
+      var line = svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 1.8, "stroke-linecap": "round" });
+      if (dash) line.setAttribute("stroke-dasharray", dash);
+      svg.appendChild(line);
+    }
+    draw(openPts, "#ff5b6e", null, 0.13, MID);
+    draw(healthPts, "#00d68f", "5 3", 0.10, MID);
+    var lblUp = el("span", { className: "side-label in", text: "open findings" });
+    lblUp.style.color = "#ff5b6e";
+    wrap.appendChild(lblUp);
+    var lblDn = el("span", { className: "side-label gain", text: "review health" });
+    wrap.appendChild(lblDn);
+    wrap.appendChild(svg);
+    var last = rows[rows.length - 1];
+    var bits = [last.open + " open"];
+    if (last.closed) bits.push(last.closed + " closed");
+    if (last.health != null) bits.push("health " + Math.round(last.health));
+    if (last.oldest) bits.push("oldest " + last.oldest + "d");
+    if (last.audit) bits.push(last.audit + " from the nightly audit");
+    var axis = el("div", { className: "axis-note" });
+    axis.appendChild(el("span", { text: bits.join(" \u00b7 "), title: "the newest row in the ledger" }));
+    axis.appendChild(el("span", { text: "peak " + maxOpen + " open", title: "the open-findings curve is scaled to its own busiest day" }));
+    axis.appendChild(el("span", { text: rows.length + "d of history", title: "one row per day, appended by the collector; the ledger starts 2026-08-24" }));
+    wrap.appendChild(axis);
+    return wrap;
   }
 
   /* ---------- Wave chart with scan-locked riders ---------- */
   function buildFlow(projId, byDay) {
+    // The health view charts a different quantity from a different feed, so it gets its
+    // own builder rather than being bent into the token wave.
+    if (VIEW === "health") return buildHealth(projId);
     // thin-log days: backfill estimates keyed by date for this scope
     var estMap = {};
     (function () {
@@ -2002,6 +2470,9 @@
     });
     if (!TOT) {
       TOT = [];
+      // Cells 0-7 are the token and cost row, unchanged. Cells 8-11 are the health row
+      // added 2026-08-24: every one of those four numbers was already collected nightly
+      // and had nowhere to land, so the page reported spend in six ways and rot in none.
       [
         { cls: "today", tip: TIPS.tokensToday },
         { cls: "cost", tip: TIPS.costToday },
@@ -2009,12 +2480,16 @@
         { cls: "", tip: TIPS.allTime },
         { cls: "cost", tip: TIPS.allTimeCost },
         { cls: "", tip: TIPS.burnRate },
-        { cls: "", tip: TIPS.reviewActions },
-        { cls: "", tip: TIPS.lastCollected }
+        { cls: "", tip: TIPS.reviewActions, go: function () { openLists("found"); } },
+        { cls: "", tip: TIPS.lastCollected },
+        { cls: "health", tip: TIPS.portfolioHealth, go: function () { if (LAST.constellation) openSummary(LAST.constellation); else openStats(); } },
+        { cls: "health", tip: TIPS.closed, go: function () { openLists("found"); } },
+        { cls: "health", tip: TIPS.oldest, go: function () { openLists("found"); } },
+        { cls: "health", tip: TIPS.auditFindings, go: function () { openLists("found"); } }
       ].forEach(function (d, i) {
         var t = el("div", { className: "panel total clickable " + d.cls }, [el("span", { className: "ck" })]);
-        t.title = d.tip + (i === 6 ? " · click for the list of open actions" : " · click for the full stats view");
-        t.addEventListener("click", i === 6 ? function () { openLists("actions"); } : openStats);
+        t.title = d.tip + (d.go ? " · click for the detail behind it" : " · click for the full stats view");
+        t.addEventListener("click", d.go || openStats);
         var n = el("div", { className: "num" });
         t.appendChild(n);
         var l = el("div", { className: "label" });
@@ -2065,20 +2540,129 @@
     setCell(5, tToday.tok > 0 ? (tToday.cost / (tToday.tok / 1000)) : 0, function (n) { return "$" + n.toFixed(3); }, "/1k", "burn rate today");
     setCell(6, actionsOpen, function (n) { return String(Math.round(n)); }, "open", "review actions" + scopeTag);
     setCell(7, usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", "last collected");
+
+    // ---- health row ----
+    var con = LAST.constellation;
+    var ph = con && con.portfolioHealth != null ? con.portfolioHealth : null;
+    var meanH = null, nH = 0, sumH = 0;
+    Object.keys(statuses).forEach(function (k) {
+      if (!inFilter(k)) return;
+      var h = statuses[k] && statuses[k].barRaise && statuses[k].barRaise.health;
+      if (h != null) { sumH += h; nH++; }
+    });
+    if (nH) meanH = Math.round(sumH / nH);
+    // The rollup score is portfolio-wide, so it only answers for the portfolio view. Under
+    // a project filter the mean of that scope's review health is the honest substitute.
+    var showH = FILTER === "ALL" && ph != null ? ph : meanH;
+    setCell(8, showH != null ? showH : 0, function (n) { return String(Math.round(n)); }, "/100",
+      (FILTER === "ALL" && ph != null ? "portfolio health" : "review health" + scopeTag));
+    var usingRollup = FILTER === "ALL" && ph != null;
+    TOT[8].n.style.color = showH == null ? "" : (usingRollup ? verdictColor(con.portfolioVerdict) : completionColor(showH));
+    var closed = closedFor(FILTER);
+    setCell(9, closed != null ? closed : 0, function (n) { return String(Math.round(n)); }, "closed", "findings closed" + scopeTag);
+    var oldest = oldestOpenFor(FILTER);
+    setCell(10, oldest != null ? oldest : 0, function (n) { return String(Math.round(n)); }, "days", "oldest open finding" + scopeTag);
+    TOT[10].n.style.color = oldest == null ? "" : (oldest >= 30 ? "#ff5b6e" : oldest >= 14 ? "#cc8400" : "#00d68f");
+    var aud = auditFor(FILTER);
+    setCell(11, aud ? aud.total : 0, function (n) { return String(Math.round(n)); }, "found", "nightly audit" + scopeTag);
+    if (aud) {
+      TOT[11].n.style.color = aud.critical > 0 ? "#ff5b6e" : aud.high > 0 ? "#cc5500" : aud.medium > 0 ? "#cc8400" : "#00d68f";
+      TOT[11].n.parentNode.title = aud.critical + " critical, " + aud.high + " high, " + aud.medium + " medium, " + aud.low + " low · click for the detail behind it";
+    }
     // Anything in usage.json with no PROJECTS entry gets no bar and is excluded
     // from ALL, so say so rather than letting it vanish. Empty in the normal case.
     var orphans = unregisteredIds();
     var orphanEl = $("usage-orphans");
     if (orphanEl) {
-      if (orphans.length) {
-        orphanEl.textContent = "not charted: " + orphans.join(", ") + " (no PROJECTS entry)";
-        orphanEl.style.display = "";
-      } else {
-        orphanEl.textContent = "";
-        orphanEl.style.display = "none";
-      }
+      var notes = [];
+      if (orphans.length) notes.push("not charted: " + orphans.join(", ") + " (no PROJECTS entry)");
+      var ret = PROJECTS.filter(function (pp) { return pp.retired; });
+      if (ret.length) notes.push("retired, lifetime totals still counted: " + ret.map(function (pp) { return pp.tag + " (" + pp.retired + ")"; }).join(", "));
+      notes.push("private, withheld from every public payload: " + PRIVATE_IDS.join(", "));
+      orphanEl.textContent = notes.join("  \u00b7  ");
+      orphanEl.style.display = "";
     }
     document.title = "dashboard · " + (FILTER === "ALL" ? "" : metaFor(FILTER).tag + " · ") + fmtUSD(tToday.cost) + " today";
+  }
+
+  /* ---------- Portfolio band ---------- */
+  // constellation.json carries a portfolio health score, a verdict, a written weekly
+  // summary, three ranked top actions, and the at-risk list. All of it was already being
+  // generated and none of it was on this page.
+  function renderBand() {
+    var c = LAST && LAST.constellation;
+    var box = $("band");
+    if (!c || (c.portfolioHealth == null && !(c.topActions || []).length)) { box.style.display = "none"; return; }
+    box.style.display = "";
+    var col = verdictColor(c.portfolioVerdict);
+    var hEl = $("band-health");
+    hEl.innerHTML = "";
+    hEl.appendChild(txt(c.portfolioHealth != null ? String(c.portfolioHealth) : "--"));
+    hEl.appendChild(el("span", { className: "unit", text: "/100" }));
+    hEl.style.color = col;
+    hEl.style.textShadow = "0 0 16px " + col + "55";
+    var vEl = $("band-verdict-word");
+    vEl.textContent = c.portfolioVerdict || "";
+    vEl.style.color = col;
+    var opened = c.totalOpenActions, closed = c.totalClosedSinceLastConstellation;
+    var sub = $("band-sub");
+    sub.innerHTML = "";
+    if (opened != null) sub.appendChild(txt(opened + " open, " + (closed != null ? closed + " closed" : "") + " since the previous rollup"));
+    if (c.generatedAt) {
+      sub.appendChild(el("br"));
+      sub.appendChild(txt("rolled up " + fmtAgo(c.generatedAt)));
+    }
+    var acts = $("band-actions");
+    acts.innerHTML = "";
+    (c.topActions || []).slice(0, 3).forEach(function (a) {
+      var sev = String(a.severity || "").toUpperCase();
+      var row = el("div", { className: "band-act" });
+      var sv = el("span", { className: "ba-sev", text: sev || "·" });
+      sv.style.color = sev === "HIGH" ? "#ff5b6e" : (sev === "MED" || sev === "MEDIUM" ? "#cc8400" : "#5fd6ff");
+      row.appendChild(sv);
+      var pm = projByLoose(a.project);
+      row.appendChild(el("span", { className: "ba-pj", text: pm.tag }));
+      row.appendChild(el("span", { className: "ba-label", text: String(a.label || "") }));
+      row.title = "jump to " + pm.tag;
+      row.addEventListener("click", function () {
+        var i = CYCLE.indexOf(pm.id);
+        if (i >= 0) jumpTo(i); else openLists("found", "ALL");
+      });
+      acts.appendChild(row);
+    });
+    var risk = $("band-risk");
+    risk.innerHTML = "";
+    // The rollup names projects by their short codes (BR, HBH, YaC); fold them to the
+    // canonical word so a chip reads the same as every other label on the page.
+    function riskChips(list, cls, why) {
+      (list || []).forEach(function (r) {
+        var pm = projByLoose(r);
+        var ch = el("span", { className: "chip chip-link " + cls, text: pm.tag, title: why });
+        ch.addEventListener("click", function () { var i = CYCLE.indexOf(pm.id); if (i >= 0) jumpTo(i); });
+        risk.appendChild(ch);
+      });
+    }
+    if ((c.atRiskProjects || []).length) risk.appendChild(el("span", { className: "band-title", text: "at risk" }));
+    riskChips(c.atRiskProjects, "at-risk", "flagged at risk by the latest rollup");
+    if ((c.stalledProjects || []).length) risk.appendChild(el("span", { className: "band-title", text: "stalled" }));
+    riskChips(c.stalledProjects, "stalled", "flagged stalled by the latest rollup");
+    var more = $("band-more");
+    more.textContent = c.summary ? "read the full rollup" : "";
+    more.style.display = c.summary ? "" : "none";
+    more.onclick = function () { openSummary(c); };
+    more.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSummary(c); } };
+  }
+  function openSummary(c) {
+    var wrap = el("div", { className: "lists" });
+    wrap.appendChild(el("div", { className: "list-sub", text: c.summary || "" }));
+    if (c.generatedAt) wrap.appendChild(el("div", { className: "list-meta", text: "rolled up " + c.generatedAt.slice(0, 10) }));
+    (c.topActions || []).forEach(function (a) {
+      var pm = projByLoose(a.project);
+      var row = el("div", { className: "list-row" }, [listRowHead(pm, String(a.severity || "").toUpperCase())]);
+      row.appendChild(el("div", { className: "list-sub", text: String(a.label || "") }));
+      wrap.appendChild(row);
+    });
+    openOverlay("portfolio rollup", wrap);
   }
 
   var TICKER_SIG = null;
@@ -2169,83 +2753,132 @@
     for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id.toLowerCase() === word || PROJECTS[i].tag.toLowerCase() === word) return PROJECTS[i];
     return ALL_META;
   }
+  function sevColor(sev) {
+    sev = String(sev || "").toUpperCase();
+    return sev === "HIGH" || sev === "CRITICAL" ? "#ff5b6e" : (sev === "MED" || sev === "MEDIUM" ? "#cc8400" : "#5fd6ff");
+  }
+  // firstSeen and runsOpen live in barRaise.openFindings, keyed by finding id, while the
+  // readable title lives in barRaise.actions. Joining the two is what puts an age on a
+  // finding, which is the difference between "58 open" and "58 open, oldest 51 days".
+  function findingAges(br) {
+    var map = {};
+    (br.openFindings || []).forEach(function (f) { if (f && f.id) map[f.id] = f; });
+    return map;
+  }
+  function findingItem(a, ages) {
+    var it = el("div", { className: "list-item" });
+    var sev = String(a.severity || "").toUpperCase();
+    var sv = el("span", { className: "li-sev", text: sev || "\u00b7" });
+    sv.style.color = sevColor(sev);
+    it.appendChild(sv);
+    it.appendChild(el("span", { className: "li-title", text: a.title || a.id || "" }));
+    if (a.lens) it.appendChild(el("span", { className: "li-lens", text: a.lens }));
+    var meta = ages && a.id ? ages[a.id] : null;
+    if (meta) {
+      var d = ageDays(meta.firstSeen);
+      var bits = [];
+      if (d != null) bits.push("open " + d + " days");
+      if (meta.runsOpen > 1) bits.push("survived " + meta.runsOpen + " review runs");
+      if (bits.length) {
+        var ln = el("div", { className: "li-id", text: bits.join(" \u00b7 ") });
+        if (d != null && d >= 30) ln.style.color = "#cc8400";
+        it.appendChild(ln);
+      }
+    }
+    return it;
+  }
   function buildListRow(metric, p, s) {
-    if (metric === "actions") {
+    // ---- FOUND: everything a review or an audit turned up ----
+    // Bar-raise findings and the nightly canonical audit were two separate surfaces (one
+    // of them invisible). They answer the same question and now share one bucket, with
+    // parked findings as a subrow rather than a seventh top-level count.
+    if (metric === "found") {
       var br = s.barRaise || {};
-      if (!(br.actionsOpen > 0)) return null;
-      var row = el("div", { className: "list-row" }, [listRowHead(p, br.actionsOpen + " open")]);
-      if (br.topFinding) { var f = el("div", { className: "list-sub" }); f.textContent = br.topFinding; row.appendChild(f); }
+      var aud = auditOf(s);
+      var parked = Array.isArray(br.deferred) ? br.deferred : [];
+      var open = br.actionsOpen || 0;
+      if (!open && !parked.length && !(aud && aud.total)) return null;
+      var count = open + " open";
+      if (br.actionsClosed != null) count += " / " + br.actionsClosed + " closed";
+      var row = el("div", { className: "list-row" }, [listRowHead(p, count)]);
+      var oldest = oldestOpenOf(s);
+      var head = [];
+      if (oldest != null) head.push("oldest open " + oldest + " days");
+      if (br.health != null) head.push("health " + br.health);
+      if (br.latestReportAt) head.push("reviewed " + fmtAgo(br.latestReportAt));
+      if (head.length) row.appendChild(el("div", { className: "list-meta", text: head.join(" \u00b7 ") }));
+      if (br.topFinding) row.appendChild(el("div", { className: "list-sub", text: br.topFinding }));
+      var ages = findingAges(br);
       if (Array.isArray(br.actions) && br.actions.length) {
-        br.actions.forEach(function (a) {
+        br.actions.forEach(function (a) { row.appendChild(findingItem(a, ages)); });
+      }
+      if (aud && aud.total) {
+        var al = el("div", { className: "list-item" });
+        var alab = aud.critical ? "CRIT" : aud.high ? "HIGH" : aud.medium ? "MED" : "LOW";
+        var asv = el("span", { className: "li-sev", text: alab });
+        asv.style.color = sevColor(aud.critical ? "CRITICAL" : alab);
+        al.appendChild(asv);
+        al.appendChild(el("span", { className: "li-title", text: "nightly canonical audit: " + aud.critical + " critical, " + aud.high + " high, " + aud.medium + " medium, " + aud.low + " low" }));
+        al.appendChild(el("span", { className: "li-lens", text: "audit" }));
+        row.appendChild(al);
+      }
+      if (s.audit && s.audit.latestReportPath) {
+        row.appendChild(el("a", { className: "list-link", text: "open audit report", href: "/" + String(s.audit.latestReportPath).replace(/\\/g, "/"), target: "_blank", rel: "noopener" }));
+      }
+      if (br.latestReportPath) {
+        var rl = el("a", { className: "list-link", text: "open review report", href: "/" + String(br.latestReportPath).replace(/\\/g, "/"), target: "_blank", rel: "noopener" });
+        rl.style.marginLeft = "14px";
+        row.appendChild(rl);
+      }
+      if (parked.length) {
+        row.appendChild(el("div", { className: "list-meta", text: parked.length + " parked, not actionable yet" }));
+        parked.forEach(function (a) {
           var it = el("div", { className: "list-item" });
-          var sev = String(a.severity || "").toUpperCase();
-          var sv = el("span", { className: "li-sev", text: sev || "·" });
-          sv.style.color = sev === "HIGH" ? "#ff5b6e" : (sev === "MED" || sev === "MEDIUM" ? "#cc8400" : "#5fd6ff");
-          it.appendChild(sv);
+          it.style.opacity = "0.7";
+          var sev2 = String(a.severity || "").toUpperCase();
+          var sv2 = el("span", { className: "li-sev", text: sev2 || "\u00b7" });
+          sv2.style.color = sevColor(sev2);
+          it.appendChild(sv2);
           it.appendChild(el("span", { className: "li-title", text: a.title || a.id || "" }));
-          if (a.lens) it.appendChild(el("span", { className: "li-lens", text: a.lens }));
+          if (a.reason) it.appendChild(el("span", { className: "li-lens", text: a.reason }));
           row.appendChild(it);
         });
       }
-      if (br.latestReportPath) row.appendChild(el("a", { className: "list-link", text: "open review report", href: "/" + String(br.latestReportPath).replace(/\\/g, "/"), target: "_blank", rel: "noopener" }));
       return row;
     }
-    if (metric === "deferred") {
-      // real-but-not-actionable-yet findings (post-1.0, backlog-parked, blocked, externally gated).
-      // Never counted as open actions; surfaced here so they are visible without nagging as actionable.
-      var brd = (s.barRaise && s.barRaise.deferred) || [];
-      if (!Array.isArray(brd) || !brd.length) return null;
-      var drow = el("div", { className: "list-row" }, [listRowHead(p, brd.length + " deferred")]);
-      brd.forEach(function (a) {
-        var it = el("div", { className: "list-item" });
-        var sev = String(a.severity || "").toUpperCase();
-        var sv = el("span", { className: "li-sev", text: sev || "·" });
-        sv.style.color = sev === "HIGH" ? "#ff5b6e" : (sev === "MED" || sev === "MEDIUM" ? "#cc8400" : "#5fd6ff");
-        it.appendChild(sv);
-        it.appendChild(el("span", { className: "li-title", text: a.title || a.id || "" }));
-        if (a.reason) it.appendChild(el("span", { className: "li-lens", text: a.reason }));
-        drow.appendChild(it);
-      });
-      return drow;
-    }
-    if (metric === "milestones") {
+    // ---- TO DONE: the owner-anchored path to finished ----
+    // Completion percent, the active milestone and the completion gates were three
+    // separate tabs telling one story. One bucket, one owner: the anchor Kane sets.
+    if (metric === "done") {
       var ms = s.milestone || {};
-      if (!ms.label && !ms.id) return null;
-      var row2 = el("div", { className: "list-row" }, [listRowHead(p, ms.status || "")]);
-      row2.appendChild(el("div", { className: "list-sub", text: ms.label || ms.id }));
-      if (s.completion && s.completion.pct != null) row2.appendChild(el("div", { className: "list-meta", text: s.completion.pct + "% complete" }));
-      return row2;
-    }
-    if (metric === "queue") {
-      var depth = (s.workQueueDepth != null) ? s.workQueueDepth : 0;
-      if (!(depth > 0)) return null;
-      return el("div", { className: "list-row" }, [listRowHead(p, depth + " queued")]);
-    }
-    if (metric === "items") {
-      // Items left = the completion gates (.project-context.json) ONLY. The queued + backlog
-      // that used to be folded in here are their own buckets now, so nothing double-counts.
       var il = s.itemsLeft || {};
       var icnt = (il.count != null) ? il.count : (il.gates != null ? il.gates : 0);
       var iitems = Array.isArray(il.items) ? il.items : [];
-      if (!icnt && !iitems.length) return null;
-      var rowi = el("div", { className: "list-row" }, [listRowHead(p, icnt + " left")]);
+      var pct = s.completion ? s.completion.pct : null;
+      if (pct == null && !ms.id && !icnt && !iitems.length) return null;
+      var rowd = el("div", { className: "list-row" }, [listRowHead(p, pct != null ? pct + "% complete" : "")]);
+      var line = [];
+      if (ms.id || ms.label) line.push("milestone " + (ms.id || "") + " " + (ms.label || "") + (ms.status ? " (" + ms.status + ")" : ""));
+      if (s.completion && s.completion.anchored) line.push("anchored " + s.completion.anchored);
+      if (line.length) rowd.appendChild(el("div", { className: "list-sub", text: line.join(" \u00b7 ") }));
+      var nleft = icnt || iitems.length;
+      if (nleft) rowd.appendChild(el("div", { className: "list-meta", text: nleft + " condition" + (nleft === 1 ? "" : "s") + " left, from .project-context.json" }));
       iitems.slice(0, 60).forEach(function (g) {
         var it = el("div", { className: "list-item" });
         it.style.borderLeft = "2px solid " + p.hue; it.style.borderRadius = "0"; it.style.paddingLeft = "8px";
         it.appendChild(el("span", { className: "li-title", text: String(g).slice(0, 200) }));
-        rowi.appendChild(it);
+        rowd.appendChild(it);
       });
-      if (!iitems.length && icnt) rowi.appendChild(el("div", { className: "list-meta", text: "owner-anchored conditions to finish (.project-context.json)" }));
-      return rowi;
+      return rowd;
     }
+    // ---- QUEUED, status side: the backlog rows. The live work-queue half renders
+    // separately because it comes from the queue feed, not from the status file.
     if (metric === "backlog") {
-      // Backlog = open rows in the project's BACKLOG.md (prioritized future work). A distinct
-      // bucket from Queued (work-queue), Open actions (bar-raise) and Items left (gates).
       var bl = s.backlog || {};
       var bcnt = (bl.count != null) ? bl.count : ((s.itemsLeft && s.itemsLeft.backlog) || 0);
       var bitems = Array.isArray(bl.items) ? bl.items : [];
       if (!bcnt && !bitems.length) return null;
-      var rowb = el("div", { className: "list-row" }, [listRowHead(p, bcnt + " backlog")]);
+      var rowb = el("div", { className: "list-row" }, [listRowHead(p, bcnt + " in backlog")]);
       bitems.slice(0, 60).forEach(function (b) {
         var it = el("div", { className: "list-item" });
         it.style.borderLeft = "2px solid " + p.hue; it.style.borderRadius = "0"; it.style.paddingLeft = "8px";
@@ -2288,20 +2921,43 @@
       bodyEl.appendChild(row);
     });
   }
-  function loadQueueItems(bodyEl, scope) {
-    var items = queueItemsFor(scope, function (it) { return it.status === "pending" && !it.deferred; });
-    if (!items.length) { bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing queued" + (scope !== "ALL" ? " for " + metaFor(scope).tag : "") })); return; }
-    bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " queued item" + (items.length === 1 ? "" : "s") }));
-    renderQueueGroups(bodyEl, items, "queued");
-  }
-  // Deferred work-queue items (parked, not actionable now): flagged deferred:true or status "deferred".
-  // Appends below any bar-raise deferred rows on the Deferred tab; never shown as queued.
-  function loadDeferredQueueItems(bodyEl, scope) {
-    var items = queueItemsFor(scope, function (it) { return it.deferred === true || it.status === "deferred"; });
-    if (!items.length) return;
-    var ph = bodyEl.querySelector(".list-empty"); if (ph) ph.parentNode.removeChild(ph);   // drop the "nothing here" placeholder once we have deferred items to show
-    bodyEl.appendChild(el("div", { className: "list-meta", text: items.length + " deferred work-queue item" + (items.length === 1 ? "" : "s") }));
-    renderQueueGroups(bodyEl, items, "deferred");
+  // ---- QUEUED: the whole work pipeline in one tab ----
+  // Live work-queue rows, the items blocked on Kane, the parked rows, and each project's
+  // backlog, in that order. Queued and backlog used to be two tabs and two chips telling
+  // the same story from two sources; waiting was collected and never shown at all.
+  function renderQueueTab(bodyEl, scope, statuses) {
+    var q = LAST && LAST.queue;
+    if (queuePrivate()) {
+      var note = el("div", { className: "list-meta" });
+      note.appendChild(txt("Work-queue detail is private. The feed has answered \u201cprivate\u201d since 2026-08-19, when the queue moved off every public surface, so the counts and rows below come only from what each project publishes in its own status file. Republishing the feed counts-only would bring the queued, waiting and parked numbers back without exposing any row text."));
+      bodyEl.appendChild(note);
+    } else {
+      var pending = queueItemsFor(scope, function (it) { return it.status === "pending" && !it.deferred; });
+      if (pending.length) {
+        bodyEl.appendChild(el("div", { className: "list-meta", text: pending.length + " queued for the next sweeps" }));
+        renderQueueGroups(bodyEl, pending, "queued");
+      }
+      var waiting = queueItemsFor(scope, function (it) { return it.status === "blocked" || it.status === "blocked-on-user"; });
+      if (waiting.length) {
+        bodyEl.appendChild(el("div", { className: "list-meta", text: waiting.length + " waiting on Kane, nothing else can move these" }));
+        renderQueueGroups(bodyEl, waiting, "waiting");
+      }
+      var parkedQ = queueItemsFor(scope, function (it) { return it.deferred === true || it.status === "deferred"; });
+      if (parkedQ.length) {
+        bodyEl.appendChild(el("div", { className: "list-meta", text: parkedQ.length + " parked, not actionable now" }));
+        renderQueueGroups(bodyEl, parkedQ, "parked");
+      }
+      if (q && q.itemsTruncated > 0) {
+        bodyEl.appendChild(el("div", { className: "list-meta", text: "showing " + (q.itemsTotal - q.itemsTruncated) + " of " + q.itemsTotal + " rows, highest priority first. The counts above every chip are exact; only this list is capped." }));
+      }
+    }
+    var anyBacklog = false;
+    PROJECTS.slice().sort(function (a, b) { return a.tag.toLowerCase() < b.tag.toLowerCase() ? -1 : a.tag.toLowerCase() > b.tag.toLowerCase() ? 1 : 0; }).forEach(function (pj) {
+      if (scope !== "ALL" && pj.id !== scope) return;
+      var st = statuses[pj.id]; if (!st) return;
+      var r = buildListRow("backlog", pj, st);
+      if (r) { if (!anyBacklog) { bodyEl.appendChild(el("div", { className: "list-meta", text: "backlog, the prioritized future work each project keeps in its own BACKLOG.md" })); anyBacklog = true; } bodyEl.appendChild(r); }
+    });
   }
   function openLists(metric, forProject) {
     var scope = forProject || FILTER;
@@ -2309,18 +2965,23 @@
     var wrap = el("div", { className: "lists" });
     var tabBar = el("div", { className: "list-tabs" });
     var bodyEl = el("div", { className: "list-body" });
-    var METRICS = [["milestones", "Milestones"], ["actions", "Open actions"], ["queue", "Queued"], ["backlog", "Backlog"], ["items", "Items left"], ["deferred", "Deferred"]];
+    // Six buckets became three on 2026-08-24. They answer three questions: what blocks
+    // done, what review turned up, and what is in the pipeline. Milestones folded into
+    // To done, backlog and waiting folded into Queued, and deferred stopped being a
+    // top-level bucket and became a parked subrow inside whichever bucket owns it.
+    var METRICS = [["done", "To done"], ["found", "Found"], ["queue", "Queued"]];
+    var LEGACY = { milestones: "done", items: "done", actions: "found", deferred: "found", backlog: "queue" };
     function render(m) {
       for (var i = 0; i < tabBar.children.length; i++) tabBar.children[i].classList.toggle("on", tabBar.children[i].getAttribute("data-k") === m);
       bodyEl.innerHTML = "";
-      // Queued is purely live work-queue items (from KV), never the status-derived rows.
-      if (m === "queue") { loadQueueItems(bodyEl, scope); return; }
-      PROJECTS.slice().sort(function (a, b) { return a.tag.toLowerCase() < b.tag.toLowerCase() ? -1 : a.tag.toLowerCase() > b.tag.toLowerCase() ? 1 : 0; }).forEach(function (p) {
-        if (scope !== "ALL" && p.id !== scope) return;
-        var s = statuses[p.id]; if (!s) return;
-        var r = buildListRow(m, p, s); if (r) bodyEl.appendChild(r);
-      });
-      if (m === "deferred") loadDeferredQueueItems(bodyEl, scope);
+      if (m === "queue") { renderQueueTab(bodyEl, scope, statuses); }
+      else {
+        PROJECTS.slice().sort(function (a, b) { return a.tag.toLowerCase() < b.tag.toLowerCase() ? -1 : a.tag.toLowerCase() > b.tag.toLowerCase() ? 1 : 0; }).forEach(function (p) {
+          if (scope !== "ALL" && p.id !== scope) return;
+          var st = statuses[p.id]; if (!st) return;
+          var r = buildListRow(m, p, st); if (r) bodyEl.appendChild(r);
+        });
+      }
       if (!bodyEl.firstChild) bodyEl.appendChild(el("div", { className: "list-empty", text: "nothing here" + (scope !== "ALL" ? " for " + metaFor(scope).tag : "") }));
     }
     METRICS.forEach(function (mt) {
@@ -2329,8 +2990,8 @@
       tabBar.appendChild(t);
     });
     wrap.appendChild(tabBar); wrap.appendChild(bodyEl);
-    render(metric || "actions");
-    openOverlay("lists" + (scope !== "ALL" ? " · " + metaFor(scope).tag : ""), wrap);
+    render(LEGACY[metric] || metric || "found");
+    openOverlay("lists" + (scope !== "ALL" ? " \u00b7 " + metaFor(scope).tag : ""), wrap);
   }
   function keyRow(hue, name, frac, val, sub, color) {
     var r = el("div", { className: "keyrow" });
@@ -2428,24 +3089,27 @@
     var outer = el("div");
     // portfolio summary chips
     var sum = el("div", { className: "gsummary" });
-    var meanC = 0, nC = 0, acts = 0, leftSum = 0, counts = {};
+    var meanC = 0, nC = 0, acts = 0, leftSum = 0, counts = {}, meanH2 = 0, nH2 = 0;
     PROJECTS.filter(function (p) { return p.id !== "Everything" && !p.usageOnly; }).forEach(function (p) {
       var st = LAST.statuses[p.id];
       if (st && st.completion && st.completion.pct != null) { meanC += st.completion.pct; nC++; }
       if (st && st.barRaise) {
         if (st.barRaise.actionsOpen != null) acts += st.barRaise.actionsOpen;
         if (st.barRaise.verdict) counts[st.barRaise.verdict] = (counts[st.barRaise.verdict] || 0) + 1;
+        if (st.barRaise.health != null) { meanH2 += st.barRaise.health; nH2++; }
       }
       var gv = gatesOf(st); if (gv != null) leftSum += gv;   // leftSum now = gates total
     });
     if (nC) sum.appendChild(el("span", { className: "chip", text: "mean " + Math.round(meanC / nC) + "% complete", title: "average of the owner-anchored completion scores" }));
+    if (nH2) sum.appendChild(el("span", { className: "chip", text: "mean health " + Math.round(meanH2 / nH2), title: TIPS.health }));
     Object.keys(counts).forEach(function (v) {
       sum.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
     });
     sum.appendChild(el("span", { className: "chip", text: acts + " actions open", title: TIPS.reviewActions }));
     var qAll = queuedFor("ALL");
     if (qAll != null) sum.appendChild(el("span", { className: "chip", text: qAll + " queued", title: "work-queue items set for the next sweeps (live)" }));
-    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " milestones", title: "the owner-anchored conditions standing between here and 100% complete" }));
+    else if (queuePrivate()) sum.appendChild(el("span", { className: "chip", text: "queue private", title: "the work-queue feed has answered private since 2026-08-19" }));
+    if (leftSum) sum.appendChild(el("span", { className: "chip", text: leftSum + " conditions left", title: "the owner-anchored conditions standing between here and 100 percent complete" }));
     outer.appendChild(sum);
 
     var split = el("div", { className: "bigviz-split" });
@@ -2462,8 +3126,9 @@
       var bits = [];
       if (st && st.version) bits.push("v" + st.version);
       if (st && st.milestone && st.milestone.id) bits.push(st.milestone.id + " " + (st.milestone.label || "").slice(0, 26));
-      if (br.verdict) bits.push("<b>" + br.verdict + "</b>");
-      if (br.actionsOpen != null) bits.push(br.actionsOpen + " open");
+      if (br.health != null) bits.push("health " + br.health);
+      if (br.actionsOpen != null) bits.push(br.actionsOpen + " open" + (br.actionsClosed != null ? " / " + br.actionsClosed + " closed" : ""));
+      var oldD = oldestOpenOf(st); if (oldD != null) bits.push("oldest " + oldD + "d");
       var qb = queuedFor(p.id); if (qb != null) bits.push("queued " + qb);
       if (st && st.lastReleaseAt) bits.push("pushed " + fmtAgo(st.lastReleaseAt));
       bits.push("today " + fmtTok(tk));
@@ -2478,7 +3143,7 @@
     });
     split.appendChild(keys);
     outer.appendChild(split);
-    openOverlay("completion radar · distance to done", outer);
+    openOverlay("project radar · complete against health", outer);
   }
   function sparkSvg(series, color) {
     var smax = 1;
@@ -2642,8 +3307,17 @@
     }
     mini("sessions logged", sessions, function (n) { return String(Math.round(n)); }, "", "distinct session logs scanned");
     mini("review actions open", actionsOpen, function (n) { return String(Math.round(n)); }, "", TIPS.reviewActions);
+    var closedS = closedFor("ALL");
+    if (closedS != null) mini("findings closed", closedS, function (n) { return String(Math.round(n)); }, "", TIPS.closed);
+    var oldS = oldestOpenFor("ALL");
+    if (oldS != null) mini("oldest open finding", oldS, function (n) { return String(Math.round(n)); }, "d", TIPS.oldest);
+    var audS = auditFor("ALL");
+    if (audS) mini("nightly audit findings", audS.total, function (n) { return String(Math.round(n)); }, "", TIPS.auditFindings);
     var queuedS = queuedFor(FILTER);
-    mini("queued", queuedS != null ? queuedS : 0, function (n) { return String(Math.round(n)); }, "", "work-queue items set for the next sweeps (live)");
+    if (queuePrivate()) mini("queued", "private", null, "", "the work-queue feed has answered private since 2026-08-19");
+    else mini("queued", queuedS != null ? queuedS : 0, function (n) { return String(Math.round(n)); }, "", "work-queue items set for the next sweeps (live)");
+    var waitS = waitingFor("ALL");
+    if (waitS) mini("waiting on Kane", waitS, function (n) { return String(Math.round(n)); }, "", TIPS.waiting);
     mini("last collected", usage && usage.generatedAt ? fmtAgo(usage.generatedAt) : "never", null, "", TIPS.lastCollected);
     grid.appendChild(brow);
     openOverlay("portfolio stats" + (FILTER === "ALL" ? "" : " · " + metaFor(FILTER).tag), grid);
@@ -2752,6 +3426,14 @@
     if (status && status.repoUrl) {
       name.appendChild(el("a", { className: "repo", href: status.repoUrl, target: "_blank", rel: "noopener", text: "↗", title: "open the repo" }));
     }
+    // liveUrl has been in the status contract all along and was never linked, so the one
+    // arrow on this card went to source and never to the running thing.
+    if (status && status.liveUrl) {
+      name.appendChild(el("a", { className: "repo", href: status.liveUrl, target: "_blank", rel: "noopener", text: "▶", title: "open the live site: " + status.liveUrl }));
+    }
+    if (status && status.stale === true) {
+      name.appendChild(el("span", { className: "stale-badge", text: "stale", title: "this project has published no fresh status since its last run; the numbers below are the last known values" }));
+    }
     name.appendChild(el("span", { className: "spot-pos", text: (SEL + 1) + " / " + CYCLE.length, title: "position on the wheel" }));
     head.appendChild(name);
 
@@ -2775,18 +3457,38 @@
     inner.appendChild(buildFlow(id, byDay));
 
     var gauges = el("div", { className: "gauges" });
+    // Chip vocabulary, identical in both branches and matching the three list tabs:
+    //   to done   what stands between here and finished (gates, milestone, completion)
+    //   found     what review and the nightly audit turned up, open against closed
+    //   queued    the work pipeline: queued, waiting on Kane, parked, backlog
+    // Everything parked is a subrow inside its owner, never a bucket of its own.
+    function bucketChip(chips, key, label, value, tip, tab, scopeId, cls) {
+      var c = el("span", { className: "chip chip-link" + (cls ? " " + cls : ""), title: tip + " \u00b7 click for the list behind it" });
+      if (key) c.appendChild(el("span", { className: "k", text: key }));
+      c.appendChild(txt(String(value)));
+      c.addEventListener("click", function (e) { e.stopPropagation(); openLists(tab, scopeId); });
+      chips.appendChild(c);
+      return c;
+    }
     if (isAll) {
-      var meanC = 0, nC = 0, acts = 0, counts = {};
+      var meanC = 0, nC = 0, acts = 0, counts = {}, meanH = 0, nH = 0, closedAll = 0;
       PROJECTS.forEach(function (p) {
         var s = LAST.statuses[p.id];
         if (s && s.completion && s.completion.pct != null) { meanC += s.completion.pct; nC++; }
         if (s && s.barRaise) {
           if (s.barRaise.actionsOpen != null) acts += s.barRaise.actionsOpen;
+          if (s.barRaise.actionsClosed != null) closedAll += s.barRaise.actionsClosed;
+          if (s.barRaise.health != null) { meanH += s.barRaise.health; nH++; }
           if (s.barRaise.verdict) counts[s.barRaise.verdict] = (counts[s.barRaise.verdict] || 0) + 1;
         }
       });
       if (nC) gauges.appendChild(arcGauge(meanC / nC, 100, completionColor(meanC / nC), "mean complete", Math.round(meanC / nC) + "%", "average of the owner-anchored completion scores"));
+      if (nH) gauges.appendChild(arcGauge(meanH / nH, 100, completionColor(meanH / nH), "mean health", String(Math.round(meanH / nH)), TIPS.health));
       gauges.appendChild(arcGauge(Math.min(acts, 60), 60, acts > 30 ? "#cc8400" : "#5fd6ff", "actions open", String(acts), TIPS.reviewActions));
+      var oldestAll = oldestOpenFor("ALL");
+      if (oldestAll != null) {
+        gauges.appendChild(arcGauge(Math.min(oldestAll, 60), 60, oldestAll >= 30 ? "#ff5b6e" : oldestAll >= 14 ? "#cc8400" : "#00d68f", "oldest finding", oldestAll + "d", TIPS.oldest));
+      }
       var ctxDenA = today.input + today.cr;
       if (ctxDenA > 0) {
         var pctA = Math.round((today.cr / ctxDenA) * 100);
@@ -2797,63 +3499,49 @@
       Object.keys(counts).forEach(function (v) {
         chipsA.appendChild(el("span", { className: "chip " + v, text: counts[v] + " " + v, title: TIPS.verdict }));
       });
-      // chip order matches the lists tabs: open actions · queued · items left
-      var ca = el("span", { className: "chip chip-link", title: TIPS.reviewActions + " · click for the portfolio lists" });
-      ca.appendChild(el("span", { className: "k", text: "open actions" }));
-      ca.appendChild(txt(String(acts)));
-      ca.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", "ALL"); });
-      chipsA.appendChild(ca);
-      var qLive = queuedFor("ALL");
-      if (qLive != null) {
-        var cq = el("span", { className: "chip chip-link", title: "work-queue items set for the next sweeps (live) · click for the portfolio lists" });
-        cq.appendChild(el("span", { className: "k", text: "queued" }));
-        cq.appendChild(txt(String(qLive)));
-        cq.addEventListener("click", function (e) { e.stopPropagation(); openLists("queue", "ALL"); });
-        chipsA.appendChild(cq);
-      }
-      var backlogSum = 0, haveBacklog = false;
-      PROJECTS.forEach(function (p) { var bv = backlogCountOf(LAST.statuses[p.id]); if (bv != null) { backlogSum += bv; haveBacklog = true; } });
-      if (haveBacklog) {
-        var cbl = el("span", { className: "chip chip-link", title: "open rows in each project's BACKLOG.md (prioritized future work) · click for the portfolio lists" });
-        cbl.appendChild(el("span", { className: "k", text: "backlog" }));
-        cbl.appendChild(txt(String(backlogSum)));
-        cbl.addEventListener("click", function (e) { e.stopPropagation(); openLists("backlog", "ALL"); });
-        chipsA.appendChild(cbl);
-      }
       var gatesSum = 0, haveGates = false;
       PROJECTS.forEach(function (p) {
         var gv2 = gatesOf(LAST.statuses[p.id]);
         if (gv2 != null) { gatesSum += gv2; haveGates = true; }
       });
-      if (haveGates) {
-        var cg = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete · click for the portfolio lists" });
-        cg.appendChild(el("span", { className: "k", text: "items left" }));
-        cg.appendChild(txt(String(gatesSum)));
-        cg.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", "ALL"); });
-        chipsA.appendChild(cg);
-      }
-      var defSum = deferredCountFor("ALL");
-      if (defSum > 0) {
-        var cdf = el("span", { className: "chip chip-link", title: "parked items, not actionable yet (post-1.0 / blocked / externally gated) · click for the portfolio lists" });
-        cdf.appendChild(el("span", { className: "k", text: "deferred" }));
-        cdf.appendChild(txt(String(defSum)));
-        cdf.addEventListener("click", function (e) { e.stopPropagation(); openLists("deferred", "ALL"); });
-        chipsA.appendChild(cdf);
-      }
+      if (haveGates) bucketChip(chipsA, "to done", null, gatesSum + " left", "the owner-anchored conditions standing between here and 100 percent complete", "done", "ALL");
+      var foundTxt = acts + " open";
+      if (closedAll) foundTxt += " / " + closedAll + " closed";
+      var audA = auditFor("ALL");
+      if (audA && audA.total) foundTxt += " + " + audA.total + " audit";
+      bucketChip(chipsA, "found", null, foundTxt, "review findings open against closed, plus the nightly canonical audit", "found", "ALL");
+      var qLive = queuedFor("ALL");
+      var backlogSum = 0, haveBacklog = false;
+      PROJECTS.forEach(function (p) { var bv = backlogCountOf(LAST.statuses[p.id]); if (bv != null) { backlogSum += bv; haveBacklog = true; } });
+      var qTxt;
+      if (queuePrivate()) qTxt = "private" + (haveBacklog ? " + " + backlogSum + " backlog" : "");
+      else if (qLive != null) qTxt = qLive + " queued" + (haveBacklog ? " + " + backlogSum + " backlog" : "");
+      else if (haveBacklog) qTxt = backlogSum + " backlog";
+      if (qTxt) bucketChip(chipsA, "queued", null, qTxt, queuePrivate() ? "the work-queue feed has been private since 2026-08-19; only the published backlog is counted here" : "work-queue items set for the next sweeps, plus each project backlog", "queue", "ALL");
+      var waitAll = waitingFor("ALL");
+      if (waitAll) bucketChip(chipsA, "waiting", null, String(waitAll), TIPS.waiting, "queue", "ALL", "needs-attention");
+      var parkedAll = deferredCountFor("ALL");
+      if (parkedAll > 0) chipsA.appendChild(el("span", { className: "chip", text: parkedAll + " parked", title: "findings and queue rows deliberately not actionable yet; listed inside the bucket that owns them, never counted as open" }));
+      var staleAll = staleFor("ALL");
+      if (staleAll) chipsA.appendChild(el("span", { className: "chip needs-attention", text: staleAll + " stale", title: "projects publishing no fresh status" }));
       inner.appendChild(chipsA);
       return inner;
     }
 
     var br = status ? (status.barRaise || {}) : {};
-    function gWire(gEl, fn, hint) { gEl.classList.add("gauge-link"); if (hint) gEl.title = (gEl.title ? gEl.title + " · " : "") + hint; gEl.addEventListener("click", fn); return gEl; }
-    function openReport() { if (br.latestReportPath) window.open("/" + String(br.latestReportPath).replace(/\\/g, "/"), "_blank", "noopener"); else openLists("actions", id); }
+    function gWire(gEl, fn, hint) { gEl.classList.add("gauge-link"); if (hint) gEl.title = (gEl.title ? gEl.title + " \u00b7 " : "") + hint; gEl.addEventListener("click", fn); return gEl; }
+    function openReport() { if (br.latestReportPath) window.open("/" + String(br.latestReportPath).replace(/\\/g, "/"), "_blank", "noopener"); else openLists("found", id); }
     if (status && status.completion && status.completion.pct != null) {
-      gauges.appendChild(gWire(arcGauge(status.completion.pct, 100, completionColor(status.completion.pct), "complete", status.completion.pct + "%", TIPS.complete), function () { openLists("items", id); }, "click for what's left to 100%"));
+      gauges.appendChild(gWire(arcGauge(status.completion.pct, 100, completionColor(status.completion.pct), "complete", status.completion.pct + "%", TIPS.complete), function () { openLists("done", id); }, "click for what is left to 100 percent"));
     }
     if (br.health != null) {
       gauges.appendChild(gWire(arcGauge(br.health, 100, verdictColor(br.verdict), "health", String(br.health), TIPS.health), openReport, "click for the review report"));
     } else if (br.verdict) {
       gauges.appendChild(gWire(arcGauge(VERDICT_APPROX[br.verdict] || 50, 100, verdictColor(br.verdict), "verdict", br.verdict, TIPS.verdict), openReport, "click for the review report"));
+    }
+    var oldestP = oldestOpenOf(status);
+    if (oldestP != null) {
+      gauges.appendChild(gWire(arcGauge(Math.min(oldestP, 60), 60, oldestP >= 30 ? "#ff5b6e" : oldestP >= 14 ? "#cc8400" : "#00d68f", "oldest finding", oldestP + "d", TIPS.oldest), function () { openLists("found", id); }, "click for the findings, oldest first"));
     }
     var ctxDen = today.input + today.cr;
     if (ctxDen > 0) {
@@ -2879,72 +3567,71 @@
       if (ro.children.length) inner.appendChild(ro);
     }
 
-    // chip order matches the lists tabs: status · current milestone · open actions ·
-    // queued · items left, then the transient pushed/dirty flags
     var chips = el("div", { className: "chips" });
     if (status) {
       if (br.verdict) {
-        var cv = el("span", { className: "chip chip-link " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict + " · click for the review report" });
+        var cv = el("span", { className: "chip chip-link " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict + " \u00b7 click for the review report" });
         cv.addEventListener("click", function (e) { e.stopPropagation(); openReport(); });
         chips.appendChild(cv);
       }
       if (status.milestone && status.milestone.id) {
         var mlabel = (status.milestone.label || "").slice(0, 32);
-        var c2 = el("span", { className: "chip chip-link", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") + " · click for this project's lists" });
+        var c2 = el("span", { className: "chip chip-link", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") + " \u00b7 click for what stands between here and done" });
         c2.appendChild(el("span", { className: "k", text: "milestone" }));
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
-        c2.addEventListener("click", function (e) { e.stopPropagation(); openLists("milestones", id); });
+        c2.addEventListener("click", function (e) { e.stopPropagation(); openLists("done", id); });
         chips.appendChild(c2);
       }
-      var qP = queuedFor(id);
       var gP = gatesOf(status);
+      if (gP != null && gP > 0) bucketChip(chips, "to done", null, gP + " left", "the owner-anchored conditions standing between here and 100 percent complete", "done", id);
       if (br.actionsOpen != null) {
-        var c1 = el("span", { className: "chip chip-link", title: TIPS.actions + " · click for this project's lists" });
-        c1.appendChild(el("span", { className: "k", text: "open actions" }));
-        c1.appendChild(txt(String(br.actionsOpen)));
-        c1.addEventListener("click", function (e) { e.stopPropagation(); openLists("actions", id); });
-        chips.appendChild(c1);
+        var ft = br.actionsOpen + " open";
+        if (br.actionsClosed != null) ft += " / " + br.actionsClosed + " closed";
+        var audP = auditOf(status);
+        if (audP && audP.total) ft += " + " + audP.total + " audit";
+        bucketChip(chips, "found", null, ft, "review findings open against closed, plus the nightly canonical audit", "found", id);
       }
-      if (qP != null) {
-        var allClear = qP === 0 && (gP || 0) === 0;
-        var c6 = el("span", {
-          className: "chip chip-link" + (allClear ? " fresh" : ""),
-          title: "work-queue items set for the next sweeps (live)" + (allClear ? " · the improvement scout hunts for more at zero" : "") + " · click for this project's lists"
-        });
-        c6.appendChild(el("span", { className: "k", text: "queued" }));
-        c6.appendChild(txt(allClear ? "0 · scouting" : String(qP)));
-        c6.addEventListener("click", function (e) { e.stopPropagation(); openLists("queue", id); });
-        chips.appendChild(c6);
-      }
+      var qP = queuedFor(id);
       var bP = backlogCountOf(status);
-      if (bP != null && bP > 0) {
-        var cb = el("span", { className: "chip chip-link", title: "open rows in this project's BACKLOG.md (prioritized future work) · click for this project's lists" });
-        cb.appendChild(el("span", { className: "k", text: "backlog" }));
-        cb.appendChild(txt(String(bP)));
-        cb.addEventListener("click", function (e) { e.stopPropagation(); openLists("backlog", id); });
-        chips.appendChild(cb);
+      var qt;
+      if (queuePrivate()) qt = bP ? bP + " backlog" : "private";
+      else if (qP != null) qt = qP + " queued" + (bP ? " + " + bP + " backlog" : "");
+      else if (bP) qt = bP + " backlog";
+      if (qt) {
+        var allClear = !queuePrivate() && qP === 0 && (gP || 0) === 0 && !bP;
+        bucketChip(chips, "queued", null, allClear ? "0 \u00b7 scouting" : qt,
+          queuePrivate() ? "the work-queue feed has been private since 2026-08-19; only this project published backlog is counted here"
+                         : "work-queue items set for the next sweeps, plus this project backlog" + (allClear ? ". The improvement scout hunts for more at zero" : ""),
+          "queue", id, allClear ? "fresh" : "");
       }
-      if (gP != null && gP > 0) {
-        var c7 = el("span", { className: "chip chip-link", title: "the owner-anchored conditions standing between here and 100% complete (.project-context.json) · click for this project's lists" });
-        c7.appendChild(el("span", { className: "k", text: "items left" }));
-        c7.appendChild(txt(String(gP)));
-        c7.addEventListener("click", function (e) { e.stopPropagation(); openLists("items", id); });
-        chips.appendChild(c7);
-      }
-      var dP = deferredCountFor(id);
-      if (dP > 0) {
-        var cd = el("span", { className: "chip chip-link", title: "parked items, not actionable yet (post-1.0 / blocked / externally gated) · click for this project's lists" });
-        cd.appendChild(el("span", { className: "k", text: "deferred" }));
-        cd.appendChild(txt(String(dP)));
-        cd.addEventListener("click", function (e) { e.stopPropagation(); openLists("deferred", id); });
-        chips.appendChild(cd);
-      }
+      var waitP = waitingFor(id);
+      if (waitP) bucketChip(chips, "waiting", null, String(waitP), TIPS.waiting, "queue", id, "needs-attention");
+      var parkedP = deferredCountFor(id);
+      if (parkedP > 0) chips.appendChild(el("span", { className: "chip", text: parkedP + " parked", title: "deliberately not actionable yet; listed inside the bucket that owns it, never counted as open" }));
       if (status.lastReleaseAt && (Date.now() - new Date(status.lastReleaseAt).getTime()) < 86400000) {
         chips.appendChild(el("span", { className: "chip fresh", text: "pushed today", title: "a commit landed in the last 24h" }));
       }
       if (status.workTreeClean === false) chips.appendChild(el("span", { className: "chip needs-attention", text: "tree dirty", title: "uncommitted changes in the repo" }));
+      // Two live-service probes that had no home on this page: the Scheduler tunnel
+      // heartbeat and the Agents headless credential check.
+      if (status.tunnel) {
+        var tOk = status.tunnel.up && status.tunnel.serverHealthy !== false;
+        chips.appendChild(el("span", { className: "chip " + (tOk ? "fresh" : "stalled"), text: "tunnel " + (tOk ? "up" : "down"), title: "heartbeat " + (status.tunnel.heartbeatAgeMin != null ? status.tunnel.heartbeatAgeMin + " minutes old" : "age unknown") + (status.tunnel.lastSeen ? ", last seen " + fmtAgo(status.tunnel.lastSeen) : "") }));
+      }
+      if (status.auth) {
+        chips.appendChild(el("span", { className: "chip " + (status.auth.ok ? "fresh" : "stalled"), text: "credentials " + (status.auth.ok ? "valid" : "failing"), title: (status.auth.reason || "") + (status.auth.checkedAt ? " \u00b7 checked " + fmtAgo(status.auth.checkedAt) : "") }));
+      }
     }
     if (chips.children.length) inner.appendChild(chips);
+    // Tags decide which domain lenses a project attracts on every review pass, so they
+    // explain the shape of its lens row and belong next to it.
+    if (status && Array.isArray(status.tags) && status.tags.length) {
+      var tagRow = el("div", { className: "tagrow" });
+      status.tags.forEach(function (t) {
+        tagRow.appendChild(el("span", { className: "tag", text: String(t), title: "review tag: matches the " + t + " domain lenses" }));
+      });
+      inner.appendChild(tagRow);
+    }
     return inner;
   }
 
@@ -3206,6 +3893,7 @@
   var DATA_SIG = null;
   function dataSig() {
     var s = (LAST.usage && LAST.usage.generatedAt) || "";
+    s += "|" + ((LAST.constellation && LAST.constellation.generatedAt) || "");
     PROJECTS.forEach(function (p) {
       var st = LAST.statuses[p.id];
       s += "|" + (st ? (st.version || "") + (st.lastReleaseAt || "") + String(st.workTreeClean) +
@@ -3221,6 +3909,7 @@
     var fresh = sig !== DATA_SIG || !$("spot-stage");
     DATA_SIG = sig;
     renderTotals(LAST.usage, LAST.statuses);
+    renderBand();
     renderTicker(LAST.statuses);
     renderCore(LAST.usage, !fresh);
     if (fresh) {
@@ -3228,6 +3917,7 @@
       renderSpotlight();
       renderStrip();
     }
+    renderLensGrid();
   }
 
   function refresh() {
@@ -3235,7 +3925,7 @@
     btn.disabled = true;
     btn.textContent = "syncing...";
     $("error-banner").style.display = "none";
-    var jobs = [fetchData("usage"), fetchJson("data/backfill.json"), fetchData("queue"), fetchStatuses()];
+    var jobs = [fetchData("usage"), fetchJson("data/backfill.json"), fetchData("queue"), fetchStatuses(), fetchConstellation(), fetchJson("data/health-trend.json")];
     return Promise.all(jobs).then(function (results) {
       var usage = results[0];
       var backfill = results[1];
@@ -3262,7 +3952,8 @@
         });
       }
       var statuses = results[3] || {};
-      LAST = { usage: usage, statuses: statuses, backfill: backfill, queue: queueLive };
+      LAST = { usage: usage, statuses: statuses, backfill: backfill, queue: queueLive,
+               constellation: results[4], trend: results[5] };
       // Publish for the enrichment IIFE below, which used to fetch the SAME
       // usage.json a second time on load and again every 5 minutes. Nothing can
       // serve either copy from cache (no-store on both ends plus a unique bust),
@@ -3335,6 +4026,7 @@
   $("glass-close").addEventListener("click", closeOverlay);
   $("panel-core").addEventListener("click", openCoreBig);
   $("panel-radar").addEventListener("click", openRadarBig);
+  $("panel-lens").addEventListener("click", openLensBig);
   $("ticker").classList.add("clickable");
   $("ticker").addEventListener("click", openReleases);
   addEventListener("keydown", function (e) {
@@ -3353,7 +4045,7 @@
     }
   });
   $("refresh-btn").addEventListener("click", refresh);
-  $("lists-btn").addEventListener("click", function () { openLists("actions"); });
+  $("lists-btn").addEventListener("click", function () { openLists("found"); });
   // local HUD clock (paused while the tab is hidden, see visibilitychange below)
   var clockTimer = null;
   function tickClock() {
@@ -3518,13 +4210,16 @@
     // born against a stale cache outlived the recovery).
     var ga = d.generatedAt ? new Date(d.generatedAt).getTime() : 0;
     var ageH = ga ? (Date.now() - ga) / 3.6e6 : 999;
-    var badge = document.querySelector(".stale-badge");
+    // Scoped to its own class since 2026-08-24: the spotlight card now carries a per
+    // project stale badge of its own, and a bare ".stale-badge" query matched that one
+    // first, so a healthy collector deleted the project badge instead of its own.
+    var badge = document.querySelector(".stale-badge.collector-stale");
     if (ageH > 24) {
       if (!badge) {
         var host = tiles[7] || document.querySelector(".totals");
         if (host) {
           badge = document.createElement("span");
-          badge.className = "stale-badge";
+          badge.className = "stale-badge collector-stale";
           host.appendChild(badge);
         }
       }
