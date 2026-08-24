@@ -86,3 +86,31 @@ finally {
 # page (usage.yesandeverything.com) updates within seconds. -NoPush = KV + local only:
 # no extra git commit and no GitHub Pages build. Never fails the release.
 try { & "X:\YesAndEverything\scripts\collect-usage.ps1" -NoPush } catch { Write-Host "usage dashboard refresh skipped: $_" -ForegroundColor DarkGray }
+
+# --- Hard-fail live check -------------------------------------------------
+# A release that announces itself without looking at the site is announcing the push,
+# not the deploy. This is GitHub Pages, asynchronous after the push, so the gap between
+# "Release complete" and a broken page was exactly the window nobody watched. Learned
+# on Gnosis 2026-07-28: a broken deploy must NEVER report success.
+#
+# Polls rather than sleeping once. A fixed wait either fails a healthy deploy or wastes
+# the time on a fast one. Throws at the end rather than warning, because not checking
+# at all is what a warning would amount to here.
+$liveUrl = "https://yesandeverything.com/"
+$deadline = (Get-Date).AddSeconds(90)
+$liveOk = $false
+$lastErr = "never attempted"
+Write-Host "Live check: the hub homepage at $liveUrl" -ForegroundColor Cyan
+while (-not $liveOk -and (Get-Date) -lt $deadline) {
+    try {
+        $resp = Invoke-WebRequest -Uri $liveUrl -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
+        if ([int]$resp.StatusCode -eq 200) { $liveOk = $true; break }
+        $lastErr = "status $([int]$resp.StatusCode)"
+    } catch { $lastErr = $_.Exception.Message }
+    Start-Sleep -Seconds 6
+}
+if (-not $liveOk) {
+    Write-Host "LIVE CHECK FAILED: $liveUrl did not return 200 within 90s. Last: $lastErr" -ForegroundColor Red
+    throw "Live check failed for $liveUrl. The push landed; the site did not come back healthy. Do not treat this release as shipped."
+}
+Write-Host "Live check OK: $liveUrl returned 200." -ForegroundColor Green
