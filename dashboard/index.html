@@ -1400,6 +1400,10 @@
       // served copy under data/ still holds the full rows when the dashboard is opened
       // from the working tree, so try it before giving up and reporting the feed private.
       if (j != null && !j.private) return j;
+      // The local copy only exists when the dashboard is opened from the working tree.
+      // Asking the deployed site for it would 404 once a minute forever for a file that
+      // is gitignored on purpose, so the fallback is scoped to a local origin.
+      if (j != null && j.private && location.hostname !== "localhost" && location.hostname !== "127.0.0.1" && location.protocol !== "file:") return j;
       return fetchJson("data/" + name + ".json").then(function (local) {
         return local != null ? local : j;
       });
