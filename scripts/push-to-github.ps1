@@ -11,7 +11,10 @@
 #   .\scripts\push-to-github.ps1 -Path status/data/Ring.json
 
 param(
-    [string[]]$Path = @()
+    [string[]]$Path = @(),
+    # Commit everything in the index, including whatever another session staged.
+    # Required only when the tree is genuinely not yours alone; see the guard below.
+    [switch]$All
 )
 
 $ErrorActionPreference = "Stop"
@@ -96,6 +99,41 @@ Write-Host ""
 Write-Host "Repo status:" -ForegroundColor Cyan
 git status --short
 Write-Host ""
+
+# What is ALREADY in the index, before this run stages anything. Anything here was put
+# there by somebody else, which is the only way to tell an ordinary release apart from one
+# that is about to sweep another session's work (decision D5). Measured before the add,
+# because `git add -A` below makes the two indistinguishable.
+$preStaged = @(& git diff --cached --name-only | Where-Object { $_ })
+if ($preStaged.Count -gt 0) {
+    Write-Host "Note: $($preStaged.Count) file(s) were already staged before this run." -ForegroundColor Yellow
+}
+
+# Unscoped-commit guard (D5). An unscoped commit here takes the WHOLE index, and
+# unattended routines commit in this repository constantly, so the window where
+# somebody else has work staged is not rare. The script already carried a comment
+# warning about this, and the warning was not enough: it bit twice in one week.
+#
+# -Path is deliberately NOT made mandatory. The unscoped form is right when a release
+# really does mean the whole tree, and a flag nobody can avoid is one people learn to
+# pass without reading. What is checked instead is whether anything is staged that this
+# run did not stage, which is the difference the old comment could not express.
+if ($Path.Count -eq 0 -and -not $All) {
+    $unexpected = @($preStaged)
+    if ($unexpected.Count -gt 0) {
+        Write-Host ""
+        Write-Host "Refusing an unscoped commit: $($unexpected.Count) file(s) were already staged before this run started." -ForegroundColor Red
+        foreach ($u in $unexpected) { Write-Host "    $u" -ForegroundColor Red }
+        Write-Host ""
+        Write-Host "An unscoped commit takes the whole index, so these would ship inside this release" -ForegroundColor Red
+        Write-Host "under its message (decision D5). Either scope it:" -ForegroundColor Red
+        Write-Host "    .\scripts\push-to-github.ps1 -Path <your files>" -ForegroundColor Red
+        Write-Host "or, if you have looked at the list above and every file belongs in this commit:" -ForegroundColor Red
+        Write-Host "    .\scripts\push-to-github.ps1 -All" -ForegroundColor Red
+        exit 1
+    }
+}
+
 
 # Stage. With -Path only those pathspecs go in, so a targeted edit cannot
 # sweep another session's staged work. Without it, stage everything and let
