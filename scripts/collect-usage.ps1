@@ -1103,6 +1103,30 @@ $KV_NS = "3c33ecd9b31e4d769f5cfb7dc5e12ab9"
 # stopped being published to the live dashboard key; queue.json is still generated
 # into dashboard\data\ for a locally served dashboard, never pushed. The "queue"
 # KV key holds a stub. See the .gitignore block and X:\DECISIONS.md.
+# Publish failures are FATAL, not cosmetic. Until 2026-08-24 a failed key-value put
+# printed one yellow line and the script still exited 0, so the routine reported
+# "collector refresh: OK" through three straight failed publishes while the live
+# dashboard sat on the previous day's payload. Nothing downstream could tell.
+# Now: keep wrangler's own words, retry a transient failure, verify the LIVE
+# endpoint actually carries what was just written, and carry the failure to a
+# non-zero exit at the end of the script.
+$publishFailed = @()
+
+function Push-KvKey([string]$key, [string]$file, [int]$attempts = 3) {
+  for ($i = 1; $i -le $attempts; $i++) {
+    $out = & wrangler kv key put --namespace-id=$KV_NS $key --path=$file --remote 2>&1
+    if ($LASTEXITCODE -eq 0) {
+      if ($i -gt 1) { Write-Host "KV: pushed $key on attempt $i." -ForegroundColor Green }
+      else { Write-Host "KV: pushed $key to the live dashboard." -ForegroundColor Green }
+      return $true
+    }
+    Write-Host "KV: push of $key failed (attempt $i of $attempts, exit $LASTEXITCODE)." -ForegroundColor Yellow
+    Write-Host ("KV: wrangler said: " + (($out | Out-String).Trim())) -ForegroundColor Yellow
+    if ($i -lt $attempts) { Start-Sleep -Seconds (5 * $i) }
+  }
+  return $false
+}
+
 foreach ($pair in @(@{ k = "usage"; f = $OutPath })) {
   # NOTE: use simple local vars in the wrangler call. A bareword like "--path=$pair.f"
   # expands only $pair (-> "System.Collections.Hashtable") and keeps ".f" literal, so
@@ -1111,10 +1135,11 @@ foreach ($pair in @(@{ k = "usage"; f = $OutPath })) {
   $kvFile = $pair.f
   if (-not (Test-Path $kvFile)) { continue }
   try {
-    & wrangler kv key put --namespace-id=$KV_NS $kvKey --path=$kvFile --remote 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "KV: pushed $kvKey to the live dashboard." -ForegroundColor Green }
-    else { Write-Host "KV: push of $kvKey failed (exit $LASTEXITCODE); live dashboard lags until the next push." -ForegroundColor Yellow }
-  } catch { Write-Host "KV: push of $kvKey errored ($_)" -ForegroundColor Yellow }
+    if (-not (Push-KvKey $kvKey $kvFile)) { $publishFailed += $kvKey }
+  } catch {
+    Write-Host "KV: push of $kvKey errored ($_)" -ForegroundColor Yellow
+    $publishFailed += $kvKey
+  }
 }
 
 # Bundle the per-project status JSON (status/data/<Project>.json: version, milestone,
@@ -1137,15 +1162,50 @@ try {
     }
     $statusTmp = Join-Path ([System.IO.Path]::GetTempPath()) "yae-statuses.kv.json"
     [System.IO.File]::WriteAllText($statusTmp, ($bundle | ConvertTo-Json -Depth 12), (New-Object System.Text.UTF8Encoding($false)))
-    & wrangler kv key put --namespace-id=$KV_NS statuses --path=$statusTmp --remote 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "KV: pushed statuses ($($bundle.Count) projects) to the live dashboard." -ForegroundColor Green }
-    else { Write-Host "KV: push of statuses failed (exit $LASTEXITCODE); status side lags until the next push." -ForegroundColor Yellow }
+    if (Push-KvKey "statuses" $statusTmp) { Write-Host "KV: statuses carried $($bundle.Count) projects." -ForegroundColor Green }
+    else { $publishFailed += "statuses" }
     Remove-Item -Path $statusTmp -ErrorAction SilentlyContinue
   }
-} catch { Write-Host "KV: statuses bundle errored ($_)" -ForegroundColor Yellow }
+} catch {
+  Write-Host "KV: statuses bundle errored ($_)" -ForegroundColor Yellow
+  $publishFailed += "statuses"
+}
+
+# ----- Prove the live dashboard actually changed -----------------------------
+# A green exit from wrangler is not proof the page moved. Read the endpoint the
+# dashboard itself reads and check the stamp came back as the one just written.
+# This is what turns a silent freeze into a loud failure at every tick, six times
+# a day, instead of waiting on a once-daily watchdog.
+if ($publishFailed -notcontains "usage") {
+  try {
+    $written = (Get-Content -Raw $OutPath | ConvertFrom-Json).generatedAt
+    $live = (Invoke-RestMethod -Uri "https://usage.yesandeverything.com/usage.json" -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 45).generatedAt
+    if ($live -eq $written) { Write-Host "Live dashboard verified: serving $live." -ForegroundColor Green }
+    else {
+      Write-Host "ERROR: live dashboard still serving $live, expected $written. The page is stale." -ForegroundColor Red
+      $publishFailed += "usage-readback"
+    }
+  } catch {
+    Write-Host "ERROR: could not read back the live dashboard ($_). Freshness unproven." -ForegroundColor Red
+    $publishFailed += "usage-readback"
+  }
+}
 
 # ----- Commit + push ---------------------------------------------------------
-if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray; exit 0 }
+# -NoPush skips the git commit only. A failed live publish still has to leave a
+# non-zero exit here, because -NoPush is exactly how the every-4-hours routine
+# calls this script, and an exit 0 there is what let the freeze go unreported.
+if ($NoPush) {
+  if ($publishFailed.Count -gt 0) {
+    Write-Host ("ERROR: live dashboard NOT updated (" + ($publishFailed -join ", ") + "). The page is serving stale data.") -ForegroundColor Red
+    exit 1
+  }
+  Write-Host "NoPush set; usage.json updated locally only." -ForegroundColor DarkGray
+  exit 0
+}
+if ($publishFailed.Count -gt 0) {
+  Write-Host ("WARN: live dashboard NOT updated (" + ($publishFailed -join ", ") + "); committing the local copy anyway.") -ForegroundColor Red
+}
 # EAP is already Continue from the KV-push block above (same git/native-stderr
 # stderr-wrap reason); the git calls below rely on $LASTEXITCODE checks.
 # Never block on a credential prompt. A scheduled run with no cached creds would
@@ -1154,12 +1214,15 @@ if ($NoPush) { Write-Host "NoPush set; usage.json updated locally only." -Foregr
 # 2026-06-23 stall). Fail fast instead so the local commit still lands.
 $env:GIT_TERMINAL_PROMPT = "0"
 $env:GCM_INTERACTIVE = "Never"
-foreach ($lockName in @("index.lock", "HEAD.lock")) {
-  $lock = ".git\$lockName"
-  if (Test-Path $lock) { Remove-Item -Force $lock -ErrorAction SilentlyContinue }
-}
+# No blind lock removal here. This runs headless on the usage-refresh routine
+# (every four hours since 2026-07-30, hourly before that), so a raw
+# Remove-Item on .git\index.lock deletes the lock of a LIVE git process from a
+# concurrent session or routine, which is the race that NUL-truncated .git\config
+# and dropped refs/heads/main. Assert-GitSafe below already waits out a live git
+# process and clears only genuinely stale locks; deleting first left it nothing
+# to see (bar-raise 2026-08-20, yae-collect-usage-blind-lock-delete).
 # Failures here used to print a coloured warning and `exit 0`. This runs headless
-# every 30 minutes, so a failed KV or git push reported SUCCESS, the live
+# unattended, so a failed KV or git push reported SUCCESS, the live
 # dashboard silently froze on last-good data, and the only evidence was a line in
 # a console nobody reads. Every failure path now exits non-zero so the routine
 # that calls it can actually tell.
@@ -1180,3 +1243,6 @@ $pushExit = $LASTEXITCODE
 Confirm-GitIntact
 if ($pushExit -ne 0) { Write-Host "ERROR: push failed; committed locally only. Dashboard data is NOT published." -ForegroundColor Red; exit 1 }
 Write-Host "Pushed usage refresh; dashboard updates in ~30s." -ForegroundColor Green
+# The git side can succeed while the live publish failed. The caller has to see that.
+if ($publishFailed.Count -gt 0) { exit 1 }
+exit 0

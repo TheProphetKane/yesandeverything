@@ -28,8 +28,13 @@ $here = $PSScriptRoot
 $repoRoot = if ((Split-Path -Leaf $here) -eq 'scripts') { Split-Path -Parent $here } else { $here }
 Set-Location -LiteralPath $repoRoot
 
-$canonical = Join-Path $repoRoot "scripts\git-guard.ps1"
-if (-not (Test-Path $canonical)) { Write-Host "ERROR: canonical scripts\git-guard.ps1 not found in $repoRoot." -ForegroundColor Red; exit 1 }
+# The canonical copy lives in PortfolioOps, not here. This repo's scripts\git-guard.ps1
+# is itself a propagated duplicate, so sourcing from it made an apply run push this
+# repo's local drift out over every sibling (bar-raise 2026-08-20,
+# yae-propagate-git-guard-wrong-canonical). Read the canonical file and refuse to run
+# if it is missing rather than falling back to a local copy.
+$canonical = "X:\PortfolioOps\scripts\core\git-guard.ps1"
+if (-not (Test-Path $canonical)) { Write-Host "ERROR: canonical git-guard.ps1 not found at $canonical. Refusing to propagate from a local copy." -ForegroundColor Red; exit 1 }
 if (-not $Root) { $Root = Split-Path -Parent $repoRoot }
 
 if ($Repos.Count -eq 0) {
