@@ -54,10 +54,19 @@ jobs:
             exit 1
           }
 
-          if (Test-Path "hordes/index.html") {
-            $hordesContent = Get-Content "hordes/index.html" -Raw
-            if ($hordesContent -notmatch '(?:var|let|const)\s+ENCODED\s*=') {
-              Write-Host "INTEGRITY FAIL: hordes/index.html no longer has the var ENCODED line." -ForegroundColor Red
+          # This guard used to require hordes/index.html to carry a `var ENCODED` line. That
+          # file is gone: it held the whole design document as base64 with the access phrase
+          # in cleartext a few lines above it, in this PUBLIC repository, so it withheld
+          # nothing from anyone who viewed source. Both documents are now served by
+          # workers/gated-docs, which resolves a session before reading them out of
+          # key-value storage, and neither document is in this repository any more.
+          #
+          # Inverted rather than deleted, because the risk did not go away, it reversed: a
+          # deploy must not quietly put a payload back.
+          foreach ($stale in @("hordes/index.html", "brackish-rising/index.html")) {
+            if (Test-Path $stale) {
+              Write-Host "INTEGRITY FAIL: $stale exists again. The design documents are served" -ForegroundColor Red
+              Write-Host "by the gated-docs Worker and must not be committed to this public repo." -ForegroundColor Red
               exit 1
             }
           }

@@ -1,0 +1,41 @@
+{
+  // The server-side gate for the private design documents on yesandeverything.com.
+  //
+  // Replaces two static pages in this repository that carried the whole document as base64
+  // with the password in a variable above it. This repository is public, so both the password
+  // and the payload were readable by anyone, and the payload was readable without the password
+  // at all.
+  //
+  // There is deliberately NO assets binding here. An assets binding serves static files before
+  // fetch() runs unless run_worker_first is set, and a gate that can be skipped by a path is
+  // not a gate. This Worker has no static path to skip to.
+  //
+  // Secrets, set with `wrangler secret put` and never committed:
+  //   SESSION_SECRET           HMAC key for the session cookies (random 32 bytes)
+  //   HORDES_PASSWORD          viewer phrase for /hordes
+  //   HORDES_EDITOR_PASSWORD   editor phrase for /hordes
+  //   RISING_PASSWORD          viewer phrase for /brackish-rising
+  //   RISING_EDITOR_PASSWORD   editor phrase for /brackish-rising
+  //
+  // The document bodies live in the GATED_DOCS namespace, written by each project's publish
+  // step. They are not in this repository and must not come back to it.
+  "name": "gated-docs-yesandeverything",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-25",
+  "workers_dev": false,
+  "account_id": "1a36e094b77857eedf7ceb5a99e007d1",
+
+  // Path routes on the zone, so the public URLs do not change. These take precedence over the
+  // GitHub Pages origin serving the rest of the site, the same way the canonical-state API
+  // routes already do.
+  "routes": [
+    { "pattern": "yesandeverything.com/hordes*", "zone_name": "yesandeverything.com" },
+    { "pattern": "yesandeverything.com/brackish-rising*", "zone_name": "yesandeverything.com" }
+  ],
+
+  "kv_namespaces": [
+    { "binding": "GATED_DOCS", "id": "3dd0b8c004f4473da2305fab795d4abb" }
+  ],
+
+  "observability": { "enabled": true }
+}

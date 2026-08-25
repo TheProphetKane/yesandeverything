@@ -3,7 +3,7 @@
 **Command rule (always):** Any git, push, release, deploy, or script command provided in chat must lead with `cd X:\YesAndEverything` so it never runs against the wrong repo. This repo is `X:\YesAndEverything`. (Cross-project standard; see `X:\CLAUDE.md` (the script standard is in `X:\ARCHITECTURE.md` section 6).)
 
 
-You are working on **YesAndEverything** — the public-facing static site at <https://yesandeverything.com>. It is a single-page landing page listing Kane's projects, plus per-project sub-pages, plus a password-gated mirror of the HBH GDD.
+You are working on **YesAndEverything** — the public-facing static site at <https://yesandeverything.com>. It is a single-page landing page listing Kane's projects, plus per-project sub-pages, plus two design documents served through a server-side gate.
 
 ## What this repo is (and isn't)
 
@@ -20,12 +20,11 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `robots.txt` | Allows crawlers on root, disallows `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/dashboard-api/`, `/sitemap/`, `/status/`, `/docs/`, `/usage-log/`, `/_skill-review/`. **Two of those are deliberately linked from the homepage** (`/status/` and `/dashboard/`, in the work section and the closing paragraph), and that is not a contradiction to be fixed: the stance is humans welcome, search engines no. Disallow keeps them out of results; it was never access control, and for `/dashboard/` the password gate is what actually protects it. A 2026-07-28 review read the link-plus-disallow pair as a defect, so it is written down here rather than re-found. |
 | `dashboard-api/` | Small Cloudflare Worker (`worker.js` + `wrangler.toml`, git-tracked, landed 2026-06-24) backing the usage dashboard. The one server-side piece in an otherwise static repo; deployed separately by wrangler, not by GitHub Pages. **Exposure:** this folder sits inside the Pages-served tree, so `yesandeverything.com/dashboard-api/worker.js` and `/dashboard-api/wrangler.toml` are publicly fetchable. `wrangler.toml` should hold no secrets (those live in the Cloudflare dashboard); `robots.txt` now disallows `/dashboard-api/` alongside the other private paths. |
 | `.nojekyll` | Real 0-byte file at the repo root. Tells GitHub Pages to serve the tree as-is (skip Jekyll processing). |
-| `hordes/index.html` | Password-gated HBH GDD mirror. **Correction 2026-08-14: both gate phrases (`PASSWORD` and the `EDITOR` override) are hardcoded in cleartext in this file, not read from `X:\.secrets` as previously documented here — verify before trusting this claim elsewhere.** The gate is UI friction only regardless: the base64 `ENCODED` payload sits in the same page, so anyone who views source already has the content without the password. Whether to move the phrase to a real secret injected at publish time (`X:\HereBeHordes\scripts\publish-gdd.ps1`) or just live with client-side friction is an open call for Kane — see `bar-raise-2026-08-06`/`-08-13` findings `yae-hordes-br-password-plaintext-and-doc-mismatch` and `yae-shared-gate-password-reused-11-files`. Contains base64-inlined GDD via `var ENCODED = "..."`. **Generated, not hand-edited.** |
+| `workers/gated-docs/` | The server-side gate for the two private design documents, at `/hordes/` and `/brackish-rising/`. Cloudflare Worker on path routes, deployed by wrangler rather than by Pages. **This replaced two static pages here that carried the whole document as base64 with the access phrase in cleartext** (2026-08-25). Those withheld nothing: the payload decoded without the phrase, and this repository is public. The documents now live in the `GATED_DOCS` key-value namespace, written by each project's `publish-gdd.ps1`, and are read only after a signed session cookie validates. Access phrases are Worker secrets, listed in `X:\.secrets\YesAndEverything\gated-docs-access.txt`. The Worker source is safe to be public: it holds no phrase and no payload. |
 | `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a meta-refresh stub that redirects to `/projects/here-be-hordes/design.html` so any old bookmark still lands on a gated page — it used to point at `/hordes/`, which made it a public link into a robots-disallowed path. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
 | `projects/scheduler/{index,design}.html` | Scheduler project landing + design preview. |
 | `projects/{apothecary,brackish-rising,budget,cattery,chains,gnosis,here-be-hordes,ring}/` | Per-project Details + Design pages (`index.html` + `design.html` each; design pages are client-gated). `projects/budget/` also carries `pre-install`, `privacy`, `security`, and `security-notices` sub-pages, plus a nested `security/pgp-key` page. Every PUBLIC project gets a homepage card (alphabetical by project word) with Details / Design / Launch buttons plus this page pair. Version/milestone values carry `<!--live:...-->` markers stamped by `scripts/update-project-pages.mjs` (run in the Pages deploy workflow), so a project release refreshes the deployed pages via its status JSON push. Agents is deliberately absent from the homepage grid (2026-07-06, still current) but is tracked on the robots-gated dashboard and status tier (restored 2026-07-08) — don't add an Agents card without Kane's explicit ask. Counselor and Skylight are never listed. |
 | `apothecary/` | Celtic apothecary label designer — multi-file ES-module app, deployed by mirroring from `X:\YesAndApothecary` via that repo's `scripts/release.ps1` (which calls `scripts/deploy-to-yae.ps1` then commits + pushes this side). Multi-file by design; the "one file per page" convention does not apply to this subdir (it's a project mirror, same as `hordes/`). Do not edit files in `apothecary/` directly; edit in the source repo and run release. |
-| `brackish-rising/` | Password-gated Brackish Rising GDD mirror. Same base64-inlined gate pattern as `hordes/`; generated from the BR repo, not hand-edited. |
 | `budget/` | Budget project landing page. Single self-contained file; project mirror. |
 | `terms/` | Terms / legal page. Single self-contained file. |
 | `dashboard/` | Private portfolio dashboard (robots-gated). Reads `dashboard/data/usage.json` (tokens and cost), `dashboard/data/health-trend.json` (one row per project per day: review health, open and closed findings, completion, gates, backlog, oldest open finding, audit count, written by `collect-usage.ps1`, rolling 90 days), the live worker feeds, every `status/data/<Project>.json`, and `status/data/constellation.json` for the portfolio band. Reworked 2026-08-24, see `docs/DASHBOARD-REDESIGN-2026-08-24.md`. |
@@ -43,9 +42,28 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `_skill-review/` | Staged personal `.skill` files (installable) plus their review viewer. |
 | `invoices/` | MOVED 2026-08-19 to `X:\PortfolioOps\invoices\`. |
 
-## The hordes/ injection rule (critical)
+## Publishing the gated design documents
 
-**Never copy `gdd.html` into `hordes/`.** The `hordes/index.html` is a hand-authored password gate that loads `var ENCODED = "..."` (a base64 string) and decodes it inline. The HBH-side `scripts/publish-gdd.ps1` injects a new base64 payload into the existing `hordes/index.html` — it does not replace the file. If you change `hordes/index.html`'s shape, you break the publish pipeline.
+**The documents are not in this repository and must not come back to it.** `/hordes/` and
+`/brackish-rising/` are served by `workers/gated-docs`, a Cloudflare Worker on path routes
+that take precedence over the Pages origin. It reads each document out of the `GATED_DOCS`
+key-value namespace only after a signed session cookie validates, so an unauthenticated
+request gets a login form and nothing else.
+
+To republish either document, run that project's own script, exactly as before:
+
+```powershell
+X:\HereBeHordes\scripts\publish-gdd.ps1
+X:\BrackishRising\scripts\publish-gdd.ps1
+```
+
+Those now write into the namespace and read the value back to prove it landed, instead of
+splicing base64 into a page here. The deploy workflow fails if either static page reappears.
+
+What this replaced, so nobody rebuilds it: a hand-authored gate page holding the whole
+document as base64 with `var PASSWORD` a few lines above it. The phrase was readable in
+source, the payload decoded without the phrase, and both were in this public repository's
+history. The phrases have been rotated; every phrase those files ever held is disclosed.
 
 ## Deploy flow
 
@@ -75,8 +93,8 @@ For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHord
 
 - **GitHub Pages caches aggressively.** If a change doesn't appear, hard-refresh first; only debug after that.
 - **`CNAME` must contain `yesandeverything.com` exactly.** GitHub regenerates it from the Pages settings; if you `git push` an empty CNAME, the custom domain breaks.
-- **Robots.txt disallows `/hordes/`** because the GDD is private. Don't add public links to it from `index.html`.
-- **The HBH GDD mirror is base64-inlined**, not fetched. The whole GDD ships in the page. That's intentional (zero-dependency, works offline).
+- **Robots.txt disallows `/hordes/`** because the GDD is private. That is politeness to crawlers, not protection: the Worker gate is what protects it now.
+- **The design documents are fetched from key-value storage after authentication**, not inlined. They stopped shipping inside the page on 2026-08-25.
 - **GDD payload integrity guard is now in place.** v0.61.8 shipped a GDD that lost 70 lines off the tail (FUSE write-truncation on the HBH side) and broke the live tab switcher silently. Both HBH's and Brackish Rising's `publish-gdd.ps1` now run a `Test-GddIntegrity` guard asserting the source GDD ends with `</html>` before injection, so this class of failure is caught before it reaches `hordes/index.html` / `brackish-rising/index.html`. Memory entry: gdd_truncation_guard.
 - **DNS and registrar on Cloudflare** for `yesandeverything.com` since 2026-05-06. The registrar transfer from Squarespace completed in May 2026; both DNS and registrar now sit on Cloudflare.
 
