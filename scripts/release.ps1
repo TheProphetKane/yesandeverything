@@ -156,3 +156,29 @@ if (-not $liveOk) {
     throw "Live check failed for $liveUrl. The push landed; the site did not come back healthy. Do not treat this release as shipped."
 }
 Write-Host "Live check OK: $liveUrl returned 200." -ForegroundColor Green
+
+# ---- the gated design documents are still gated ----
+#
+# Checks the LIVE site, so it runs after the push: an unauthenticated request to /hordes/
+# and /brackish-rising/ must return a small login form carrying no payload and no phrase.
+# Those two paths served the whole document as base64 with the phrase above it until
+# 2026-08-25, and the shape of a regression is the same: a large response to a request
+# that did not authenticate.
+#
+# Warns rather than aborts, because by the time it runs the release has already shipped and
+# a release that shipped fine should not be reported as failed. A failure here is something
+# to act on immediately, not something to swallow.
+# $repoRoot does not exist in this script; $here is $PSScriptRoot, the scripts folder. The
+# first version of this used $repoRoot, which resolves to nothing, so Test-Path came back
+# false and the check silently never ran. A guard that quietly does not run is worse than no
+# guard, because the release output reads identically either way.
+$gateCheck = Join-Path (Split-Path -Parent $here) "workers\gated-docs\verify.ps1"
+if (Test-Path $gateCheck) {
+    Write-Host ""
+    Write-Host "==== gated documents: still gated? ====" -ForegroundColor Magenta
+    & $gateCheck
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "WARNING: the gate check FAILED against the live site. The design documents may be exposed." -ForegroundColor Red
+        Write-Host "         Investigate before the next release: workers\gated-docs\verify.ps1" -ForegroundColor Red
+    }
+}
