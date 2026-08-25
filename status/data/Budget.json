@@ -2,8 +2,8 @@
   "project": "Budget",
   "displayName": "Yes& Budget",
   "version": "0.15.0",
-  "lastReleaseAt": "2026-08-24T15:38:31-05:00",
-  "lastReleaseMessage": "data-integrity and disclosure pass: the vanishing duplicate charge, discarded import errors, one-shot categorize rules, an unsnapshotted merge, a factory reset that left a relay registration behind, and three documents that denied the relay existed",
+  "lastReleaseAt": "2026-08-25T01:15:53-05:00",
+  "lastReleaseMessage": "the seventeen bullets v0.15.0 shipped move under the version that shipped them",
   "milestone": {
     "id": "M6",
     "label": "Budgets + goals",
@@ -25,982 +25,752 @@
     "items": []
   },
   "repoUrl": "https://github.com/TheProphetKane/yesandbudget",
-  "workTreeClean": true,
+  "workTreeClean": false,
   "audit": {
     "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-25.md",
     "latestReportAt": "2026-08-25T06:15:47Z",
     "findings": {
       "critical": 0,
       "high": 0,
-      "medium": 0,
+      "medium": 1,
       "low": 0
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-18.md",
-    "latestReportAt": "2026-08-18T11:56:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-08-25.md",
+    "latestReportAt": "2026-08-25T13:05:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 63,
-    "actionsClosed": 66,
+    "actionsOpen": 42,
+    "actionsClosed": 26,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Fix the dashboard audit-findings parser; it reports 0/0/0/0 right now because the report-format contract drifted from what the audit skill emits.",
-        "lens": "observability",
+        "title": "Either ship the restore endpoint and its interface, or correct both documents and add a real runbook entry describing the only path that currently works.",
+        "lens": "orchestration-incident-runbook-currency",
         "priority": 25,
-        "id": "observability-01"
+        "id": "orchestration-incident-runbook-currency-01"
       },
       {
         "severity": "HIGH",
-        "title": "Force the Plaid connector cut-or-keep decision; never credentialed or synced a transaction in 12+ review cycles while growing in code, docs, and dependency-advisory surface.",
-        "lens": "strategic-kill-this",
-        "priority": 25,
-        "id": "strategic-kill-this-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Fix the false-duplicate-merge bug in CSV import dedupe; two genuinely distinct same-day charges are silently merged and dropped on every import. Backfill the three already-identified lost rows.",
-        "lens": "finance-product-dedupe",
-        "priority": 25,
-        "id": "finance-product-dedupe-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Confirmed: zero of 104 findings recorded 2026-08-04 reached the live queue, same failure mode independently confirmed in this run's Chains review.",
-        "lens": "orchestration-work-queue-hygiene",
-        "priority": 25,
-        "id": "orchestration-work-queue-hygiene-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Same enqueue-pipeline failure as work-queue-hygiene-01, tracked independently by this lens: zero of 18 new findings from 2026-08-04 reached the queue.",
-        "lens": "orchestration-skill-chain-handoff-integrity",
-        "priority": 25,
-        "id": "orchestration-skill-chain-handoff-integrity-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Convert the 12 web components still calling fetch() directly to the existing api.ts + useTileData.ts pattern. [CHRONIC x14]",
+        "title": "Add api.ts wrappers for the lock, consent, factory-reset, plaid-link, plaid-sync and insights endpoints and convert the twelve components to useTileData.",
         "lens": "architecture",
         "priority": 20,
         "id": "architecture-01"
       },
       {
         "severity": "HIGH",
-        "title": "Wrap bulk-delete and merge-merchant in the existing createBackup/BackupFailedError pattern; both bypass the pre-op backup every other mutating path uses.",
-        "lens": "reliability",
-        "priority": 20,
-        "id": "reliability-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Propagate the correct relay-disclosure sentence from SECURITY_POLICY.md into the four surfaces that still flatly deny any operator-controlled server exists (chronic 19x). [CHRONIC x20]",
-        "lens": "compliance-data-steward",
-        "priority": 20,
-        "id": "compliance-data-steward-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Unregister the Plaid relay mapping before factory-reset destroys the local credential; a mapping otherwise stays live in Cloudflare KV up to a year after deletion. [CHRONIC x14]",
-        "lens": "compliance-data-steward",
-        "priority": 20,
-        "id": "compliance-data-steward-02"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Same root issue as reliability-01: bulk-delete, merge-merchant, and Plaid sync still bypass the pre-op backup pattern, unchanged across 3+ reviews.",
+        "title": "Wrap the sync path's delete in the same snapshot-then-fail-strict pattern as bulk-delete and merge-merchant, and add the sync route to the destructive list in the guard test.",
         "lens": "finance-product-backup-cadence",
         "priority": 20,
         "id": "finance-product-backup-cadence-01"
       },
       {
         "severity": "HIGH",
-        "title": "Port the git-guard.ps1 stderr-promotion fix to the six sibling projects still carrying the unfixed copy, or promote it to a single shared source.",
-        "lens": "release-pipeline-ps1-stack",
+        "title": "Compute a per-page occurrence index in the Plaid sync insert the same way the import pipeline does, or drop Plaid-sourced rows from the five-column key's scope since the Plaid transaction id already identifies them uniquely.",
+        "lens": "finance-product-dedupe",
         "priority": 20,
-        "id": "release-pipeline-ps1-stack-01"
+        "id": "finance-product-dedupe-05"
       },
       {
         "severity": "HIGH",
-        "title": "Add billing/subscription/keytar/Plaid-relay coverage to the hazard catalog; the most secret-sensitive part of the codebase sits outside every hazard-driven audit pass (unaddressed 14 days).",
-        "lens": "orchestration-skill-suite-health",
+        "title": "Add component tests for Categorize.tsx and Rules.tsx first since both mutate money and one has already shipped a bug, then extend to Transactions.tsx and the import flow.",
+        "lens": "maintainability",
         "priority": 20,
-        "id": "orchestration-skill-suite-health-01"
+        "id": "maintainability-06"
       },
       {
         "severity": "HIGH",
-        "title": "Confirm queue-drain is actually running; it has not touched this project in 18 days and every active item already exceeds the 14-day escalation threshold.",
-        "lens": "orchestration-work-queue-hygiene",
-        "priority": 20,
-        "id": "orchestration-work-queue-hygiene-02"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Instrument bar-raise-rotating to fail loud when a project's slot completes without writing its report; Budget's 2026-08-11 cycle was silently lost despite the cron firing on time.",
+        "title": "Add a post-run check that fails loud when a scheduled slot completes without both a new report file and a refreshed status timestamp.",
         "lens": "orchestration-audit-loop-integrity",
         "priority": 20,
         "id": "orchestration-audit-loop-integrity-01"
       },
       {
         "severity": "HIGH",
-        "title": "Add reciprocal do-not-trigger clauses for bar-raise's 'weekly review' vs cross-project-status-digest's 'weekly digest' (same defect independently found in the Chains review). [CHRONIC x20]",
-        "lens": "orchestration-skill-trigger-collisions",
+        "title": "Extend the parser to read a severity token from the finding's own indented sub-line, and pin a fixture test to this exact multi-line shape.",
+        "lens": "orchestration-audit-loop-integrity",
         "priority": 20,
-        "id": "orchestration-skill-trigger-collisions-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Add do-not-trigger clauses between project-canonical-audit and handler-audit; both claim bare 'audit CLAUDE.md' phrasing. [CHRONIC x20]",
-        "lens": "orchestration-skill-trigger-collisions",
-        "priority": 20,
-        "id": "orchestration-skill-trigger-collisions-02"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Execute the prior run's own self-diagnosed enqueue fix (five specific findings named for manual enqueue); it was never executed, 14 days with no re-attempt.",
-        "lens": "orchestration-skill-chain-handoff-integrity",
-        "priority": 20,
-        "id": "orchestration-skill-chain-handoff-integrity-02"
+        "id": "orchestration-audit-loop-integrity-05"
       },
       {
         "severity": "MED",
-        "title": "Give the dashboard stale-flag an independent, longer threshold for the now-weekly bar-raise signal instead of reusing the 36-hour daily-audit window.",
-        "lens": "observability",
-        "priority": 20,
-        "id": "observability-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Spend one real session actually using the app before further milestone work; the live database outside the repo has sat untouched roughly three months despite a 100% completion claim.",
-        "lens": "strategic-kill-this",
-        "priority": 20,
-        "id": "strategic-kill-this-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a sourceRef/referenceColumn field to RawTransaction/CsvMapping; there is no plumbing anywhere for a bank-provided reference number.",
+        "title": "Add an optional reference column to the mapping and a matching field to the raw transaction type so a bank that prints a reference number can use it instead of positional occurrence.",
         "lens": "finance-product-dedupe",
         "priority": 20,
         "id": "finance-product-dedupe-04"
       },
       {
         "severity": "MED",
-        "title": "Re-audit whatever change was supposed to dedupe-and-enqueue against the live queue; the 2026-07-16 fix for this exact defect never held.",
-        "lens": "orchestration-work-queue-hygiene",
+        "title": "Give the stale-flag helper a second, longer threshold for the bar-raise timestamp of roughly nine days and pass it explicitly at the call site.",
+        "lens": "observability",
         "priority": 20,
-        "id": "orchestration-work-queue-hygiene-04"
+        "id": "observability-02"
       },
       {
         "severity": "MED",
-        "title": "Nudge OS disk encryption at install, or make the already-shipped SQLCipher path the default; a non-technical install can end up with plaintext bank data on an unencrypted disk. [CHRONIC x14]",
+        "title": "Move the pre-install nudge to first launch so it applies to every install, or add a lightweight check of the operating system's disk-encryption state surfaced in Settings.",
         "lens": "finance-product-threat-model",
         "priority": 16,
         "id": "finance-product-threat-model-04"
       },
       {
-        "severity": "HIGH",
-        "title": "Diagnose why nightly-sweep alone skipped its 2026-08-16 window while six sibling routines caught up successfully hours later.",
-        "lens": "orchestration-scheduled-task-firing-state",
-        "priority": 15,
-        "id": "orchestration-scheduled-task-firing-state-01"
-      },
-      {
         "severity": "MED",
-        "title": "Extract server.ts's 47 inline db.prepare call sites into per-domain modules; the file grew rather than shrank since the last review. [CHRONIC x14]",
+        "title": "Split server.ts into per-domain route modules for accounts, transactions, rules, imports, analytics, plaid and backups, each owning its own prepared statements.",
         "lens": "architecture",
         "priority": 15,
         "id": "architecture-02"
       },
       {
         "severity": "MED",
-        "title": "Replace the capped SELECT in Plaid-takeover preview with a real COUNT(*) so toArchiveCount can't diverge from what commit actually archives. [CHRONIC x20]",
-        "lens": "reliability",
+        "title": "Move the nine interfaces into packages/shared/src/types.ts and import them from api.ts.",
+        "lens": "architecture",
         "priority": 15,
-        "id": "reliability-03"
+        "id": "architecture-04"
       },
       {
         "severity": "MED",
-        "title": "Add a React error boundary; a single render-time throw on any page currently blanks the entire UI with no recovery path.",
-        "lens": "reliability",
-        "priority": 15,
-        "id": "reliability-04"
-      },
-      {
-        "severity": "MED",
-        "title": "Add test coverage for the untested half of subscriptions.ts (won't-cut/already-cut flag CRUD). [CHRONIC x22]",
-        "lens": "maintainability",
-        "priority": 15,
-        "id": "maintainability-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Fix the two docs still claiming a lint gate that doesn't exist in code. [CHRONIC x13]",
-        "lens": "maintainability",
-        "priority": 15,
-        "id": "maintainability-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add an in-app view listing transactions whose category came from a since-superseded rule; Kane's own live data has known miscategorized rows with no way to review them. [CHRONIC x20]",
-        "lens": "solo-tool-ux",
-        "priority": 15,
-        "id": "solo-tool-ux-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Plan the react-router v6-to-v7 migration; three moderate advisories only resolve on the major bump.",
-        "lens": "dependency",
-        "priority": 15,
-        "id": "dependency-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a relay disclosure paragraph to privacy.md; it affirmatively states 'none is copied' which D-010 itself contradicts.",
-        "lens": "compliance-data-steward",
-        "priority": 15,
-        "id": "compliance-data-steward-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a preship gate step that fails the release when data-handling docs and the mirrored yesandeverything.com pages disagree on relay disclosure.",
+        "title": "Add a preship check that greps the three policy documents for the relay-disclosure sentence and fails if any is missing it.",
         "lens": "compliance-data-steward",
         "priority": 15,
         "id": "compliance-data-steward-04"
       },
       {
         "severity": "MED",
-        "title": "Rebuild the dedupe test suite to boot the real migrate() output instead of hand-mirroring the schema. [CHRONIC x20]",
-        "lens": "finance-product-dedupe",
+        "title": "Extend the disclosure to name the count and the verification token, or strip both fields from the stored event if nothing downstream needs them.",
+        "lens": "compliance-data-steward",
         "priority": 15,
-        "id": "finance-product-dedupe-02"
+        "id": "compliance-data-steward-06"
       },
       {
         "severity": "MED",
-        "title": "Add a runtime guard rejecting a non-loopback YAB_HOSTNAME.",
-        "lens": "finance-product-threat-model",
-        "priority": 15,
-        "id": "finance-product-threat-model-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Rewrite the app-lock documentation; it implies API-level protection when the lock only gates the UI screen (chronic, 13+ runs).",
-        "lens": "finance-product-threat-model",
-        "priority": 15,
-        "id": "finance-product-threat-model-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Add an integration test verifying a backup is actually a valid, restorable snapshot (integrity check plus row-count match).",
+        "title": "Add an integration test that backs up a real temporary database seeded with known rows, reopens the result and asserts row counts and an integrity check.",
         "lens": "finance-product-backup-cadence",
         "priority": 15,
         "id": "finance-product-backup-cadence-02"
       },
       {
         "severity": "MED",
-        "title": "Fold the Plaid webhook relay Worker into the pnpm workspace and add a CI dry-run gate before its manual wrangler deploy.",
-        "lens": "release-pipeline-gate-page-publish",
+        "title": "Add a restore route that swaps the live database for a chosen backup after taking one more pre-restore snapshot, and expose it from the Settings backups table.",
+        "lens": "finance-product-backup-cadence",
         "priority": 15,
-        "id": "release-pipeline-gate-page-publish-01"
+        "id": "finance-product-backup-cadence-03"
       },
       {
         "severity": "MED",
-        "title": "Delete the superseded docs/landing-page.html; it still describes a password-gate shape the shipped page doesn't use. [CHRONIC x14]",
-        "lens": "release-pipeline-gate-page-publish",
+        "title": "Surface a distinct unmatchable bucket on the Categorize page, or subtract the real uncategorized count rather than the filtered group total, so the progress figure cannot read higher than reality.",
+        "lens": "finance-product-categorization-tail",
         "priority": 15,
-        "id": "release-pipeline-gate-page-publish-02"
+        "id": "finance-product-categorization-tail-05"
       },
       {
         "severity": "MED",
-        "title": "Rewrite the YaE-side Budget project pages; they still describe shipped capability (launcher, Plaid relay, SQLCipher) as future or in-progress work. [CHRONIC x14]",
-        "lens": "release-pipeline-gate-page-publish",
+        "title": "Add a test that inserts two Plaid-shaped rows sharing account, date, amount and description but with distinct Plaid ids, and asserts both land.",
+        "lens": "finance-product-dedupe",
         "priority": 15,
-        "id": "release-pipeline-gate-page-publish-03"
+        "id": "finance-product-dedupe-02"
       },
       {
         "severity": "MED",
-        "title": "Drain or triage the three P1 queue items for this lens that have sat unworked 19+ days while the next bar-raise re-derived the same substance.",
+        "title": "Persist the resolved date format per account or import source, or require an explicit choice, instead of re-resolving on every import.",
+        "lens": "finance-product-dedupe",
+        "priority": 15,
+        "id": "finance-product-dedupe-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a startup check that refuses to boot, or forces loopback with a loud warning, when the hostname variable resolves to a non-loopback address.",
+        "lens": "finance-product-threat-model",
+        "priority": 15,
+        "id": "finance-product-threat-model-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a small set of tests against a test database that call the flag and unflag functions directly and assert the idempotency the comment claims.",
+        "lens": "maintainability",
+        "priority": 15,
+        "id": "maintainability-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a test that feeds the audit parser a fixture report in the shape the audit skill actually emits and asserts non-zero counts, so a third format drift trips a gate instead of a human.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a short if-an-import-goes-wrong section to a user-facing document naming the roll-back button and the route explicitly.",
+        "lens": "orchestration-incident-runbook-currency",
+        "priority": 15,
+        "id": "orchestration-incident-runbook-currency-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Downgrade to a time-boxed watch and re-open at high only if a new skip-without-catch-up appears in a future mirror.",
+        "lens": "orchestration-scheduled-task-firing-state",
+        "priority": 15,
+        "id": "orchestration-scheduled-task-firing-state-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Enqueue the two missing findings now, and change the Wave 5 post-write gate from a per-id existence check to a count check against the printed number so a partial miss fails loud.",
+        "lens": "orchestration-skill-chain-handoff-integrity",
+        "priority": 15,
+        "id": "orchestration-skill-chain-handoff-integrity-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Drain or explicitly close the aged blocked-on-user items before the next review adds another layer on top of them.",
         "lens": "orchestration-skill-suite-health",
         "priority": 15,
         "id": "orchestration-skill-suite-health-03"
       },
       {
         "severity": "MED",
-        "title": "Prune completed items from the live queue after the commits that close them; they are not currently being removed.",
-        "lens": "orchestration-work-queue-hygiene",
-        "priority": 15,
-        "id": "orchestration-work-queue-hygiene-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Replace the three retired routine names in .project-context.json and CLAUDE.md with nightly-sweep and bar-raise-rotating; chronic 14+ days. [CHRONIC x20]",
-        "lens": "orchestration-audit-loop-integrity",
-        "priority": 15,
-        "id": "orchestration-audit-loop-integrity-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Route release.ps1's version-stamping writes to docs/DESIGN.md through the atomic-write-with-readback pattern already proven elsewhere in the repo. [CHRONIC x14]",
-        "lens": "orchestration-fuse-truncation-defense",
-        "priority": 15,
-        "id": "orchestration-fuse-truncation-defense-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Rewrite the portfolio FUSE-truncation checker to read critical_files_for_python_atomic_write from each project's .project-context.json instead of a hardcoded list that omits this project entirely.",
-        "lens": "orchestration-fuse-truncation-defense",
-        "priority": 15,
-        "id": "orchestration-fuse-truncation-defense-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add the auto-enqueue step drift-auto-fix's description promises, or correct the description to match actual behavior.",
+        "title": "Add reciprocal do-not-trigger clauses to both skill documents.",
         "lens": "orchestration-skill-trigger-collisions",
         "priority": 15,
-        "id": "orchestration-skill-trigger-collisions-03"
+        "id": "orchestration-skill-trigger-collisions-02"
       },
       {
         "severity": "MED",
-        "title": "Move the nine wire-format interfaces living only in api.ts into the packages/shared contract.",
-        "lens": "architecture",
-        "priority": 12,
-        "id": "architecture-04"
+        "title": "Batch the ten blocked-on-user items into one attended decision session instead of letting each keep aging individually.",
+        "lens": "orchestration-work-queue-hygiene",
+        "priority": 15,
+        "id": "orchestration-work-queue-hygiene-05"
       },
       {
         "severity": "MED",
-        "title": "Wrap the import pipeline's post-insert steps in try/catch so a thrown error doesn't leave the imports row permanently status=pending. [CHRONIC x14]",
-        "lens": "reliability",
-        "priority": 12,
-        "id": "reliability-02"
+        "title": "Give the prune step a home in the enabled burndown routine so completed items age out automatically.",
+        "lens": "orchestration-work-queue-hygiene",
+        "priority": 15,
+        "id": "orchestration-work-queue-hygiene-07"
       },
       {
         "severity": "MED",
-        "title": "Wrap the rules apply-all/apply-batch loop in db.transaction(), matching the existing insert pattern; cost currently scales with total uncategorized history. [CHRONIC x22]",
+        "title": "Wrap the update loop in both rule-application functions in a database transaction, matching the pattern already used three other places in the same package.",
         "lens": "performance",
-        "priority": 12,
+        "priority": 15,
         "id": "performance-01"
       },
       {
         "severity": "MED",
-        "title": "Fold the Plaid webhook relay Worker into the pnpm workspace so its dependencies get a lockfile and are scanned by pnpm audit / CI.",
-        "lens": "dependency",
+        "title": "Wrap the post-snapshot body of runImport in a try and catch that marks the imports row failed with an error message before re-throwing.",
+        "lens": "reliability",
+        "priority": 15,
+        "id": "reliability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Replace the limited count with a real count query and keep the limit only on the sample rows shown in the preview list.",
+        "lens": "reliability",
+        "priority": 15,
+        "id": "reliability-03"
+      },
+      {
+        "severity": "MED",
+        "title": "Add a top-level error boundary around the app that shows a reload affordance instead of a blank screen.",
+        "lens": "reliability",
+        "priority": 15,
+        "id": "reliability-04"
+      },
+      {
+        "severity": "MED",
+        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "lens": "security",
+        "priority": 15,
+        "id": "security-05",
+        "redacted": true
+      },
+      {
+        "severity": "MED",
+        "title": "Add a rule-id column to transactions written at categorize time, then add a Transactions filter or an Insights tile listing rows whose recorded rule no longer matches the rule currently active for that category.",
+        "lens": "solo-tool-ux",
+        "priority": 15,
+        "id": "solo-tool-ux-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Wire a script that pushes the landing page to the portfolio mirror and refreshes the ticker at release time, or delete the static ticker and source those values at generation time.",
+        "lens": "release-pipeline-gate-page-publish",
         "priority": 12,
-        "id": "dependency-02"
+        "id": "release-pipeline-gate-page-publish-05"
       },
       {
         "severity": "MED",
-        "title": "Track keytar's viability going forward; no release in roughly 4.5 years, traces to the sunset Atom-editor project. [CHRONIC x14]",
-        "lens": "dependency",
+        "title": "Add the worker's manifest to both the stamp and the agreement check, or document in docs/DESIGN.md that it versions independently so it is excluded on purpose.",
+        "lens": "release-pipeline-version-pill-drift",
         "priority": 12,
-        "id": "dependency-03"
+        "id": "release-pipeline-version-pill-drift-01"
       },
       {
         "severity": "MED",
-        "title": "Add automated test coverage (Pester or equivalent) for the dashboard/release PowerShell pipeline; it has shipped two silent-zero regressions in three weeks with none caught by tests.",
-        "lens": "observability",
-        "priority": 12,
-        "id": "observability-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Decide whether the review cadence should collapse to the shared weekly constellation pass now that the project is feature-frozen with zero real usage.",
-        "lens": "strategic-kill-this",
-        "priority": 12,
-        "id": "strategic-kill-this-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Resolve the repo-visibility call alongside the Plaid decision; the D-005 hybrid launch page still can't actually be used by the stated close-friends audience. [CHRONIC x13]",
-        "lens": "strategic-kill-this",
-        "priority": 12,
-        "id": "strategic-kill-this-04"
-      },
-      {
-        "severity": "MED",
-        "title": "Pin the resolved date format per account for the generic-CSV importer instead of re-detecting per file on 'auto'.",
-        "lens": "finance-product-dedupe",
-        "priority": 12,
-        "id": "finance-product-dedupe-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Move the LASTEXITCODE capture/restore into Confirm-GitIntact itself so the protection doesn't depend on caller discipline at every future call site.",
-        "lens": "release-pipeline-ps1-stack",
-        "priority": 12,
-        "id": "release-pipeline-ps1-stack-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Resolve the backlog-webhook channel-label contradiction between the scripts (#budget-ideas) and CLAUDE.md's naming standard (#budget-backlog).",
-        "lens": "release-pipeline-discord-notify",
-        "priority": 12,
-        "id": "release-pipeline-discord-notify-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Give Get-StaleFlag independent thresholds per source; the 36-hour audit window is reused for the now-weekly bar-raise signal (same root cause as observability-02).",
-        "lens": "orchestration-audit-loop-integrity",
-        "priority": 12,
-        "id": "orchestration-audit-loop-integrity-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a DB-corruption recovery runbook; this app's single most likely real-world incident has no documented recovery path despite backups being the documented primitive.",
-        "lens": "orchestration-incident-runbook-currency",
-        "priority": 12,
-        "id": "orchestration-incident-runbook-currency-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Move the duplicated dollars-to-cents parser in Categorize.tsx and Rules.tsx into the shared money.ts module.",
-        "lens": "architecture",
-        "priority": 10,
-        "id": "architecture-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Change the event-drain endpoint to authenticate via the header pattern used everywhere else in the same file instead of a URL-path capability.",
+        "title": "Move the key validation in the drain handler to the header, matching the unregister handler, and drop the path-embedded secret.",
         "lens": "compliance-data-steward",
         "priority": 10,
         "id": "compliance-data-steward-05"
       },
       {
         "severity": "MED",
-        "title": "Pin and test the Vite dev server's bind address; it currently has no host key at all.",
+        "title": "Set the development server host explicitly to a loopback value and add a regression test mirroring the existing bind test.",
         "lens": "finance-product-threat-model",
         "priority": 10,
         "id": "finance-product-threat-model-02"
       },
       {
         "severity": "MED",
-        "title": "Sweep scripts/README.md and release.ps1's step-5 comment to say #budget-audit; a prior fix only corrected the label in one place. [CHRONIC x24]",
+        "title": "Register the two drain jobs per the runbook, or remove the scheduling instructions if the Plaid cut-or-keep decision resolves toward cutting.",
+        "lens": "orchestration-scheduled-task-firing-state",
+        "priority": 10,
+        "id": "orchestration-scheduled-task-firing-state-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Replace the four stale channel references with the locked channel name.",
         "lens": "release-pipeline-discord-notify",
         "priority": 10,
-        "id": "release-pipeline-discord-notify-01"
+        "id": "release-pipeline-discord-notify-02"
       },
       {
         "severity": "MED",
         "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
         "lens": "security",
-        "priority": 9,
-        "id": "security-01",
+        "priority": 8,
+        "id": "security-06",
         "redacted": true
       }
     ],
-    "deferred": [],
-    "health": 60,
+    "deferred": [
+      {
+        "severity": "HIGH",
+        "title": "Hold a decision session on D-012 and record the outcome, including an explicit keep-parked if that is the answer, so it stops resurfacing as an open item.",
+        "lens": "strategic-kill-this",
+        "reason": "decision waiting on Kane under D-012, which the decisions log already records as decided per user rather than in this codebase"
+      },
+      {
+        "severity": "MED",
+        "title": "Decide whether to step this project down to the weekly constellation pass now that it is dormant; the consolidation groundwork to do it cheaply already exists.",
+        "lens": "strategic-kill-this",
+        "reason": "cadence call for Kane on whether a dormant project keeps a daily audit and a weekly deep review"
+      },
+      {
+        "severity": "MED",
+        "title": "Confirm and record the current repository visibility in docs/DECISIONS.md, and if it is still private either flip it or define another distribution path.",
+        "lens": "strategic-kill-this",
+        "reason": "decision for Kane on repository visibility and distribution path"
+      },
+      {
+        "severity": "LOW",
+        "title": "Have a future review with the right access, or Kane directly, confirm whether the app has been used since 2026-05-22 before this is carried as fact again.",
+        "lens": "strategic-kill-this",
+        "reason": "cannot be verified from inside this review's scope; needs access to the live data folder or Kane directly"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Republish the personal-skills plugin so every runtime cache matches source; two runtime copies are stale and one is truncated mid-word.",
+        "lens": "orchestration-skill-suite-health",
+        "reason": "only Kane can republish the plugin; a session cannot write the runtime cache. Verified against the filesystem earlier this session during the Chains pass."
+      },
+      {
+        "severity": "MED",
+        "title": "Widen the nightly plugin-snapshot check so it can see the runtime folder whose name does not match its filter.",
+        "lens": "orchestration-skill-suite-health",
+        "reason": "resolves with the same republish, and the check itself lives outside this project"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Confirm which physical copy of each shared skill loads at runtime and republish if the live copy predates the source edits.",
+        "lens": "orchestration-skill-trigger-collisions",
+        "reason": "blocked on the same plugin republish"
+      },
+      {
+        "severity": "MED",
+        "title": "Verify whether the portfolio pages describing this project's shipped work as future have been corrected.",
+        "lens": "release-pipeline-gate-page-publish",
+        "reason": "the content lives in another project's folder and is out of this run's scope"
+      }
+    ],
+    "health": 66,
     "lensScores": {
-      "architecture": 60,
-      "reliability": 69,
-      "security": 82,
+      "architecture": 58,
+      "reliability": 76,
+      "security": 78,
       "performance": 78,
-      "data-integrity": 82,
-      "maintainability": 73,
-      "solo-tool-ux": 82,
-      "cost-economics": 85,
-      "dependency": 78,
-      "observability": 46,
-      "strategic-kill-this": 24,
-      "compliance-data-steward": 55,
-      "finance-product-dedupe": 36,
-      "finance-product-categorization-tail": 79,
-      "finance-product-threat-model": 76,
-      "finance-product-backup-cadence": 48,
-      "release-pipeline-ps1-stack": 79,
-      "release-pipeline-discord-notify": 68,
-      "release-pipeline-version-pill-drift": 95,
-      "release-pipeline-gate-page-publish": 55,
-      "orchestration-skill-suite-health": 28,
-      "orchestration-work-queue-hygiene": 10,
-      "orchestration-audit-loop-integrity": 44,
-      "orchestration-fuse-truncation-defense": 65,
-      "orchestration-incident-runbook-currency": 52,
-      "orchestration-scheduled-task-firing-state": 62,
-      "orchestration-skill-trigger-collisions": 40,
-      "orchestration-skill-chain-handoff-integrity": 15
+      "data-integrity": 66,
+      "maintainability": 68,
+      "solo-tool-ux": 80,
+      "cost-economics": 95,
+      "dependency": 88,
+      "observability": 68,
+      "strategic-kill-this": 30,
+      "compliance-data-steward": 79,
+      "finance-product-dedupe": 58,
+      "finance-product-categorization-tail": 75,
+      "finance-product-threat-model": 78,
+      "finance-product-backup-cadence": 60,
+      "release-pipeline-ps1-stack": 92,
+      "release-pipeline-discord-notify": 76,
+      "release-pipeline-version-pill-drift": 80,
+      "release-pipeline-gate-page-publish": 68,
+      "orchestration-skill-suite-health": 27,
+      "orchestration-work-queue-hygiene": 58,
+      "orchestration-audit-loop-integrity": 32,
+      "orchestration-fuse-truncation-defense": 62,
+      "orchestration-incident-runbook-currency": 30,
+      "orchestration-scheduled-task-firing-state": 74,
+      "orchestration-skill-trigger-collisions": 42,
+      "orchestration-skill-chain-handoff-integrity": 60
     },
     "openFindings": [
       {
-        "id": "observability-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-04"
-      },
-      {
-        "id": "strategic-kill-this-01",
+        "id": "orchestration-incident-runbook-currency-01",
         "severity": "HIGH",
         "priority": 25,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "finance-product-dedupe-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "orchestration-work-queue-hygiene-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "orchestration-skill-chain-handoff-integrity-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-04"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "architecture-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 14,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "reliability-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "compliance-data-steward-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 20,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "compliance-data-steward-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-16"
       },
       {
         "id": "finance-product-backup-cadence-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-04"
       },
       {
-        "id": "release-pipeline-ps1-stack-01",
+        "id": "finance-product-dedupe-05",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
-        "id": "orchestration-skill-suite-health-01",
+        "id": "maintainability-06",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "orchestration-work-queue-hygiene-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "orchestration-audit-loop-integrity-01",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-04"
       },
       {
-        "id": "orchestration-skill-trigger-collisions-01",
+        "id": "orchestration-audit-loop-integrity-05",
         "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 20,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "orchestration-skill-trigger-collisions-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 20,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "orchestration-skill-chain-handoff-integrity-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-04"
-      },
-      {
-        "id": "observability-02",
-        "severity": "MED",
         "priority": 20,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "strategic-kill-this-02",
-        "severity": "MED",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "finance-product-dedupe-04",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
-        "id": "orchestration-work-queue-hygiene-04",
+        "id": "observability-02",
         "severity": "MED",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
         "id": "finance-product-threat-model-04",
         "severity": "MED",
         "priority": 16,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "orchestration-scheduled-task-firing-state-01",
-        "severity": "HIGH",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-30"
       },
       {
         "id": "architecture-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
+        "runsOpen": 15,
         "firstSeen": "2026-07-16"
       },
       {
-        "id": "reliability-03",
+        "id": "architecture-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 20,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "maintainability-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 22,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "maintainability-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 13,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "solo-tool-ux-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 20,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "dependency-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "compliance-data-steward-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
         "id": "compliance-data-steward-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
-        "id": "finance-product-dedupe-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 20,
-        "firstSeen": "2026-07-10"
-      },
-      {
-        "id": "finance-product-threat-model-01",
+        "id": "compliance-data-steward-06",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "finance-product-threat-model-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "finance-product-backup-cadence-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-08-04"
       },
       {
-        "id": "release-pipeline-gate-page-publish-01",
+        "id": "finance-product-backup-cadence-03",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
+        "firstSeen": "2026-08-25"
+      },
+      {
+        "id": "finance-product-categorization-tail-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-25"
+      },
+      {
+        "id": "finance-product-dedupe-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 21,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "finance-product-dedupe-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
-        "id": "release-pipeline-gate-page-publish-02",
+        "id": "finance-product-threat-model-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
-        "firstSeen": "2026-07-16"
+        "runsOpen": 2,
+        "firstSeen": "2026-08-18"
       },
       {
-        "id": "release-pipeline-gate-page-publish-03",
+        "id": "maintainability-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 14,
-        "firstSeen": "2026-07-16"
+        "runsOpen": 23,
+        "firstSeen": "2026-07-07"
+      },
+      {
+        "id": "observability-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-18"
+      },
+      {
+        "id": "orchestration-incident-runbook-currency-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-25"
+      },
+      {
+        "id": "orchestration-scheduled-task-firing-state-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 4,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "orchestration-skill-chain-handoff-integrity-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "orchestration-skill-suite-health-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
-        "id": "orchestration-work-queue-hygiene-03",
+        "id": "orchestration-skill-trigger-collisions-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "orchestration-audit-loop-integrity-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 20,
+        "runsOpen": 21,
         "firstSeen": "2026-07-10"
       },
       {
-        "id": "orchestration-fuse-truncation-defense-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 14,
-        "firstSeen": "2026-07-16"
-      },
-      {
-        "id": "orchestration-fuse-truncation-defense-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-30"
-      },
-      {
-        "id": "orchestration-skill-trigger-collisions-03",
+        "id": "orchestration-work-queue-hygiene-05",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
-        "id": "architecture-04",
+        "id": "orchestration-work-queue-hygiene-07",
         "severity": "MED",
-        "priority": 12,
+        "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "reliability-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 14,
-        "firstSeen": "2026-07-16"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "performance-01",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 22,
+        "priority": 15,
+        "runsOpen": 23,
         "firstSeen": "2026-07-07"
       },
       {
-        "id": "dependency-02",
+        "id": "reliability-02",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-04"
-      },
-      {
-        "id": "dependency-03",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 14,
+        "priority": 15,
+        "runsOpen": 15,
         "firstSeen": "2026-07-16"
       },
       {
-        "id": "observability-03",
+        "id": "reliability-03",
         "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
+        "priority": 15,
+        "runsOpen": 21,
+        "firstSeen": "2026-07-10"
+      },
+      {
+        "id": "reliability-04",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-08-18"
       },
       {
-        "id": "strategic-kill-this-03",
+        "id": "security-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-25"
+      },
+      {
+        "id": "solo-tool-ux-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-25"
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-05",
         "severity": "MED",
         "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
-        "id": "strategic-kill-this-04",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 13,
-        "firstSeen": "2026-07-17"
-      },
-      {
-        "id": "finance-product-dedupe-03",
+        "id": "release-pipeline-version-pill-drift-01",
         "severity": "MED",
         "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "release-pipeline-ps1-stack-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "release-pipeline-discord-notify-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-30"
-      },
-      {
-        "id": "orchestration-audit-loop-integrity-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "orchestration-incident-runbook-currency-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "architecture-03",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "compliance-data-steward-05",
         "severity": "MED",
         "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
         "id": "finance-product-threat-model-02",
         "severity": "MED",
         "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       },
       {
-        "id": "release-pipeline-discord-notify-01",
+        "id": "orchestration-scheduled-task-firing-state-02",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 24,
-        "firstSeen": "2026-07-04"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-25"
       },
       {
-        "id": "security-01",
+        "id": "release-pipeline-discord-notify-02",
         "severity": "MED",
-        "priority": 9,
+        "priority": 10,
+        "runsOpen": 4,
+        "firstSeen": "2026-07-30"
+      },
+      {
+        "id": "security-06",
+        "severity": "MED",
+        "priority": 8,
         "runsOpen": 1,
-        "firstSeen": "2026-08-18"
+        "firstSeen": "2026-08-25"
       }
     ],
     "tensionsOpen": [
       {
         "lenses": [
-          "finance-product-dedupe",
+          "architecture",
           "maintainability"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "strategic-kill-this",
-          "dependency"
-        ],
-        "runsSeen": 13
-      },
-      {
-        "lenses": [
-          "strategic-kill-this",
-          "compliance-data-steward"
-        ],
-        "runsSeen": 13
-      },
-      {
-        "lenses": [
-          "strategic-kill-this",
-          "cost-economics"
-        ],
-        "runsSeen": 13
-      },
-      {
-        "lenses": [
-          "orchestration-work-queue-hygiene",
-          "orchestration-skill-suite-health"
+          "compliance-data-steward",
+          "orchestration-incident-runbook-currency"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "reliability",
+          "compliance-data-steward",
+          "security"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "compliance-data-steward",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "security"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "data-integrity",
+          "reliability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "data-integrity",
           "solo-tool-ux"
         ],
         "runsSeen": 1
@@ -1008,7 +778,126 @@
       {
         "lenses": [
           "dependency",
-          "security"
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "finance-product-backup-cadence",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "finance-product-backup-cadence",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "finance-product-categorization-tail",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "finance-product-dedupe",
+          "reliability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "finance-product-threat-model",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "maintainability",
+          "release-pipeline-ps1-stack"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "maintainability",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "orchestration-audit-loop-integrity"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "reliability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orchestration-audit-loop-integrity",
+          "orchestration-skill-chain-handoff-integrity"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orchestration-audit-loop-integrity",
+          "orchestration-work-queue-hygiene"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orchestration-audit-loop-integrity",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orchestration-incident-runbook-currency",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orchestration-scheduled-task-firing-state",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orchestration-skill-suite-health",
+          "orchestration-work-queue-hygiene"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
+          "solo-tool-ux"
         ],
         "runsSeen": 1
       }
@@ -1029,7 +918,7 @@
     }
   ],
   "workQueueDepth": 12,
-  "stale": true,
+  "stale": false,
   "tags": [
     "finance-product",
     "orchestration",
