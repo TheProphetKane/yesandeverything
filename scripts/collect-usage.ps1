@@ -1447,13 +1447,36 @@ try {
 # dashboard itself reads and check the stamp came back as the one just written.
 # This is what turns a silent freeze into a loud failure at every tick, six times
 # a day, instead of waiting on a once-daily watchdog.
+#
+# Two things stop it crying wolf, both measured on 2026-08-26 when three healthy
+# publishes in a row reported "the page is stale":
+#   Retry, and for long enough. The key-value write is not visible to a reader the
+#   instant wrangler returns, and the response carries no-store, so this is store
+#   propagation rather than an edge cache a query string could bust. Measured that
+#   day with a second collector running concurrently: a write took longer than 12
+#   seconds and under 90 to appear. Eight attempts, eight seconds apart. A single
+#   immediate fetch reads the previous object and calls a working publish broken.
+#   At-or-newer, not equal. When another run publishes while this one is checking,
+#   the live stamp is NEWER than the one this run wrote. That is publishing working,
+#   not failing. Only a live stamp OLDER than what this run wrote means the page
+#   froze, which is the condition this check exists to catch.
 if ($publishFailed -notcontains "usage") {
   try {
     $written = (Get-Content -Encoding utf8 -Raw $OutPath | ConvertFrom-Json).generatedAt
-    $live = (Invoke-RestMethod -Uri "https://usage.yesandeverything.com/usage.json" -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 45).generatedAt
-    if ($live -eq $written) { Write-Host "Live dashboard verified: serving $live." -ForegroundColor Green }
-    else {
-      Write-Host "ERROR: live dashboard still serving $live, expected $written. The page is stale." -ForegroundColor Red
+    $writtenTs = [datetime]::Parse($written).ToUniversalTime()
+    $liveTs = $null
+    $live = $null
+    $attempts = 8
+    for ($i = 1; $i -le $attempts; $i++) {
+      $live = (Invoke-RestMethod -Uri "https://usage.yesandeverything.com/usage.json" -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 45).generatedAt
+      $liveTs = [datetime]::Parse($live).ToUniversalTime()
+      if ($liveTs -ge $writtenTs) { break }
+      if ($i -lt $attempts) { Start-Sleep -Seconds 8 }
+    }
+    if ($liveTs -ge $writtenTs) {
+      Write-Host "Live dashboard verified: serving $live (wrote $written)." -ForegroundColor Green
+    } else {
+      Write-Host "ERROR: live dashboard still serving $live after $attempts attempts, expected $written or newer. The page is stale." -ForegroundColor Red
       $publishFailed += "usage-readback"
     }
   } catch {
