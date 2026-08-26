@@ -1,35 +1,35 @@
 {
   "project": "Rising",
   "displayName": "Brackish Rising",
-  "version": "0.59.81",
-  "lastReleaseAt": "2026-08-26T01:15:14-05:00",
-  "lastReleaseMessage": "the read-only tooltip stops naming a phrase the gate rotated away",
+  "version": "0.60.0",
+  "lastReleaseAt": "2026-08-26T08:40:31-05:00",
+  "lastReleaseMessage": "v0.59.81 - quick-load no longer erases a live horde, six dead hotkeys route through their rebindable actions, three infantry scenes stop inheriting a 75pct scale",
   "milestone": {
-    "id": "M1",
-    "label": "Vertical Slice",
+    "id": "M6",
+    "label": "Art Integration",
     "status": "in-progress"
   },
   "completion": {
-    "pct": 50,
-    "anchored": "2026-08-14"
+    "pct": 38,
+    "anchored": "2026-08-26"
   },
   "itemsLeft": {
-    "open": 4,
+    "open": 5,
     "queue": 0,
-    "backlog": 1,
-    "gates": 3,
+    "backlog": 0,
+    "gates": 5,
     "items": [
-      "M1 gameplay vertical slice: two deliverables still open per the GDD Roadmap tab (docs/GDD.html) - Shambler + Lunger combat tuning, and Hatchery destruction + Coral Receding VFX. The other four M1 deliverables (Hold the Wall mission script, Wood Wall/Gate/Tower cell-occupant refactor, Lantern Oil drain + mission-fail clock UI, build-menu category tabs) are struck as shipped on that same tab as of v0.59.45 (commit 9129519, 2026-07-24)",
-      "MVP art + audio integration ongoing and paced by Navy's delivery cadence: HUD rebuild, Spine2D rigs, and the terrain TileMapLayer migration landed through the v0.59.x series, but remaining unit/building art and MVP-scope audio are still outstanding",
-      "Basis for the 50% hold: the art-integration track (M6) has been the active work for weeks while the two open M1 gameplay deliverables above are unstarted; number is evidence-anchored here, not moved, and will only advance when a real gameplay deliverable lands"
+      "Declared milestone moved M1 to M6 on 2026-08-26. M6 Art Integration is the track receiving the work and has been for weeks; M1 Vertical Slice stays open behind it. The old declaration paired M1 with a rule that the number only advances on a gameplay deliverable, which froze the number against a track nobody was on. The number now counts Roadmap deliverables across all nine milestones, so art work moves it.",
+      "How the 38 is derived, countable off the GDD Roadmap tab: 18 of 47 deliverables shipped. M0 8/8, M1 3/6, M2 2/4, M3 0/4, M4 2/6, M5 0/4, M6 3/5, M7 0/5, M8 0/5. Replaces the unsupported 50, which was hand-held since 2026-07-18 and disagreed with the document's own Progress tab aggregate of 34/135 (25 percent).",
+      "M1 Vertical Slice, three of six shipped and one previously mis-recorded. Open: Shambler + Lunger combat tuning, and Hatchery destruction + Coral Receding VFX (hatchery.gd is a scaffold with group membership, HP 800, a 2x2 footprint and four spawn constants; no spawn loop and no destruction handler exist). Mis-recorded: the Roadmap strikes 'Hold the Wall mission script (5-7 wave cadence)' as shipped, but source/data/missions/m1_default.tres is 'Mission 1: Hold the Line' at target_day 30, which against game_clock.DAY_LENGTH_SEC of 60 is a 30-minute mission with four horde nights at days 7, 14, 21 and 28. Neither a 5-7 wave slice nor the 5-7 minute mission M1's own target paragraph describes.",
+      "M6 Art Integration, three of five shipped. Building sprites, terrain tile set and HUD icon set are in. Open: unit sheets, where three of six scenes carry Spine rigs (scout, rifleman, marksman) and harpoonist, tommy and trench_sweeper carry none; and enemy sheets, where only the Shambler is rigged and the other seven are static single frames.",
+      "Live defect inside the active track: tools/bake_spine_sheets.gd configures two bakes, shambler and scout, while rifleman.tscn and marksman.tscn both carry rigs. Past the eight-unit LIVE_RIG_BUDGET in source/units/unit_lod.gd a demoted rig has no baked sheet to fall back to. Queued as bar-raise-2026-08-24-rising-asset-pipeline-01, which names the Rifleman only."
     ]
   },
   "backlog": {
-    "count": 1,
-    "totalOpen": 47,
-    "items": [
-      "docs/MILESTONE-PROMPTS.md scaffold once M0 starts shipping commits."
-    ]
+    "count": 0,
+    "totalOpen": 54,
+    "items": []
   },
   "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
   "workTreeClean": false,
@@ -48,8 +48,8 @@
     "latestReportAt": "2026-08-24T12:40:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 44,
-    "actionsClosed": 20,
+    "actionsOpen": 48,
+    "actionsClosed": 16,
     "actions": [
       {
         "severity": "HIGH",
@@ -57,6 +57,14 @@
         "id": "asset-pipeline-01",
         "lens": "asset-pipeline",
         "title": "Add a rifleman entry to the baker config, bake, import and commit the output, and extend a preship check to fail when a rig-carrying scene has no baked counterpart."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 25,
+        "id": "security-05",
+        "lens": "security",
+        "title": "REDACTED: a HIGH severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "redacted": true
       },
       {
         "severity": "HIGH",
@@ -75,6 +83,20 @@
       {
         "severity": "HIGH",
         "priority": 20,
+        "id": "art-direction-consistency-01",
+        "lens": "art-direction-consistency",
+        "title": "Set the three inheriting scenes to native scale, or drop the 0.75 default out of the base scene entirely."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "data-integrity-01",
+        "lens": "data-integrity",
+        "title": "Snapshot live enemies the way buildings and units already are, or withhold the fired marker for any horde day whose enemy group is non-empty at save time."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
         "id": "observability-10",
         "lens": "observability",
         "title": "Add a preship check that walks tracked images and confirms each has an import sidecar newer than its source, failing loud instead of leaving it to a play-tester's eye."
@@ -85,6 +107,13 @@
         "id": "scope-discipline-01",
         "lens": "scope-discipline",
         "title": "Write a new locked decision replacing the wave-cap entry with the pool-first architecture and its real ceiling, or flip the defaults back and enforce the stated cap."
+      },
+      {
+        "severity": "HIGH",
+        "priority": 20,
+        "id": "solo-tool-ux-04",
+        "lens": "solo-tool-ux",
+        "title": "Route the raw key-code branches through input actions the way the one working action already is, or pull the dead rows out of the Hotkeys screen until they are wired."
       },
       {
         "severity": "HIGH",
@@ -444,6 +473,13 @@
         "firstSeen": "2026-08-24"
       },
       {
+        "id": "security-05",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-24"
+      },
+      {
         "id": "strategic-kill-this-01",
         "severity": "HIGH",
         "priority": 25,
@@ -458,6 +494,20 @@
         "firstSeen": "2026-08-17"
       },
       {
+        "id": "art-direction-consistency-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-24"
+      },
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-24"
+      },
+      {
         "id": "observability-10",
         "severity": "HIGH",
         "priority": 20,
@@ -466,6 +516,13 @@
       },
       {
         "id": "scope-discipline-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-24"
+      },
+      {
+        "id": "solo-tool-ux-04",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 1,
@@ -818,7 +875,7 @@
     },
     {
       "k": "buildings",
-      "v": "26"
+      "v": "27"
     },
     {
       "k": "enemies",
@@ -826,11 +883,11 @@
     },
     {
       "k": "tests",
-      "v": "2"
+      "v": "3"
     },
     {
       "k": "scenes",
-      "v": "57"
+      "v": "59"
     },
     {
       "k": "gdd kb",
