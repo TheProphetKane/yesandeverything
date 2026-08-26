@@ -108,7 +108,7 @@ $note | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 if ($fail.Count -gt 0) {
   Write-Host "DASHBOARD STALE:" -ForegroundColor Red
   $fail | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
-  Write-Host "Republish with: powershell -NoProfile -ExecutionPolicy Bypass -File X:\YesAndEverything\scripts\collect-usage.ps1 -NoPush" -ForegroundColor Yellow
+  Write-Host "Republish with: powershell -NoProfile -ExecutionPolicy Bypass -File X:\PortfolioOps\scripts\collect-usage.ps1 -NoPush" -ForegroundColor Yellow
   exit 1
 }
 

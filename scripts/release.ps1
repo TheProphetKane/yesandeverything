@@ -127,7 +127,7 @@ finally {
 # Pushes fresh per-project token usage to the dashboard's Cloudflare KV so the live
 # page (usage.yesandeverything.com) updates within seconds. -NoPush = KV + local only:
 # no extra git commit and no GitHub Pages build. Never fails the release.
-try { & "X:\YesAndEverything\scripts\collect-usage.ps1" -NoPush } catch { Write-Host "usage dashboard refresh skipped: $_" -ForegroundColor DarkGray }
+try { & "X:\PortfolioOps\scripts\collect-usage.ps1" -NoPush } catch { Write-Host "usage dashboard refresh skipped: $_" -ForegroundColor DarkGray }
 
 # --- Hard-fail live check -------------------------------------------------
 # A release that announces itself without looking at the site is announcing the push,
