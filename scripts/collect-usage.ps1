@@ -33,6 +33,15 @@
 # records keep their original attribution. Run -Rescan occasionally (or after
 # any attribution change) to re-true history.
 #
+# TASK ROLLUP (2026-08-26): a scheduled run's transcript carries a
+# <scheduled-task name="<id>"> tag. The scan already read that tag to attribute the
+# session to a project and then threw the id away. It now banks the raw id too, so
+# usage.json carries a `tasks` block: one row per task id per day, with the run count
+# and the priced cost. That is what makes a routine's own cost readable after its
+# transcript is gone, since claude-temp-cleanup-daily deletes transcripts older than
+# 7 days. Additive on purpose: a state file with no aggT starts the rollup empty
+# instead of forcing a re-scan, so no history is rebuilt and none is lost.
+#
 # Costs are API-EQUIVALENT ESTIMATES. Subscription usage is not billed per
 # token; the table below exists so the numbers mean something. Edit freely.
 
@@ -44,7 +53,7 @@ Set-Location $RepoRoot
 . (Join-Path $PSScriptRoot "git-guard.ps1")
 
 $ATTRIB_VERSION = 21  # v21 (2026-08-19): adds rd-weekly-log -> SignalRD and routine-health -> Everything.
-# v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project —
+# v18 (2026-07-10): adds Lexi (X:\YesAndLexi, private family project -
 # kayak search; never publicly listed, same tier as Counselor/Skylight): kayak-scout task
 # name + folder patterns + REPO_PATHS + QUEUE_ALIAS entries.
 # v17 (2026-07-08): fixes Gnosis work leaking to Everything. The
@@ -352,6 +361,7 @@ $Files = @{}   # path -> @{ length; processed; project; votes; lastMsgId }
 $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
 $AggM = @{}    # project -> model family -> @{ input; output; cacheRead; cacheWrite; cost }
 $AggCache = @{} # project -> date -> @{ gain/ttlLoss/switchLoss/subagent/sessionStart/unclassified Tokens+Usd }
+$AggT = @{}    # scheduled-task id -> date -> @{ runs; input; output; cacheRead; cacheWrite; cost }
 $PrevOldest = $null   # oldest record ever seen across runs (the log horizon)
 if (-not $FreshScan -and (Test-Path $StatePath)) {
   try {
@@ -367,7 +377,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     foreach ($prop in $state.files.PSObject.Properties) {
       $votes = @{}
       if ($prop.Value.votes) { foreach ($v in $prop.Value.votes.PSObject.Properties) { $votes[$v.Name] = [int]$v.Value } }
-      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs; taskProj = $prop.Value.taskProj; lastUsageTs = $prop.Value.lastUsageTs }
+      $Files[$prop.Name] = @{ length = [long]$prop.Value.length; processed = [long]$prop.Value.processed; project = $prop.Value.project; votes = $votes; lastMsgId = $prop.Value.lastMsgId; lastTs = $prop.Value.lastTs; taskProj = $prop.Value.taskProj; lastUsageTs = $prop.Value.lastUsageTs; taskId = $prop.Value.taskId; taskRunCounted = $prop.Value.taskRunCounted }
     }
     foreach ($row in $state.agg) {
       $rp = Resolve-ProjectId $row.p
@@ -403,9 +413,19 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
         $cc.unclassifiedTokens += [long]$row.unclassifiedTokens; $cc.unclassifiedUsd += [double]$row.unclassifiedUsd
       }
     }
+    if ($state.aggT) {
+      foreach ($row in $state.aggT) {
+        if (-not $AggT.ContainsKey($row.t)) { $AggT[$row.t] = @{} }
+        if (-not $AggT[$row.t].ContainsKey($row.d)) { $AggT[$row.t][$row.d] = @{ runs = [int]0; input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+        $bt = $AggT[$row.t][$row.d]
+        $bt.runs += [int]$row.runs
+        $bt.input += [long]$row.input; $bt.output += [long]$row.output
+        $bt.cacheRead += [long]$row.cacheRead; $bt.cacheWrite += [long]$row.cacheWrite; $bt.cost += [double]$row.cost
+      }
+    }
   } catch {
     Write-Host "WARN: full rescan. ($_)" -ForegroundColor Yellow
-    $Files = @{}; $Agg = @{}; $AggCache = @{}
+    $Files = @{}; $Agg = @{}; $AggCache = @{}; $AggT = @{}
   }
 }
 
@@ -427,6 +447,33 @@ function Add-Usage([string]$proj, [string]$day, $u, [string]$model) {
   if (-not $AggM[$proj].ContainsKey($fam)) { $AggM[$proj][$fam] = @{ input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
   $bm = $AggM[$proj][$fam]
   $bm.input += $in; $bm.output += $out; $bm.cacheRead += $cr; $bm.cacheWrite += $cw; $bm.cost += $cost
+}
+
+# Per-task rollup: what one scheduled routine costs, per day, and how often it ran.
+# Keyed by the raw id from the transcript's <scheduled-task> tag rather than by the
+# project it maps to, so "what does one bar-raise run cost" has an answer that does not
+# depend on a transcript still being on disk. Same price table as Add-Usage.
+function Add-TaskUsage([string]$task, [string]$day, $u, [string]$model) {
+  $in  = [long]($u.input_tokens); if (-not $in) { $in = 0 }
+  $out = [long]($u.output_tokens); if (-not $out) { $out = 0 }
+  $cr  = [long]($u.cache_read_input_tokens); if (-not $cr) { $cr = 0 }
+  $cw  = [long]($u.cache_creation_input_tokens); if (-not $cw) { $cw = 0 }
+  if (($in + $out + $cr + $cw) -eq 0) { return }
+  $price = Get-Price $model
+  $cost = ($in * $price.in + $out * $price.out + $cr * $price.cacheRead + $cw * $price.cacheWrite) / 1e6
+  if (-not $AggT.ContainsKey($task)) { $AggT[$task] = @{} }
+  if (-not $AggT[$task].ContainsKey($day)) { $AggT[$task][$day] = @{ runs = [int]0; input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+  $bt = $AggT[$task][$day]
+  $bt.input += $in; $bt.output += $out; $bt.cacheRead += $cr; $bt.cacheWrite += $cw; $bt.cost += $cost
+}
+
+# One run is one transcript, counted on the day of the first usage record the scan
+# banks for that file. The counted flag rides in per-file state, so an incremental
+# scan that appends more records to the same session does not count a second run.
+function Add-TaskRun([string]$task, [string]$day) {
+  if (-not $AggT.ContainsKey($task)) { $AggT[$task] = @{} }
+  if (-not $AggT[$task].ContainsKey($day)) { $AggT[$task][$day] = @{ runs = [int]0; input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; cost = [double]0 } }
+  $AggT[$task][$day].runs += 1
 }
 
 # Cache-efficiency buckets, per project per day. "gain" is the $ actually saved by every
@@ -591,10 +638,13 @@ foreach ($root in $SCAN_ROOTS) {
       # sessions also write to the YaE work-queue, which otherwise drags the
       # majority vote to Everything and zeroes the audited project.
       $taskProj = $null
-      if ($body -match 'scheduled-task name=[''"\\]*([\w-]+)') { $taskProj = Get-ProjectFor $matches[1] }
+      $taskId = $null
+      if ($body -match 'scheduled-task name=[''"\\]*([\w-]+)') { $taskId = $matches[1]; $taskProj = Get-ProjectFor $taskId }
       # incremental scans lose the head-of-file task tag; fall back to the identity
       # remembered from the first scan of this transcript
       if (-not $taskProj -and $prev -and $prev.taskProj) { $taskProj = $prev.taskProj }
+      if (-not $taskId -and $prev -and $prev.taskId) { $taskId = $prev.taskId }
+      $taskRunCounted = [bool]($prev -and $prev.taskRunCounted)
       $fileProj = $null
       if ($taskProj) { $fileProj = $taskProj }
       elseif ($votes.Count -gt 0) { $fileProj = ($votes.GetEnumerator() | Sort-Object -Property Value -Descending | Select-Object -First 1).Key }
@@ -613,6 +663,10 @@ foreach ($root in $SCAN_ROOTS) {
         $fileTok += [long]($u.input_tokens) + [long]($u.output_tokens)
         $rDay = Get-CentralDay $r.ts
         Add-Usage $proj $rDay $u $r.model
+        if ($taskId) {
+          Add-TaskUsage $taskId $rDay $u $r.model
+          if (-not $taskRunCounted) { Add-TaskRun $taskId $rDay; $taskRunCounted = $true }
+        }
 
         # Cache efficiency: every read is a "gain" (billed at ~10% of input rate instead
         # of full price). A write's classification depends on why it happened -- see
@@ -656,7 +710,7 @@ foreach ($root in $SCAN_ROOTS) {
       if ($Audit -and $fileTok -gt 0) {
         $fileTotals += [pscustomobject]@{ path = $key; project = $(if ($fileProj) { $fileProj } else { "Everything" }); tokens = $fileTok }
       }
-      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }); taskProj = $taskProj; lastUsageTs = $(if ($lastUsageTs) { $lastUsageTs.ToString("o") } else { $null }) }
+      $Files[$key] = @{ length = $f.Length; processed = $newProcessed; project = $fileProj; votes = $votes; lastMsgId = $lastMsgId; lastTs = $(if ($lastTs) { $lastTs.ToString("o") } else { $null }); taskProj = $taskProj; lastUsageTs = $(if ($lastUsageTs) { $lastUsageTs.ToString("o") } else { $null }); taskId = $taskId; taskRunCounted = $taskRunCounted }
     } catch {
       Write-Host "WARN: error reading $key ($($_.Exception.Message)); file skipped this run." -ForegroundColor Yellow
     } finally {
@@ -879,6 +933,30 @@ $PUBLIC_EXCLUDE = @("Counselor", "Skylight", "SignalRD")
 $USAGE_EXCLUDE  = @("Counselor", "SignalRD")
 foreach ($x in $USAGE_EXCLUDE) { if ($projects.Contains($x)) { $projects.Remove($x) } }
 
+# ----- Per-task rollup -------------------------------------------------------
+# One row per scheduled-task id: all-time runs and cost, plus the same 60-day daily
+# window the project cards use. A task whose id maps to a project that is kept out of
+# the usage payload is kept out here too, so this block never names private work. A
+# task id that matches no project pattern (bar-raise-rotating, for one) carries a null
+# project and is still counted: the id is the identity that matters here.
+$tasks = [ordered]@{}
+foreach ($t in ($AggT.Keys | Sort-Object)) {
+  $tProj = Get-ProjectFor $t
+  if ($tProj -and ($USAGE_EXCLUDE -contains $tProj)) { continue }
+  $tAll = [ordered]@{ runs = [int]0; input = [long]0; output = [long]0; cacheRead = [long]0; cacheWrite = [long]0; costUSD = [double]0 }
+  $tDaily = @()
+  foreach ($day in ($AggT[$t].Keys | Sort-Object)) {
+    $bt = $AggT[$t][$day]
+    $tAll.runs += $bt.runs; $tAll.input += $bt.input; $tAll.output += $bt.output
+    $tAll.cacheRead += $bt.cacheRead; $tAll.cacheWrite += $bt.cacheWrite; $tAll.costUSD += $bt.cost
+    if ([datetime]$day -ge $cutoff) {
+      $tDaily += [ordered]@{ d = $day; runs = $bt.runs; input = $bt.input; output = $bt.output; cacheRead = $bt.cacheRead; cacheWrite = $bt.cacheWrite; costUSD = [math]::Round($bt.cost, 4) }
+    }
+  }
+  $tAll.costUSD = [math]::Round($tAll.costUSD, 4)
+  $tasks[$t] = [ordered]@{ project = $tProj; allTime = $tAll; daily = $tDaily }
+}
+
 # ----- Build usage.json ------------------------------------------------------
 $payload = [ordered]@{
   generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -886,6 +964,7 @@ $payload = [ordered]@{
   pricingNote = "Anthropic published API rates as of $PRICING_VERSION; rate changes apply forward only (costs freeze into history at scan time)"
   oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("yyyy-MM-dd") } else { $null })
   projects = $projects
+  tasks = $tasks
 }
 
 function Write-ValidatedJson([string]$path, $obj) {
@@ -1035,7 +1114,14 @@ foreach ($proj in $AggCache.Keys) {
     }
   }
 }
-Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat; aggM = $flatM; aggC = $flatC })
+$flatT = @()
+foreach ($t in $AggT.Keys) {
+  foreach ($day in $AggT[$t].Keys) {
+    $bt = $AggT[$t][$day]
+    $flatT += [ordered]@{ t = $t; d = $day; runs = $bt.runs; input = $bt.input; output = $bt.output; cacheRead = $bt.cacheRead; cacheWrite = $bt.cacheWrite; cost = $bt.cost }
+  }
+}
+Write-ValidatedJson $StatePath ([ordered]@{ pricingVersion = $PRICING_VERSION; attribVersion = $ATTRIB_VERSION; oldestRecord = $(if ($oldestTs) { $oldestTs.ToString("o") } else { $null }); files = $Files; agg = $flat; aggM = $flatM; aggC = $flatC; aggT = $flatT })
 
 # ----- Queue summary for the dashboard ---------------------------------------
 # Live "queued" counts per project, refreshed every collect run, so the
