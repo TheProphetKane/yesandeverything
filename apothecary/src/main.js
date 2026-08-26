@@ -25,6 +25,7 @@ const [
   autofitMod,
   printMod,
   truncateMod,
+  suggestMod,
 ] = await Promise.all([
   import("./state.js" + V),
   import("./render.js" + V),
@@ -53,6 +54,10 @@ const [
   import("./util/autofit.js" + V),
   import("./util/print.js" + V),
   import("./util/truncate.js" + V),
+  // maintainability-04: extracted from editor.js's autocomplete scoring so
+  // it could be unit-tested; forwarded per the same cache-bust contract as
+  // the block above rather than statically imported into editor.js.
+  import("./util/suggest.js" + V),
 ]);
 
 const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
@@ -72,6 +77,7 @@ const { TEMPLATES, DEFAULT_TEMPLATE_ID, resolveSize } = templatesMod;
 const { autofitText } = autofitMod;
 const { printLabel } = printMod;
 const { truncateAtWordBoundary } = truncateMod;
+const { rankSuggestions } = suggestMod;
 
 // v1.1.9: inject persist.js's notifyStorageError into saved-labels.js instead
 // of letting saved-labels.js statically import persist.js itself (same
@@ -145,6 +151,9 @@ async function main() {
     // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
     // architecture-01). Do not add these back as static imports in editor.js.
     printLabel, truncateAtWordBoundary,
+    // maintainability-04: forwarded per the same contract. Do not add this
+    // back as a static import in editor.js.
+    rankSuggestions,
     onReset: () => {
       clearState();
       state.set(defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID));

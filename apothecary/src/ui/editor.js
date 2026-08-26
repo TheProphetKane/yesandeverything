@@ -56,6 +56,10 @@ export function mountEditor(root, ctx) {
     exportPng,
     // v1.1.6: forwarded from main.js's versioned dynamic imports.
     printLabel, truncateAtWordBoundary,
+    // maintainability-04: forwarded from main.js's versioned dynamic imports.
+    // Do not add this back as a static import; see the note at the top of
+    // this file on why cross-module references travel through ctx.
+    rankSuggestions,
   } = ctx;
   const tmpl = templates[state.get().templateId];
 
@@ -354,25 +358,11 @@ export function mountEditor(root, ctx) {
   let suggestionIdx = -1;
   let activeSuggestions = [];
 
+  // Scoring lives in src/util/suggest.js (maintainability-04) so it can run
+  // without a DOM and carry its own test coverage; this wrapper just gives
+  // it the editor's live search index.
   function filterSuggestions(q) {
-    if (!q || !q.trim()) return searchIndex.slice(0, 12);
-    const ql = q.toLowerCase().trim();
-    const scored = [];
-    for (const item of searchIndex) {
-      const d = item.display.toLowerCase();
-      const l = item.latin.toLowerCase();
-      let score = 0;
-      if (d === ql)              score = 100;
-      else if (d.startsWith(ql)) score = 60;
-      else if (l.startsWith(ql)) score = 50;
-      else if (d.includes(ql))   score = 30;
-      else if (l.includes(ql))   score = 20;
-      if (score === 0) continue;
-      if (item.alias) score -= 1;
-      scored.push({ item, score });
-    }
-    scored.sort((a, b) => b.score - a.score || a.item.display.localeCompare(b.item.display));
-    return scored.slice(0, 12).map(x => x.item);
+    return rankSuggestions(q, searchIndex);
   }
 
   function renderSuggestions(items) {
