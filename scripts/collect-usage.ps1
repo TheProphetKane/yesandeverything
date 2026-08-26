@@ -295,6 +295,26 @@ function Get-CentralDay([datetime]$ts) {
 
 $DataDir = Join-Path $RepoRoot "dashboard\data"
 $OutPath = Join-Path $DataDir "usage.json"
+
+# A full rescan rebuilds every aggregate from the transcripts still on disk, and
+# claude-temp-cleanup-daily deletes those at 7 days. So a rescan today throws away
+# every day older than a week: on 2026-08-26 that was history back to 2026-06-12.
+# Both rescan triggers snapshot the current usage.json first, newest 3 kept, so the
+# numbers are recoverable by hand even though the aggregates cannot rebuild themselves.
+function Save-PreScanSnapshot([string]$why) {
+  if (-not (Test-Path $OutPath)) { return }
+  try {
+    $stamp = (Get-Date).ToString("yyyyMMdd-HHmmss")
+    $snap = Join-Path $DataDir ".usage-prescan-$stamp.json"
+    Copy-Item -LiteralPath $OutPath -Destination $snap -Force
+    Write-Host "Pre-rescan snapshot: $snap ($why). Transcripts older than the retention window cannot rebuild; this file is the only copy of those days." -ForegroundColor Yellow
+    Get-ChildItem -Path $DataDir -Filter ".usage-prescan-*.json" -File -ErrorAction SilentlyContinue |
+      Sort-Object Name -Descending | Select-Object -Skip 3 |
+      ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }
+  } catch {
+    Write-Host "WARN: pre-rescan snapshot failed ($_). Continuing; the rescan will still run." -ForegroundColor Red
+  }
+}
 $StatePath = Join-Path $DataDir ".usage-state.json"
 if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir -Force | Out-Null }
 
@@ -357,6 +377,7 @@ function Get-ModelFamily([string]$model) {
 
 # ----- Load state -----------------------------------------------------------
 $FreshScan = ($Audit -or $Rescan)
+if ($Rescan) { Save-PreScanSnapshot "-Rescan requested" }
 $Files = @{}   # path -> @{ length; processed; project; votes; lastMsgId }
 $Agg = @{}     # project -> date -> @{ input; output; cacheRead; cacheWrite; cost }
 $AggM = @{}    # project -> model family -> @{ input; output; cacheRead; cacheWrite; cost }
@@ -425,6 +446,7 @@ if (-not $FreshScan -and (Test-Path $StatePath)) {
     }
   } catch {
     Write-Host "WARN: full rescan. ($_)" -ForegroundColor Yellow
+    Save-PreScanSnapshot "state rejected: $_"
     $Files = @{}; $Agg = @{}; $AggCache = @{}; $AggT = @{}
   }
 }
