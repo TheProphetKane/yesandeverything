@@ -637,9 +637,18 @@ foreach ($root in $SCAN_ROOTS) {
       # cross-project tasks -> Everything), beating content majority - these
       # sessions also write to the YaE work-queue, which otherwise drags the
       # majority vote to Everything and zeroes the audited project.
+      # Read the tag ONLY on the first scan of a file, and only from its head. Every
+      # scheduled transcript on disk on 2026-08-26 carries it at offset 150 or 417, so
+      # 4000 characters is generous. Matching anywhere in any chunk let a session that
+      # merely QUOTES the tag stamp itself as a run of that routine and bill its whole
+      # cost there; this file's own author did exactly that on 2026-08-26 and minted a
+      # fake $4.26 bar-raise run.
       $taskProj = $null
       $taskId = $null
-      if ($body -match 'scheduled-task name=[''"\\]*([\w-]+)') { $taskId = $matches[1]; $taskProj = Get-ProjectFor $taskId }
+      if ($processed -eq 0) {
+        $head = $body.Substring(0, [Math]::Min(4000, $body.Length))
+        if ($head -match 'scheduled-task name=[''"\\]*([\w-]+)') { $taskId = $matches[1]; $taskProj = Get-ProjectFor $taskId }
+      }
       # incremental scans lose the head-of-file task tag; fall back to the identity
       # remembered from the first scan of this transcript
       if (-not $taskProj -and $prev -and $prev.taskProj) { $taskProj = $prev.taskProj }
