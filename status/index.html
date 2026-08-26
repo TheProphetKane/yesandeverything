@@ -146,6 +146,17 @@
     border-radius: 999px;
     font-size: 11px;
   }
+  .card .retired-pill {
+    background: var(--ink-2);
+    color: var(--fg-2);
+    border: 1px solid var(--ink-4);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card.retired { opacity: 0.72; }
   .card .stale-pill {
     background: rgba(245, 165, 36, 0.12);
     color: var(--warn);
@@ -408,10 +419,15 @@
       ]);
     }
 
-    var stale = data.stale === true ||
-      isStale(data.lastReleaseAt, (data.tags || []).indexOf("parked") >= 0);
+    // A retired project is frozen on purpose, so the staleness clock is meaningless
+    // on it: the card would go orange forever for doing exactly what was decided.
+    // It keeps its card rather than disappearing, because a card that vanishes with
+    // no explanation reads as a bug rather than as a decision.
+    var retired = !!(data.retired && data.retired.on);
+    var stale = !retired && (data.stale === true ||
+      isStale(data.lastReleaseAt, (data.tags || []).indexOf("parked") >= 0));
 
-    var card = el("div", { className: "card" + (stale ? " stale" : "") });
+    var card = el("div", { className: "card" + (stale ? " stale" : "") + (retired ? " retired" : "") });
 
     // Head: name + version pill (or stale pill)
     var head = el("div", { className: "head" });
@@ -419,6 +435,11 @@
     if (proj.short) nameDiv.appendChild(el("span", { className: "short", text: " (" + proj.short + ")" }));
     head.appendChild(nameDiv);
     var pillBox = el("div");
+    if (retired) {
+      var rp = el("span", { className: "retired-pill", text: "retired " + data.retired.on });
+      rp.setAttribute("title", data.retired.reason || "");
+      pillBox.appendChild(rp);
+    }
     if (stale) pillBox.appendChild(el("span", { className: "stale-pill", text: "stale" }));
     if (data.version) pillBox.appendChild(el("span", { className: "version-pill", text: "v" + data.version }));
     head.appendChild(pillBox);
