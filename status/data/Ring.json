@@ -1,17 +1,17 @@
 {
   "project": "Ring",
   "displayName": "Yes& Ring",
-  "version": "0.17.35",
-  "lastReleaseAt": "2026-08-26T08:37:28-05:00",
-  "lastReleaseMessage": "extend app.js section markers past the router, order the judge-vote KV writes to lose rather than invent a vote, and record cron/scraper failures to a bounded KV log",
+  "version": "0.17.36",
+  "lastReleaseAt": "2026-08-26T14:49:24-05:00",
+  "lastReleaseMessage": "version-one scope settled, community ratings get a daily Postgres copy, account export and erasure go live, and the rate limiter stops paying to refuse people",
   "milestone": {
     "id": "v0.16",
     "label": "v0.16 - Supabase auth + Stripe subscriptions + live TICA data pipeline",
     "status": "shipped"
   },
   "completion": {
-    "pct": 76,
-    "anchored": "2026-08-24"
+    "pct": 84,
+    "anchored": "2026-08-26"
   },
   "itemsLeft": {
     "open": 5,
@@ -19,11 +19,11 @@
     "backlog": 0,
     "gates": 5,
     "items": [
-      "RE-ANCHORED 2026-08-24 without moving the number, and the reason is the point. Releases v0.17.11 through v0.17.28 shipped since the 2026-07-03 anchor and the engineering was real: per-user state dual-written to Postgres, migration 0008 and the state-parity probe, the billing sync made loud. None of it closed a gate on this list. Checked each one against the code today. Judge-panel coverage is converging by cron and is ongoing by design, not a gate that closes. The multi-user ownership model is still at the design-document stage and its two blocking questions, the mail sender and the session lifetime, are open decisions. Auth polish is unchanged. On the security line, view-as and sharing still read the key-value store rather than security-definer functions: verified in src/index.js, where the view-as branch reads KV and says so in its own comment. So 76 is still the honest figure and the date now says when that was last checked rather than when it was last true. Do not read a flat number as a stalled project; read it as four gates that none of the last seventeen releases were aimed at.",
-      "Judge-panel coverage polish: intl coverage grows as the daily cron converges; re-check cadence for clubs that post panels late",
-      "Multi-user ownership model (docs/AUTH-OWNERSHIP-DESIGN.md): MERGED co-ownership (shared writes both see), email invite notification, reg-number join requests + certificate verification",
-      "Auth polish: email OTP code / verification edge cases",
-      "Security (docs/SECURITY.md): sprint 2026-06-30..07-02 (v0.17.2-0.17.10). DONE: CSP+headers (run_worker_first), rate limits, audit log, prototype-pollution guard, shared-cat payload sanitization, seed-share owner-check, DB advisor lockdown (migration 0006), judge-rating anti-ballot-stuffing, supabase-js confirmed latest, leaked webhook revoked, rotation runbook. **P1-7 DONE + verified live: per-user state migrated to Postgres user_state with RLS (migration 0007); dual-write KV+PG, STATE_READ=pg flag + KV fallback/lazy-backfill; RLS isolation proven (own-row-only/anon-denied); view-as+sharing stay on KV; cost-neutral (free tier) + cron keep-warm.** **Turnstile widget CREATED + site key wired + deployed (v0.17.12, 2026-07-02): managed-mode widget for ring.yesandeverything.com, TURNSTILE_SITE_KEY var live, /api/config serves it, CSP opens challenges.cloudflare.com, login renders widget + passes captchaToken; verified turnstile.render() accepts the key on the live hostname.** **Turnstile ENFORCING (2026-07-03): Kane pasted the secret into Supabase CAPTCHA; verified live, OTP without captcha_token now returns captcha_failed.** OPEN: full relational cats/shows normalization (optional product-scale), move view-as/sharing reads to DEFINER RPCs. Ring Resources Bot webhook recreated 2026-07-06 (real URL on disk, audit digests posting again)."
+      "RE-COUNTED 2026-08-26 against an approved scope, which is why the number finally moved. It sat at 76 through three reviews because the completion question could not be answered while the freeze-versus-phase-two decision was open: a percentage needs a denominator, and there was not one. Kane ruled keep building, under a no-cost-increase constraint, and the scope is now eight gates written into the Version-one scope section of PROJECT_SPEC.md. Six of the eight are shipped. Three of them closed today in v0.17.36: data stewardship (export, erasure, retention policy, public retention page), durability (the community judge ratings now have a daily Postgres snapshot, migration 0010, and were the last dataset with no second copy), and the code half of running inside the free tier. Four surfaces moved out of the count entirely rather than being finished, and that is a real part of the change: the ten-table relational schema in 0001_init.sql is parked in the file itself, along with ownership certificate verification, the invite flow, and merged co-ownership. They were counting against completion while nobody intended to build them.",
+      "Billing gate: the Stripe subscription path is code-complete and one environment flag (SUBSCRIPTION_GATE_ENFORCE) from enforcing. Turning it on or deciding not to is the open gate.",
+      "Free-tier measurement: the write budget is now understood and the code is inside it, but nobody has read the actual key-value write counts off the Cloudflare dashboard. That reading needs an account token this session was not permitted to use, so the arithmetic in PROJECT_SPEC.md is unverified against real traffic.",
+      "Judge-panel coverage keeps converging by cron. Ongoing by design, not a gate that closes.",
+      "Security: view-as and shared-cats still read the key-value store rather than security-definer remote calls, so the two cross-account paths lack the database-enforced boundary that own-data reads have. Carried, not scoped as a version-one gate."
     ]
   },
   "backlog": {
@@ -48,8 +48,8 @@
     "latestReportAt": "2026-08-21T11:47:34Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 44,
-    "actionsClosed": 13,
+    "actionsOpen": 47,
+    "actionsClosed": 10,
     "actions": [
       {
         "severity": "HIGH",
@@ -152,6 +152,13 @@
       },
       {
         "severity": "MED",
+        "title": "Extend the section-marker convention through the unsectioned tail of public/app.js so the file matches the module list in PROJECT_SPEC.md end to end.",
+        "lens": "architecture",
+        "priority": 15,
+        "id": "architecture-01"
+      },
+      {
+        "severity": "MED",
         "title": "Either wire readers and writers to the ten-table schema in migration 0001 or park the migration, instead of carrying two parallel data models with one dead.",
         "lens": "architecture",
         "priority": 15,
@@ -184,6 +191,13 @@
         "lens": "dependency",
         "priority": 15,
         "id": "dependency-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Post cron and scraper failures to a webhook or a key-value error log using the posting helper that already exists.",
+        "lens": "observability",
+        "priority": 15,
+        "id": "observability-02"
       },
       {
         "severity": "MED",
@@ -233,6 +247,13 @@
         "lens": "gate-page-publish",
         "priority": 15,
         "id": "gate-page-publish-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Write the vote marker before the tally so a partial failure costs an uncounted vote rather than a double count, and record the accepted read-modify-write race in a comment.",
+        "lens": "data-integrity",
+        "priority": 15,
+        "id": "data-integrity-05"
       },
       {
         "severity": "MED",
@@ -511,6 +532,13 @@
         "firstSeen": "2026-08-21"
       },
       {
+        "id": "architecture-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-07"
+      },
+      {
         "id": "architecture-02",
         "severity": "MED",
         "priority": 15,
@@ -544,6 +572,13 @@
         "priority": 15,
         "runsOpen": 3,
         "firstSeen": "2026-08-07"
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 6,
+        "firstSeen": "2026-07-07"
       },
       {
         "id": "observability-03",
@@ -593,6 +628,13 @@
         "priority": 15,
         "runsOpen": 1,
         "firstSeen": "2026-08-21"
+      },
+      {
+        "id": "data-integrity-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-07"
       },
       {
         "id": "ai-tell-concealment-04",
@@ -792,7 +834,7 @@
     }
   ],
   "workQueueDepth": 0,
-  "generatedAt": "2026-08-26T13:37:48.3389435Z",
+  "generatedAt": "2026-08-26T19:49:52.2896530Z",
   "stale": false,
   "tags": [
     "browser-app",
