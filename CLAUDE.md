@@ -10,6 +10,35 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 - **Is:** a static-site monorepo deployed to **GitHub Pages by a GitHub Actions workflow** (`.github/workflows/deploy-pages.yml`: `configure-pages` then `upload-pages-artifact` then `deploy-pages`, serialized through a single `pages` concurrency group with `cancel-in-progress` so a burst of pushes stops colliding at the Pages deploy API and failing). This replaced the legacy Deploy-from-a-branch builder. No framework, no SSR: pure HTML/CSS/JS, dark-mode by default, mono-font-first aesthetic. The one workflow step beyond serving the repo root as-is is `node scripts/update-project-pages.mjs`, which stamps live version and milestone numbers from `status/data/*.json` into the homepage cards and project pages. One exception now ships from here too: a small Cloudflare Worker under `dashboard-api/` (deployed separately via wrangler, not by Pages). So it's a static site PLUS one tiny API worker.
 - **Is not:** the actual code of the projects it links to. Each project (Here Be Hordes, Brackish Rising, Chains, Scheduler, Apothecary, Budget, Gnosis, Cattery, Agents, Ring) lives in its own repo. This repo carries landing pages + mirrors, plus one small API worker (`dashboard-api/`, see Files at a glance).
 
+## What belongs in this repo (the rule, Kane 2026-08-26)
+
+The Pages workflow uploads `path: '.'`. There is no build step and no include list, so
+the repository root IS the artifact and every tracked file here is a URL whether anyone
+meant it to be one. `usage-log/Chains.jsonl`, `scripts/collect-usage.ps1` and
+`docs/BAR_RAISE_ROADMAP.md` all answered 200 on the live domain until this ruling.
+
+Three questions, in order, for anything new:
+
+1. Should a request to `yesandeverything.com` be able to fetch it? If yes, it belongs here.
+2. Does it exist to make that fetch correct: a build step, a gate, a guard, a deploy, or the
+   target of a projection? If yes, it belongs here.
+3. Anything else belongs in `X:\PortfolioOps`, the private ops repo.
+
+**The tripwire: if you are reaching for a `.gitignore` line to keep a file out of the
+deploy, the rule has already answered.** That file failed both questions, so it goes in the
+other repository rather than onto the ignore list. Two thirds of that file was a denylist
+grown one line per incident, each marking a place someone caught an ops artifact in time.
+The only patterns that should survive here are operating-system noise, build caches, this
+project's own local audit reports, and the secret-shaped defensive globs, which catch an
+accident rather than house an intentional artifact.
+
+`status/data/` is the shape to copy when something genuinely has to be public: canonical
+private in the ops repo, a projector emits scrubbed public copies here, and the nightly
+sweep flags a direct write. `workers/gated-docs/` is the shape to copy in the other
+direction: it is tooling, and it belongs here because it serves paths on this domain.
+
+Full reasoning and the moved inventory: `docs/IMPROVEMENTS-repo-shape-2026-08-26.md`.
+
 ## Files at a glance
 
 | Path | Purpose |
@@ -17,7 +46,7 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `index.html` | The site itself. Single self-contained file. Lists projects with descriptions. |
 | `404.html` | Fallback for unknown paths. |
 | `CNAME` | Custom-domain pointer for GitHub Pages: `yesandeverything.com`. |
-| `robots.txt` | Allows crawlers on root, disallows `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/dashboard-api/`, `/sitemap/`, `/status/`, `/docs/`, `/usage-log/`, `/_skill-review/`. **Two of those are deliberately linked from the homepage** (`/status/` and `/dashboard/`, in the work section and the closing paragraph), and that is not a contradiction to be fixed: the stance is humans welcome, search engines no. Disallow keeps them out of results; it was never access control, and for `/dashboard/` the password gate is what actually protects it. A 2026-07-28 review read the link-plus-disallow pair as a defect, so it is written down here rather than re-found. |
+| `robots.txt` | Allows crawlers on root, disallows `/hordes/`, `/brackish-rising/`, `/work/`, `/dashboard/`, `/dashboard-api/`, `/sitemap/`, `/status/`, `/docs/`, `/_skill-review/`. **Two of those are deliberately linked from the homepage** (`/status/` and `/dashboard/`, in the work section and the closing paragraph), and that is not a contradiction to be fixed: the stance is humans welcome, search engines no. Disallow keeps them out of results; it was never access control, and for `/dashboard/` the password gate is what actually protects it. A 2026-07-28 review read the link-plus-disallow pair as a defect, so it is written down here rather than re-found. |
 | `dashboard-api/` | Small Cloudflare Worker (`worker.js` + `wrangler.toml`, git-tracked, landed 2026-06-24) backing the usage dashboard. The one server-side piece in an otherwise static repo; deployed separately by wrangler, not by GitHub Pages. **Exposure:** this folder sits inside the Pages-served tree, so `yesandeverything.com/dashboard-api/worker.js` and `/dashboard-api/wrangler.toml` are publicly fetchable. `wrangler.toml` should hold no secrets (those live in the Cloudflare dashboard); `robots.txt` now disallows `/dashboard-api/` alongside the other private paths. |
 | `.nojekyll` | Real 0-byte file at the repo root. Tells GitHub Pages to serve the tree as-is (skip Jekyll processing). |
 | `workers/gated-docs/` | The server-side gate for the two private design documents, at `/hordes/` and `/brackish-rising/`. Cloudflare Worker on path routes, deployed by wrangler rather than by Pages. **This replaced two static pages here that carried the whole document as base64 with the access phrase in cleartext** (2026-08-25). Those withheld nothing: the payload decoded without the phrase, and this repository is public. The documents now live in the `GATED_DOCS` key-value namespace, written by each project's `publish-gdd.ps1`, and are read only after a signed session cookie validates. Access phrases are Worker secrets, listed in `X:\.secrets\YesAndEverything\gated-docs-access.txt`. The Worker source is safe to be public: it holds no phrase and no payload. |
@@ -27,16 +56,13 @@ You are working on **YesAndEverything** — the public-facing static site at <ht
 | `apothecary/` | Celtic apothecary label designer — multi-file ES-module app, deployed by mirroring from `X:\YesAndApothecary` via that repo's `scripts/release.ps1` (which calls `scripts/deploy-to-yae.ps1` then commits + pushes this side). Multi-file by design; the "one file per page" convention does not apply to this subdir (it's a project mirror, same as `hordes/`). Do not edit files in `apothecary/` directly; edit in the source repo and run release. |
 | `budget/` | Budget project landing page. Single self-contained file; project mirror. |
 | `terms/` | Terms / legal page. Single self-contained file. |
-| `dashboard/` | Private portfolio dashboard (robots-gated). Reads `dashboard/data/usage.json` (tokens and cost), `dashboard/data/health-trend.json` (one row per project per day: review health, open and closed findings, completion, gates, backlog, oldest open finding, audit count, written by `collect-usage.ps1`, rolling 90 days), the live worker feeds, every `status/data/<Project>.json`, and `status/data/constellation.json` for the portfolio band. Reworked 2026-08-24, see `docs/DASHBOARD-REDESIGN-2026-08-24.md`. |
+| `dashboard/` | Private portfolio dashboard (robots-gated). Reads `dashboard/data/usage.json` (tokens and cost), `dashboard/data/health-trend.json` (one row per project per day: review health, open and closed findings, completion, gates, backlog, oldest open finding, audit count, written by `collect-usage.ps1`, rolling 90 days), the live worker feeds, every `status/data/<Project>.json`, and `status/data/constellation.json` for the portfolio band. Reworked 2026-08-24, see `X:\PortfolioOps\docs\DASHBOARD-REDESIGN-2026-08-24.md`. |
 | `sitemap/` | Private site map page (robots-gated). |
 | `work/` | Private work page (robots-gated). |
 | `DEPLOY.md` | One-time DNS + GitHub Pages setup runbook. Already executed. |
-| `unstick-git.ps1` | Recovery script if git lock or remote desync. |
-| `scripts/` | Release tooling. `release.ps1` runs the integrity guards then commit + push + Discord; `push-to-github.ps1`, `discord-notify.ps1`, plus repo-parity and branch-protection helpers. `update-project-pages.mjs` stamps live version/milestone data from `status/data/*.json` into the homepage cards and project pages (runs in the Pages deploy workflow and locally). `collect-usage.ps1` keeps TWO exclusion lists, not one, since Kane's ruling of 2026-08-24. `$PUBLIC_EXCLUDE` holds Counselor, Skylight and SignalRD and governs the status side and the queue counts, where the sensitive material lives. `$USAGE_EXCLUDE` holds Counselor and SignalRD only, and governs the usage payload. Skylight is therefore on the first list and off the second: it gets a usage card with real tokens and cost like any other project, and still publishes no status file and no queue rows. A `Skylight` key in `dashboard/data/usage.json` is that ruling working, NOT a leak; do not file it as one. Agents is deliberately NOT on it, restored to the usage feed on 2026-07-08. A private project needs three things, not one: this list, a `.gitignore` line for its `usage-log/<name>.jsonl`, and `git rm --cached` on that ledger if it was ever tracked. |
-| `IMPLEMENTATION_GUIDE.md` | SUPERSEDED. How-to for the 2026-05-era personal-Claude setup whose two companion docs retired to `X:\_archive-2026-08-17\` on 2026-08-17. Kept for history; the live layer is `X:\ARCHITECTURE.md` + `X:\HAZARDS.md` + `X:\DECISIONS.md`. |
-| `DISCORD_WEBHOOK_NAMING.md` | Portfolio-standard naming convention for every project's Discord webhooks (display name format `<identifier> <Role> Bot`, keyed off the `project` field in each `status/data/<Project>.json`). The New Project Template references it; every existing project's webhooks must match it. |
-| `docs/` | Audit findings live here as `CANONICAL_AUDIT-YAE-YYYY-MM-DD.md`. The project infix is what `.gitignore`'s `*AUDIT-*-20*.md` catches, so the shape matters. Handler audits land here as `HANDLER_AUDIT-YYYY-MM-DD.md`, and cross-portfolio CONSTELLATION bar-raise reports land here too: Phase 3 shipped, and there are four of them on disk from 2026-08-02 onward. |
-| `docs/BAR_RAISE_ROADMAP.md` | Active build plan for the periodic-review skill + status dashboard. Multi-session; check phase status table before resuming. Source of truth for the JSON contract and URL slugs. |
+| `scripts/` | Only what makes a deploy of this site correct. `release.ps1` runs the integrity guards then commit + push, and calls `discord-notify.ps1`, which exits early because this project has no webhook by Kane's ruling of 2026-06-22. `push-to-github.ps1`, `check-status-json.ps1`, `check-page-prose-staleness.mjs`, `check-dashboard-live.ps1`, `write-dashboard-status.ps1`, `rotate-gate-phrase.mjs`, `git-guard.ps1`. `update-project-pages.mjs` stamps live version/milestone data from `status/data/*.json` into the homepage cards and project pages (runs in the Pages deploy workflow and locally). The portfolio telemetry collector and the fleet-administration helpers left on 2026-08-26; see `X:\PortfolioOps\scripts`. |
+| `DISCORD_WEBHOOK_NAMING.md` | Portfolio-standard naming convention for every project's Discord webhooks (display name format `<identifier> <Role> Bot`, keyed off the `project` field in each `status/data/<Project>.json`). The New Project Template references it; every existing project's webhooks must match it. The five-role table in it is naming vocabulary, not a set of webhooks each project owes, and no handler lists a role it has not provisioned (2026-08-26). |
+| `docs/` | THIS project's own audit findings, and nothing else. `CANONICAL_AUDIT-YAE-YYYY-MM-DD.md` (the project infix is what `.gitignore`'s `*AUDIT-*-20*.md` catches, so the shape matters) and `HANDLER_AUDIT-YYYY-MM-DD.md`. Every file here is gitignored and local-only. Portfolio-wide reports stopped landing here on 2026-08-26: the CONSTELLATION bar-raise reports, `ROUTINE_HEALTH.md`, the usage and cost audits, and `BAR_RAISE_ROADMAP.md` all moved to `X:\PortfolioOps\docs`, along with their writers. A cross-project report written here would be a public artifact; a report about this one project belongs to this project. |
 | `status/` | Static status dashboard at `yesandeverything.com/status/`. The `PROJECTS` array in `status/index.html` drives which cards render; each listed project reads `status/data/<project>.json`. **Since 2026-08-19 every file in `status/data/` is a GENERATED projection**: canonical status data lives in the private `X:\PortfolioOps\status\data`, writers write canonical, and `X:\PortfolioOps\scripts\project-status.py` emits the public copies (never edit them directly; the nightly sweep runs the projector in `--check` mode and flags direct writes). `Everything.json` and `constellation.json` are tracked here and deliberately card-less: audits should not flag those TWO as orphaned data files. Skylight and `backlog-trend.json` have canonical files with no public copy, so they cannot be orphaned here; the projector reports the first as withheld by the privacy rule and the second as a canonical-only ops ledger. Counselor has no canonical status file at all, so there is nothing for the projector to withhold. Do not recreate any of them here. |
 | `.work-queue.json` | MOVED 2026-08-19 to `X:\PortfolioOps\queue\` (private ops repo); `scripts\queue_write.py` here is a forwarding shim. Cross-project drain queue. Items get added by audits, processed by `work-queue-runner` skill on the `queue-drain-hourly` scheduled task (cut from hourly to every-3-hours 2026-07-30, since the auto-safe pool was usually empty; `loop-tick-hourly`, which it used to interleave with, was retired the same day. Currently disabled in the live scheduled-tasks registry -- real judgment-tier drain lives in `backlog-burndown-daily`/`-friday`). |
 | `_skill-review/` | Staged personal `.skill` files (installable) plus their review viewer. |
@@ -80,6 +106,23 @@ cd X:\YesAndEverything
 Raw git is the escape hatch only. It skips every integrity guard above, so reserve it for one-off recovery when the release script itself is the thing being fixed. Scope it with an explicit pathspec even then: an unscoped commit here sweeps another session's staged work, which is decision D5 and has already happened.
 
 For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHordes\scripts\publish-gdd.ps1` and it'll push the injection here for you.
+
+## Discord webhooks
+
+**None, and none are owed.** Release notifications are off for this project by Kane's ruling of
+2026-06-22; `scripts/discord-notify.ps1` finds no `.discord_webhook.txt` and exits 0 without nagging.
+Nothing here posts to Discord and nothing should be wired to.
+
+`scripts/check-discord-webhooks.ps1` audits the whole portfolio's webhooks from here: which URL
+files exist per project and which scripts read them, names and caller paths only, never a URL. It
+exits non-zero on a caller with no webhook or a webhook with no caller, and it knows about the
+two intentional cases (this project is off by ruling; Gnosis builds its topic filenames at
+runtime, so no literal search can find those callers).
+
+This repo still owns `DISCORD_WEBHOOK_NAMING.md`, the naming standard every other project follows.
+Owning the standard is not a reason to adopt it here. The five-role table in that file is naming
+vocabulary for whichever webhooks a project actually has; a handler lists a role only once the
+webhook exists on the Discord side AND a script in that repo reads its file (2026-08-26).
 
 ## Conventions
 
