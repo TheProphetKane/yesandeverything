@@ -14,11 +14,32 @@
 // fresh numbers. Also runnable locally: node scripts/update-project-pages.mjs
 // Idempotent; skips cleanly when a marker or JSON is absent.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, renameSync, unlinkSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Every tracked file this script touches (index.html is on the critical-write
+// list) goes through here rather than a raw writeFileSync. Write to a sibling
+// temp file on the same volume, rename it over the target (atomic on the same
+// filesystem, unlike a direct write that can be caught mid-write), then read
+// the target back and confirm it holds exactly what was intended. A mismatch
+// throws naming the path instead of shipping a silently short file.
+function writeFileAtomic(p, content) {
+  const tmp = `${p}.tmp-${process.pid}`;
+  try {
+    writeFileSync(tmp, content, "utf8");
+    renameSync(tmp, p);
+  } catch (e) {
+    try { unlinkSync(tmp); } catch {}
+    throw e;
+  }
+  const onDisk = readFileSync(p, "utf8");
+  if (onDisk !== content) {
+    throw new Error(`writeFileAtomic: verification failed, ${p} does not match the content just written`);
+  }
+}
 
 // slug -> dashboard identifier (the status/data/<id>.json name).
 // Agents is delisted from all public surfaces (2026-07-06); never add it here.
@@ -56,6 +77,10 @@ for (const slug of Object.keys(SLUGS)) {
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const vfmt = (v) => { const s = String(v || "").trim(); return s ? (s.startsWith("v") ? s : "v" + s) : ""; };
 const mfmt = (m) => { const raw = (m && typeof m === "object") ? (m.label || m.name || m.title || m.id || "") : m; let s = String(raw || "").replace(/\s+/g, " ").trim(); if (s.length > 52) s = s.slice(0, 49).trimEnd() + "..."; return s; };
+// Milestone STATUS as prose. A page that hand-writes "in progress" beside a
+// milestone whose status field already reads done drifts the moment the project
+// ships it; Budget carried that contradiction through eight review runs.
+const sfmt = (m) => { const s = String((m && typeof m === "object") ? (m.status || "") : "").trim().toLowerCase(); if (!s) return ""; if (s === "done" || s === "complete" || s === "completed") return "done"; if (s === "active" || s === "in-progress" || s === "in progress") return "in progress"; return s.replace(/-/g, " "); };
 
 function stamp(text, key, value) {
   if (!value) return { text, hit: false };
@@ -86,7 +111,7 @@ let changed = 0, stamped = 0;
   }
   if (t !== before) {
     if (!t.trimEnd().endsWith("</html>")) throw new Error("index.html lost its tail; refusing to write");
-    writeFileSync(p, t); changed++;
+    writeFileAtomic(p, t); changed++;
   }
 }
 
@@ -115,6 +140,7 @@ for (const [slug, id] of Object.entries(SLUGS)) {
       [`version:${id}`, vfmt(d.version)],
       ["version", vfmt(d.version)],
       [`milestone:${id}`, mid + mlabel],
+      [`milestone-status:${id}`, sfmt(d.milestone)],
     ]) {
       const r = stamp(t, key, value); t = r.text; if (r.hit) stamped++;
     }
@@ -133,9 +159,21 @@ for (const [slug, id] of Object.entries(SLUGS)) {
       const h2Re = /(<h2>)v\d+(?:\.\d+){1,3}(?:\.x)?( - what's new<\/h2>)/;
       t = t.replace(h2Re, (_, a, b) => { stamped++; return a + vfmt(d.version) + b; });
     }
+    // A roadmap <li> carries its state in a class attribute, which no HTML
+    // comment can sit inside, so the same freeze that hit the meta tags hits it.
+    // Re-key the class of the li whose text opens with the current milestone id
+    // off the live status, and leave every other row alone.
+    if (page === "index.html" && midRaw && sfmt(d.milestone)) {
+      const wanted = sfmt(d.milestone) === "done" ? "done" : "active";
+      // Milestone ids are short tokens (M6, phase-2). Anything else is not
+      // safe to splice into a pattern, so skip rather than escape.
+      const safeId = /^[A-Za-z0-9_-]+$/.test(midRaw) ? midRaw : "";
+      const liRe = safeId ? new RegExp('(<li class=")(done|active)(">\\s*' + safeId + '\\b)', "g") : null;
+      if (liRe) t = t.replace(liRe, (m, a, cls, b) => { if (cls === wanted) return m; stamped++; return a + wanted + b; });
+    }
     if (t !== before) {
       if (!t.trimEnd().endsWith("</html>")) throw new Error(`${slug}/${page} lost its tail; refusing to write`);
-      writeFileSync(p, t); changed++;
+      writeFileAtomic(p, t); changed++;
     }
   }
 }
@@ -156,7 +194,7 @@ for (const [slug, id] of Object.entries(SLUGS)) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
   const p = join(ROOT, "sitemap.xml");
   const before = existsSync(p) ? readFileSync(p, "utf8") : "";
-  if (xml !== before) { writeFileSync(p, xml); changed++; console.log(`sitemap.xml: rewritten (${locs.length} urls)`); }
+  if (xml !== before) { writeFileAtomic(p, xml); changed++; console.log(`sitemap.xml: rewritten (${locs.length} urls)`); }
 }
 
 // 4. homepage machine-readable enumerations - meta description, og:description,
@@ -211,7 +249,7 @@ for (const [slug, id] of Object.entries(SLUGS)) {
 
   if (t !== before) {
     if (!t.trimEnd().endsWith("</html>")) throw new Error("index.html lost its tail; refusing to write");
-    writeFileSync(p, t); changed++; console.log(`index.html: regenerated the ${slugs.length}-project descriptions and JSON-LD`);
+    writeFileAtomic(p, t); changed++; console.log(`index.html: regenerated the ${slugs.length}-project descriptions and JSON-LD`);
   }
 }
 
