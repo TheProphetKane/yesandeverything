@@ -19,13 +19,13 @@
   "tunnel": {
     "up": true,
     "serverHealthy": true,
-    "lastSeen": "2026-08-27T06:35:23.0071393Z",
+    "lastSeen": "2026-08-27T13:34:03.7739330Z",
     "heartbeatAgeMin": 0
   },
   "auth": {
     "ok": true,
     "reason": "ok",
-    "checkedAt": "2026-08-27T05:54:24.546Z"
+    "checkedAt": "2026-08-27T12:54:27.738Z"
   },
   "audit": {
     "latestReportPath": "docs/CANONICAL_AUDIT-2026-08-27.md",
@@ -38,182 +38,183 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-20.md",
-    "latestReportAt": "2026-08-20T11:58:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-08-27.md",
+    "latestReportAt": "2026-08-27T12:55:00Z",
     "verdict": "needs-attention",
-    "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 25,
-    "actionsClosed": 5,
+    "topFinding": "REDACTED: this run's top-finding narrative names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+    "actionsOpen": 30,
+    "actionsClosed": 12,
     "actions": [
+      {
+        "severity": "HIGH",
+        "title": "REDACTED: a HIGH severity finding in the compliance-data-steward lens names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+        "lens": "compliance-data-steward",
+        "priority": 25,
+        "id": "compliance-data-steward-01",
+        "redacted": true
+      },
+      {
+        "severity": "HIGH",
+        "title": "Add priority to the POST /queue body in public/index.html; the pill row shipped this cycle sets QPRIO but only /run carries it, and /run never reads it, so every queued item still lands P2 exactly as before the fix.",
+        "lens": "solo-tool-ux",
+        "priority": 20,
+        "id": "yaag-queue-no-priority-picker-in-ui"
+      },
       {
         "severity": "HIGH",
         "title": "REDACTED: a HIGH severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
         "lens": "security",
         "priority": 20,
-        "id": "yaag-projects-lookup-prototype-crash",
+        "id": "yaag-receipt-redaction-too-narrow",
         "redacted": true
       },
       {
         "severity": "HIGH",
-        "title": "Point the queue lock at the literal shared lock path rather than deriving it by appending to the data filename; the server locks .work-queue.json.lock while both sanctioned writers lock .work-queue.lock, so console queue writes are not serialised against them and the test mirrors the same wrong derivation.",
-        "lens": "dependency",
-        "priority": 20,
-        "id": "yaag-queue-lock-path-mismatch"
+        "title": "Fix the severity pattern in sync-audit-pointers.py to match the format the audit skill actually writes, and make an unattributable entry fail loudly instead of counting zero; every project's dashboard audit block currently reports zero findings while the underlying report lists real drift. Found independently by two lenses this run.",
+        "lens": "orch-audit-loop-integrity",
+        "priority": 25,
+        "id": "orch-audit-loop-integrity-01"
       },
       {
         "severity": "HIGH",
-        "title": "Write a status sync step for this project, or fold the pointer refresh into write-dashboard-status.ps1; the audit block names a 2026-08-07 report that no longer exists and its finding counts match no report on disk, across at least four audit cycles.",
+        "title": "Have the watchdog hit the public tunnel hostname rather than only 127.0.0.1 and fold that into the heartbeat; tunnel.up today means a cloudflared process exists locally, so a connected-but-dead tunnel still reports up.",
         "lens": "observability",
         "priority": 20,
-        "id": "yaag-audit-pointer-dangling"
+        "id": "observability-02"
       },
       {
         "severity": "HIGH",
-        "title": "Replace the in-daily-use claim in README.md and DESIGN.md with the measured cadence; the run archive holds 15 receipts across 5 distinct dates in 66 days with a 21-day dry spell, and that claim is what justifies treating the milestone as shipped.",
-        "lens": "strategic-kill-this",
-        "priority": 20,
-        "id": "yaag-readme-daily-use-claim-false"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Rule keep or kill on the hourly drain and correct the queue item that closed itself by asserting a retirement that never happened; the drain has been silent 20 days and the health watcher still lists the decision as open. [CHRONIC]",
-        "lens": "orch-work-queue-hygiene",
-        "priority": 20,
-        "id": "yaag-queue-drain-hourly-disabled-6-days"
-      },
-      {
-        "severity": "MED",
-        "title": "Replace the synchronous lock backoff with an async retry; it can stall the single-threaded event loop for up to 8 seconds, exceeding the watchdog health timeout and killing live run streams. [CHRONIC]",
-        "lens": "performance",
-        "priority": 20,
-        "id": "yaag-async-queue-lock-blocks-event-loop"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Scope the nightly retention step to the report types each routine generates and give bar-raise reports their own pass; the queue item asking for this has been blocked-on-user with zero attempts since 2026-08-13. [CHRONIC]",
-        "lens": "orch-audit-loop-integrity",
+        "title": "Give the three audit-family skills an unattended fallback clause; the collision is resolved by telling the skill to ask which is wanted, and a one-shot headless run has no turn in which to ask.",
+        "lens": "orch-skill-trigger-collisions",
         "priority": 16,
-        "id": "yaag-audit-retention-prune-scope-fix-dropped"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Protect docs/drift-fixes-2026-08-01.md; it is the sole gitignored copy of its report type, exactly the shape the nightly retention step destroyed three nights running in three other projects.",
-        "lens": "orch-audit-loop-integrity",
-        "priority": 16,
-        "id": "yaag-drift-fixes-sole-report-at-risk"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Extract one shared output-pump helper so the script route gets the same partial-line buffering the run and new-project routes already have; this is the path that gives release and push confirmations from the phone. [CHRONIC]",
-        "lens": "architecture",
-        "priority": 15,
-        "id": "yaag-script-sse-no-line-buffer"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Narrow the canonical-audit trigger description so a bare audit-a-project phrase stops mapping ambiguously to three skills; verified unfixed at source, not just in a snapshot. [CHRONIC]",
-        "lens": "orch-skill-suite-health",
-        "priority": 15,
         "id": "yaag-skill-audit-trigger-collision"
       },
       {
+        "severity": "HIGH",
+        "title": "Make the canonical-audit enqueue phase read the live queue before writing already queued; the changelog-gap finding has bounced through three cycles and has no queue row in either the live file or the archive.",
+        "lens": "orch-skill-chain-handoff",
+        "priority": 15,
+        "id": "orch-skill-chain-handoff-01"
+      },
+      {
         "severity": "MED",
-        "title": "Add hard-rule assertions to check-readiness.ps1 and call it as a gate in release.ps1; the new test suite covers helper functions, not one of the four hard rules. [CHRONIC]",
+        "title": "Add GET /presets and GET /queue to the route lists in docs/DESIGN.md section 6 and docs/ARCHITECTURE.md line 12; both routes are live and neither inventory names them.",
         "lens": "maintainability",
         "priority": 15,
-        "id": "yaag-hard-rules-not-automated-tested"
+        "id": "maintainability-01"
       },
       {
         "severity": "MED",
-        "title": "Add this project to the git recovery skill repo map; the branch-reference lock half landed on 2026-08-14 but the recovery runbook still cannot recognise this repo by name. [CHRONIC]",
-        "lens": "orch-incident-runbook-currency",
+        "title": "Add a test that calls /healthz with a cf-ray header and asserts the reduced body, plus a shape test for /presets; the caller-keyed split already regressed once and has no regression test.",
+        "lens": "maintainability",
         "priority": 15,
-        "id": "yaag-git-unstick-missing-yaag-and-branch-lock"
+        "id": "maintainability-03"
       },
       {
         "severity": "MED",
-        "title": "Add this project to the decision-promoter routing table and the code-audit supported list, plus a per-project hazard file; both still fall through to the unhandled path. [CHRONIC]",
-        "lens": "orch-skill-suite-health",
-        "priority": 15,
-        "id": "yaag-adr-promoter-code-audit-omit-yaag"
-      },
-      {
-        "severity": "MED",
-        "title": "Move terminal queue items to the archive from a routine that actually runs; completed rows grew from 53 to 230 because the only routine that ever pruned them is the disabled drain. Promptless half verified fixed at zero. [CHRONIC]",
-        "lens": "orch-work-queue-hygiene",
-        "priority": 15,
-        "id": "yaag-queue-completed-unpruned-and-promptless-items"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a priority picker beside the queue button; every queued item silently defaults to the middle priority regardless of urgency. [CHRONIC]",
-        "lens": "solo-tool-ux",
-        "priority": 15,
-        "id": "yaag-queue-no-priority-picker-in-ui"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a queue panel and a read endpoint; after queuing, the console shows one toast and then offers no way to see, reprioritise or cancel what is pending.",
+        "title": "Add a DELETE or PATCH route for a queued item and a per-row control, or narrow this finding to visibility only; the panel shipped but nothing can cancel or reprioritise a row once sent.",
         "lens": "solo-tool-ux",
         "priority": 15,
         "id": "yaag-queue-no-visibility-in-ui"
       },
       {
         "severity": "MED",
-        "title": "Split or relabel the runs-archived metric; it reads 15 while the usage ledger bills 171 sessions, because the hourly credential probe writes no receipt. [CHRONIC]",
-        "lens": "cost-economics",
+        "title": "Add X:\\YesAndAgents to both project-detection lists in code-audit, or have it read the project list from .project-context.json; a hazard catalogue was written for this project and the skill can never reach it.",
+        "lens": "orch-skill-suite-health",
         "priority": 15,
-        "id": "yaag-runs-archived-metric-undercounts-probes"
+        "id": "yaag-adr-promoter-code-audit-omit-yaag"
       },
       {
         "severity": "MED",
-        "title": "Update the README cost model to the corrected wording; the design doc and handler both flagged the monthly-credit description as wrong on 2026-08-19 and the fix never reached the public-facing file.",
-        "lens": "maintainability",
+        "title": "Give the terminal-row prune its own lightweight scheduled pass or fold it into backlog-burndown-daily; 217 of the 426 live queue rows are completed and the only step that pruned them is ruled permanently disabled.",
+        "lens": "orch-work-queue-hygiene",
         "priority": 15,
-        "id": "yaag-readme-cost-model-stale"
+        "id": "orch-work-queue-hygiene-01"
       },
       {
         "severity": "MED",
-        "title": "Widen the run-receipt secret scrub; the archive already contains a real password-recovery session that reads clean only because someone redacted it by hand later, not because the scrub matched it.",
-        "lens": "compliance-data-steward",
+        "title": "Give the 14-day and 30-day stale-pending triage a scheduled pass; six P1 and P2 items have sat 19 to 41 days with no escalation since the step that did it was disabled.",
+        "lens": "orch-work-queue-hygiene",
         "priority": 15,
-        "id": "yaag-receipt-redaction-too-narrow"
+        "id": "orch-work-queue-hygiene-02"
       },
       {
         "severity": "MED",
-        "title": "Rule on which projection tier this project belongs to; its public status file still ships full finding text naming live security gaps, the exposure class that moved two other projects to a restricted tier on 2026-08-19.",
-        "lens": "compliance-data-steward",
-        "priority": 15,
-        "id": "yaag-agents-json-public-tier-undecided"
-      },
-      {
-        "severity": "MED",
-        "title": "Delete or resync the older skills snapshot; it holds a handler-audit definition claiming a four-handler scope that omits this project entirely, and if that copy resolves the handler sweep silently skips this repo.",
-        "lens": "orch-skill-trigger-collisions",
-        "priority": 15,
-        "id": "yaag-stale-skills-plugin-snapshot"
-      },
-      {
-        "severity": "MED",
-        "title": "Teach the health watcher that a task-running result code is the correct steady state for a permanent watchdog loop, and cross-check the live heartbeat before flagging red; the current rule produces a standing false alarm on a server that is verifiably up.",
-        "lens": "orch-scheduled-task-firing",
-        "priority": 15,
-        "id": "yaag-routine-health-false-red-autostart"
-      },
-      {
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the compliance-data-steward lens names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-        "lens": "compliance-data-steward",
+        "title": "Move the queue file read and stringify off the main thread or cap how much of it this server touches per write; lock acquisition is fixed but the read-modify-write body still blocks the event loop for the full 1.1 megabytes.",
+        "lens": "performance",
         "priority": 12,
-        "id": "yaag-runs-archive-no-retention-policy",
+        "id": "yaag-async-queue-lock-blocks-event-loop"
+      },
+      {
+        "severity": "MED",
+        "title": "Cap the retained log DOM nodes and batch the scroll-height read; the console appends one node per streamed line forever and forces a reflow on every append.",
+        "lens": "performance",
+        "priority": 12,
+        "id": "performance-02"
+      },
+      {
+        "severity": "MED",
+        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "lens": "security",
+        "priority": 12,
+        "id": "security-02",
         "redacted": true
       },
       {
         "severity": "MED",
-        "title": "Close the one reopened mis-attributed item for this project with real evidence; the repo state already looks like the fix happened, but nobody has verified and recorded it.",
-        "lens": "orch-work-queue-hygiene",
+        "title": "Add an in-flight run counter and a wall-clock kill timer to POST /run, mirroring the 120-second timer the auth probe already uses; nothing today caps how many unbounded sessions can stack against the shared weekly window.",
+        "lens": "cost-economics",
+        "priority": 12,
+        "id": "cost-economics-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Close or reopen the retention-scope queue item on evidence; it has sat blocked on Kane for 13 days asking for a per-prefix retention rule the nightly sweep already implements.",
+        "lens": "orch-audit-loop-integrity",
+        "priority": 12,
+        "id": "orch-audit-loop-integrity-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Write the auto-enqueued and enqueue-deferred lines into every bar-raise report; the 2026-08-20 report carries neither, so a silently failed enqueue would read exactly like the successful one it was.",
+        "lens": "orch-skill-chain-handoff",
+        "priority": 12,
+        "id": "orch-skill-chain-handoff-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Record the last verified-compatible claude version range in DESIGN.md and have check-readiness.ps1 warn when the installed version falls outside it; today it prints the version and asserts nothing.",
+        "lens": "dependency",
+        "priority": 12,
+        "id": "dependency-01"
+      },
+      {
+        "severity": "MED",
+        "title": "Serve the model allowlist from the server the way projects.json and presets.json already are; it is hardcoded independently in server.mjs and public/index.html and the two can drift.",
+        "lens": "architecture",
         "priority": 10,
-        "id": "yaag-mis-attributed-agents-item-unverified"
+        "id": "architecture-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Reconcile the two sync-direction statements for bar-raise; the portfolio policy and the skill's own note assert opposite directions, which is the exact condition that already cost one divergence.",
+        "lens": "orch-skill-suite-health",
+        "priority": 10,
+        "id": "yaag-stale-skills-plugin-snapshot"
+      },
+      {
+        "severity": "MED",
+        "title": "Give routine-health-watch an exception for a permanently running watchdog; the autostart task reads as a daily manual override instead of green and has since it was raised.",
+        "lens": "orch-scheduled-task-firing",
+        "priority": 10,
+        "id": "yaag-routine-health-false-red-autostart"
+      },
+      {
+        "severity": "MED",
+        "title": "Reorder the nightly sweep so the pointer sync runs before verify.py; a clean run currently reports a false FAIL every night on the reports its own retention just pruned.",
+        "lens": "orch-audit-loop-integrity",
+        "priority": 10,
+        "id": "orch-audit-loop-integrity-03"
       },
       {
         "severity": "MED",
@@ -222,214 +223,309 @@
         "priority": 10,
         "id": "yaag-bind-hardrule-text-vs-design-drift",
         "redacted": true
+      },
+      {
+        "severity": "MED",
+        "title": "Clear the em dashes out of docs/DESIGN.md when it is next bumped; the file carries 49 of them while its own changelog preset instructs every future run to write without any.",
+        "lens": "maintainability",
+        "priority": 10,
+        "id": "maintainability-02"
+      },
+      {
+        "severity": "MED",
+        "title": "REDACTED: a MED severity finding in the compliance-data-steward lens names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+        "lens": "compliance-data-steward",
+        "priority": 12,
+        "id": "compliance-data-steward-02",
+        "redacted": true
+      },
+      {
+        "severity": "MED",
+        "title": "Spend the next session on getting one real run through end to end rather than on another feature; the last two genuine attempts both failed before any work landed, one on the seven-day limit and one on authentication.",
+        "lens": "strategic-kill-this",
+        "priority": 12,
+        "id": "strategic-kill-this-02"
+      },
+      {
+        "severity": "MED",
+        "title": "State the redaction rule for the public status projection by exploit relevance rather than by lens name; a HIGH finding describing a live shared-queue locking defect shipped in full while the security-lens findings beside it were replaced with placeholders.",
+        "lens": "compliance-data-steward",
+        "priority": 8,
+        "id": "yaag-agents-json-public-tier-undecided"
+      },
+      {
+        "severity": "MED",
+        "title": "Re-pin the release and changelog presets to sonnet; four of the five presets run opus including mechanical work, and this project's own telemetry shows opus costing roughly three and a half times per token.",
+        "lens": "cost-economics",
+        "priority": 8,
+        "id": "cost-economics-02"
       }
     ],
     "deferred": [
       {
         "severity": "HIGH",
-        "title": "Whether this tool still earns its upkeep at all, given 9 maintenance commits in the week ending 2026-08-20 against zero real runs in 21 days.",
+        "title": "Whether this tool still earns its upkeep. The run archive holds 15 runs across 5 dates; the last attempt was 2026-07-30 and it was rejected on the seven-day limit, the one before it failed on authentication, and the last run that actually did cross-project work was 2026-06-18. Twenty-six maintenance commits landed in the 27 days since the last attempt.",
         "lens": "strategic-kill-this",
-        "reason": "A genuine kill-or-keep judgment. The measured usage is now in hand, so this is a decision to make rather than work to schedule."
+        "reason": "A genuine kill-or-keep judgment and the measurement is now unambiguous. This is Kane's ruling, not work to schedule."
+      },
+      {
+        "severity": "MED",
+        "title": "Whether this project should stay on the weekly review rotation given its measured use.",
+        "lens": "cost-economics",
+        "reason": "Follows the kill-or-keep ruling above. Deciding the cadence before the project's future is settled answers the smaller question first."
+      },
+      {
+        "severity": "MED",
+        "title": "The archived-runs metric undercounts because it also counts readiness probes.",
+        "lens": "observability",
+        "reason": "Not re-verified this run; the observability lens found larger gaps and spent its evidence there."
+      },
+      {
+        "severity": "MED",
+        "title": "The run archive has no retention policy.",
+        "lens": "observability",
+        "reason": "Not re-verified this run."
+      },
+      {
+        "severity": "MED",
+        "title": "One queue item attributed to this project was never verified as belonging to it.",
+        "lens": "observability",
+        "reason": "Not re-verified this run."
       }
     ],
-    "health": 66,
+    "health": 70,
     "lensScores": {
-      "architecture": 80,
-      "reliability": 76,
-      "security": 60,
-      "performance": 78,
-      "data-integrity": 82,
-      "maintainability": 76,
-      "solo-tool-ux": 80,
-      "cost-economics": 80,
-      "dependency": 62,
-      "observability": 62,
-      "strategic-kill-this": 38,
-      "compliance-data-steward": 62,
-      "orch-skill-suite-health": 63,
-      "orch-work-queue-hygiene": 30,
-      "orch-audit-loop-integrity": 40,
-      "orch-fuse-truncation-defense": 87,
-      "orch-incident-runbook-currency": 72,
-      "orch-scheduled-task-firing": 74,
-      "orch-skill-trigger-collisions": 68,
-      "orch-skill-chain-handoff": 42
+      "architecture": 88,
+      "reliability": 90,
+      "security": 64,
+      "performance": 76,
+      "data-integrity": 85,
+      "maintainability": 78,
+      "solo-tool-ux": 74,
+      "cost-economics": 60,
+      "dependency": 78,
+      "observability": 58,
+      "strategic-kill-this": 28,
+      "compliance-data-steward": 42,
+      "orch-skill-suite-health": 66,
+      "orch-work-queue-hygiene": 80,
+      "orch-audit-loop-integrity": 48,
+      "orch-fuse-truncation-defense": 89,
+      "orch-incident-runbook-currency": 85,
+      "orch-scheduled-task-firing": 78,
+      "orch-skill-trigger-collisions": 72,
+      "orch-skill-chain-handoff": 58
     },
     "openFindings": [
       {
-        "id": "yaag-projects-lookup-prototype-crash",
+        "id": "compliance-data-steward-01",
         "severity": "HIGH",
-        "priority": 20,
+        "priority": 25,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
       },
       {
-        "id": "yaag-queue-lock-path-mismatch",
+        "id": "yaag-queue-no-priority-picker-in-ui",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-20"
-      },
-      {
-        "id": "yaag-audit-pointer-dangling",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-20"
-      },
-      {
-        "id": "yaag-readme-daily-use-claim-false",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-20"
-      },
-      {
-        "id": "yaag-queue-drain-hourly-disabled-6-days",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-08-06"
       },
       {
-        "id": "yaag-async-queue-lock-blocks-event-loop",
-        "severity": "MED",
+        "id": "yaag-receipt-redaction-too-narrow",
+        "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
       },
       {
-        "id": "yaag-audit-retention-prune-scope-fix-dropped",
+        "id": "orch-audit-loop-integrity-01",
         "severity": "HIGH",
-        "priority": 16,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yaag-drift-fixes-sole-report-at-risk",
-        "severity": "HIGH",
-        "priority": 16,
+        "priority": 25,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
       },
       {
-        "id": "yaag-script-sse-no-line-buffer",
+        "id": "observability-02",
         "severity": "HIGH",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
       },
       {
         "id": "yaag-skill-audit-trigger-collision",
         "severity": "HIGH",
-        "priority": 15,
-        "runsOpen": 3,
+        "priority": 16,
+        "runsOpen": 4,
         "firstSeen": "2026-08-06"
       },
       {
-        "id": "yaag-hard-rules-not-automated-tested",
-        "severity": "MED",
+        "id": "orch-skill-chain-handoff-01",
+        "severity": "HIGH",
         "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
       },
       {
-        "id": "yaag-git-unstick-missing-yaag-and-branch-lock",
+        "id": "maintainability-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
       },
       {
-        "id": "yaag-adr-promoter-code-audit-omit-yaag",
+        "id": "maintainability-03",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yaag-queue-completed-unpruned-and-promptless-items",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
-      },
-      {
-        "id": "yaag-queue-no-priority-picker-in-ui",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-06"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
       },
       {
         "id": "yaag-queue-no-visibility-in-ui",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
       },
       {
-        "id": "yaag-runs-archived-metric-undercounts-probes",
+        "id": "yaag-adr-promoter-code-audit-omit-yaag",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-08-06"
       },
       {
-        "id": "yaag-readme-cost-model-stale",
+        "id": "orch-work-queue-hygiene-01",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
       },
       {
-        "id": "yaag-receipt-redaction-too-narrow",
+        "id": "orch-work-queue-hygiene-02",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
       },
       {
-        "id": "yaag-agents-json-public-tier-undecided",
+        "id": "yaag-async-queue-lock-blocks-event-loop",
         "severity": "MED",
-        "priority": 15,
+        "priority": 12,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "security-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "cost-economics-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "orch-audit-loop-integrity-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 4,
+        "firstSeen": "2026-08-06"
+      },
+      {
+        "id": "orch-skill-chain-handoff-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "dependency-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "architecture-02",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
       },
       {
         "id": "yaag-stale-skills-plugin-snapshot",
         "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "priority": 10,
+        "runsOpen": 3,
+        "firstSeen": "2026-08-13"
       },
       {
         "id": "yaag-routine-health-false-red-autostart",
         "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
+        "priority": 10,
+        "runsOpen": 2,
         "firstSeen": "2026-08-20"
       },
       {
-        "id": "yaag-runs-archive-no-retention-policy",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-20"
-      },
-      {
-        "id": "yaag-mis-attributed-agents-item-unverified",
+        "id": "orch-audit-loop-integrity-03",
         "severity": "MED",
         "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
       },
       {
         "id": "yaag-bind-hardrule-text-vs-design-drift",
         "severity": "MED",
         "priority": 10,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "MED",
+        "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-08-20"
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "compliance-data-steward-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "strategic-kill-this-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
+      },
+      {
+        "id": "yaag-agents-json-public-tier-undecided",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-13"
+      },
+      {
+        "id": "cost-economics-02",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-27"
       }
     ],
     "tensionsOpen": [
@@ -438,19 +534,19 @@
           "strategic-kill-this",
           "reliability"
         ],
-        "runsSeen": 4
-      },
-      {
-        "lenses": [
-          "orch-skill-chain-handoff",
-          "observability"
-        ],
-        "runsSeen": 3
+        "runsSeen": 5
       },
       {
         "lenses": [
           "cost-economics",
           "reliability"
+        ],
+        "runsSeen": 5
+      },
+      {
+        "lenses": [
+          "orch-skill-chain-handoff",
+          "observability"
         ],
         "runsSeen": 4
       },
@@ -458,6 +554,20 @@
         "lenses": [
           "compliance-data-steward",
           "solo-tool-ux"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "orch-work-queue-hygiene",
+          "orch-audit-loop-integrity"
         ],
         "runsSeen": 1
       }
@@ -469,10 +579,11 @@
       "v": "15"
     }
   ],
-  "generatedAt": "2026-08-27T06:35:23.0956903Z",
+  "generatedAt": "2026-08-27T13:34:03.8760489Z",
   "stale": false,
   "tags": [
     "orchestration",
     "solo-tool-ux"
-  ]
+  ],
+  "schemaVersion": 1
 }
