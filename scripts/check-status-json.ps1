@@ -24,6 +24,21 @@ Set-Location (Join-Path $PSScriptRoot "..")
 $bad    = @()
 $healed = @()
 
+# --- Status-card contract (2026-08-27, bar-raise finding yae-statusjson-contract-unversioned) ---
+# status/index.html renders a project card off these keys unconditionally: project,
+# displayName and version for the card head, lastReleaseAt for the freshness clock and
+# the release line, workTreeClean and repoUrl for the meta row and the repo link, stale
+# for the staleness pill, and tags for both the parked-cadence check and the tag pills.
+# Every other field (milestone, completion, audit, barRaise, workQueueDepth) is
+# legitimately optional: the page already renders a placeholder when a project has no
+# active milestone, no bar-raise has run yet, or the queue concept does not apply to it.
+# Gnosis shipped without `tags` for weeks with nothing to catch it; this is that catch.
+# constellation.json is a portfolio roll-up, not a per-project card, and carries a
+# different shape entirely, so it is exempt from this contract.
+$SchemaVersion    = 1
+$RequiredKeys     = @("project", "displayName", "version", "lastReleaseAt", "workTreeClean", "repoUrl", "stale", "tags")
+$ContractExempt   = @("constellation.json")
+
 # Mojibake byte signatures. These are the UTF-8 encodings of text that was
 # already mojibake - a UTF-8 string decoded as cp1252 and re-encoded, the classic
 # em-dash-to-garbage round trip. The result is VALID UTF-8 and parses clean, so
@@ -56,15 +71,23 @@ function Find-Mojibake([byte[]]$bytes, [int]$end) {
 # dashboard pair crossed no guard at all, despite the header above claiming this
 # script catches corruption before it ships to the live dashboard.
 $targets = @()
-$targets += Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue
-$targets += Get-ChildItem "dashboard\data\usage.json" -ErrorAction SilentlyContinue
-$targets += Get-ChildItem "dashboard\data\queue.json" -ErrorAction SilentlyContinue
+Get-ChildItem "status\data\*.json" -ErrorAction SilentlyContinue | ForEach-Object {
+  $targets += [PSCustomObject]@{ File = $_; IsStatusCard = ($ContractExempt -notcontains $_.Name) }
+}
+Get-ChildItem "dashboard\data\usage.json" -ErrorAction SilentlyContinue | ForEach-Object {
+  $targets += [PSCustomObject]@{ File = $_; IsStatusCard = $false }
+}
+Get-ChildItem "dashboard\data\queue.json" -ErrorAction SilentlyContinue | ForEach-Object {
+  $targets += [PSCustomObject]@{ File = $_; IsStatusCard = $false }
+}
 
 $targets | ForEach-Object {
-  $path  = $_.FullName
-  $name  = $_.Name
-  $bytes = [System.IO.File]::ReadAllBytes($path)
-  $why   = $null
+  $path         = $_.File.FullName
+  $name         = $_.File.Name
+  $isStatusCard = $_.IsStatusCard
+  $bytes        = [System.IO.File]::ReadAllBytes($path)
+  $why          = $null
+  $parsed       = $null
 
   if ($bytes.Length -eq 0) {
     $why = "empty file"
@@ -92,12 +115,31 @@ $targets | ForEach-Object {
           $why = "does not end with a closing brace"
         }
         else {
-          try { $null = $body | ConvertFrom-Json } catch { $why = "does not parse: $($_.Exception.Message)" }
+          try { $parsed = $body | ConvertFrom-Json } catch { $why = "does not parse: $($_.Exception.Message)" }
         }
 
         if (-not $why) {
           $moji = Find-Mojibake $bytes $end
           if ($moji) { $why = "contains mojibake ($moji) - a string was decoded as cp1252 and re-encoded somewhere upstream" }
+        }
+
+        # Required-key + schema-version assertion, status cards only (see contract note above).
+        if (-not $why -and $isStatusCard) {
+          $propNames = @()
+          if ($parsed -is [System.Management.Automation.PSCustomObject]) {
+            $propNames = @($parsed.PSObject.Properties.Name)
+          }
+          foreach ($key in $RequiredKeys) {
+            if ($propNames -notcontains $key) {
+              $bad += "${name}: missing required key '$key' (status-card contract v$SchemaVersion)"
+            }
+          }
+          if ($propNames -notcontains "schemaVersion") {
+            $bad += "${name}: missing schemaVersion (expected $SchemaVersion)"
+          }
+          elseif ($parsed.schemaVersion -ne $SchemaVersion) {
+            $bad += "${name}: schemaVersion $($parsed.schemaVersion) does not match expected $SchemaVersion"
+          }
         }
 
         # Body is valid but the file carried trailing NUL pad: heal it byte-exact.
