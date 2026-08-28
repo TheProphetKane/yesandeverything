@@ -1,9 +1,9 @@
 {
   "project": "Ring",
   "displayName": "Yes& Ring",
-  "version": "0.17.37",
-  "lastReleaseAt": "2026-08-26T15:03:12-05:00",
-  "lastReleaseMessage": "point the retention page links at the URL the asset layer actually serves, instead of the one it redirects from",
+  "version": "0.18.0",
+  "lastReleaseAt": "2026-08-28T08:58:33-05:00",
+  "lastReleaseMessage": "the Stripe webhook has answered 500 on every delivery since the event log landed, local edits stopped losing to stale remote copies, and the cron health marker stopped reporting success it never checked",
   "milestone": {
     "id": "v0.16",
     "label": "v0.16 - Supabase auth + Stripe subscriptions + live TICA data pipeline",
@@ -44,245 +44,190 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-08-21.md",
-    "latestReportAt": "2026-08-21T11:47:34Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-08-28.md",
+    "latestReportAt": "2026-08-28T11:50:00Z",
     "verdict": "needs-attention",
-    "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 47,
-    "actionsClosed": 10,
+    "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+    "actionsOpen": 34,
+    "actionsClosed": 30,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Parse the billing sync response body and throw when the remote call returns false, so an unmatched Stripe customer fails loudly and Stripe retries instead of the entitlement write being dropped forever.",
-        "lens": "reliability",
+        "title": "REDACTED: a HIGH severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "lens": "security",
         "priority": 25,
-        "id": "reliability-07"
+        "id": "security-11",
+        "redacted": true
       },
       {
         "severity": "HIGH",
-        "title": "Add authenticated account export and delete endpoints and write a retention policy covering user_state, the key-value ratings, and the audit log.",
-        "lens": "compliance-data-steward",
-        "priority": 25,
-        "id": "compliance-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Stop returning a 200 from the state post handler when the Postgres half of the dual-write failed; answer 502 or ok false so the retry ladder and the not-synced indicator fire.",
+        "title": "Claim a Stripe event as in-progress rather than applied, stamp applied only after the entitlement write succeeds, and add a guarded release call the webhook catch block makes before returning 500, so a retry re-runs the write instead of being answered duplicate.",
         "lens": "data-integrity",
-        "priority": 20,
-        "id": "data-integrity-01"
+        "priority": 25,
+        "id": "data-integrity-15"
       },
       {
         "severity": "HIGH",
-        "title": "Give merged leaf values an update stamp and compare it in mergeStates, or add per-item tombstones, so a stale remote array cannot resurrect a deleted target.",
+        "title": "Return a discriminated result from getProfileByToken so a read failure is not read as no subscription, treat a failed read as entitled in entitlementFor, and refuse account erasure with a 503 rather than skipping the active-subscription guard.",
+        "lens": "reliability",
+        "priority": 20,
+        "id": "reliability-11"
+      },
+      {
+        "severity": "HIGH",
+        "title": "Call stampKey from every setter that writes the eight flat maps the merge treats as stamped, and extend the same stamped merge to judgeStatus and showLogistics, because only catTargets is stamped today and the rest still lose an edit to a stale remote.",
         "lens": "pwa-sync",
         "priority": 20,
-        "id": "pwa-sync-02"
+        "id": "pwa-sync-01"
       },
       {
         "severity": "HIGH",
-        "title": "Return a discriminated result from the remote-state loader so a failed read cannot be mistaken for a new user and overwritten with stale local state.",
+        "title": "Read the key-value record's updatedAt alongside the Postgres row in handleStateGet under STATE_READ=pg and serve whichever copy is newer, backfilling the loser, so a partially failed dual-write cannot make the older copy authoritative.",
         "lens": "data-integrity",
-        "priority": 20,
-        "id": "data-integrity-06"
+        "priority": 16,
+        "id": "data-integrity-16"
       },
       {
         "severity": "HIGH",
-        "title": "Add a Stripe event table keyed by the event id, insert before calling billing sync, and skip duplicate or out-of-order events so a retried update cannot restore a cancelled subscription.",
-        "lens": "data-integrity",
-        "priority": 20,
-        "id": "data-integrity-10"
+        "title": "REDACTED: this text named a weakness and the file it lives in, which together are an address. Severity and project are kept; the location is in the project's own report under X:\\PortfolioOps.",
+        "lens": "reliability",
+        "priority": 16,
+        "id": "reliability-15"
       },
       {
         "severity": "HIGH",
-        "title": "Cache verified tokens for their remaining lifetime or verify them locally against Supabase's published keys, and stop serializing the identity check with the Postgres read on the state endpoint.",
-        "lens": "auth-token-hygiene",
-        "priority": 20,
-        "id": "auth-token-hygiene-02"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Spend the next Ring session only on the v1.0-freeze-versus-Phase-2 scope call and the pricing question, before any further release-script or infrastructure work lands.",
-        "lens": "strategic-kill-this",
-        "priority": 20,
-        "id": "strategic-kill-this-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Add a release pre-flight that greps every public artifact path for long dashes and a maintained tell-vocabulary list, covering CHANGELOG.md, README.md, PROJECT_SPEC.md and DEPLOY.md, not just the two files under public.",
-        "lens": "ai-tell-concealment",
-        "priority": 20,
-        "id": "ai-tell-concealment-02"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Rewrite the six collective-voice strings in the live app shell to solo first person.",
-        "lens": "solo-dev-voice",
-        "priority": 20,
-        "id": "solo-dev-voice-01"
-      },
-      {
-        "severity": "HIGH",
-        "title": "Mirror each judge-rating tally write into Postgres or add a nightly key-value dump, so the one dataset with no copy on any device survives a namespace mistake.",
-        "lens": "data-integrity",
+        "title": "Await the tracked cron sub-tasks before writing the cron:last finish marker and set ok false when any rejected, because the marker is written by an independent fast key-value put that always wins the race and reports ok true whatever the work did.",
+        "lens": "observability",
         "priority": 15,
-        "id": "data-integrity-02"
+        "id": "observability-04"
       },
       {
         "severity": "MED",
         "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
         "lens": "security",
         "priority": 15,
-        "id": "security-02",
+        "id": "security-05",
         "redacted": true
       },
       {
         "severity": "MED",
-        "title": "Raise or make dynamic the 14-page cap on the standings walk and log when the walk ends by hitting the cap rather than by running out of rows.",
-        "lens": "performance",
+        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "lens": "security",
         "priority": 15,
-        "id": "performance-01"
+        "id": "security-13",
+        "redacted": true
       },
       {
         "severity": "MED",
-        "title": "Run the Postgres state read concurrently with the identity check in the state get handler, since both need only the bearer token, and discard the read if verification fails.",
-        "lens": "performance",
-        "priority": 15,
-        "id": "performance-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Extend the section-marker convention through the unsectioned tail of public/app.js so the file matches the module list in PROJECT_SPEC.md end to end.",
-        "lens": "architecture",
-        "priority": 15,
-        "id": "architecture-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Either wire readers and writers to the ten-table schema in migration 0001 or park the migration, instead of carrying two parallel data models with one dead.",
-        "lens": "architecture",
-        "priority": 15,
-        "id": "architecture-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a request timeout signal to the Stripe, Supabase, Discord and Resend fetches the way the TICA fetches already have one.",
-        "lens": "reliability",
-        "priority": 15,
-        "id": "reliability-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Wrap the api dispatch in a try/catch that logs the route and returns a JSON 500 carrying the security headers.",
+        "title": "Wrap the /api/ dispatch in a try/catch that logs the route and returns a JSON 500 carrying the security headers, and move the webhook's body read and signature check inside its own try.",
         "lens": "reliability",
         "priority": 15,
         "id": "reliability-05"
       },
       {
         "severity": "MED",
-        "title": "Land straight on the single cat's dashboard when the signed-in owner has exactly one cat, instead of rendering the picker grid.",
+        "title": "Refuse the cal:tica write when the new show count is below half the previous record's count and report the refusal through recordCronError, so a partial parse cannot replace a good calendar and discard every carried judge panel.",
+        "lens": "reliability",
+        "priority": 15,
+        "id": "reliability-13"
+      },
+      {
+        "severity": "MED",
+        "title": "Call schedulePush from the existing online listener and from a visibilitychange handler, because the backoff ladder never re-arms and the app tells the user it is syncing while calling nothing.",
+        "lens": "reliability",
+        "priority": 15,
+        "id": "reliability-10"
+      },
+      {
+        "severity": "MED",
+        "title": "Call pgEraseUser first in handleUserDelete and abort the key-value deletions if it does not confirm, so a failed Postgres half cannot leave an account erased in one store and intact in the other.",
+        "lens": "data-integrity",
+        "priority": 15,
+        "id": "data-integrity-21"
+      },
+      {
+        "severity": "MED",
+        "title": "Run pgStateRead concurrently with verifyUser in handleStateGet, since row-level security already scopes the read to the token's owner, and reuse the /api/me identity result instead of a second independent check.",
+        "lens": "performance",
+        "priority": 15,
+        "id": "performance-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Verify the Supabase access token locally against the published signing keys and cache the verified identity for the token's remaining lifetime, instead of a live upstream call on all seventeen call sites.",
+        "lens": "auth-token-hygiene",
+        "priority": 15,
+        "id": "auth-token-hygiene-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Route straight to the single cat's dashboard in startApp when there is no hash and the signed-in owner has exactly one cat, instead of rendering the picker grid.",
         "lens": "solo-tool-ux",
         "priority": 15,
         "id": "solo-tool-ux-02"
       },
       {
         "severity": "MED",
-        "title": "Bump the wrangler development dependency to the major actually resolved at deploy time, install it locally instead of leaning on the package runner, and commit the lockfile.",
+        "title": "Install wrangler locally, commit the generated lockfile, and change the release script to invoke the local binary instead of the package runner, because the major was bumped but the version that actually ships is still resolved fresh at deploy time.",
         "lens": "dependency",
         "priority": 15,
         "id": "dependency-01"
       },
       {
         "severity": "MED",
-        "title": "Post cron and scraper failures to a webhook or a key-value error log using the posting helper that already exists.",
+        "title": "Post a Discord line on the daily calendar, snapshot and purge cron failures the way the Monday parity leg already does, or add an external check against /api/health, because those three failures reach a human only if somebody visits the endpoint.",
         "lens": "observability",
         "priority": 15,
-        "id": "observability-02"
+        "id": "observability-05"
       },
       {
         "severity": "MED",
-        "title": "Write a last-cron-run marker from the scheduled handler and surface it in the health endpoint, distinct from the calendar-age proxy.",
-        "lens": "observability",
-        "priority": 15,
-        "id": "observability-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Keep the multi-user ownership tables unwired until the scope decision is actually made, rather than letting dormancy stand in for the call.",
-        "lens": "strategic-kill-this",
-        "priority": 15,
-        "id": "strategic-kill-this-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Publish a short static privacy and terms page naming the data collected and how long it is kept, and link it from the footer.",
-        "lens": "compliance-data-steward",
-        "priority": 15,
-        "id": "compliance-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Wrap the Step 4 notify call in release.ps1 in the same try/catch used by Steps 3 and 5, so an error there cannot abort the release and skip the audit digests.",
+        "title": "Move the long-dash scan and the tell-vocabulary ratchet into scripts/verify.ps1 so the pre-commit hook catches them, instead of only a full release catching them.",
         "lens": "release-ps1-stack",
         "priority": 15,
-        "id": "release-ps1-stack-01"
+        "id": "release-ps1-stack-02"
       },
       {
         "severity": "MED",
-        "title": "Replace the sequential per-grant read loop in the shared-cats handler with a batched read, matching the judge-aggregate handler.",
-        "lens": "kv-data-shape",
+        "title": "Add public/privacy.html to public_artifact_globs in .project-context.json and to both the dash scan and the tell-vocabulary baseline in scripts/release.ps1, because it is a real shipped page that neither scan covers.",
+        "lens": "ai-tell-concealment",
         "priority": 15,
-        "id": "kv-data-shape-01"
+        "id": "ai-tell-concealment-02"
       },
       {
         "severity": "MED",
-        "title": "Add the service worker version constant to check-version-pill.ps1 and to the marker list, since that is the exact file that drifted in the 2026-08-14 audit.",
-        "lens": "version-pill-drift",
-        "priority": 15,
-        "id": "version-pill-drift-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Have the post-deploy live check read the response body for the new version or build stamp, not just assert a 200.",
-        "lens": "gate-page-publish",
-        "priority": 15,
-        "id": "gate-page-publish-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Write the vote marker before the tally so a partial failure costs an uncounted vote rather than a double count, and record the accepted read-modify-write race in a comment.",
-        "lens": "data-integrity",
-        "priority": 15,
-        "id": "data-integrity-05"
-      },
-      {
-        "severity": "MED",
-        "title": "Add CLAUDE.md and .project-context.json to the voice scope and strip the long dash that has landed in .project-context.json since the last hand fix.",
+        "title": "Add CLAUDE.md and .project-context.json to voice_scope and to the release dash scan, because CLAUDE.md declares itself in scope for the rule and nothing checks either file.",
         "lens": "ai-tell-concealment",
         "priority": 15,
         "id": "ai-tell-concealment-04"
       },
       {
         "severity": "MED",
-        "title": "Name the shipped Stripe subscriptions in the systems or decisions panel of both Ring pages on the portfolio site.",
-        "lens": "brand-consistency",
+        "title": "Extend the release tell check to cover the courtesy-offer phrase, first-person collective pronouns and named assistant tools, since three of the four rules CLAUDE.md states have no automated check.",
+        "lens": "ai-tell-concealment",
         "priority": 15,
-        "id": "brand-consistency-01"
+        "id": "ai-tell-concealment-06"
       },
       {
         "severity": "MED",
-        "title": "Spell out the abbreviations that appear in prose across README.md, DEPLOY.md, PROJECT_SPEC.md and CHANGELOG.md.",
-        "lens": "solo-dev-voice",
+        "title": "Add the feedback and cron-alert webhook to the channel table in CLAUDE.md and log the drift line to the console beside the postDiscord call, so a dead webhook cannot make a real parity drift finding vanish.",
+        "lens": "discord-notify-wiring",
         "priority": 15,
-        "id": "solo-dev-voice-02"
+        "id": "discord-notify-wiring-01"
       },
       {
         "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 12,
-        "id": "security-05",
-        "redacted": true
+        "title": "Point the two webhook example files and the discord-notify.ps1 header comment at the centralized secrets path the script actually reads, because following the documented setup today produces a file nothing looks at.",
+        "lens": "discord-notify-wiring",
+        "priority": 15,
+        "id": "discord-notify-wiring-02"
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap the standings page walk in a start and end timestamp, record it the way cron failures already are, and pre-warm the current season so the first real caller is not the one paying for a cold forty-page walk.",
+        "lens": "worker-cpu-budget",
+        "priority": 15,
+        "id": "worker-cpu-budget-01"
       },
       {
         "severity": "MED",
@@ -294,473 +239,347 @@
       },
       {
         "severity": "MED",
-        "title": "Send an idempotency key derived from the user id on the Stripe customer create, and log the swallowed link write in the customer helper instead of discarding it.",
+        "title": "Add an idempotency-key header to the Stripe form helper and pass a key derived from the user id on customer creation, so a timeout after Stripe has created the customer cannot mint a second one.",
         "lens": "reliability",
         "priority": 12,
         "id": "reliability-09"
       },
       {
         "severity": "MED",
-        "title": "Re-arm the state push from the online listener and from a visibility-change handler, so offline edits do not wait for an unrelated change to sync.",
-        "lens": "reliability",
+        "title": "Record events the Worker does not act on with an ignored outcome and compute the staleness watermark only over the entitlement-writing types, so an invoice event cannot make a real subscription change look stale.",
+        "lens": "data-integrity",
         "priority": 12,
-        "id": "reliability-10"
+        "id": "data-integrity-18"
       },
       {
         "severity": "MED",
-        "title": "Have the profile lookup tell a transport failure apart from an empty result and treat the failure as entitled with a logged error, so a Supabase blip does not paywall a paying subscriber.",
-        "lens": "reliability",
+        "title": "Give the scheduled handler one shared key-value operation budget that every leg draws from and stamps into its truncation flag, instead of three independently sized caps that can together exceed the per-invocation limit on a Monday.",
+        "lens": "data-integrity",
         "priority": 12,
-        "id": "reliability-11"
+        "id": "data-integrity-20"
       },
       {
         "severity": "MED",
-        "title": "Refuse the calendar cache write when the new show count falls well below the previous one, so a partial parse cannot replace a good calendar and discard carried judge panels.",
-        "lens": "reliability",
-        "priority": 12,
-        "id": "reliability-13"
-      },
-      {
-        "severity": "MED",
-        "title": "Move the long-dash scan into verify.ps1 or a shared function, so it runs on every commit rather than only on a full release.",
-        "lens": "release-ps1-stack",
-        "priority": 12,
-        "id": "release-ps1-stack-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Log once per fail-open branch in the rate limiter, naming the bucket, so a dead ratings binding is visible.",
-        "lens": "reliability",
-        "priority": 10,
-        "id": "reliability-04"
-      },
-      {
-        "severity": "MED",
-        "title": "Read the rate-limit counter before writing it and only write near the threshold, so gated traffic stops multiplying key-value writes one for one.",
+        "title": "Add a per-user write cap or a content-equality check to the state post handler and fold its volume into the cost table in PROJECT_SPEC.md, because the highest-frequency key-value write in the app is outside the budget arithmetic entirely.",
         "lens": "cost-economics",
-        "priority": 10,
-        "id": "cost-economics-01"
+        "priority": 12,
+        "id": "cost-economics-02"
       },
       {
         "severity": "MED",
-        "title": "Record the vendored Supabase client version and pull date in a header comment on public/vendor/supabase.js.",
-        "lens": "dependency",
-        "priority": 10,
-        "id": "dependency-02"
+        "title": "Run the sixty-three breed line-art files through a path-simplification pass and commit the optimized versions, because they are unminified high-precision traces totalling more than three thousand six hundred path elements.",
+        "lens": "pwa-dataset-size",
+        "priority": 12,
+        "id": "pwa-dataset-size-01"
       },
       {
         "severity": "MED",
-        "title": "Log a warning in the remote-state loader's catch so a failed boot-time read leaves a trace.",
-        "lens": "maintainability",
-        "priority": 10,
-        "id": "maintainability-03"
-      },
-      {
-        "severity": "MED",
-        "title": "Log inside the Postgres read failure paths and branch on the result, so a broken read path is distinguishable from an unmigrated user.",
+        "title": "Log the reason inside both failure branches of pgStateRead and skip the lazy backfill when the read failed, so an unreachable Postgres stops looking like a user who has not migrated yet.",
         "lens": "data-integrity",
         "priority": 10,
         "id": "data-integrity-12"
       },
       {
         "severity": "MED",
-        "title": "Re-run the portfolio page stamper so the Ring version pill stops reading three patch versions behind.",
-        "lens": "brand-consistency",
+        "title": "Give the null-byte strip and the build stamp a real failure path, or rewrite the gate description in CLAUDE.md, because two of the seven documented pre-flight gates have no failure condition at all.",
+        "lens": "release-ps1-stack",
         "priority": 10,
-        "id": "brand-consistency-03"
+        "id": "release-ps1-stack-03"
       },
       {
         "severity": "MED",
-        "title": "Cap the per-request standings page walk and backfill the rest in the background, so one request's processor time does not scale with season depth.",
-        "lens": "worker-cpu-budget",
-        "priority": 9,
-        "id": "worker-cpu-budget-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Adopt the versioned-prefix pattern the standings cache already uses, or document near the key builders that a shape change needs a versioned prefix and a read-time fallback.",
-        "lens": "kv-data-shape",
-        "priority": 8,
-        "id": "kv-data-shape-02"
+        "title": "Add public/app.js to the tell-vocabulary baseline in scripts/release.ps1, since the same file is already covered by the dash scan but not by the word ratchet.",
+        "lens": "ai-tell-concealment",
+        "priority": 10,
+        "id": "ai-tell-concealment-05"
       }
     ],
     "deferred": [
       {
         "severity": "MED",
-        "title": "Decide a v1.0 freeze against a scoped Phase-2 milestone (ownership, invites, certificate verification).",
-        "lens": "strategic-kill-this",
-        "reason": "blocked on Kane decision"
+        "title": "Move the view-as and shared-cats cross-account reads onto secret-guarded security-definer functions so both have the database-enforced boundary own-data reads already have.",
+        "lens": "security",
+        "reason": "carried by ruling, not a version-one gate; open 7 runs"
       },
       {
         "severity": "MED",
-        "title": "Revisit pricing and unit economics; a dollar a month needs roughly 500 users to cover hosting.",
-        "lens": "cost-economics",
+        "title": "Either schedule the four remaining steps in the Stripe go-live checklist or park the whole billing surface the way the ownership tables were parked.",
+        "lens": "strategic-kill-this",
         "reason": "blocked on Kane decision"
       },
       {
         "severity": "LOW",
-        "title": "Judge-panel coverage polish, one-time-code edge cases, and the remaining relational normalization.",
-        "lens": "strategic-kill-this",
-        "reason": "hold until the v1.0 and Phase-2 scope decision resolves"
+        "title": "Widen the milestone truncation in the portfolio card updater so the Ring card's milestone sentence does not end mid-word.",
+        "lens": "brand-consistency",
+        "reason": "the fix lands in YesAndEverything, outside this project"
       }
     ],
-    "health": 67,
+    "health": 75,
     "lensScores": {
-      "architecture": 60,
-      "reliability": 60,
-      "security": 76,
-      "performance": 60,
-      "data-integrity": 54,
-      "maintainability": 79,
-      "solo-tool-ux": 78,
-      "cost-economics": 78,
-      "dependency": 68,
-      "observability": 64,
-      "strategic-kill-this": 42,
-      "compliance-data-steward": 55,
-      "pwa-install-offline": 92,
-      "pwa-sync": 62,
-      "pwa-dataset-size": 94,
+      "architecture": 90,
+      "reliability": 58,
+      "security": 58,
+      "performance": 74,
+      "data-integrity": 66,
+      "maintainability": 91,
+      "solo-tool-ux": 82,
+      "cost-economics": 76,
+      "dependency": 76,
+      "observability": 60,
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 93,
+      "pwa-install-offline": 93,
+      "pwa-sync": 52,
+      "pwa-dataset-size": 79,
       "worker-cpu-budget": 70,
-      "kv-data-shape": 62,
-      "auth-token-hygiene": 45,
-      "release-ps1-stack": 65,
-      "discord-notify-wiring": 92,
-      "version-pill-drift": 92,
-      "gate-page-publish": 84,
-      "solo-dev-voice": 42,
-      "ai-tell-concealment": 42,
-      "brand-consistency": 70
+      "kv-data-shape": 85,
+      "auth-token-hygiene": 46,
+      "release-ps1-stack": 74,
+      "discord-notify-wiring": 76,
+      "version-pill-drift": 78,
+      "gate-page-publish": 94,
+      "solo-dev-voice": 80,
+      "ai-tell-concealment": 58,
+      "brand-consistency": 92
     },
     "openFindings": [
       {
-        "id": "reliability-07",
+        "id": "security-11",
         "severity": "HIGH",
         "priority": 25,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "compliance-01",
+        "id": "data-integrity-15",
         "severity": "HIGH",
         "priority": 25,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "data-integrity-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "pwa-sync-02",
-        "severity": "HIGH",
-        "priority": 20,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "data-integrity-06",
+        "id": "reliability-11",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 2,
-        "firstSeen": "2026-08-14"
-      },
-      {
-        "id": "data-integrity-10",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
         "firstSeen": "2026-08-21"
       },
       {
-        "id": "auth-token-hygiene-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "strategic-kill-this-01",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
-      },
-      {
-        "id": "ai-tell-concealment-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
-      },
-      {
-        "id": "solo-dev-voice-01",
+        "id": "pwa-sync-01",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "data-integrity-02",
+        "id": "data-integrity-16",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "reliability-15",
+        "severity": "HIGH",
+        "priority": 16,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "observability-04",
         "severity": "HIGH",
         "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "security-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "performance-01",
+        "id": "security-05",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 2,
-        "firstSeen": "2026-08-14"
-      },
-      {
-        "id": "performance-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
         "firstSeen": "2026-08-21"
       },
       {
-        "id": "architecture-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "architecture-02",
+        "id": "security-13",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "reliability-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
+        "firstSeen": "2026-08-28"
       },
       {
         "id": "reliability-05",
         "severity": "MED",
         "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-07-24"
+      },
+      {
+        "id": "reliability-13",
+        "severity": "MED",
+        "priority": 15,
         "runsOpen": 2,
-        "firstSeen": "2026-08-14"
+        "firstSeen": "2026-08-21"
+      },
+      {
+        "id": "reliability-10",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-21"
+      },
+      {
+        "id": "data-integrity-21",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-08-21"
+      },
+      {
+        "id": "auth-token-hygiene-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 7,
+        "firstSeen": "2026-07-07"
       },
       {
         "id": "solo-tool-ux-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-14"
+        "runsOpen": 3,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "dependency-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
+        "runsOpen": 4,
+        "firstSeen": "2026-07-24"
       },
       {
-        "id": "observability-02",
+        "id": "observability-05",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "observability-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
-      },
-      {
-        "id": "strategic-kill-this-02",
+        "id": "release-ps1-stack-02",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 2,
-        "firstSeen": "2026-08-14"
-      },
-      {
-        "id": "compliance-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "release-ps1-stack-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
-      },
-      {
-        "id": "kv-data-shape-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
-      },
-      {
-        "id": "version-pill-drift-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
         "firstSeen": "2026-08-21"
       },
       {
-        "id": "gate-page-publish-01",
+        "id": "ai-tell-concealment-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "data-integrity-05",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-07"
+        "runsOpen": 4,
+        "firstSeen": "2026-07-24"
       },
       {
         "id": "ai-tell-concealment-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-14"
+        "runsOpen": 3,
+        "firstSeen": "2026-07-30"
       },
       {
-        "id": "brand-consistency-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-14"
-      },
-      {
-        "id": "solo-dev-voice-02",
+        "id": "ai-tell-concealment-06",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "security-05",
+        "id": "discord-notify-wiring-01",
         "severity": "MED",
-        "priority": 12,
+        "priority": 15,
         "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "discord-notify-wiring-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "worker-cpu-budget-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-08-21"
       },
       {
         "id": "security-07",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-21"
       },
       {
         "id": "reliability-09",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "reliability-10",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "reliability-11",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "reliability-13",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "release-ps1-stack-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "cost-economics-01",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "dependency-02",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 6,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "maintainability-03",
-        "severity": "MED",
-        "priority": 10,
         "runsOpen": 2,
-        "firstSeen": "2026-08-14"
+        "firstSeen": "2026-08-21"
+      },
+      {
+        "id": "data-integrity-18",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "data-integrity-20",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "cost-economics-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
+      },
+      {
+        "id": "pwa-dataset-size-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-08-28"
       },
       {
         "id": "data-integrity-12",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-08-21"
       },
       {
-        "id": "brand-consistency-03",
+        "id": "release-ps1-stack-03",
         "severity": "MED",
         "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
+        "firstSeen": "2026-08-28"
       },
       {
-        "id": "worker-cpu-budget-01",
+        "id": "ai-tell-concealment-05",
         "severity": "MED",
-        "priority": 9,
+        "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "kv-data-shape-02",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-21"
+        "firstSeen": "2026-08-28"
       }
     ],
     "tensionsOpen": [
@@ -769,51 +588,52 @@
           "auth-token-hygiene",
           "performance"
         ],
-        "runsSeen": 6
-      },
-      {
-        "lenses": [
-          "security",
-          "maintainability"
-        ],
-        "runsSeen": 6
+        "runsSeen": 7
       },
       {
         "lenses": [
           "cost-economics",
           "reliability"
         ],
-        "runsSeen": 3
-      },
-      {
-        "lenses": [
-          "compliance-data-steward",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 3
+        "runsSeen": 4
       },
       {
         "lenses": [
           "reliability",
           "security"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
-          "strategic-kill-this",
-          "release-ps1-stack"
+          "security",
+          "cost-economics"
         ],
-        "runsSeen": 2
+        "runsSeen": 1
       },
       {
         "lenses": [
           "data-integrity",
-          "solo-tool-ux"
+          "performance"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "worker-cpu-budget",
+          "cost-economics"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "public-voice",
+          "release-ps1-stack"
         ],
         "runsSeen": 1
       }
-    ]
+    ],
+    "reconcileNote": "30 of the 47 findings open at 2026-08-21 verified closed in the current tree, not taken from queue notes. ring-dependency-01 and ring-ai-tell-concealment-02 are marked completed in the queue while the defect stands, so both stay open here and neither can be re-queued until those rows are reopened."
   },
   "metrics": [
     {
@@ -834,7 +654,7 @@
     }
   ],
   "workQueueDepth": 0,
-  "generatedAt": "2026-08-26T20:03:28.6941402Z",
+  "generatedAt": "2026-08-28T13:59:04.7956997Z",
   "stale": false,
   "tags": [
     "browser-app",
