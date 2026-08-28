@@ -26,17 +26,17 @@ const BOOK = {
   viewerSecret: "COILED_PASSWORD",
 };
 
-// Every page this Worker will serve, and the key-value key each one is published under. A path
-// that is not on this list is a 404 even for a signed-in reader, so adding a chapter is a
-// deliberate edit here and not a matter of what happens to be sitting in the namespace.
-const PAGES = {
-  "": "cg:index",
-  "/": "cg:index",
-  "/ch-1": "cg:ch-1",
-  "/ch-2": "cg:ch-2",
-  "/ch-3": "cg:ch-3",
-  "/ch-4": "cg:ch-4",
-  "/ch-5": "cg:ch-5",
+// Every page this Worker will serve. The index maps by name; chapters map by a bounded
+// numeric pattern, added 2026-08-27 when the book outgrew the hand-kept five-row list and
+// its chapters started returning this Worker's 404 the night Kane sat down to read them.
+// The pattern keeps the original intent: only chapter-shaped keys can ever be served, so
+// nothing else sitting in the shared namespace is reachable, and a chapter link the index
+// does not carry resolves to a key the publish step never wrote, which lands on the plain
+// "not published" page rather than leaking anything.
+const pageKey = (rest) => {
+  if (rest === "" || rest === "/") return "cg:index";
+  const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);
+  return m ? "cg:ch-" + m[1] : null;
 };
 
 const html = (body, status = 200, headers = {}) =>
@@ -83,7 +83,7 @@ export default {
     if (!role) return html(loginPage(BOOK), 200, loginHeaders());
     if (request.method !== "GET") return html("Method Not Allowed", 405, loginHeaders());
 
-    const key = PAGES[rest];
+    const key = pageKey(rest);
     if (!key) return html("Not found", 404, docHeaders());
 
     const body = await env.GATED_DOCS.get(key);
