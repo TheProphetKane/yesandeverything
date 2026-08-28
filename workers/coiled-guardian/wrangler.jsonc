@@ -1,0 +1,34 @@
+{
+  // The server-side gate for the private manuscript at yesandeverything.com/coiledguardian.
+  //
+  // The Coiled Guardian is an unpublished novel series written in X:\CoiledGuardian. It is
+  // intended to sell, so nothing about it may sit in this repository, which is public. The
+  // chapter bodies live in the GATED_DOCS namespace under cg:* keys, written by that project's
+  // tools/publish.mjs. They are not here and must not come back here.
+  //
+  // There is deliberately NO assets binding. An assets binding serves static files before
+  // fetch() runs unless run_worker_first is set, and a gate that can be skipped by a path is
+  // not a gate.
+  //
+  // Secrets, set with `wrangler secret put` and never committed:
+  //   SESSION_SECRET    HMAC key for the session cookie (random 32 bytes, its own, not shared)
+  //   COILED_PASSWORD   the reader phrase for /coiledguardian
+  "name": "coiled-guardian-yesandeverything",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-25",
+  "workers_dev": false,
+  "account_id": "1a36e094b77857eedf7ceb5a99e007d1",
+
+  // A path route on the zone, which takes precedence over the GitHub Pages origin serving the
+  // rest of the site, the same way the gated-docs routes already do.
+  "routes": [
+    { "pattern": "yesandeverything.com/coiledguardian*", "zone_name": "yesandeverything.com" }
+  ],
+
+  // The same namespace the design documents use. Keys are prefixed cg: so the two never collide.
+  "kv_namespaces": [
+    { "binding": "GATED_DOCS", "id": "3dd0b8c004f4473da2305fab795d4abb" }
+  ],
+
+  "observability": { "enabled": true }
+}
