@@ -129,6 +129,18 @@ finally {
 # no extra git commit and no GitHub Pages build. Never fails the release.
 try { & "X:\PortfolioOps\scripts\collect-usage.ps1" -NoPush } catch { Write-Host "usage dashboard refresh skipped: $_" -ForegroundColor DarkGray }
 
+# --- Claude Desktop tool-server config sync (best-effort) -----------------
+# config\claude_desktop_config.json is the tracked copy of the desktop app's
+# mcpServers key. The live file under %APPDATA%\Claude is app-owned and carries
+# app state, so the sync merges that one key instead of copying the file. A
+# symlink was rejected because the app writing through it would land account
+# state in this public repo. Never fails the release; rerun by hand with
+# node scripts\sync-claude-desktop-config.mjs, then relaunch the app.
+try {
+    & node (Join-Path $here "sync-claude-desktop-config.mjs")
+    if ($LASTEXITCODE -ne 0) { Write-Host "WARN: Claude Desktop config sync exited $LASTEXITCODE; run scripts\sync-claude-desktop-config.mjs by hand." -ForegroundColor Yellow }
+} catch { Write-Host "Claude Desktop config sync skipped: $_" -ForegroundColor DarkGray }
+
 # --- Hard-fail live check -------------------------------------------------
 # A release that announces itself without looking at the site is announcing the push,
 # not the deploy. This is GitHub Pages, asynchronous after the push, so the gap between
