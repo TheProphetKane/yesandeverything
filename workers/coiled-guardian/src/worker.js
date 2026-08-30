@@ -26,6 +26,11 @@ const BOOK = {
   viewerSecret: "COILED_PASSWORD",
 };
 
+// One book-wide array of reading notes (comments and suggested edits), written by the
+// annotation layer on the chapter pages. Manuscript-adjacent, so it lives beside the
+// chapter bodies and never in this repository.
+const NOTES_KEY = "cg:notes";
+
 // Every page this Worker will serve. The index maps by name; chapters map by a bounded
 // numeric pattern, added 2026-08-27 when the book outgrew the hand-kept five-row list and
 // its chapters started returning this Worker's 404 the night Kane sat down to read them.
@@ -81,6 +86,31 @@ export default {
     // --- the gate: nothing below here runs without a valid session ---
     const role = await sessionRole(request, BOOK, env);
     if (!role) return html(loginPage(BOOK), 200, loginHeaders());
+
+    // The notes store, added 2026-08-29. The annotation layer used to keep its notes in each
+    // device's localStorage alone, so a note made on the phone was invisible at the desk and
+    // invisible to the sessions that apply the edits. The chapter pages now sync the whole
+    // array through here (merge on the client, store whole). Behind the session on purpose:
+    // the notes quote the manuscript. The cookie is SameSite=Strict, so a cross-site POST
+    // arrives bare and stops at the login wall above.
+    if (rest === "/api/notes") {
+      const jsonHeaders = docHeaders({ "content-type": "application/json; charset=utf-8" });
+      if (request.method === "GET") {
+        const body = await env.GATED_DOCS.get(NOTES_KEY);
+        return html(body || "[]", 200, jsonHeaders);
+      }
+      if (request.method === "POST") {
+        const text = await request.text();
+        if (text.length > 512 * 1024) return html('{"error":"too large"}', 413, jsonHeaders);
+        let notes;
+        try { notes = JSON.parse(text); } catch { notes = null; }
+        if (!Array.isArray(notes)) return html('{"error":"expected an array"}', 400, jsonHeaders);
+        await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify(notes));
+        return html(JSON.stringify({ ok: true, count: notes.length }), 200, jsonHeaders);
+      }
+      return html("Method Not Allowed", 405, docHeaders());
+    }
+
     if (request.method !== "GET") return html("Method Not Allowed", 405, loginHeaders());
 
     const key = pageKey(rest);
