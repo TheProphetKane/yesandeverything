@@ -29,10 +29,10 @@ function Phrase([string]$pattern, [string]$what) {
 }
 
 $secrets = [ordered]@{
-    HORDES_PASSWORD        = Phrase 'hordes/\s+viewer: (\S+)' 'the Hordes viewer phrase'
-    HORDES_EDITOR_PASSWORD = Phrase 'hordes/[^\r\n]*\r?\n\s+editor: (\S+)' 'the Hordes editor phrase'
-    RISING_PASSWORD        = Phrase 'brackish-rising/\s+viewer: (\S+)' 'the Rising viewer phrase'
-    RISING_EDITOR_PASSWORD = Phrase 'brackish-rising/[^\r\n]*\r?\n\s+editor: (\S+)' 'the Rising editor phrase'
+    HORDES_PASSWORD        = Phrase 'hordes/\s+viewer: (.+)' 'the Hordes viewer phrase'
+    HORDES_EDITOR_PASSWORD = Phrase 'hordes/[^\r\n]*\r?\n\s+editor: (.+)' 'the Hordes editor phrase'
+    RISING_PASSWORD        = Phrase 'brackish-rising/\s+viewer: (.+)' 'the Rising viewer phrase'
+    RISING_EDITOR_PASSWORD = Phrase 'brackish-rising/[^\r\n]*\r?\n\s+editor: (.+)' 'the Rising editor phrase'
     SESSION_SECRET         = Phrase 'SESSION_SECRET: (\S+)' 'the session signing key'
 }
 

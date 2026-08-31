@@ -23,10 +23,10 @@ function Check($label, $cond, $detail) {
 
 $cases = @(
     @{ name='Hordes'; url='https://yesandeverything.com/hordes'; marker='Here Be Hordes';
-       viewer=(Phrase 'hordes/\s+viewer: (\S+)'); editor=(Phrase 'hordes/[^\r\n]*\r?\n\s+editor: (\S+)');
+       viewer=(Phrase 'hordes/\s+viewer: (.+)'); editor=(Phrase 'hordes/[^\r\n]*\r?\n\s+editor: (.+)');
        flag='htbh-access-mode' },
     @{ name='Brackish Rising'; url='https://yesandeverything.com/brackish-rising'; marker='Brackish Rising';
-       viewer=(Phrase 'brackish-rising/\s+viewer: (\S+)'); editor=(Phrase 'brackish-rising/[^\r\n]*\r?\n\s+editor: (\S+)');
+       viewer=(Phrase 'brackish-rising/\s+viewer: (.+)'); editor=(Phrase 'brackish-rising/[^\r\n]*\r?\n\s+editor: (.+)');
        flag='brackish-access-mode' }
 )
 
