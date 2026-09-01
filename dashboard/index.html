@@ -443,6 +443,10 @@
   .flow path.line.out-l { stroke: var(--accent-hot); filter: drop-shadow(0 0 4px var(--accent-glow)); animation-delay: 0.15s; }
   .flow path.line.gain-l { stroke: var(--ok-hot); filter: drop-shadow(0 0 4px var(--ok-glow)); stroke-width: 1.3; animation-delay: 0.3s; }
   .flow path.line.loss-l { stroke: var(--loss-hot); filter: drop-shadow(0 0 4px var(--loss-glow)); stroke-width: 1.3; animation-delay: 0.45s; }
+  /* Re-cache lost draws as bars, not a curve: it is a share of that day's saving, a different
+     measurement from the dollars the green area carries, and two curves in one lane read as
+     one line no matter how they are scaled. */
+  .flow rect.loss-b { fill: var(--loss-hot); opacity: 0; filter: drop-shadow(0 0 3px var(--loss-glow)); animation: areaIn 0.9s var(--ease-out-quart) 0.55s forwards; }
   @keyframes drawIn { to { stroke-dashoffset: 0; } }
   .flow line.midline { stroke: var(--ink-4); stroke-width: 1; }
   /* moving dots are HTML divs, not svg circles: the stretched svg
@@ -2226,6 +2230,10 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     function gainVal(r) { return (r.cacheEff && r.cacheEff.gainUsd) || 0; }
     function lossVal(r) { return r.cacheEff ? ((r.cacheEff.ttlLossUsd || 0) + (r.cacheEff.switchLossUsd || 0)) : 0; }
     var maxGain = 1, maxLoss = 1;
+    // Set by the flow branch below and read by the side labels: the worst loss-as-share-of-
+    // saving day in view (what the red bars are scaled to) and the first day that has any
+    // cache-efficiency data at all (nothing is drawn to the left of it).
+    var maxShare = 0, ceStart = -1;
     for (var i = DAYS - 1; i >= 0; i--) {
       var k = dayKey(i), d = byDay[k] || {};
       var rec = { d: k, input: d.input || 0, output: d.output || 0, cacheRead: d.cacheRead || 0, cacheWrite: d.cacheWrite || 0, cost: d.costUSD || 0, cacheEff: d.cacheEff || null };
@@ -2311,36 +2319,49 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       svg.appendChild(svgEl("path", { class: "area out-a", fill: "url(#gout-" + projId + ")", d: dnD2 + " L" + W + "," + MID + " L0," + MID + " Z" }));
 
       if (isFlow) {
-        // Cache gain (green) and loss (red) share ONE lane hanging down from the midline and
-        // ONE scale (maxGain), so they read against each other directly. Loss is AMPLIFIED so
-        // it is trackable, and CLAMPED so it can never draw taller than that day's gain.
+        // The bottom lane carries two DIFFERENT measurements, which is the whole point.
         //
-        // The bug this replaces: the red line used to trace gain+loss (a stack top). Loss runs
-        // 1.7-8.6% of gain, so the two paths differed by well under a pixel and rendered as
-        // literally the same line - Kane, 2026-08-04: "100% aligned to a T, which means there
-        // was something wrong". It was a real defect, not a scale nuance.
+        // Cache saved (green) is dollars, on its own true scale (maxGain), drawn as the area.
         //
-        // LOSS_MULT is derived, not hardcoded: it lifts the worst loss day to ~70% of the
-        // chart's gain peak, so the red line has real amplitude whatever the ratio happens to
-        // be. The per-day clamp is what enforces "never sits larger than cache saved" even on
-        // an outlier day (e.g. a thin-data day where loss is a big fraction of a tiny gain).
-        // Loss draws as a LINE ONLY, no filled area: two translucent fills overlapping in one
-        // lane is what blended green-under-red into orange in an earlier pass.
-        var LOSS_MULT = Math.max(1, (maxGain / Math.max(maxLoss, 1e-9)) * 0.7);
-        var gainPts = days.map(function (r, i) { return [i * step, MID + (gainVal(r) / maxGain) * AMP]; });
-        var lossPts = days.map(function (r, i) {
-          // Clamp to 90% of gain, not 100%: clamping to exactly gain made the two lines
-          // coincident on the days where the clamp bites, which is the same unreadable
-          // "aligned to a T" result this whole fix exists to remove.
-          var shown = Math.min(lossVal(r) * LOSS_MULT, gainVal(r) * 0.9);
-          return [i * step, MID + (shown / maxGain) * AMP];
-        });
-        // Both cache series live strictly below the midline; clamp so neither bleeds up into
-        // the token half, and so a zero-loss day rests exactly on the midline.
-        var gainD = smoothPath(gainPts, MID, H), lossD = smoothPath(lossPts, MID, H);
-        svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L0," + MID + " Z" }));
-        svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
-        svg.appendChild(svgEl("path", { class: "line loss-l", d: lossD, pathLength: 1 }));
+        // Re-cache lost (red) is a SHARE: that day's wasted rebuild dollars as a fraction of
+        // that day's saving, scaled to the worst share in the window, drawn as BARS.
+        //
+        // Two earlier passes drew lost as dollars in this same lane and both failed the same
+        // way. The waste runs a near-constant 0.4-2.1% of the saving, so any dollar-scaled
+        // version of it rides the green curve and reads as the same line (Kane, 2026-08-04:
+        // "100% aligned to a T, which means there was something wrong"). Amplifying it by a
+        // derived multiplier and clamping it under the green did not break that: both ends of
+        // that treatment are functions of the green, so the red still tracked it. A share is
+        // the thing that moves independently of how big the day was. A tall bar under a small
+        // green day is a bad cache day, which is the signal being asked for, and a busy day
+        // with ordinary discipline no longer paints a matching red peak just for being busy.
+        // Bars rather than a second curve so the two can never be read as one line again.
+        //
+        // Days with no cacheEff at all are NOT DRAWN. The classifier only starts on
+        // 2026-08-24; before that, both series flatlined on the midline, which asserts "saved
+        // nothing, lost nothing" across three weeks where nothing was ever measured.
+        ceStart = -1;
+        for (var ci = 0; ci < days.length; ci++) { if (days[ci].cacheEff) { ceStart = ci; break; } }
+        if (ceStart >= 0) {
+          var ceDays = days.slice(ceStart), x0 = ceStart * step;
+          ceDays.forEach(function (r) {
+            var g0 = gainVal(r);
+            if (g0 > 0) maxShare = Math.max(maxShare, lossVal(r) / g0);
+          });
+          var gainPts = ceDays.map(function (r, i) { return [x0 + i * step, MID + (gainVal(r) / maxGain) * AMP]; });
+          // Clamped below the midline so the lane never bleeds up into the token half, and so
+          // a zero-saving day rests exactly on it.
+          var gainD = smoothPath(gainPts, MID, H);
+          svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L" + x0 + "," + MID + " Z" }));
+          svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
+          var bw = Math.max(1.6, Math.min(step * 0.34, 6));
+          ceDays.forEach(function (r, i) {
+            var g1 = gainVal(r), sh = g1 > 0 ? lossVal(r) / g1 : 0;
+            if (sh <= 0 || maxShare <= 0) return;
+            var bx = Math.max(0, Math.min(W - bw, (x0 + i * step) - bw / 2));
+            svg.appendChild(svgEl("rect", { class: "loss-b", x: bx, y: MID, width: bw, height: Math.max(1, (sh / maxShare) * AMP), rx: bw / 2 }));
+          });
+        }
       }
 
       svg.appendChild(svgEl("line", { class: "midline", x1: 0, y1: MID, x2: W, y2: MID }));
@@ -2414,10 +2435,11 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     }
     if (labelUp) wrap.appendChild(el("span", { className: "side-label in", text: labelUp, title: VIEW === "cost" ? "estimated dollars per day" : VIEW === "cache" ? "context re-read from cache" : "prompt + context tokens in" }));
     if (labelDn) wrap.appendChild(el("span", { className: "side-label out", text: labelDn, title: VIEW === "cache" ? "context written to cache" : "generated tokens out" }));
-    if (isFlow) {
-      var lossMultTxt = "×" + (LOSS_MULT >= 10 ? Math.round(LOSS_MULT) : LOSS_MULT.toFixed(1));
-      wrap.appendChild(el("span", { className: "side-label gain", text: "cache saved", title: "$ actually saved by cache reads that day. True scale, peak " + fmtUSD(maxGain) + "/day." }));
-      wrap.appendChild(el("span", { className: "side-label loss", text: "re-cache lost " + lossMultTxt, title: "$ spent rebuilding a cache that should still have been warm: idle past the 1h/5m TTL, or a mid-session model/effort switch, /compact, etc. Real peak " + fmtUSD(maxLoss) + "/day, which is only " + (100 * maxLoss / maxGain).toFixed(1) + "% of the cache-saved peak, so the line is drawn " + lossMultTxt + " to be trackable. It is also clamped so it can never draw taller than that day's cache-saved line. Hover any day for the true dollar figures." }));
+    if (isFlow && ceStart >= 0) {
+      var fromTxt = days[ceStart] ? days[ceStart].d : "";
+      var sinceTxt = ceStart > 0 ? " Measured from " + fromTxt + "; nothing is drawn before that, because nothing was classified before that." : "";
+      wrap.appendChild(el("span", { className: "side-label gain", text: "cache saved", title: "Dollars actually saved by cache reads that day, filled area, true scale, peak " + fmtUSD(maxGain) + "/day." + sinceTxt }));
+      wrap.appendChild(el("span", { className: "side-label loss", text: "re-cache lost · share", title: "Bars, NOT dollars: each bar is that day's wasted rebuild spend as a share of that day's saving, scaled to the worst day in view (" + (100 * maxShare).toFixed(2) + "%). Wasted means a cache write that should have been a read: idle past the one-hour or five-minute expiry, or a mid-session model or effort switch. A tall bar under a shallow green day is a bad cache day. Dollars are deliberately not used here, because the waste is a near-constant fraction of the saving, so a dollar line just retraces the green one. Real peak " + fmtUSD(maxLoss) + "/day. Hover any day for the true dollar figures." + sinceTxt }));
     }
     wrap.appendChild(svg);
     var axis = el("div", { className: "axis-note" });
@@ -2464,7 +2486,8 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
         tip.appendChild(el("div", { className: "d", text: "cache saved " + fmtUSD(ce.gainUsd || 0) + " (" + fmtTok(ce.gainTokens || 0) + " tok read)" }));
         var lossTot = (ce.ttlLossUsd || 0) + (ce.switchLossUsd || 0);
         var lossTotTok = (ce.ttlLossTokens || 0) + (ce.switchLossTokens || 0);
-        tip.appendChild(el("div", { className: "d", text: "re-cache lost " + fmtUSD(lossTot) + " (" + fmtTok(lossTotTok) + " tok rewritten)" }));
+        var lossShare = (ce.gainUsd || 0) > 0 ? (100 * lossTot / ce.gainUsd) : 0;
+        tip.appendChild(el("div", { className: "d", text: "re-cache lost " + fmtUSD(lossTot) + " (" + fmtTok(lossTotTok) + " tok rewritten) · " + lossShare.toFixed(2) + "% of the saving" }));
         if (ce.ttlLossUsd || ce.switchLossUsd) {
           tip.appendChild(el("div", { className: "d", text: "  idle-expiry " + fmtUSD(ce.ttlLossUsd || 0) + " · mid-session switch " + fmtUSD(ce.switchLossUsd || 0) }));
         }
@@ -2472,6 +2495,8 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
         if (otherWrite > 0.005) {
           tip.appendChild(el("div", { className: "d", text: "  not counted as loss: subagent " + fmtUSD(ce.subagentUsd || 0) + " (5-min TTL by design) · new session " + fmtUSD(ce.sessionStartUsd || 0) }));
         }
+      } else if (VIEW === "flow") {
+        tip.appendChild(el("div", { className: "d", text: "cache saved / lost: not measured this day" }));
       }
       tip.style.left = Math.min(rect.width - 70, Math.max(70, px)) + "px";
       tip.style.top = "8px";
