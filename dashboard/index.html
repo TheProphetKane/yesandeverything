@@ -441,8 +441,8 @@
   }
   .flow path.line.in-l { stroke: var(--cyan-hot); filter: drop-shadow(0 0 4px var(--cyan-glow)); }
   .flow path.line.out-l { stroke: var(--accent-hot); filter: drop-shadow(0 0 4px var(--accent-glow)); animation-delay: 0.15s; }
-  .flow path.line.gain-l { stroke: var(--ok-hot); filter: drop-shadow(0 0 4px var(--ok-glow)); stroke-width: 1.3; animation-delay: 0.3s; }
-  .flow path.line.loss-l { stroke: var(--loss-hot); filter: drop-shadow(0 0 4px var(--loss-glow)); stroke-width: 1.3; animation-delay: 0.45s; }
+  .flow path.line.gain-l { stroke: var(--ok-hot); filter: drop-shadow(0 0 4px var(--ok-glow)); animation-delay: 0.3s; }
+  .flow path.line.loss-l { stroke: var(--loss-hot); filter: drop-shadow(0 0 4px var(--loss-glow)); animation-delay: 0.45s; }
   @keyframes drawIn { to { stroke-dashoffset: 0; } }
   .flow line.midline { stroke: var(--ink-4); stroke-width: 1; }
   /* moving dots are HTML divs, not svg circles: the stretched svg
@@ -2276,8 +2276,8 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     gGain.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#00d68f", "stop-opacity": "0.02" }));
     gGain.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#00d68f", "stop-opacity": "0.45" }));
     var gLoss = svgEl("linearGradient", { id: "gloss-" + projId, x1: 0, y1: 0, x2: 0, y2: 1 });
-    gLoss.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#d43d3d", "stop-opacity": "0.04" }));
-    gLoss.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#d43d3d", "stop-opacity": "0.55" }));
+    gLoss.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#d43d3d", "stop-opacity": "0.02" }));
+    gLoss.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#d43d3d", "stop-opacity": "0.45" }));
     defs.appendChild(gIn); defs.appendChild(gOut); defs.appendChild(gCost); defs.appendChild(gGain); defs.appendChild(gLoss);
     svg.appendChild(defs);
 
@@ -2350,13 +2350,18 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
           // Clamped below the midline so the lane never bleeds up into the token half, and so
           // a zero-saving day rests exactly on it.
           var gainD = smoothPath(gainPts, MID, H);
-          svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L" + x0 + "," + MID + " Z" }));
-          svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
           var lossPts = ceDays.map(function (r, i) {
             var g1 = gainVal(r), sh = (g1 > 0 && maxShare > 0) ? (lossVal(r) / g1) / maxShare : 0;
             return [x0 + i * step, MID + sh * AMP];
           });
-          svg.appendChild(svgEl("path", { class: "line loss-l", d: smoothPath(lossPts, MID, H), pathLength: 1 }));
+          var lossD = smoothPath(lossPts, MID, H);
+          // Both cache series are built exactly like "in" and "out" above: a gradient area
+          // closed back to the midline, then the glowing line on top. Same treatment for all
+          // four, hue is the only difference (Kane, 2026-09-01).
+          svg.appendChild(svgEl("path", { class: "area gain-a", fill: "url(#ggain-" + projId + ")", d: gainD + " L" + W + "," + MID + " L" + x0 + "," + MID + " Z" }));
+          svg.appendChild(svgEl("path", { class: "area loss-a", fill: "url(#gloss-" + projId + ")", d: lossD + " L" + W + "," + MID + " L" + x0 + "," + MID + " Z" }));
+          svg.appendChild(svgEl("path", { class: "line gain-l", d: gainD, pathLength: 1 }));
+          svg.appendChild(svgEl("path", { class: "line loss-l", d: lossD, pathLength: 1 }));
         }
       }
 
