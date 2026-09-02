@@ -82,7 +82,7 @@ try {
         exit 1
     }
 
-    Write-Host "==== Step 3/5: project-page prose staleness guard ====" -ForegroundColor Magenta
+    Write-Host "==== Step 3/6: project-page prose staleness guard ====" -ForegroundColor Magenta
     # Prose-staleness guard. The version pill on every project page is stamped from that
     # project status JSON, so it is right the moment a release pushes, while the prose
     # underneath it is hand-written and nothing updates it. That is how the Scheduler page
@@ -98,7 +98,21 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 4/5: push YaE to GitHub ====" -ForegroundColor Magenta
+    Write-Host "==== Step 4/6: portfolio status projection freshness ====" -ForegroundColor Magenta
+    # Every status/data/*.json here is a generated projection of canonical data in
+    # X:\PortfolioOps\status\data (ruled 2026-08-19). The nightly sweep already runs this
+    # in --check mode, but that leaves up to a day where a diverged projection -- a direct
+    # hand-edit of a public file, or canonical moving on without a re-projection -- can ship
+    # and stay live. Checking here too closes that gap at the one other place a push happens.
+    python "X:\PortfolioOps\scripts\project-status.py" --check
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: a public status/data/*.json no longer matches its canonical projection." -ForegroundColor Red
+        Write-Host "         Re-run project-status.py --all after folding any direct public edit back into canonical." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host ""
+    Write-Host "==== Step 5/6: push YaE to GitHub ====" -ForegroundColor Magenta
     if ($Path.Count -gt 0) {
         Write-Host "Scoped to: $($Path -join ', ')" -ForegroundColor DarkGray
         & (Join-Path $here "push-to-github.ps1") -Path $Path
@@ -111,7 +125,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 5/5: post to #yae-dev-log on Discord ====" -ForegroundColor Magenta
+    Write-Host "==== Step 6/6: post to #yae-dev-log on Discord ====" -ForegroundColor Magenta
     # If scripts\.discord_webhook.txt is missing, discord-notify.ps1 logs a
     # warning and exits 0. Release is unaffected; Discord is optional.
     & (Join-Path $here "discord-notify.ps1")
