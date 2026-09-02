@@ -49,8 +49,8 @@
     "latestReportAt": "2026-08-28T11:50:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 17,
-    "actionsClosed": 47,
+    "actionsOpen": 10,
+    "actionsClosed": 54,
     "actions": [
       {
         "severity": "MED",
@@ -69,52 +69,10 @@
       },
       {
         "severity": "MED",
-        "title": "Run pgStateRead concurrently with verifyUser in handleStateGet, since row-level security already scopes the read to the token's owner, and reuse the /api/me identity result instead of a second independent check.",
-        "lens": "performance",
-        "priority": 15,
-        "id": "performance-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Verify the Supabase access token locally against the published signing keys and cache the verified identity for the token's remaining lifetime, instead of a live upstream call on all seventeen call sites.",
-        "lens": "auth-token-hygiene",
-        "priority": 15,
-        "id": "auth-token-hygiene-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Install wrangler locally, commit the generated lockfile, and change the release script to invoke the local binary instead of the package runner, because the major was bumped but the version that actually ships is still resolved fresh at deploy time.",
-        "lens": "dependency",
-        "priority": 15,
-        "id": "dependency-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Move the long-dash scan and the tell-vocabulary ratchet into scripts/verify.ps1 so the pre-commit hook catches them, instead of only a full release catching them.",
-        "lens": "release-ps1-stack",
-        "priority": 15,
-        "id": "release-ps1-stack-02"
-      },
-      {
-        "severity": "MED",
-        "title": "Add CLAUDE.md and .project-context.json to voice_scope and to the release dash scan, because CLAUDE.md declares itself in scope for the rule and nothing checks either file.",
-        "lens": "ai-tell-concealment",
-        "priority": 15,
-        "id": "ai-tell-concealment-04"
-      },
-      {
-        "severity": "MED",
         "title": "Extend the release tell check to cover the courtesy-offer phrase, first-person collective pronouns and named assistant tools, since three of the four rules CLAUDE.md states have no automated check.",
         "lens": "ai-tell-concealment",
         "priority": 15,
         "id": "ai-tell-concealment-06"
-      },
-      {
-        "severity": "MED",
-        "title": "Wrap the standings page walk in a start and end timestamp, record it the way cron failures already are, and pre-warm the current season so the first real caller is not the one paying for a cold forty-page walk.",
-        "lens": "worker-cpu-budget",
-        "priority": 15,
-        "id": "worker-cpu-budget-01"
       },
       {
         "severity": "MED",
@@ -151,13 +109,6 @@
         "lens": "pwa-dataset-size",
         "priority": 12,
         "id": "pwa-dataset-size-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Log the reason inside both failure branches of pgStateRead and skip the lazy backfill when the read failed, so an unreachable Postgres stops looking like a user who has not migrated yet.",
-        "lens": "data-integrity",
-        "priority": 10,
-        "id": "data-integrity-12"
       },
       {
         "severity": "MED",
@@ -238,53 +189,11 @@
         "firstSeen": "2026-08-28"
       },
       {
-        "id": "performance-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "auth-token-hygiene-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 7,
-        "firstSeen": "2026-07-07"
-      },
-      {
-        "id": "dependency-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-07-24"
-      },
-      {
-        "id": "release-ps1-stack-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-21"
-      },
-      {
-        "id": "ai-tell-concealment-04",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-07-30"
-      },
-      {
         "id": "ai-tell-concealment-06",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 1,
         "firstSeen": "2026-08-28"
-      },
-      {
-        "id": "worker-cpu-budget-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-21"
       },
       {
         "id": "security-07",
@@ -320,13 +229,6 @@
         "priority": 12,
         "runsOpen": 1,
         "firstSeen": "2026-08-28"
-      },
-      {
-        "id": "data-integrity-12",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-21"
       },
       {
         "id": "release-ps1-stack-03",
@@ -394,7 +296,51 @@
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "30 of the 47 findings open at 2026-08-21 verified closed in the current tree, not taken from queue notes. ring-dependency-01 and ring-ai-tell-concealment-02 are marked completed in the queue while the defect stands, so both stay open here and neither can be re-queued until those rows are reopened."
+    "reconcileNote": "30 of the 47 findings open at 2026-08-21 verified closed in the current tree, not taken from queue notes. ring-dependency-01 and ring-ai-tell-concealment-02 are marked completed in the queue while the defect stands, so both stay open here and neither can be re-queued until those rows are reopened.",
+    "closedLog": [
+      {
+        "date": "2026-09-02",
+        "id": "auth-token-hygiene-02",
+        "by": "aged burn-down session",
+        "evidence": "verified identities cached 60 seconds in the isolate, successes only, hashed key, capped at 200, memory only; six tests; v0.18.2 a5291ac, live"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "performance-02",
+        "by": "aged burn-down session",
+        "evidence": "handleStateGet starts pgStateRead alongside verifyUser, skipped when the request names an address; v0.18.2 a5291ac, live"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "data-integrity-12",
+        "by": "aged burn-down session",
+        "evidence": "pgStateRead returns a reason and logs both failure branches; the lazy backfill fires only on a genuine missing row; two tests; v0.18.2 a5291ac, live"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "worker-cpu-budget-01",
+        "by": "aged burn-down session",
+        "evidence": "standings walk instrumented on /api/health (standingsMs, standingsPages, verified live) with abnormal walks into the cron error sink; the pre-warm half cut with the arithmetic in PROJECT_SPEC.md and WONT_DO.md"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "dependency-01",
+        "by": "aged burn-down session",
+        "evidence": "wrangler 4.128.0 pinned by package-lock.json; release.ps1 step 2 runs the local binary and refuses to fall back; DEPLOY.md and CLAUDE.md say npm ci; v0.18.2 a5291ac"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "release-ps1-stack-02",
+        "by": "aged burn-down session",
+        "evidence": "both voice gates extracted to scripts/check-voice.ps1, called by verify.ps1 as gate 4 of 4 so the pre-commit hook runs them; proven on commits a5291ac and c606916"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "ai-tell-concealment-04",
+        "by": "aged burn-down session",
+        "evidence": "CLAUDE.md and .project-context.json added to voice_scope and public_artifact_globs and to both scans in check-voice.ps1; both files clean"
+      }
+    ]
   },
   "metrics": [
     {

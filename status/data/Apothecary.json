@@ -40,22 +40,15 @@
     "latestReportPath": "docs/BAR_RAISE-2026-09-02.md",
     "latestReportAt": "2026-09-02T12:05:00Z",
     "verdict": "needs-attention",
-    "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 21,
-    "actionsClosed": 14,
+    "topFinding": "One thing in the product itself is actually broken, and it is in the export path rather than the print path everyone assumed was the risk. PNG export rasterizes the print stage through html2canvas outside print media, so the gap and stacking rules that live only inside the print block never apply, and a back-enabled label at large or xl comes out laid in a fixed-width row that both diverges from the browser's own print output and overflows the 8.5 inch box (src/util/export-png.js:48-58 against styles/label.css:460-478 and the class stamped at src/render.js:582). Everything the last review flagged as shipping wrong content is genuinely fixed and was re-measured rather than read off the changelog: zero em dashes remain anywhere in the data, the source or the docs, the contrast gate really does target 4.5 and really does run pre-commit, and the blind git-lock delete is gone from the status writer. The count of open actions jumps from 8 to 34 because this was a full 30-lens fan-out against a project that had not had one in a week, and because 16 of the 34 are the shared orchestration layer rather than this repository: the stale plugin snapshot, the skill-routing clauses that sit in body prose where the router never reads them, and this very orchestrator's steps 7 and 8 pointing a session at the generated public status file instead of the canonical one. The thing worth Kane's attention above all of it is not a bug: ten weeks after the v1.0 cut, every commit here has been review-machinery output and no roadmap item has moved, which is the same profile that earned Cattery and Scheduler an explicit dead-for-now ruling.",
+    "actionsOpen": 16,
+    "actionsClosed": 19,
     "actions": [
       {
         "severity": "HIGH",
         "title": "Split mountLayoutDesigner, mountIllustrationPicker, mountPresets, mountTitleEditor and mountCustomItems into their own src/ui modules.",
         "lens": "maintainability",
         "id": "maintainability-01",
-        "priority": 20
-      },
-      {
-        "severity": "HIGH",
-        "title": "Move or duplicate each do-not-trigger phrase into the front-matter description of project-canonical-audit, handler-audit, backlog-hygiene and bar-raise.",
-        "lens": "orchestration-skill-trigger-collisions",
-        "id": "orchestration-skill-trigger-collisions-01",
         "priority": 20
       },
       {
@@ -95,23 +88,9 @@
       },
       {
         "severity": "MED",
-        "title": "Add a standalone schedule, or a call from the nightly sweep, that runs post-audit-digests.ps1 against each project's docs folder independent of a release.",
-        "lens": "release-pipeline-discord-notify-wiring",
-        "id": "release-pipeline-discord-notify-wiring-01",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
         "title": "Extend check-plugin-snapshot.ps1's root discovery to enumerate the skills-plugin tree as well, so both drift surfaces are guarded by the same check.",
         "lens": "orchestration-skill-suite-health",
         "id": "orchestration-skill-suite-health-03",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Add a step to the burndown that always includes any pending item older than 21 days in the candidate set for that run.",
-        "lens": "orchestration-work-queue-hygiene",
-        "id": "orchestration-work-queue-hygiene-02",
         "priority": 15
       },
       {
@@ -165,13 +144,6 @@
       },
       {
         "severity": "MED",
-        "title": "Rewrite work-queue-runner SKILL.md line 222 to count the six current status values.",
-        "lens": "orchestration-skill-chain-handoff-integrity",
-        "id": "orchestration-skill-chain-handoff-integrity-02",
-        "priority": 10
-      },
-      {
-        "severity": "MED",
         "title": "Replace the hardcoded project list in self-reprompt-loop SKILL.md:95 with a directory enumeration.",
         "lens": "orchestration-skill-chain-handoff-integrity",
         "id": "orchestration-skill-chain-handoff-integrity-04",
@@ -183,14 +155,6 @@
         "lens": "observability",
         "id": "observability-02",
         "priority": 9
-      },
-      {
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "id": "security-02",
-        "priority": 8,
-        "redacted": true
       }
     ],
     "deferred": [
@@ -273,13 +237,6 @@
         "firstSeen": "2026-09-02"
       },
       {
-        "id": "orchestration-skill-trigger-collisions-01",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 4,
-        "firstSeen": "2026-08-12"
-      },
-      {
         "id": "orchestration-skill-trigger-collisions-02",
         "severity": "high",
         "priority": 20,
@@ -315,25 +272,11 @@
         "firstSeen": "2026-09-02"
       },
       {
-        "id": "release-pipeline-discord-notify-wiring-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-08-05"
-      },
-      {
         "id": "orchestration-skill-suite-health-03",
         "severity": "medium",
         "priority": 15,
         "runsOpen": 1,
         "firstSeen": "2026-09-02"
-      },
-      {
-        "id": "orchestration-work-queue-hygiene-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-08-05"
       },
       {
         "id": "orchestration-audit-loop-integrity-01",
@@ -385,13 +328,6 @@
         "firstSeen": "2026-09-02"
       },
       {
-        "id": "orchestration-skill-chain-handoff-integrity-02",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 4,
-        "firstSeen": "2026-08-12"
-      },
-      {
         "id": "orchestration-skill-chain-handoff-integrity-04",
         "severity": "medium",
         "priority": 10,
@@ -404,13 +340,6 @@
         "priority": 9,
         "runsOpen": 1,
         "firstSeen": "2026-09-02"
-      },
-      {
-        "id": "security-02",
-        "severity": "medium",
-        "priority": 8,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-26"
       }
     ],
     "tensionsOpen": [
@@ -457,7 +386,39 @@
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-09-02: all eight findings carried from 2026-08-26 re-verified in code and all eight still hold, so nothing closed on a claim. Two had terminal queue rows that did not close the finding: bar-raise-2026-08-12-apothecary-queue-status-enum-mismatch is completed while work-queue-runner SKILL.md:222 still carries the retired vocabulary, and bar-raise-2026-08-05-apothecary-audit-digest-release-gated was dropped with no reason while post-audit-digests.ps1 still has no standalone caller. skill-suite-health-01 and -02 moved from actions to deferred: both are parked blocked-on-user and neither is a session action."
+    "reconcileNote": "2026-09-02: all eight findings carried from 2026-08-26 re-verified in code and all eight still hold, so nothing closed on a claim. Two had terminal queue rows that did not close the finding: bar-raise-2026-08-12-apothecary-queue-status-enum-mismatch is completed while work-queue-runner SKILL.md:222 still carries the retired vocabulary, and bar-raise-2026-08-05-apothecary-audit-digest-release-gated was dropped with no reason while post-audit-digests.ps1 still has no standalone caller. skill-suite-health-01 and -02 moved from actions to deferred: both are parked blocked-on-user and neither is a session action.",
+    "closedLog": [
+      {
+        "date": "2026-09-02",
+        "id": "security-02",
+        "by": "aged burn-down session",
+        "evidence": "normalizeState in src/util/migrate.js validates accent, shopColor, symbol, illustration and per-item layout color and glow against hex or the registry before render; 41 tests pass; v1.1.14 commit 45750c5, live 200"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "by": "aged burn-down session",
+        "evidence": "decided under D52 not to post audit digests on a schedule: a digest posts on release, when there is something to say, and a nightly per-project post is noise; recorded in WONT_DO.md 2026-09-02"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-work-queue-hygiene-02",
+        "by": "aged burn-down session",
+        "evidence": "moot: the daily governor is folded and disabled, and the seven-day rule (D53) is a stricter superset of the 21-day floor the finding asked for"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-skill-trigger-collisions-01",
+        "by": "aged burn-down session",
+        "evidence": "reciprocal do-not-trigger clauses appended to the front-matter descriptions of project-canonical-audit, handler-audit, backlog-hygiene, cross-project-status-digest and bar-raise in both the plugin source and the user skills copy, 2026-09-02"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-skill-chain-handoff-integrity-02",
+        "by": "aged burn-down session",
+        "evidence": "work-queue-runner SKILL.md line 222 now counts the six status values queue_write.py accepts, both copies, 2026-09-02"
+      }
+    ]
   },
   "metrics": [
     {

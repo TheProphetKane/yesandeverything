@@ -41,8 +41,8 @@
     "latestReportAt": "2026-09-01T12:03:03Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 41,
-    "actionsClosed": 66,
+    "actionsOpen": 35,
+    "actionsClosed": 72,
     "actions": [
       {
         "severity": "HIGH",
@@ -99,48 +99,6 @@
         "lens": "observability",
         "priority": 15,
         "id": "observability-01"
-      },
-      {
-        "severity": "MED",
-        "title": "CARRIED UNVERIFIED (lens not re-run this session): Add a short if-an-import-goes-wrong section to a user-facing document naming the roll-back button and the route explicitly.",
-        "lens": "orchestration-incident-runbook-currency",
-        "priority": 15,
-        "id": "orchestration-incident-runbook-currency-02"
-      },
-      {
-        "severity": "MED",
-        "title": "CARRIED UNVERIFIED (lens not re-run this session): Downgrade to a time-boxed watch and re-open at high only if a new skip-without-catch-up appears in a future mirror.",
-        "lens": "orchestration-scheduled-task-firing-state",
-        "priority": 15,
-        "id": "orchestration-scheduled-task-firing-state-01"
-      },
-      {
-        "severity": "MED",
-        "title": "CARRIED UNVERIFIED (lens not re-run this session): Change the Wave 5 post-write gate from a per-id existence check to a count check against the printed number. Note that the Chains side of this session measured the same gap and found the queue kind vocabulary still stale.",
-        "lens": "orchestration-skill-chain-handoff-integrity",
-        "priority": 15,
-        "id": "orchestration-skill-chain-handoff-integrity-03"
-      },
-      {
-        "severity": "MED",
-        "title": "CARRIED UNVERIFIED (lens not re-run this session): Drain or explicitly close the aged blocked-on-user items before the next review adds another layer on top of them.",
-        "lens": "orchestration-skill-suite-health",
-        "priority": 15,
-        "id": "orchestration-skill-suite-health-03"
-      },
-      {
-        "severity": "MED",
-        "title": "CARRIED UNVERIFIED (lens not re-run this session): Batch the blocked-on-user items into one attended decision session instead of letting each keep aging individually.",
-        "lens": "orchestration-work-queue-hygiene",
-        "priority": 15,
-        "id": "orchestration-work-queue-hygiene-05"
-      },
-      {
-        "severity": "MED",
-        "title": "CARRIED UNVERIFIED (lens not re-run this session): Give the prune step a home in the enabled burndown routine so completed items age out automatically.",
-        "lens": "orchestration-work-queue-hygiene",
-        "priority": 15,
-        "id": "orchestration-work-queue-hygiene-07"
       },
       {
         "severity": "MED",
@@ -453,48 +411,6 @@
         "firstSeen": "2026-09-01"
       },
       {
-        "id": "orchestration-incident-runbook-currency-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-25"
-      },
-      {
-        "id": "orchestration-scheduled-task-firing-state-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-07-30"
-      },
-      {
-        "id": "orchestration-skill-chain-handoff-integrity-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-25"
-      },
-      {
-        "id": "orchestration-skill-suite-health-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-08-18"
-      },
-      {
-        "id": "orchestration-work-queue-hygiene-05",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-25"
-      },
-      {
-        "id": "orchestration-work-queue-hygiene-07",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-25"
-      },
-      {
         "id": "performance-02",
         "severity": "MED",
         "priority": 15,
@@ -729,7 +645,45 @@
       }
     ],
     "reconcileNote": "Close leg, run first. Every one of the nineteen carried openFindings ids was matched against both the live queue and the archive, filtered to items tagged for this project and dated at or after the finding's first sighting. Ten came back closed, and every one of those ten carried a COMPLETELY EMPTY notes field and an empty title, so not one of them could be closed on its own record. All ten were re-verified against the code by a separate read-only pass and all ten hold: `architecture-02`, `architecture-04`, `compliance-data-steward-04`, `-05`, `-06`, `finance-product-categorization-tail-05`, `finance-product-dedupe-03`, `finance-product-threat-model-01` and `-02`, plus `finance-product-threat-model-04`, which the threat-model lens found closed by the first-launch consent modal after 15 runs open. That an entire batch of closures carried no evidence is itself worth fixing; the queue writer does not require a closure note and nothing checks for one.\n\n`observability-03` was reported closed by nothing and is re-filed this run as `observability-01` with fresh evidence: the audit-findings self-test still is not invoked by preship, by the release script, or by the security workflow. `release-pipeline-gate-page-publish-05` stays open and moves to the deferred list rather than being reported clean, because its subject lives in another project's folder and a single-project run cannot see it, which is the same reason the previous run gave. The seven orchestration findings are carried unverified and are marked as such in the action list.",
-    "verdictNote": "Health 71 sits in the in-progress band. The verdict is one step below it on a breakage signal, not on the number: reliability-01 is live, silent, unrecoverable loss of real bank transactions on an install carrying real money."
+    "verdictNote": "Health 71 sits in the in-progress band. The verdict is one step below it on a breakage signal, not on the number: reliability-01 is live, silent, unrecoverable loss of real bank transactions on an install carrying real money.",
+    "closedLog": [
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-incident-runbook-currency-02",
+        "by": "aged burn-down session",
+        "evidence": "README.md gained the if-an-import-goes-wrong section naming DELETE /api/imports/:id and the Import page roll-back button; commit 199976b, pushed"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-scheduled-task-firing-state-01",
+        "by": "aged burn-down session",
+        "evidence": "routine-health-watch has been the time-boxed daily watch since 2026-08-19; ROUTINE_HEALTH.md 2026-09-02 07:46 shows every routine green with no skip-without-catch-up"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-skill-chain-handoff-integrity-03",
+        "by": "aged burn-down session",
+        "evidence": "wave 5 post-write gate resolves ids exactly and asserts the printed count equals the list (personal-skills 92eb5d9, 2026-08-28), present in the runtime copy"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-skill-suite-health-03",
+        "by": "aged burn-down session",
+        "evidence": "zero Budget blocked-on-user rows in the live queue; the 2026-09-02 attended burn-down is the drain the finding asked for"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-work-queue-hygiene-05",
+        "by": "aged burn-down session",
+        "evidence": "the one attended decision session the finding asked for ran 2026-09-02 under D52 and D53"
+      },
+      {
+        "date": "2026-09-02",
+        "id": "orchestration-work-queue-hygiene-07",
+        "by": "aged burn-down session",
+        "evidence": "the prune step has a home: step 3 of the portfolio-nightly-sweep skill since 2026-09-02 (D66 amendment)"
+      }
+    ]
   },
   "metrics": [
     {
