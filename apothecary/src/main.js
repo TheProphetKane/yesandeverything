@@ -115,6 +115,11 @@ async function main() {
     // v1.1.9: forwarded so migrate.js doesn't need a static import of
     // state.js. Keeps the v0.8.0 cache-bust contract intact.
     defaultState, defaultLayout, DEFAULT_SECTION_TITLES,
+    // security-02: known-good id sets so normalizeState can reject a symbol
+    // or illustration value that didn't come from the app's own pickers
+    // before it ever reaches render.js's unescaped src="..." attributes.
+    symbolIds: new Set([...Object.keys(SYMBOL_LABELS), ...Object.keys(SYMBOL_ALIASES), 'none']),
+    illustrationKeywords: new Set(illustrations.map(i => i.keyword)),
   };
   const persisted = loadState();
   const initial = normalizeState(persisted ?? defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID), migrateCtx);

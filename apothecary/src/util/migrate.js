@@ -17,6 +17,18 @@
 // arrive via the ctx param instead, forwarded from main.js's own versioned
 // import of state.js.
 
+// bar-raise security-02 (2026-08-26): render.js interpolates state.accent,
+// state.shopColor, and every per-item color/glow straight into style="..."
+// attribute strings with no escaping (the text fields alongside them go
+// through esc(), colors never did). A crafted value like `red" onmouseover="`
+// breaks out of the attribute and injects arbitrary markup. Every field that
+// ends up there gets forced through this pattern before it ever reaches
+// render.js; anything that fails it resets to a safe default rather than
+// rendering. Colors in this app are always browser-native <input type=color>
+// or a fixed swatch, both always 3- or 6-digit hex, so the pattern costs
+// nothing on legitimate state and only rejects a tampered or hand-edited one.
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
 // Build a v0.9 layout from a pre-v0.9 saved state. Reads state.placement
 // (per-item front/back booleans) and state.notesSplit (combined vs three-col
 // back-bottom-row) to reconstruct what the user had, then maps onto the new
@@ -187,6 +199,26 @@ export function normalizeState(initial, ctx) {
   }
   if (typeof initial.icon === 'undefined') initial.icon = defaults.icon;
 
+  // security-02: accent and shopColor render straight into a style attribute
+  // (render.js herb-name/latin/props/description/rune/shop/divider items) with
+  // no escaping. Reject anything that isn't a bare hex color.
+  if (typeof initial.accent !== 'string' || !HEX_COLOR_RE.test(initial.accent)) {
+    initial.accent = defaults.accent;
+  }
+  if (typeof initial.shopColor !== 'string' || !HEX_COLOR_RE.test(initial.shopColor)) {
+    initial.shopColor = defaults.shopColor;
+  }
+
+  // security-02: state.symbol resolves through ctx.symbolAliases and lands in
+  // an unescaped src="data/symbols/<id>.png" attribute (render.js). 'none'
+  // is the valid "no symbol" sentinel; anything else must be a known id or
+  // alias. ctx.symbolIds is optional so a caller that hasn't wired the new
+  // field yet (an older test harness) degrades to skipping the check rather
+  // than throwing.
+  if (ctx.symbolIds && initial.symbol !== 'none' && !ctx.symbolIds.has(initial.symbol)) {
+    initial.symbol = defaults.symbol;
+  }
+
   // v0.9 migration: state.layout owns zone composition. Old saved state may
   // carry state.placement (per-item front/back grid) and state.notesSplit
   // instead. Build state.layout from those signals + the canonical default,
@@ -213,7 +245,16 @@ export function normalizeState(initial, ctx) {
   if (!Array.isArray(initial.layoutPresets)) initial.layoutPresets = [];
   if (typeof initial.borderStyle !== 'string') initial.borderStyle = 'celtic';
   // v0.14: illustration override field. Default null = auto-match.
+  // security-02: a non-null value lands in an unescaped
+  // src="data/illustrations/<keyword>.png" attribute (render.js), so it must
+  // be a known library keyword. ctx.illustrationKeywords is optional for the
+  // same reason ctx.symbolIds is above.
   if (initial.illustration === undefined) initial.illustration = null;
+  if (initial.illustration !== null && ctx.illustrationKeywords) {
+    if (typeof initial.illustration !== 'string' || !ctx.illustrationKeywords.has(initial.illustration)) {
+      initial.illustration = null;
+    }
+  }
   // v0.14.2: preview-collapse persistence. Both open on first load.
   if (!initial.previewCollapse || typeof initial.previewCollapse !== 'object') {
     initial.previewCollapse = { front: false, back: false };
@@ -222,9 +263,20 @@ export function normalizeState(initial, ctx) {
   if (typeof initial.previewCollapse.back  !== 'boolean') initial.previewCollapse.back  = false;
 
   // v0.11: backfill zone.align (default 'center') on any pre-existing layout.
+  // security-02: an item entry can be an object { key, color?, glow? }
+  // (render.js normalizeItem); color and glow land in the same unescaped
+  // style attributes as accent/shopColor above, so the same pattern applies.
+  // A field that fails it is dropped rather than defaulted: render.js's
+  // instanceColor/instanceGlow already fall back to state.accent / no glow
+  // when the field is absent, which is the correct per-item default.
   for (const side of ['front', 'back']) {
     for (const z of (initial.layout?.[side] ?? [])) {
       if (!z.align) z.align = 'center';
+      for (const it of (z.items ?? [])) {
+        if (!it || typeof it !== 'object') continue;
+        if (it.color !== undefined && !HEX_COLOR_RE.test(it.color)) delete it.color;
+        if (it.glow !== undefined && !HEX_COLOR_RE.test(it.glow)) delete it.glow;
+      }
     }
   }
 
