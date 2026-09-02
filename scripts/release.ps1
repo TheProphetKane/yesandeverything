@@ -97,6 +97,14 @@ try {
         exit 1
     }
 
+    # ----- Prose ratchet (X:\WRITING.md, D55) ----------------------------------
+    # The declared prose surfaces may not get worse: any count above the floor recorded in
+    # .prose-ratchet.json aborts the release, and --tighten lowers the floor to the live
+    # counts so this ship records the new line. The floor is never raised to get past this.
+    Write-Host "==== Pre-flight: prose ratchet (X:\WRITING.md) ====" -ForegroundColor Magenta
+    & python X:\prose.py --project YesAndEverything --ratchet --tighten
+    if ($LASTEXITCODE -ne 0) { Write-Host "Prose ratchet failed: a writing-rule count rose above its floor (RISE lines above). Fix the prose; the floor is never raised." -ForegroundColor Red; exit 1 }
+
     Write-Host ""
     Write-Host "==== Step 4/6: portfolio status projection freshness ====" -ForegroundColor Magenta
     # Every status/data/*.json here is a generated projection of canonical data in

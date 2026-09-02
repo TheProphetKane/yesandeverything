@@ -189,3 +189,13 @@ End every turn in a completed ("done") state, not an input-requested state. The 
 - When there are genuinely optional follow-ups, state them as available options in a plain declarative sentence -- never phrase them as a question directed at the user.
 - Only end a turn awaiting input when the user's answer genuinely determines what you do next -- a real fork you cannot resolve yourself. Then ask one direct question and stop.
 - Never end with a question solely to be polite or to prompt continuation.
+
+## Writing rules (Kane, 2026-09-02)
+
+Prose in this project follows `X:\WRITING.md`, the Coiled Guardian writing rules made
+portable on Kane's ask: three or more ands in a sentence never, no em dash, no aphoristic
+closer, the verb belonging to whoever does it, the tics and the generated register named and
+counted. The measured half is `python X:\prose.py --project YesAndEverything`; the surfaces it reads
+are the `prose` block in `.project-context.json`, the floor is `.prose-ratchet.json`, and
+the nightly sweep runs the ratchet across every wired project. Run `python X:\prose.py --staged --repo X:\YesAndEverything` before committing prose: a touched
+file may keep its old debt and may not add to it. Never raise the floor.
