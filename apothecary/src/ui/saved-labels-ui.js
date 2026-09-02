@@ -9,11 +9,12 @@
 // deploy (cache-bust contract, PROJECT_SPEC 3.1, bar-raise architecture-01).
 // The CRUD functions arrive via the ctx param instead.
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
+// One HTML-escaper for the app (bar-raise maintainability-02). Dynamic import
+// with the build query for the same reason the CRUD functions arrive via ctx:
+// a static import resolves at a bare URL the edge cache can serve stale.
+const ESC_V = '?v=' + (typeof window !== 'undefined' && window.__APOTHECARY_BUILD
+  ? window.__APOTHECARY_BUILD : '0');
+const { escapeHtml: esc } = await import('../util/escape-html.js' + ESC_V);
 
 function fmt(ts) {
   if (!ts) return '';

@@ -21,11 +21,15 @@
 // against main.js's own versioned copy (label-templates.js was affected both
 // ways at once). See ctx.autofitText / ctx.resolveSize, forwarded from main.js.
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
+// The HTML-escaper lives in one place now (bar-raise maintainability-02);
+// eight byte-identical copies of it used to be spread across this file,
+// editor.js and saved-labels-ui.js. It arrives through a versioned dynamic
+// import, not a static one, for the same reason autofitText and resolveSize
+// travel through ctx: a static import resolves at a bare URL with no ?v= and
+// the edge cache can serve it stale after a deploy (PROJECT_SPEC 3.1).
+const ESC_V = '?v=' + (typeof window !== 'undefined' && window.__APOTHECARY_BUILD
+  ? window.__APOTHECARY_BUILD : '0');
+const { escapeHtml: esc } = await import('./util/escape-html.js' + ESC_V);
 
 function wavyDivider(color) {
   return `<svg width="60" height="6" viewBox="0 0 60 6" xmlns="http://www.w3.org/2000/svg">
@@ -513,7 +517,7 @@ function zonesForSide(state, tmpl, side) {
 export function render(state, mounts, ctx) {
   const tmpl = ctx.templates[state.templateId];
   if (!tmpl) {
-    mounts.preview.innerHTML = `<div style="color:#C4580A">Unknown template: ${esc(state.templateId)}</div>`;
+    mounts.preview.innerHTML = `<div style="color:var(--warn)">Unknown template: ${esc(state.templateId)}</div>`;
     if (mounts.printStage) mounts.printStage.innerHTML = '';
     return;
   }

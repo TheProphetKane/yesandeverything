@@ -52,7 +52,15 @@ export function saveState(state) {
 }
 
 export function clearState() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    // Reset-to-default used to swallow this, so a failed clear looked like a
+    // successful one and the old label came back on the next load
+    // (bar-raise reliability-02). Route it through the same channel as
+    // loadState and saveState so the status line says something.
+    notifyStorageError('state', err, 'clear');
+  }
 }
 
 export function debounce(fn, ms = 200) {

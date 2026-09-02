@@ -16,6 +16,16 @@
 // rule via a stray static import (bar-raise 2026-08-12 architecture-01);
 // they're destructured from ctx below now, same as everything else here.
 
+// The HTML-escaper: one copy for the app (bar-raise maintainability-02).
+// Six byte-identical closures used to live in this file under two names,
+// escAttr and esc, doing exactly the same five-character escape. Loaded
+// through a versioned dynamic import rather than a static one for the reason
+// spelled out above: a static import resolves at a bare URL with no ?v= and
+// the edge cache can serve it stale after a deploy (PROJECT_SPEC 3.1).
+const ESC_V = '?v=' + (typeof window !== 'undefined' && window.__APOTHECARY_BUILD
+  ? window.__APOTHECARY_BUILD : '0');
+const { escapeHtml: esc } = await import('../util/escape-html.js' + ESC_V);
+
 const SWATCH_COLORS = [
   '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
   '#4A3F6B', '#C97BA8', '#C4580A', '#B8860B', '#6B3A2A',
@@ -301,11 +311,15 @@ export function mountEditor(root, ctx) {
   // a one-line warning. 'read' (a corrupted entry, data is lost) and 'write'
   // (quota exceeded, best effort) get different wording so the user knows
   // whether something they had is gone versus something they're about to
-  // lose (bar-raise reliability-01).
+  // lose (bar-raise reliability-01). 'clear' is the reset path failing to
+  // remove the stored label, which reads back on the next load (reliability-02).
+  const STORAGE_ERROR_MSG = {
+    read:  'Could not read your saved data. It may be corrupted; starting fresh.',
+    clear: 'Could not clear the stored label. The old one may come back on reload.',
+    write: 'Storage is full. Changes may not save. Delete unused saved labels.',
+  };
   document.addEventListener('yaa:storage-error', (e) => {
-    statusMsg.textContent = e.detail?.op === 'read'
-      ? 'Could not read your saved data. It may be corrupted; starting fresh.'
-      : 'Storage is full. Changes may not save. Delete unused saved labels.';
+    statusMsg.textContent = STORAGE_ERROR_MSG[e.detail?.op] || STORAGE_ERROR_MSG.write;
     statusMsg.className = 'status-msg warn';
   });
   const runeChar = [$('r1Char'), $('r2Char'), $('r3Char')];
@@ -339,7 +353,6 @@ export function mountEditor(root, ctx) {
   const autocompleteRoot = root.querySelector('[data-herb-autocomplete]');
   const suggestList      = root.querySelector('[data-herb-suggestions]');
   const titleCase = (s) => s.replace(/(^|\s)\w/g, c => c.toUpperCase());
-  const escAttr   = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const searchIndex = [];
   for (const k of Object.keys(herbDB)) {
@@ -370,10 +383,10 @@ export function mountEditor(root, ctx) {
     suggestionIdx = -1;
     if (items.length === 0) { suggestList.hidden = true; return; }
     suggestList.innerHTML = items.map((it, i) => {
-      const latin = it.latin ? `<span class="herb-suggest__latin">${escAttr(it.latin)}</span>` : '';
+      const latin = it.latin ? `<span class="herb-suggest__latin">${esc(it.latin)}</span>` : '';
       const aliasTag = it.alias ? '<span class="herb-suggest__alias">alias</span>' : '';
-      return `<li class="herb-suggest" role="option" data-idx="${i}" data-canonical="${escAttr(it.canonical)}">
-        <span class="herb-suggest__name">${escAttr(it.display)}</span>${latin}${aliasTag}
+      return `<li class="herb-suggest" role="option" data-idx="${i}" data-canonical="${esc(it.canonical)}">
+        <span class="herb-suggest__name">${esc(it.display)}</span>${latin}${aliasTag}
       </li>`;
     }).join('');
     suggestList.hidden = false;
@@ -781,7 +794,7 @@ function mountTitleEditor(root, state, _deps) {
       return `
         <div class="title-editor-row">
           <span class="title-editor-label">${field.label}</span>
-          <input type="text" class="title-editor-input" data-title-key="${field.key}" value="${escAttr(v)}" placeholder="${escAttr(field.key === 'back-desc-full' ? '(no title)' : '(hidden)')}" />
+          <input type="text" class="title-editor-input" data-title-key="${field.key}" value="${esc(v)}" placeholder="${esc(field.key === 'back-desc-full' ? '(no title)' : '(hidden)')}" />
         </div>
       `;
     }).join('');
@@ -793,9 +806,6 @@ function mountTitleEditor(root, state, _deps) {
       });
     });
   }); }
-  function escAttr(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
   paint();
   state.subscribe(paint);
 }
@@ -816,12 +826,12 @@ function mountCustomItems(root, state, _deps) {
       return;
     }
     root.innerHTML = items.map(item => `
-      <div class="custom-item-card" data-custom-id="${escAttr(item.id)}">
+      <div class="custom-item-card" data-custom-id="${esc(item.id)}">
         <div class="custom-item-head">
-          <input type="text" class="custom-item-title field-input" data-custom-title value="${escAttr(item.title)}" placeholder="Section title" />
+          <input type="text" class="custom-item-title field-input" data-custom-title value="${esc(item.title)}" placeholder="Section title" />
           <button type="button" class="custom-item-remove" data-custom-remove aria-label="Delete custom section">×</button>
         </div>
-        <textarea class="custom-item-body field-input" data-custom-body rows="2" placeholder="Section body text">${escAttr(item.body)}</textarea>
+        <textarea class="custom-item-body field-input" data-custom-body rows="2" placeholder="Section body text">${esc(item.body)}</textarea>
       </div>
     `).join('');
 
@@ -852,9 +862,6 @@ function mountCustomItems(root, state, _deps) {
     layout.hidden = (layout.hidden || []).filter(k => k !== id);
     state.set({ customItems: items, layout });
   }
-  function escAttr(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
   paint();
   state.subscribe(paint);
 }
@@ -878,14 +885,14 @@ function mountPresets({ select, saveBtn, actions }, state, deps) {
   function paint() {
     const presets = allPresets();
     select.innerHTML = '<option value="">Load a preset...</option>' +
-      presets.map(p => `<option value="${escAttr(p.id)}">${escAttr(p.name)}${p.kind === 'user' ? ' (saved)' : ''}</option>`).join('');
+      presets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}${p.kind === 'user' ? ' (saved)' : ''}</option>`).join('');
 
     // Show delete button only if the currently-selected preset is a user one.
     const cur = select.value;
     const curPreset = presets.find(p => p.id === cur);
     if (curPreset && curPreset.kind === 'user') {
       actions.hidden = false;
-      actions.innerHTML = `<button type="button" class="btn-ghost preset-delete-btn" data-delete-preset>Delete "${escAttr(curPreset.name)}"</button>`;
+      actions.innerHTML = `<button type="button" class="btn-ghost preset-delete-btn" data-delete-preset>Delete "${esc(curPreset.name)}"</button>`;
       actions.querySelector('[data-delete-preset]').addEventListener('click', () => {
         if (!confirm(`Delete preset "${curPreset.name}"?`)) return;
         const next = (state.get().layoutPresets ?? []).filter(p => p.id !== cur);
@@ -938,9 +945,6 @@ function mountPresets({ select, saveBtn, actions }, state, deps) {
     paint();
   });
 
-  function escAttr(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
   paint();
   state.subscribe(paint);
 }
@@ -1104,9 +1108,6 @@ function mountLayoutDesigner(root, state, deps) {
     </div>`;
   }
 
-  function esc(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
 
   function wireDragAndDrop() {
     root.querySelectorAll('.layout-chip').forEach(chip => {
@@ -1507,9 +1508,6 @@ function mountLayoutDesigner(root, state, deps) {
 //   - Click "Back to Auto" to clear the override
 
 function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch, herbCategoryFallback }) {
-  function esc(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
 
   function currentResolution() {
     const s = state.get();
