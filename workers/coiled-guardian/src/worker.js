@@ -105,8 +105,34 @@ export default {
         let notes;
         try { notes = JSON.parse(text); } catch { notes = null; }
         if (!Array.isArray(notes)) return html('{"error":"expected an array"}', 400, jsonHeaders);
-        await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify(notes));
-        return html(JSON.stringify({ ok: true, count: notes.length }), 200, jsonHeaders);
+
+        // Merge, never overwrite (2026-08-29, the night a refresh appeared to eat
+        // annotations). A client posts its whole array, but another device or the
+        // session tooling may have written since that client last read, so the store's
+        // copy is folded in: union by id, a delete anywhere wins everywhere, and the
+        // copy that still carries its text beats a stripped one. Notes without ids
+        // (there should be none) are kept rather than dropped.
+        let cur = [];
+        try { cur = JSON.parse(await env.GATED_DOCS.get(NOTES_KEY)) || []; } catch { cur = []; }
+        const byId = new Map();
+        const loose = [];
+        const fold = (n) => {
+          if (!n || typeof n !== "object") return;
+          if (!n.id) { loose.push(n); return; }
+          const prev = byId.get(n.id);
+          if (!prev) { byId.set(n.id, n); return; }
+          const del = prev.del || n.del ? 1 : 0;
+          const texty = (n.text || n.anchor) ? n : prev;
+          const kept = { ...prev, ...texty };
+          if (del) kept.del = 1; else delete kept.del;
+          byId.set(n.id, kept);
+        };
+        cur.forEach(fold);
+        notes.forEach(fold);
+        const merged = [...byId.values()].concat(loose)
+          .sort((a, b) => ((a.at || "") < (b.at || "") ? -1 : (a.at || "") > (b.at || "") ? 1 : 0));
+        await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify(merged));
+        return html(JSON.stringify({ ok: true, count: merged.length }), 200, jsonHeaders);
       }
       return html("Method Not Allowed", 405, docHeaders());
     }
