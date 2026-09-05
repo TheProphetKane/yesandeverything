@@ -160,23 +160,47 @@ if ($Path.Count -gt 0) {
     Assert-GitOk "add"
     $staged = git diff --cached --name-only
 }
-# Secret-shape gate on what is actually staged. .gitignore only helps for files
-# git is not already tracking, and this repo is public with Pages serving the
-# raw tree, so a staged secret is live the moment the push lands.
+# Secret gate on what is actually staged: filename shapes (cheap, first) plus a
+# content scan of the ADDED lines in the staged diff, which is the check that
+# actually catches a secret pasted into an ordinary-looking file. .gitignore
+# only helps for files git is not already tracking, and this repo is public
+# with Pages serving the raw tree, so a staged secret is live the moment the
+# push lands. Content patterns match the staged-diff scan already run across
+# the portfolio (X:\HereBeHordes\scripts\check-secrets.ps1 and siblings).
 $secretShapes = @(
     '\.pem$', '\.key$', '\.p12$', '\.pfx$', '\.ppk$',
     '(^|/)\.env($|\.)', '(^|/)id_rsa$', '(^|/)id_ed25519$',
     'secret', 'credential', 'webhook', 'cloudflare-token', 'oauth'
 )
-$suspect = @($staged -split "`n" | Where-Object { $_ } | ForEach-Object { $_.Trim() } | Where-Object {
+$suspectNames = @($staged -split "`n" | Where-Object { $_ } | ForEach-Object { $_.Trim() } | Where-Object {
     $f = $_
     if ($f -match '\.example$' -or $f -match '(?i)SECURITY') { return $false }
     foreach ($shape in $secretShapes) { if ($f -match "(?i)$shape") { return $true } }
     return $false
 })
-if ($suspect.Count -gt 0) {
-    Write-Host "INTEGRITY FAIL: staged files look secret-shaped. This repo is PUBLIC." -ForegroundColor Red
-    $suspect | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
+
+$secretContentPatterns = @(
+    'sk_live_[A-Za-z0-9]', 'whsec_[A-Za-z0-9]', 'rk_live_[A-Za-z0-9]',
+    're_[A-Za-z0-9]{20}', 'ghp_[A-Za-z0-9]{20}',
+    'github_pat_[A-Za-z0-9_]{20}', 'discord\.com/api/webhooks/\d',
+    'sbp_[a-f0-9]{40}', 'eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{10,}',
+    '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+)
+$suspectContent = @()
+$diffLines = git diff --cached --unified=0
+$currentFile = "(diff)"
+foreach ($line in $diffLines) {
+    if ($line -match '^\+\+\+ b/(.+)$') { $currentFile = $Matches[1]; continue }
+    if ($line -notmatch '^\+') { continue }
+    foreach ($pat in $secretContentPatterns) {
+        if ($line -cmatch $pat) { $suspectContent += "  content: $currentFile has an added line matching /$pat/" }
+    }
+}
+
+if ($suspectNames.Count -gt 0 -or $suspectContent.Count -gt 0) {
+    Write-Host "INTEGRITY FAIL: a staged change looks secret-shaped. This repo is PUBLIC." -ForegroundColor Red
+    $suspectNames | ForEach-Object { Write-Host "  filename: $_" -ForegroundColor Yellow }
+    $suspectContent | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
     Write-Host "Secrets belong in X:\.secrets. Unstage these, or add an ignore rule." -ForegroundColor Yellow
     Write-Host "To override deliberately: `$env:YAE_ALLOW_SECRET_SHAPE = '1'" -ForegroundColor DarkGray
     if ($env:YAE_ALLOW_SECRET_SHAPE -ne "1") { exit 1 }
