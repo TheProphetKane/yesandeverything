@@ -80,6 +80,15 @@ Get-ChildItem "dashboard\data\usage.json" -ErrorAction SilentlyContinue | ForEac
 Get-ChildItem "dashboard\data\queue.json" -ErrorAction SilentlyContinue | ForEach-Object {
   $targets += [PSCustomObject]@{ File = $_; IsStatusCard = $false }
 }
+# dashboard/index.html fetches these two on every load (bar-raise 2026-09-03,
+# data-integrity-02) but neither ever crossed this guard, so a FUSE-truncated
+# write to either would ship to production undetected same as usage.json would.
+Get-ChildItem "dashboard\data\backfill.json" -ErrorAction SilentlyContinue | ForEach-Object {
+  $targets += [PSCustomObject]@{ File = $_; IsStatusCard = $false }
+}
+Get-ChildItem "dashboard\data\health-trend.json" -ErrorAction SilentlyContinue | ForEach-Object {
+  $targets += [PSCustomObject]@{ File = $_; IsStatusCard = $false }
+}
 
 $targets | ForEach-Object {
   $path         = $_.File.FullName
@@ -199,6 +208,42 @@ if ($secrets.Count -gt 0) {
       if ($text -and $text.Contains($s)) {
         $bad += "$($_.Name): republishes a gate phrase from the mirror pages (rewrite the prose to name the finding without quoting the secret)"
         break
+      }
+    }
+  }
+}
+
+# --- Private-telemetry projection guard (bar-raise 2026-09-03, security-01) ---
+# The usage collector (X:\PortfolioOps\scripts\collect-usage.ps1) is out of this
+# repo and out of this script's reach, but it writes straight into
+# dashboard\data\usage.json here, so this is the one place left to catch it if it
+# ever ships a private project's day-by-day spend again. D4 and D64 already settled
+# that a private project's bare roster name and its all-time aggregate cost are fine
+# on the public dashboard; what is never fine is the per-day series or a named
+# spend-anomaly row, because those are the same health-judgement shape D64 keeps out
+# of atRiskProjects and stalledProjects. Same roster _redact_constellation() in
+# project-status.py uses, kept in sync by hand since it lives in the other repo.
+$PrivateRoster = @("skylight", "counselor", "kounselor", "guardian", "coiledguardian", "signalrd")
+$usagePath = Join-Path (Get-Location) "dashboard\data\usage.json"
+if (Test-Path -LiteralPath $usagePath) {
+  $usageDoc = $null
+  try { $usageDoc = Get-Content -LiteralPath $usagePath -Raw -Encoding utf8 | ConvertFrom-Json } catch { $usageDoc = $null }
+  if ($usageDoc) {
+    if ($usageDoc.projects) {
+      foreach ($projName in @($usageDoc.projects.PSObject.Properties.Name)) {
+        if ($PrivateRoster -contains $projName.ToLowerInvariant()) {
+          $entry = $usageDoc.projects.$projName
+          if ($entry -and $entry.PSObject.Properties.Name -contains "daily" -and @($entry.daily).Count -gt 0) {
+            $bad += "usage.json: projects.$projName.daily carries $(@($entry.daily).Count) row(s) of a private project's day-by-day spend (security-01: drop the daily[] array for private-roster projects)"
+          }
+        }
+      }
+    }
+    if ($usageDoc.spendAnomalies) {
+      $leaked = @($usageDoc.spendAnomalies | Where-Object { $_.project -and ($PrivateRoster -contains ([string]$_.project).ToLowerInvariant()) })
+      if ($leaked.Count -gt 0) {
+        $names = ($leaked | ForEach-Object { $_.project } | Sort-Object -Unique) -join ", "
+        $bad += "usage.json: spendAnomalies carries $($leaked.Count) row(s) naming a private project ($names) (security-01: filter these out of the public projection)"
       }
     }
   }
