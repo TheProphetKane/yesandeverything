@@ -49,8 +49,8 @@
     "latestReportAt": "2026-09-04T12:05:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 46,
-    "actionsClosed": 0,
+    "actionsOpen": 42,
+    "actionsClosed": 4,
     "actions": [
       {
         "severity": "HIGH",
@@ -80,13 +80,6 @@
         "lens": "discord-notify-wiring",
         "priority": 20,
         "id": "discord-notify-wiring-01"
-      },
-      {
-        "severity": "MED",
-        "title": "Stamp events the Worker does not act on with an ignored outcome and compute the staleness watermark only over the entitlement-writing types, so an invoice event cannot permanently suppress a real cancellation.",
-        "lens": "data-integrity",
-        "priority": 20,
-        "id": "data-integrity-18"
       },
       {
         "severity": "HIGH",
@@ -134,20 +127,6 @@
       },
       {
         "severity": "MED",
-        "title": "Call pgEraseUser first in handleUserDelete and abort before any key-value deletion when it does not confirm, so a failed durable half cannot leave an account erased in one store and intact in the other.",
-        "lens": "data-integrity",
-        "priority": 15,
-        "id": "data-integrity-21"
-      },
-      {
-        "severity": "MED",
-        "title": "Add a per-user write throttle or a content-equality short-circuit to handleStatePost and give its volume a row in the Cost constraint table, because the highest-frequency write in the app is outside the budget arithmetic.",
-        "lens": "cost-economics",
-        "priority": 15,
-        "id": "cost-economics-02"
-      },
-      {
-        "severity": "MED",
         "title": "Name Discord and Resend in privacy.html, or add a feedback row to its storage table, since feedback carries an optional email and free text to two third parties the page does not mention.",
         "lens": "compliance-data-steward",
         "priority": 15,
@@ -159,14 +138,6 @@
         "lens": "compliance-data-steward",
         "priority": 15,
         "id": "compliance-data-steward-03"
-      },
-      {
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 15,
-        "id": "security-13",
-        "redacted": true
       },
       {
         "severity": "MED",
@@ -467,13 +438,6 @@
         "firstSeen": "2026-09-04"
       },
       {
-        "id": "data-integrity-18",
-        "severity": "MED",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-28"
-      },
-      {
         "id": "reliability-18",
         "severity": "HIGH",
         "priority": 16,
@@ -516,20 +480,6 @@
         "firstSeen": "2026-09-04"
       },
       {
-        "id": "data-integrity-21",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-28"
-      },
-      {
-        "id": "cost-economics-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-28"
-      },
-      {
         "id": "compliance-data-steward-01",
         "severity": "MED",
         "priority": 15,
@@ -542,13 +492,6 @@
         "priority": 15,
         "runsOpen": 1,
         "firstSeen": "2026-09-04"
-      },
-      {
-        "id": "security-13",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-08-28"
       },
       {
         "id": "dependency-01",
@@ -819,7 +762,33 @@
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-09-04: close leg ran against both the live queue and the archive. None of the ten findings carried from 2026-08-28 resolved: nine had no queue item at all and were re-verified as still true in the code by this run's lenses, and security-07 holds a live blocked-on-user row parked as a money decision under D52 (brief D-OPEN-35), so it moved to deferred rather than closing. actionsClosed is 0 and that is the honest number."
+    "reconcileNote": "2026-09-04: close leg ran against both the live queue and the archive. None of the ten findings carried from 2026-08-28 resolved: nine had no queue item at all and were re-verified as still true in the code by this run's lenses, and security-07 holds a live blocked-on-user row parked as a money decision under D52 (brief D-OPEN-35), so it moved to deferred rather than closing. actionsClosed is 0 and that is the honest number.",
+    "closedLog": [
+      {
+        "date": "2026-09-05",
+        "id": "data-integrity-18",
+        "by": "nightly sweep 2026-09-05, aged burn-down",
+        "evidence": "an event type this app does not act on is stamped ignored rather than applied, through a new stripe_event_ignore function in migration 0013, so an ignored delivery stops raising the per-customer staleness watermark. Commit 490bb15, with a new webhook test and the migration probe updated to six guarded functions. Commit da90f1b then made the stamp survive a worker deployed ahead of its migration: a"
+      },
+      {
+        "date": "2026-09-05",
+        "id": "data-integrity-21",
+        "by": "nightly sweep 2026-09-05, aged burn-down",
+        "evidence": "handleUserDelete erases the durable copy first and aborts with 502 postgres_unavailable before touching any key-value store when that erasure is not confirmed, so an outage can no longer destroy the fast copy, the sharing grants and the vote markers while the durable account row survives. Commit 490bb15, with two new tests. Verified 2026-09-04 by running npm test in X:/YesAndRing: 144 of 144 pass."
+      },
+      {
+        "date": "2026-09-05",
+        "id": "cost-economics-02",
+        "by": "nightly sweep 2026-09-05, aged burn-down",
+        "evidence": "handleStatePost reads the last written blob and skips both writes when the incoming state and name are unchanged under a stable serialization, reporting unchanged, and PROJECT_SPEC.md gains the write-volume row in the cost table. Commits 490bb15 and dc21e28, with a new four-case test covering the no-op skip, a key-order-only change, a real edit and the first save. Verified 2026-09-04 by running np"
+      },
+      {
+        "date": "2026-09-05",
+        "id": "security-13",
+        "by": "nightly sweep 2026-09-05, aged burn-down",
+        "evidence": "REDACTED: this text named a weakness and the file it lives in, which together are an address. Severity and project are kept; the location is in the project's own report under X:\\PortfolioOps."
+      }
+    ]
   },
   "metrics": [
     {
