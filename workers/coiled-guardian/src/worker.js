@@ -31,6 +31,19 @@ const BOOK = {
 // chapter bodies and never in this repository.
 const NOTES_KEY = "cg:notes";
 
+// Stored as { v, notes } since the reliability-01 optimistic-concurrency fix
+// (2026-09-03/04); a bare array is the pre-fix shape and reads as v 0 so an old
+// stored value keeps working without a migration step.
+async function readNotesStore(env) {
+  let raw;
+  try { raw = JSON.parse(await env.GATED_DOCS.get(NOTES_KEY)); } catch { raw = null; }
+  if (Array.isArray(raw)) return { v: 0, notes: raw };
+  if (raw && typeof raw === "object" && Array.isArray(raw.notes)) {
+    return { v: Number.isInteger(raw.v) ? raw.v : 0, notes: raw.notes };
+  }
+  return { v: 0, notes: [] };
+}
+
 // Every page this Worker will serve. The index maps by name; chapters map by a bounded
 // numeric pattern, added 2026-08-27 when the book outgrew the hand-kept five-row list and
 // its chapters started returning this Worker's 404 the night Kane sat down to read them.
@@ -96,8 +109,8 @@ export default {
     if (rest === "/api/notes") {
       const jsonHeaders = docHeaders({ "content-type": "application/json; charset=utf-8" });
       if (request.method === "GET") {
-        const body = await env.GATED_DOCS.get(NOTES_KEY);
-        return html(body || "[]", 200, jsonHeaders);
+        const stored = await readNotesStore(env);
+        return html(JSON.stringify(stored.notes), 200, jsonHeaders);
       }
       if (request.method === "POST") {
         const text = await request.text();
@@ -112,11 +125,7 @@ export default {
         // copy is folded in: union by id, a delete anywhere wins everywhere, and the
         // copy that still carries its text beats a stripped one. Notes without ids
         // (there should be none) are kept rather than dropped.
-        let cur = [];
-        try { cur = JSON.parse(await env.GATED_DOCS.get(NOTES_KEY)) || []; } catch { cur = []; }
-        const byId = new Map();
-        const loose = [];
-        const fold = (n) => {
+        const fold = (byId, loose, n) => {
           if (!n || typeof n !== "object") return;
           if (!n.id) { loose.push(n); return; }
           const prev = byId.get(n.id);
@@ -127,12 +136,42 @@ export default {
           if (del) kept.del = 1; else delete kept.del;
           byId.set(n.id, kept);
         };
-        cur.forEach(fold);
-        notes.forEach(fold);
-        const merged = [...byId.values()].concat(loose)
-          .sort((a, b) => ((a.at || "") < (b.at || "") ? -1 : (a.at || "") > (b.at || "") ? 1 : 0));
-        await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify(merged));
-        return html(JSON.stringify({ ok: true, count: merged.length }), 200, jsonHeaders);
+        const mergeOnto = (cur) => {
+          const byId = new Map();
+          const loose = [];
+          cur.forEach((n) => fold(byId, loose, n));
+          notes.forEach((n) => fold(byId, loose, n));
+          return [...byId.values()].concat(loose)
+            .sort((a, b) => ((a.at || "") < (b.at || "") ? -1 : (a.at || "") > (b.at || "") ? 1 : 0));
+        };
+
+        // Optimistic-concurrency check (bar-raise 2026-09-03, reliability-01). Workers KV
+        // has no compare-and-swap, so this cannot be made airtight the way a database
+        // transaction would be, but a bare get-then-put left the whole merge computation
+        // as the race window: two interleaved writes could each read the same "cur" and
+        // the second put would still silently drop whatever the first one added. Storing
+        // a version alongside the notes and re-reading it right before the put narrows
+        // that window to the read-put gap, and retries the merge against whatever landed
+        // in between rather than clobbering it.
+        let result = null;
+        for (let attempt = 0; attempt < 5 && !result; attempt++) {
+          const before = await readNotesStore(env);
+          const merged = mergeOnto(before.notes);
+          const after = await readNotesStore(env);
+          if (after.v !== before.v) continue;   // something else wrote between our two reads; retry
+          const nextV = after.v + 1;
+          await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify({ v: nextV, notes: merged }));
+          result = merged;
+        }
+        if (!result) {
+          // Every attempt raced with another writer. Fold onto whatever is live now and
+          // write it anyway rather than dropping the client's notes entirely; this is the
+          // one case left where two truly simultaneous writes can still interleave.
+          const before = await readNotesStore(env);
+          result = mergeOnto(before.notes);
+          await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify({ v: before.v + 1, notes: result }));
+        }
+        return html(JSON.stringify({ ok: true, count: result.length }), 200, jsonHeaders);
       }
       return html("Method Not Allowed", 405, docHeaders());
     }

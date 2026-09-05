@@ -29,7 +29,7 @@ $here = $PSScriptRoot
 Push-Location
 
 try {
-    Write-Host "==== Step 1/5: dashboard JSON integrity guard ====" -ForegroundColor Magenta
+    Write-Host "==== Step 1/6: dashboard JSON integrity guard ====" -ForegroundColor Magenta
     & (Join-Path $here "check-status-json.ps1")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Aborting release: corrupt status JSON would ship to the live dashboard." -ForegroundColor Red
@@ -37,7 +37,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "==== Step 2/5: write YaE's own dashboard status JSON ====" -ForegroundColor Magenta
+    Write-Host "==== Step 2/6: write YaE's own dashboard status JSON ====" -ForegroundColor Magenta
     # Non-fatal: a failed status write never unships a release.
     try {
         $global:LASTEXITCODE = 0
