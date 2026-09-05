@@ -72,6 +72,15 @@ jobs:
           }
 
           Write-Host "Artifact integrity guards passed." -ForegroundColor Green
+
+          # Receiving-side secret-exposure scan (2026-09-02, D62). Catches a
+          # secret-shaped artifact another project's own publish script wrote
+          # into this tree (the HBH and Brackish Rising publish-gdd.ps1 land the
+          # version-chip patch to index.html by pushing straight to this repo's
+          # remote), which can reach main without ever running the local
+          # push-to-github.ps1 path where the same scan also runs.
+          & ./scripts/check-secret-exposure.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Stamp live project data into pages
         # Every project release pushes its status/data/<Project>.json here, which
         # triggers this deploy; this step folds those numbers (version, milestone)

@@ -92,6 +92,18 @@ if ($conflicted) {
     exit 1
 }
 
+# --- Receiving-side secret-exposure scan (2026-09-02, D62) ---
+# Catches a secret-shaped artifact that another project's own publish script
+# (publish-gdd.ps1 for Here Be Hordes and Brackish Rising, the version-chip
+# patch to index.html) wrote into this tree, since that content never crosses
+# the staged-file gate above: it can already be committed by the time this
+# script runs, or committed by a script that never calls this one at all.
+& (Join-Path $here "check-secret-exposure.ps1")
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Aborting push: receiving-side secret scan failed." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
 Write-Host "Integrity OK." -ForegroundColor Green
 Write-Host ""
 
