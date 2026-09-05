@@ -86,8 +86,8 @@
     "latestReportAt": "2026-08-31T12:00:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 26,
-    "actionsClosed": 79,
+    "actionsOpen": 25,
+    "actionsClosed": 80,
     "actions": [
       {
         "severity": "HIGH",
@@ -116,13 +116,6 @@
         "id": "work-queue-hygiene-10",
         "lens": "work-queue-hygiene",
         "title": "Put the outstanding blocked-on-user Hordes rows in front of Kane as one batched decision session, then close what gets answered and move anything still undecided into a single dated open-question document."
-      },
-      {
-        "severity": "HIGH",
-        "priority": 20,
-        "id": "scheduled-task-firing-state-10",
-        "lens": "scheduled-task-firing-state",
-        "title": "Add a heartbeat check outside the scheduled-task system, for example a native Windows task that confirms the registry file is non-empty and recently modified and alerts directly."
       },
       {
         "severity": "MED",
@@ -369,13 +362,6 @@
       },
       {
         "id": "work-queue-hygiene-10",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-08-31"
-      },
-      {
-        "id": "scheduled-task-firing-state-10",
         "severity": "HIGH",
         "priority": 20,
         "runsOpen": 1,
@@ -969,6 +955,12 @@
         "id": "skill-trigger-collisions-01",
         "by": "session on the finding",
         "evidence": "version-bump-and-publish owns the release execution path and is the only skill that runs release.ps1; htbh-changelog-entry stops at the staged design-document edits and invokes it on a ship signal; each skill carries a do-not-trigger paragraph naming the other; PortfolioOps 242fa95, a924222, c842b03"
+      },
+      {
+        "date": "2026-09-05",
+        "id": "scheduled-task-firing-state-10",
+        "by": "session on the finding",
+        "evidence": "the watchdog now lives outside the registry it watches: X:\\Claude\\registry-heartbeat.py runs hourly from the native Windows task claude-registry-heartbeat, registered by X:\\Claude\\register-registry-heartbeat-task.ps1 at 20 past the hour and verified running with LastTaskResult 0 at 00:55 on 2026-09-05. It checks the task-folder count under C:\\Users\\Kane\\.claude\\scheduled-tasks, parses the live registry, requires a firing inside 30 hours, and requires the backup chain to be under 48 hours old and to hold a full roster. Failure raises four channels: a Windows toast, X:\\Claude\\REGISTRY-HEARTBEAT-ALERT.md, CLAUDE-ROUTINES-STOPPED.txt on the desktop, and a line in X:\\OPEN-LOOPS.md that the [loops] hook prints at every session start; --test-alert fired all four and the first healthy run withdrew them, restoring OPEN-LOOPS.md byte for byte. routine-health-watch gained a bullet reading registry-heartbeat-state.json, so a dead heartbeat is itself detected. Commit cd1d32d in X:\\Claude."
       }
     ]
   },
