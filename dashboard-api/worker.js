@@ -27,12 +27,22 @@ export default {
     }
     const key = KEYS[url.pathname];
     if (!key) return new Response("not found", { status: 404, headers: CORS });
-    const val = await env.DASHBOARD.get(key);
+    let val;
+    try {
+      val = await env.DASHBOARD.get(key);
+    } catch (err) {
+      console.error(`dashboard-api: key-value read failed for key "${key}": ${err && err.message ? err.message : err}`);
+      return new Response(JSON.stringify({ error: "kv_read_failed", key }), {
+        status: 500,
+        headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
     // A missing or evicted key used to answer 200 with "{}". The dashboard only
     // falls back to its shipped static copy when the parsed body is null, and
     // "{}" is not null, so it rendered zeroes instead of the last known-good
     // data. 404 makes the absence legible to the caller.
     if (val == null) {
+      console.error(`dashboard-api: key "${key}" missing or evicted from KV`);
       return new Response(JSON.stringify({ error: "not_found", key }), {
         status: 404,
         headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },

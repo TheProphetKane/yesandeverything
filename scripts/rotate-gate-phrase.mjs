@@ -23,10 +23,14 @@
 // compare a hash, and it can rotate them all in one command. Without it, rotation means
 // hand-editing twelve files and getting all twelve right.
 //
-// The gate remains client-side friction and nothing more. The hordes and brackish-rising
-// pages carry their whole payload base64-encoded in the same file, so anyone who views
-// source already has the content without any phrase at all. This raises the floor; it does
-// not turn the gate into access control, and no one should start treating it as one.
+// The gate remains client-side friction and nothing more: it is a hashed phrase compared
+// in the browser, not a permission check. The two game design documents, /hordes/ and
+// /brackish-rising/, moved off this pattern on 2026-08-25 - the gated-docs Worker now
+// serves them from key-value storage only after a signed session cookie validates, so
+// their content never reaches the page unauthenticated. The per-project design.html pages
+// this script rewrites are what is left on the client-side pattern. This raises the floor
+// on those; it does not turn the gate into access control, and no one should start
+// treating it as one.
 //
 // Usage:
 //   node scripts/rotate-gate-phrase.mjs --check           report what each page uses
