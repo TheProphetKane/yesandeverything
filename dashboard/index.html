@@ -1225,6 +1225,20 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     return n;
   }
   function txt(s) { return document.createTextNode(s == null ? "" : String(s)); }
+  // Bar-raise 2026-09-03, accessibility-01: several controls attached a click
+  // listener to a bare div or span with no way for a keyboard user to reach them.
+  // .band-more, .ghost and the mini panel already did this right; this is that
+  // same role/tabindex/keydown triple, in one place so every new click-only
+  // control can be wired through it instead of growing a thirteenth copy.
+  function activatable(node, handler) {
+    node.setAttribute("role", "button");
+    node.setAttribute("tabindex", "0");
+    node.addEventListener("click", handler);
+    node.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handler(e); }
+    });
+    return node;
+  }
 
   function fmtTok(n) {
     if (n == null || !isFinite(n)) return "0";
@@ -2710,7 +2724,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       row.appendChild(el("span", { className: "ba-pj", text: pm.tag }));
       row.appendChild(el("span", { className: "ba-label", text: String(a.label || "") }));
       row.title = String(a.label || "") + "  (click to jump to " + pm.tag + ")";
-      row.addEventListener("click", function () {
+      activatable(row, function () {
         var i = CYCLE.indexOf(pm.id);
         if (i >= 0) jumpTo(i); else openLists("found", "ALL");
       });
@@ -2724,7 +2738,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       (list || []).forEach(function (r) {
         var pm = projByLoose(r);
         var ch = el("span", { className: "chip chip-link " + cls, text: pm.tag, title: why });
-        ch.addEventListener("click", function () { var i = CYCLE.indexOf(pm.id); if (i >= 0) jumpTo(i); });
+        activatable(ch, function () { var i = CYCLE.indexOf(pm.id); if (i >= 0) jumpTo(i); });
         risk.appendChild(ch);
       });
     }
@@ -3165,7 +3179,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       row.style.animationDelay = (0.08 + i * 0.05) + "s";
       row.classList.add("kr-link");
       row.title = "spotlight " + metaFor(r.id).displayName;
-      (function (pid) { row.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(r.id);
+      (function (pid) { activatable(row, function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(r.id);
       keys.appendChild(row);
     });
     if (!rows.length) keys.appendChild(el("div", { text: "nothing burned yet today" }));
@@ -3229,7 +3243,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       row.style.animationDelay = (0.08 + i * 0.05) + "s";
       row.classList.add("kr-link");
       row.title = "spotlight " + p.displayName;
-      (function (pid) { row.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(p.id);
+      (function (pid) { activatable(row, function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(p.id);
       keys.appendChild(row);
     });
     split.appendChild(keys);
@@ -3426,7 +3440,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       var r = el("div", { className: "rel-row rel-link" });
       r.style.animationDelay = (i * 0.05) + "s";
       r.title = "spotlight " + it.id;
-      (function (pid) { r.addEventListener("click", function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(it.pid);
+      (function (pid) { activatable(r, function () { closeOverlay(); jumpTo(CYCLE.indexOf(pid)); }); })(it.pid);
       r.appendChild(el("span", { className: "rid", text: it.id }));
       r.appendChild(el("span", { className: "rv", text: "v" + it.v }));
       r.appendChild(el("span", { className: "rmsg", text: it.msg }));
@@ -3620,7 +3634,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     }
 
     var br = status ? (status.barRaise || {}) : {};
-    function gWire(gEl, fn, hint) { gEl.classList.add("gauge-link"); if (hint) gEl.title = (gEl.title ? gEl.title + " \u00b7 " : "") + hint; gEl.addEventListener("click", fn); return gEl; }
+    function gWire(gEl, fn, hint) { gEl.classList.add("gauge-link"); if (hint) gEl.title = (gEl.title ? gEl.title + " \u00b7 " : "") + hint; activatable(gEl, fn); return gEl; }
     function openReport() { if (br.latestReportPath) window.open("/" + String(br.latestReportPath).replace(/\\/g, "/"), "_blank", "noopener"); else openLists("found", id); }
     if (status && status.completion && status.completion.pct != null) {
       gauges.appendChild(gWire(arcGauge(status.completion.pct, 100, completionColor(status.completion.pct), "complete", status.completion.pct + "%", TIPS.complete), function () { openLists("done", id); }, "click for what is left to 100 percent"));
@@ -3662,7 +3676,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     if (status) {
       if (br.verdict) {
         var cv = el("span", { className: "chip chip-link " + br.verdict, text: br.verdict + (br.health != null ? " " + br.health : ""), title: TIPS.verdict + " \u00b7 click for the review report" });
-        cv.addEventListener("click", function (e) { e.stopPropagation(); openReport(); });
+        activatable(cv, function (e) { e.stopPropagation(); openReport(); });
         chips.appendChild(cv);
       }
       if (status.milestone && status.milestone.id) {
@@ -3670,7 +3684,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
         var c2 = el("span", { className: "chip chip-link", title: TIPS.milestone + ": " + status.milestone.id + " " + (status.milestone.label || "") + " \u00b7 click for what stands between here and done" });
         c2.appendChild(el("span", { className: "k", text: "milestone" }));
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
-        c2.addEventListener("click", function (e) { e.stopPropagation(); openLists("done", id); });
+        activatable(c2, function (e) { e.stopPropagation(); openLists("done", id); });
         chips.appendChild(c2);
       }
       var gP = gatesOf(status);
