@@ -27,8 +27,8 @@
   "repoUrl": "https://github.com/TheProphetKane/yesandapothecary",
   "workTreeClean": true,
   "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-09-09.md",
-    "latestReportAt": "2026-09-09T06:12:08Z",
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-09-10.md",
+    "latestReportAt": "2026-09-10T06:16:38Z",
     "findings": {
       "critical": 0,
       "high": 0,
@@ -37,33 +37,27 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-09-02.md",
-    "latestReportAt": "2026-09-02T12:05:00Z",
-    "verdict": "needs-attention",
-    "topFinding": "One thing in the product itself is actually broken, and it is in the export path rather than the print path everyone assumed was the risk. PNG export rasterizes the print stage through html2canvas outside print media, so the gap and stacking rules that live only inside the print block never apply, and a back-enabled label at large or xl comes out laid in a fixed-width row that both diverges from the browser's own print output and overflows the 8.5 inch box (src/util/export-png.js:48-58 against styles/label.css:460-478 and the class stamped at src/render.js:582). Everything the last review flagged as shipping wrong content is genuinely fixed and was re-measured rather than read off the changelog: zero em dashes remain anywhere in the data, the source or the docs, the contrast gate really does target 4.5 and really does run pre-commit, and the blind git-lock delete is gone from the status writer. The count of open actions jumps from 8 to 34 because this was a full 30-lens fan-out against a project that had not had one in a week, and because 16 of the 34 are the shared orchestration layer rather than this repository: the stale plugin snapshot, the skill-routing clauses that sit in body prose where the router never reads them, and this very orchestrator's steps 7 and 8 pointing a session at the generated public status file instead of the canonical one. The thing worth Kane's attention above all of it is not a bug: ten weeks after the v1.0 cut, every commit here has been review-machinery output and no roadmap item has moved, which is the same profile that earned Cattery and Scheduler an explicit dead-for-now ruling.",
-    "actionsOpen": 16,
-    "actionsClosed": 19,
+    "latestReportPath": "docs/BAR_RAISE-2026-09-09.md",
+    "latestReportAt": "2026-09-09T11:50:00Z",
+    "verdict": "working",
+    "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+    "actionsOpen": 23,
+    "actionsClosed": 22,
     "actions": [
       {
         "severity": "HIGH",
-        "title": "Split mountLayoutDesigner, mountIllustrationPicker, mountPresets, mountTitleEditor and mountCustomItems into their own src/ui modules.",
-        "lens": "maintainability",
-        "id": "maintainability-01",
-        "priority": 20
+        "title": "REDACTED: a HIGH severity finding in the release-pipeline-per-project-ps1-stack lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "lens": "release-pipeline-per-project-ps1-stack",
+        "id": "release-pipeline-per-project-ps1-stack-01",
+        "priority": 15,
+        "redacted": true
       },
       {
-        "severity": "HIGH",
-        "title": "Add a code-audit exclusion to bar-raise's front matter and do-not-trigger list, and the reciprocal bar-raise exclusion to code-audit.",
-        "lens": "orchestration-skill-trigger-collisions",
-        "id": "orchestration-skill-trigger-collisions-02",
-        "priority": 20
-      },
-      {
-        "severity": "HIGH",
-        "title": "Rewrite per_project.md steps 7 and 8 to point at the canonical PortfolioOps status file, or delete them and let step 5's delegate own the whole write and projection sequence.",
-        "lens": "orchestration-skill-chain-handoff-integrity",
-        "id": "orchestration-skill-chain-handoff-integrity-03",
-        "priority": 20
+        "severity": "MED",
+        "title": "Extract the three-step illustration resolution into one exported resolveIllustration(state, ctx) that render.js and illustration-picker.js both call.",
+        "lens": "architecture",
+        "id": "architecture-01",
+        "priority": 15
       },
       {
         "severity": "MED",
@@ -74,295 +68,409 @@
       },
       {
         "severity": "MED",
-        "title": "Carry a short qualifier into the print-stage tree whenever a compounds or cautions zone is present.",
+        "title": "Cache the parchmentBg output keyed on the texture and the theme gradient fields so it regenerates only when one of them changes.",
+        "lens": "performance",
+        "id": "performance-02",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Have the nightly sweep stamp a one-line heartbeat every night whether or not drift-auto-fix runs, so a missing drift-fixes report reads as a quiet night rather than a silent failure.",
+        "lens": "observability",
+        "id": "observability-02",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Build a short qualifier into printCardHtml whenever a compounds or cautions zone is present, so it ships inside #print-stage rather than the app footer the print sweep hides.",
         "lens": "compliance-data-steward",
         "id": "compliance-data-steward-01",
         "priority": 15
       },
       {
         "severity": "MED",
-        "title": "Either drive the editor's content sections from tmpl.fields before the second-template backlog item lands, or correct the spec and handler claim to describe the form as hand-authored.",
+        "title": "Drive the editor's Content-section inputs from tmpl.fields, or correct PROJECT_SPEC.md 4.7 and CLAUDE.md to say the per-field editor markup is hand-authored.",
         "lens": "generative-art-schema-driven-correctness",
         "id": "generative-art-schema-driven-correctness-01",
         "priority": 15
       },
       {
         "severity": "MED",
-        "title": "Extend check-plugin-snapshot.ps1's root discovery to enumerate the skills-plugin tree as well, so both drift surfaces are guarded by the same check.",
-        "lens": "orchestration-skill-suite-health",
-        "id": "orchestration-skill-suite-health-03",
+        "title": "Add a node test that mocks localStorage to throw and asserts loadState, saveState and clearState each call notifyStorageError with the right operation, and add it to scripts/preflight.ps1.",
+        "lens": "reliability",
+        "id": "reliability-03",
         "priority": 15
       },
       {
         "severity": "MED",
-        "title": "Add a per-project drift-auto-fix invoked and applied line to whatever nightly artifact survives longest, so a 32-day gap in reports can be told apart from a 32-day gap in the call firing.",
-        "lens": "orchestration-audit-loop-integrity",
-        "id": "orchestration-audit-loop-integrity-01",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Recompute workTreeClean and lastReleaseAt in the nightly pointer sync, or fold the field's age into the existing stale flag so a release-only field is visibly marked rather than read as current.",
-        "lens": "orchestration-audit-loop-integrity",
-        "id": "orchestration-audit-loop-integrity-02",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Have fuse_truncation.py read critical_files_for_python_atomic_write from .project-context.json, or hand-add the other five paths with tail markers, so the declared list and the enforced list are the same list.",
-        "lens": "orchestration-fuse-truncation-defense",
-        "id": "orchestration-fuse-truncation-defense-01",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Add a PROJECT_SPEC.md source to the version_drift entry, or correct the hazard catalogue to name the two sources actually compared.",
-        "lens": "orchestration-incident-runbook-currency",
-        "id": "orchestration-incident-runbook-currency-02",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Memoize the parchment background so it regenerates only when the texture or theme changes.",
+        "title": "Gate the print-stage rebuild and its fitPrintStage reflow behind a dirty flag so it runs before a print or export rather than on every keystroke.",
         "lens": "performance",
-        "id": "performance-02",
+        "id": "performance-03",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Add a source field per herb record, or soften the compounds and cautions language to folklore framing until the citation pass lands.",
+        "lens": "compliance-data-steward",
+        "id": "compliance-data-steward-03",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Assert in a test, or in a shared constants module, that export-png.js's LAYOUT_RULES match the @media print block in styles/label.css for every layout class.",
+        "lens": "generative-art-print-fidelity",
+        "id": "generative-art-print-fidelity-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Extend the contrast gate in test-data-integrity.mjs to check every theme's latinColor, shopColor and descColor against that theme's paperGradEnd, not only herb accents.",
+        "lens": "generative-art-palette-discipline",
+        "id": "generative-art-palette-discipline-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Give the announcements post its own dedupe state so a failed announcements post can be retried without forcing a duplicate dev-log post.",
+        "lens": "release-pipeline-discord-notify-wiring",
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Add a check that compares the commit which last touched the pill against HEAD and fails when unbumped commits sit above it, since check-version-pill.ps1 only compares the three locations to each other.",
+        "lens": "release-pipeline-version-pill-drift",
+        "id": "release-pipeline-version-pill-drift-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Run scripts/release.ps1 to ship the four pending commits and refresh the published mirror, which still serves the pre-split editor.js from v1.1.14.",
+        "lens": "release-pipeline-gate-page-publish",
+        "id": "release-pipeline-gate-page-publish-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap each of the five mounter calls in src/ui/editor.js in its own try/catch that renders a local fallback, so one panel's failure does not blank the whole app.",
+        "lens": "reliability",
+        "id": "reliability-01",
         "priority": 12
       },
       {
         "severity": "MED",
-        "title": "Extract the resolution order into one exported resolveIllustration(state, ctx) that both render.js and editor.js call.",
-        "lens": "architecture",
-        "id": "architecture-01",
-        "priority": 10
+        "title": "Give createState's notify() catch the same document-event escape hatch persist.js uses, so a panel frozen by a render error is visible on screen rather than only in the console.",
+        "lens": "reliability",
+        "id": "reliability-02",
+        "priority": 12
       },
       {
         "severity": "MED",
-        "title": "Wire both into real call sites or delete them and correct the CLAUDE.md:72 claim.",
+        "title": "Wrap release.ps1's three-location pill stamp in one try/catch that reverts index.html when a later write fails, or cache the intended version instead of re-deriving it from index.html.",
+        "lens": "release-pipeline-per-project-ps1-stack",
+        "id": "release-pipeline-per-project-ps1-stack-03",
+        "priority": 12
+      },
+      {
+        "severity": "MED",
+        "title": "Wire patchNested and updateLabel into real call sites or delete them, and correct the CLAUDE.md:77 claim either way.",
         "lens": "maintainability",
         "id": "maintainability-03",
         "priority": 10
       },
       {
         "severity": "MED",
-        "title": "Replace the hardcoded project list in self-reprompt-loop SKILL.md:95 with a directory enumeration.",
-        "lens": "orchestration-skill-chain-handoff-integrity",
-        "id": "orchestration-skill-chain-handoff-integrity-04",
+        "title": "Add file-layout rows in CLAUDE.md for src/util/truncate.js, src/util/suggest.js and src/util/escape-html.js, matching the format the other utility files already get.",
+        "lens": "maintainability",
+        "id": "maintainability-05",
         "priority": 10
       },
       {
         "severity": "MED",
-        "title": "Have the nightly drift-auto-fix leg stamp a one-line heartbeat separate from the canonical-audit report so a broken step is visible on a clean night.",
-        "lens": "observability",
-        "id": "observability-02",
-        "priority": 9
+        "title": "Change src/main.js:354 to color:var(--warn) so the fatal-error screen tracks the design token the v1.1.12 changelog says it already uses.",
+        "lens": "generative-art-palette-discipline",
+        "id": "generative-art-palette-discipline-02",
+        "priority": 10
+      },
+      {
+        "severity": "MED",
+        "title": "Run the YesAndEverything release so update-project-pages.mjs re-stamps the Apothecary card and pages, which still read v1.1.11 beside the app's own v1.1.14 footer.",
+        "lens": "release-pipeline-gate-page-publish",
+        "id": "release-pipeline-gate-page-publish-02",
+        "priority": 10
+      },
+      {
+        "severity": "MED",
+        "title": "Route push-to-github.ps1's merge-conflict scan through Invoke-Git instead of the raw git call with a stderr redirect inside a swallowing try/catch.",
+        "lens": "release-pipeline-per-project-ps1-stack",
+        "id": "release-pipeline-per-project-ps1-stack-02",
+        "priority": 8
       }
     ],
     "deferred": [
       {
         "severity": "HIGH",
-        "title": "In the ten weeks since the v1.0 cut every shipped change has been review-machinery output and zero roadmap or backlog items have moved, so the nightly sweep and weekly review are spending recurring attention on a product whose forward motion has stopped.",
         "lens": "strategic-kill-this",
-        "reason": "blocked on a ruling from Kane: is the post-1.0 roadmap live work or formally closed"
+        "title": "None of the five commits since 2026-09-03 is a product change, the one code change is itself an unshipped review-machinery action item, and the post-1.0 roadmap and backlog are unchanged, so ten weeks after the v1.0 cut the nightly sweep and weekly review still spend recurring attention on a product whose forward motion has stopped.",
+        "reason": "blocked on a ruling from Kane: is the post-1.0 roadmap live work, or does Apothecary get the dead-for-now treatment Cattery and Scheduler already have"
       },
       {
-        "severity": "MED",
-        "title": "The canonical schema documents a hard 260-character ceiling that the shipped data and the enforcing test both quietly disagree with for 43 of 199 records, and nothing in PROJECT_SPEC.md discloses the exception.",
-        "lens": "data-integrity",
-        "reason": "blocked on a ruling from Kane: the 260-character cap moves to match the data, or the 43 records come down to the cap"
+        "severity": "HIGH",
+        "lens": "compliance-data-steward",
+        "title": "The 75 shipped botanical illustrations are unlicensed third-party commercial art, live on a public GitHub Pages site and in a public repository.",
+        "reason": "risk knowingly accepted 2026-07-11 in PROJECT_SPEC.md section 8, with monetization or the site leaving personal-page status named as the revisit triggers; re-verified this run, no trigger has fired"
+      },
+      {
+        "severity": "LOW",
+        "lens": "generative-art-print-fidelity",
+        "title": "layout-separate PNG export would stack both cards into one image where the printer produces two pages, with no user-facing note.",
+        "reason": "unreachable with the five current label sizes; gated on the post-1.0 multi-label-sheet milestone growing the size table"
       }
     ],
-    "health": 73,
+    "health": 79,
     "lensScores": {
-      "architecture": 85,
-      "reliability": 85,
-      "security": 82,
-      "performance": 74,
-      "data-integrity": 78,
-      "maintainability": 78,
-      "solo-tool-ux": 91,
-      "cost-economics": 90,
-      "dependency": 93,
-      "observability": 72,
-      "strategic-kill-this": 74,
-      "compliance-data-steward": 64,
+      "architecture": 78,
+      "reliability": 80,
+      "security": 94,
+      "performance": 76,
+      "data-integrity": 92,
+      "maintainability": 83,
+      "solo-tool-ux": 87,
+      "cost-economics": 88,
+      "dependency": 90,
+      "observability": 70,
+      "strategic-kill-this": 72,
+      "compliance-data-steward": 55,
       "generative-art-schema-driven-correctness": 82,
-      "generative-art-print-fidelity": 63,
-      "generative-art-palette-discipline": 88,
-      "public-voice-solo-dev-voice": 96,
-      "public-voice-ai-tell-concealment": 46,
-      "public-voice-brand-consistency": 95,
-      "release-pipeline-per-project-ps1-stack": 61,
-      "release-pipeline-discord-notify-wiring": 71,
-      "release-pipeline-version-pill-drift": 98,
-      "release-pipeline-gate-page-publish": 92,
-      "orchestration-skill-suite-health": 18,
-      "orchestration-work-queue-hygiene": 80,
-      "orchestration-audit-loop-integrity": 55,
-      "orchestration-fuse-truncation-defense": 52,
-      "orchestration-incident-runbook-currency": 58,
-      "orchestration-scheduled-task-firing-state": 93,
-      "orchestration-skill-trigger-collisions": 32,
-      "orchestration-skill-chain-handoff-integrity": 38
+      "generative-art-print-fidelity": 84,
+      "generative-art-palette-discipline": 80,
+      "release-pipeline-per-project-ps1-stack": 63,
+      "release-pipeline-discord-notify-wiring": 83,
+      "release-pipeline-version-pill-drift": 82,
+      "release-pipeline-gate-page-publish": 72
     },
     "openFindings": [
       {
-        "id": "maintainability-01",
+        "id": "release-pipeline-per-project-ps1-stack-01",
         "severity": "high",
-        "priority": 20,
+        "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "orchestration-skill-trigger-collisions-02",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-02"
-      },
-      {
-        "id": "orchestration-skill-chain-handoff-integrity-03",
-        "severity": "high",
-        "priority": 20,
-        "runsOpen": 1,
+        "id": "architecture-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-09-02"
       },
       {
         "id": "architecture-02",
         "severity": "medium",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
+        "firstSeen": "2026-09-02"
+      },
+      {
+        "id": "performance-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-09-02"
+      },
+      {
+        "id": "observability-02",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-09-02"
       },
       {
         "id": "compliance-data-steward-01",
         "severity": "medium",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-02"
       },
       {
         "id": "generative-art-schema-driven-correctness-01",
         "severity": "medium",
         "priority": 15,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-02"
       },
       {
-        "id": "orchestration-skill-suite-health-03",
+        "id": "reliability-03",
         "severity": "medium",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "orchestration-audit-loop-integrity-01",
+        "id": "performance-03",
         "severity": "medium",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "orchestration-audit-loop-integrity-02",
+        "id": "compliance-data-steward-03",
         "severity": "medium",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "orchestration-fuse-truncation-defense-01",
+        "id": "generative-art-print-fidelity-01",
         "severity": "medium",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "orchestration-incident-runbook-currency-02",
+        "id": "generative-art-palette-discipline-01",
         "severity": "medium",
         "priority": 15,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "performance-02",
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "release-pipeline-version-pill-drift-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "reliability-01",
         "severity": "medium",
         "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "architecture-01",
+        "id": "reliability-02",
         "severity": "medium",
-        "priority": 10,
+        "priority": 12,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "release-pipeline-per-project-ps1-stack-03",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-09"
       },
       {
         "id": "maintainability-03",
         "severity": "medium",
         "priority": 10,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-02"
       },
       {
-        "id": "orchestration-skill-chain-handoff-integrity-04",
+        "id": "maintainability-05",
         "severity": "medium",
         "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
       },
       {
-        "id": "observability-02",
+        "id": "generative-art-palette-discipline-02",
         "severity": "medium",
-        "priority": 9,
+        "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-09-02"
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-02",
+        "severity": "medium",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "release-pipeline-per-project-ps1-stack-02",
+        "severity": "medium",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-09"
       }
     ],
     "tensionsOpen": [
       {
         "lenses": [
-          "public-voice-solo-dev-voice",
-          "data-integrity"
-        ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "observability",
-          "reliability"
-        ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
           "strategic-kill-this",
           "orchestration-audit-loop-integrity"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "compliance-data-steward",
           "solo-tool-ux"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "architecture",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
           "maintainability"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "public-voice-ai-tell-concealment",
-          "release-pipeline-per-project-ps1-stack"
+          "performance",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "generative-art-print-fidelity",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "dependency",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "release-pipeline-discord-notify-wiring",
+          "maintainability"
         ],
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-09-02: all eight findings carried from 2026-08-26 re-verified in code and all eight still hold, so nothing closed on a claim. Two had terminal queue rows that did not close the finding: bar-raise-2026-08-12-apothecary-queue-status-enum-mismatch is completed while work-queue-runner SKILL.md:222 still carries the retired vocabulary, and bar-raise-2026-08-05-apothecary-audit-digest-release-gated was dropped with no reason while post-audit-digests.ps1 still has no standalone caller. skill-suite-health-01 and -02 moved from actions to deferred: both are parked blocked-on-user and neither is a session action.",
+    "reconcileNote": "Closed on verified evidence this run: maintainability-01 (five modules on disk under src/ui/, editor.js down to 822 lines, no mounter body left in it), orchestration-skill-trigger-collisions-02 (the reciprocal exclusion is present in all four skill files, source and runtime copies byte-identical), and orchestration-skill-chain-handoff-integrity-03 (per_project.md steps 7 and 8 rewritten to point at the canonical status file, both copies agreeing). The deferred 260-character cap item is closed by commit 4c0f045 and leaves the deferred list. Six further orchestration findings are dropped from this ledger under D56, which moved those lenses to the constellation pass; they are named in the report Notes and are not counted as closed.",
     "closedLog": [
       {
         "date": "2026-09-02",
