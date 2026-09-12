@@ -28,6 +28,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   sync:
@@ -58,3 +59,18 @@ jobs:
           fi
           git commit -m "dashboard data sync: pick up the live KV payload" -- dashboard/data/usage.json
           git push
+
+      # A push made with the workflow's own token never starts another workflow, so the
+      # commit above landed on main every four hours and the Pages deploy never ran for
+      # it. The public copy sat at 2026-09-05 while main carried 2026-09-12 (measured
+      # 2026-09-12, finding observability-01). Asking for the deploy by name is the one
+      # trigger that token is allowed to fire.
+      - name: Start the Pages deploy for the commit just pushed
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$(git log -1 --pretty=%s)" = "dashboard data sync: pick up the live KV payload" ]; then
+            gh workflow run deploy-pages.yml --ref main
+          fi
