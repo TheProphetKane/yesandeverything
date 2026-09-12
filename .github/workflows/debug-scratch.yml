@@ -8,29 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: bash raw check
-        run: |
-          echo "--- ls -la repo root (bash) ---"
-          ls -la | head -30
-          echo "--- stat .gitattributes ---"
-          stat .gitattributes || echo "stat FAILED"
-          echo "--- git ls-files for it ---"
-          git ls-files -- .gitattributes
-          echo "--- git status ---"
-          git status --porcelain=v1 --ignored | head -30
-          echo "--- find it explicitly ---"
-          find . -maxdepth 1 -iname "*gitattributes*" -o -maxdepth 1 -iname "*gitignore*"
       - shell: pwsh
         run: |
-          Write-Host "PSVersion: $($PSVersionTable.PSVersion)"
-          Write-Host "cwd: $(Get-Location)"
-          Get-ChildItem -Force -Name | Select-Object -First 15 | ForEach-Object { Write-Host "entry: $_" }
           $full = Join-Path (Get-Location) ".gitattributes"
-          Write-Host "full: $full"
-          Write-Host "TestPath: $(Test-Path -LiteralPath $full -PathType Leaf)"
-          try {
-            $item = Get-Item -LiteralPath $full
-            Write-Host "GetItem OK, length: $($item.Length)"
-          } catch {
-            Write-Host "GetItem FAILED: $_"
-          }
+          Write-Host "--- Get-Item plain ---"
+          try { $i = Get-Item -LiteralPath $full; Write-Host "OK len=$($i.Length)" } catch { Write-Host "FAIL: $($_.Exception.Message)" }
+          Write-Host "--- Get-Item -Force ---"
+          try { $i = Get-Item -LiteralPath $full -Force; Write-Host "OK len=$($i.Length)" } catch { Write-Host "FAIL: $($_.Exception.Message)" }
+          Write-Host "--- Get-Content -Raw ---"
+          try { $t = Get-Content -LiteralPath $full -Raw -Encoding utf8 -ErrorAction Stop; Write-Host "OK chars=$($t.Length)" } catch { Write-Host "FAIL: $($_.Exception.Message)" }
+          Write-Host "--- Get-Content -Raw -Force ---"
+          try { $t = Get-Content -LiteralPath $full -Raw -Encoding utf8 -Force -ErrorAction Stop; Write-Host "OK chars=$($t.Length)" } catch { Write-Host "FAIL: $($_.Exception.Message)" }
+          Write-Host "--- [IO.File]::ReadAllText ---"
+          try { $t2 = [System.IO.File]::ReadAllText($full); Write-Host "OK chars=$($t2.Length)" } catch { Write-Host "FAIL: $($_.Exception.Message)" }
+          Write-Host "--- [IO.FileInfo] ---"
+          try { $fi = [System.IO.FileInfo]::new($full); Write-Host "OK len=$($fi.Length) exists=$($fi.Exists)" } catch { Write-Host "FAIL: $($_.Exception.Message)" }
