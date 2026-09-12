@@ -1,0 +1,60 @@
+name: Sync dashboard data from the live KV endpoint
+
+# The usage-refresh routine pushes a fresh usage.json to Cloudflare KV
+# (usage.yesandeverything.com) every four hours, on purpose with no git commit: a
+# commit on every tick would spam the Pages deploy queue. dashboard/index.html reads
+# that live endpoint first and only falls back to the static copy under
+# dashboard/data/ when the Worker is unreachable (see the comment above DATA_API
+# there), so the static copy is meant to be a rarely-used fallback, not a mirror
+# that visitors actually depend on day to day.
+#
+# The gap: nothing else ever commits the static fallback, so it only moved when a
+# full content release happened to carry it along. Releases got infrequent enough
+# that the fallback drifted six days behind the live data (constellation
+# 2026-09-06, finding observability-01), which would have shown stale numbers to
+# anyone who ever needed the fallback. This workflow closes that gap on its own
+# schedule, independent of the local machine and independent of whether a release
+# ships. It only ever writes dashboard/data/usage.json, matches the same 4-hour
+# cadence as the live refresh, and commits nothing when the payload has not moved.
+
+on:
+  schedule:
+    - cron: '20 3,7,11,15,19,23 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: dashboard-data-sync
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the live usage payload
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/usage.json -w '%{http_code}' "https://usage.yesandeverything.com/usage.json")
+          if [ "$code" != "200" ]; then
+            echo "live endpoint returned $code; leaving dashboard/data/usage.json untouched"
+            exit 0
+          fi
+          python3 -c "import json; json.load(open('/tmp/usage.json'))"
+          cp /tmp/usage.json dashboard/data/usage.json
+
+      - name: Commit and push only if the payload actually moved
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- dashboard/data/usage.json
+          if git diff --cached --quiet -- dashboard/data/usage.json; then
+            echo "no change; nothing to publish"
+            exit 0
+          fi
+          git commit -m "dashboard data sync: pick up the live KV payload" -- dashboard/data/usage.json
+          git push
