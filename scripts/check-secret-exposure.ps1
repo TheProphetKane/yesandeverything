@@ -43,7 +43,14 @@ foreach ($rel in $files) {
     if ($rel -match '\.example$') { continue }
     $full = Join-Path (Get-Location) $rel
     if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
-    $len = (Get-Item -LiteralPath $full).Length
+    # -Force: PowerShell 7.6 on the Ubuntu Actions runner stopped resolving a hidden
+    # dotfile (a regular file whose name starts with ".") through Get-Item without it,
+    # even though Test-Path -LiteralPath on the same path answers true and the file is
+    # plainly on disk. Without -Force this threw on the very first dotfile scanned
+    # (.gitattributes) and crashed the whole guard, which failed every deploy from
+    # 2026-09-10 on and is why the published site fell behind its own git history.
+    # Directories were unaffected; only regular hidden files hit this.
+    $len = (Get-Item -LiteralPath $full -Force).Length
     if ($len -gt 512kb) { continue }
     $text = $null
     try { $text = Get-Content -LiteralPath $full -Raw -Encoding utf8 -ErrorAction Stop } catch { continue }
