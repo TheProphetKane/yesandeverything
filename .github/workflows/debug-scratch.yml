@@ -8,6 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: bash raw check
+        run: |
+          echo "--- ls -la repo root (bash) ---"
+          ls -la | head -30
+          echo "--- stat .gitattributes ---"
+          stat .gitattributes || echo "stat FAILED"
+          echo "--- git ls-files for it ---"
+          git ls-files -- .gitattributes
+          echo "--- git status ---"
+          git status --porcelain=v1 --ignored | head -30
+          echo "--- find it explicitly ---"
+          find . -maxdepth 1 -iname "*gitattributes*" -o -maxdepth 1 -iname "*gitignore*"
       - shell: pwsh
         run: |
           Write-Host "PSVersion: $($PSVersionTable.PSVersion)"
@@ -21,17 +33,4 @@ jobs:
             Write-Host "GetItem OK, length: $($item.Length)"
           } catch {
             Write-Host "GetItem FAILED: $_"
-          }
-          Write-Host "--- now via scripts subdir like check-secret-exposure.ps1 does ---"
-          Set-Location (Join-Path (Get-Location) "scripts")
-          Set-Location (Join-Path (Get-Location) "..")
-          Write-Host "cwd now: $(Get-Location)"
-          $full2 = Join-Path (Get-Location) ".gitattributes"
-          Write-Host "full2: $full2"
-          Write-Host "TestPath2: $(Test-Path -LiteralPath $full2 -PathType Leaf)"
-          try {
-            $item2 = Get-Item -LiteralPath $full2
-            Write-Host "GetItem2 OK, length: $($item2.Length)"
-          } catch {
-            Write-Host "GetItem2 FAILED: $_"
           }
