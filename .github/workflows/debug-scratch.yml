@@ -1,0 +1,37 @@
+name: debug scratch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: pwsh
+        run: |
+          Write-Host "PSVersion: $($PSVersionTable.PSVersion)"
+          Write-Host "cwd: $(Get-Location)"
+          Get-ChildItem -Force -Name | Select-Object -First 15 | ForEach-Object { Write-Host "entry: $_" }
+          $full = Join-Path (Get-Location) ".gitattributes"
+          Write-Host "full: $full"
+          Write-Host "TestPath: $(Test-Path -LiteralPath $full -PathType Leaf)"
+          try {
+            $item = Get-Item -LiteralPath $full
+            Write-Host "GetItem OK, length: $($item.Length)"
+          } catch {
+            Write-Host "GetItem FAILED: $_"
+          }
+          Write-Host "--- now via scripts subdir like check-secret-exposure.ps1 does ---"
+          Set-Location (Join-Path (Get-Location) "scripts")
+          Set-Location (Join-Path (Get-Location) "..")
+          Write-Host "cwd now: $(Get-Location)"
+          $full2 = Join-Path (Get-Location) ".gitattributes"
+          Write-Host "full2: $full2"
+          Write-Host "TestPath2: $(Test-Path -LiteralPath $full2 -PathType Leaf)"
+          try {
+            $item2 = Get-Item -LiteralPath $full2
+            Write-Host "GetItem2 OK, length: $($item2.Length)"
+          } catch {
+            Write-Host "GetItem2 FAILED: $_"
+          }
