@@ -1114,11 +1114,12 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
   //   totals, but it takes no wheel slot, no strip card and no legend row, because a
   //   permanent zero on twelve widgets is noise, not history. Named in the footnote.
   //
-  // Counselor and Skylight were both carried here while the collector stripped both from
-  // every public payload, so each rendered as a permanent zero on the wheel, the strip and
-  // the donut legend. Skylight is back with real numbers as of 2026-08-24; the Counselor
-  // app is the one project that stays off, and it is named in PRIVATE_IDS so its absence
-  // reads as deliberate rather than as a gap.
+  // Skylight and one private project were both carried here while the collector stripped
+  // both from every public payload, so each rendered as a permanent zero on the wheel, the
+  // strip and the donut legend. Skylight is back with real numbers as of 2026-08-24; the
+  // private one stays off, and PRIVATE_COUNT carries it as a count so its absence reads as
+  // deliberate rather than as a gap. This page is served from a public repository, so the
+  // project is never named here.
   // Guardian (the Coiled Guardian book) joined 2026-08-30 on the same usageOnly shape as
   // Skylight: tokens and cost from the collector, no status file and no queue rows ever.
   var PROJECTS = [
@@ -1138,11 +1139,13 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     { id: "Scheduler",    tag: "Scheduler",    displayName: "Yes& Scheduler",    hue: "#b88aff", retired: "2026-08-25" },
     { id: "Skylight",     tag: "Skylight",     displayName: "Yes& Skylight",     hue: "#82aaff", usageOnly: true }
   ];
-  // Excluded from the usage payload by the collector ($USAGE_EXCLUDE in
-  // collect-usage.ps1), so it can never have a card. Named so an absent number reads as
-  // private rather than as missing. Skylight came off this list on 2026-08-24: it now
-  // gets tokens and cost like any other project and still publishes no status file.
-  var PRIVATE_IDS = ["Counselor"];
+  // One project is excluded from the usage payload by the collector ($USAGE_EXCLUDE in
+  // collect-usage.ps1), so it can never have a card. Counted, never named, so an absent
+  // number reads as private rather than as missing and this served page carries no private
+  // project name. Skylight came off that list on 2026-08-24: it now gets tokens and cost
+  // like any other project and still publishes no status file.
+  var PRIVATE_COUNT = 1;
+  var PRIVATE_IDS = [];
   var LIVE_PROJECTS = PROJECTS.filter(function (p) { return !p.retired; });
   var ALL_META = { id: "ALL", tag: "All Projects", displayName: "All Projects", hue: "#ff66ff" };
   var CYCLE = ["ALL"].concat(LIVE_PROJECTS.map(function (p) { return p.id; }));
@@ -1521,9 +1524,9 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
   var REGISTERED_IDS = {};
   PROJECTS.forEach(function (p) { REGISTERED_IDS[p.id] = true; });
   function unregisteredIds() {
-    // PRIVATE_IDS never reach a public payload, so they can never appear here. Listing
-    // them as "not charted" would read as a bug rather than as the deliberate exclusion
-    // it is.
+    // A private project never reaches a public payload, so it can never appear here.
+    // Listing it as "not charted" would read as a bug rather than as the deliberate
+    // exclusion it is. PRIVATE_IDS stays as an empty list for that filter.
     if (!LAST || !LAST.usage || !LAST.usage.projects) return [];
     return Object.keys(LAST.usage.projects).filter(function (pid) {
       return pid !== "unattributed" && !REGISTERED_IDS[pid] && PRIVATE_IDS.indexOf(pid) < 0;
@@ -1729,9 +1732,10 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       bits.push(ret.map(function (pp) { return pp.tag; }).join(", ") + " retired");
       full.push("retired, lifetime totals still counted, no slot on the wheel: " + ret.map(function (pp) { return pp.tag + " (" + pp.retired + ")"; }).join(", "));
     }
-    if (PRIVATE_IDS.length) {
-      bits.push(PRIVATE_IDS.join(", ") + " private");
-      full.push("held out of every public payload by the collector: " + PRIVATE_IDS.join(", "));
+    if (PRIVATE_COUNT) {
+      bits.push(PRIVATE_COUNT + " private");
+      full.push("held out of every public payload by the collector, and not named here: "
+        + PRIVATE_COUNT + (PRIVATE_COUNT === 1 ? " project" : " projects"));
     }
     if (!bits.length) return null;
     return { short: bits.join(" · "), full: full.join(". ") };
@@ -2842,7 +2846,6 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     yab: "Budget", budget: "Budget", yesandbudget: "Budget",
     yae: "Everything", everything: "Everything", yesandeverything: "Everything",
     yaag: "Agents", agents: "Agents", yesandagents: "Agents",
-    counselor: "Counselor", yesandcounselor: "Counselor",
     skylight: "Skylight", yesandskylight: "Skylight",
     ring: "Ring", yesandring: "Ring", cats: "Ring", yesandcats: "Ring",
     cattery: "Cattery", yesandcattery: "Cattery",
@@ -3855,8 +3858,8 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       svg.appendChild(svgEl("path", { d: smoothPath(pts), fill: "none", stroke: meta.hue, "stroke-width": 1.2, opacity: 0.85 }));
       mini.appendChild(svg);
       var pct = st && st.completion ? st.completion.pct : null;
-      // usageOnly projects (Counselor, Skylight) carry no completion anchor and
-      // must not show a progress bar; their card is usage spark + tokens only.
+      // usageOnly projects carry no completion anchor and must not show a progress
+      // bar; their card is usage spark and tokens only.
       if (!meta.usageOnly) {
         var bar = el("div", { className: "mbar", title: pct != null ? pct + "% to done" : (id === "ALL" ? "portfolio" : "no completion anchor yet") });
         var fill = el("div", { className: "mfill" });
