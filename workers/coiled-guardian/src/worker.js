@@ -14,7 +14,7 @@
 // runs, and a gate that can be skipped by a path is not a gate.
 
 import {
-  roleFor, issueCookie, sessionRole, clearCookie,
+  roleFor, issueCookie, sessionRole, clearCookie, reviewerOf, reviewerThrough,
   loginPage, loginHeaders, docHeaders,
 } from "./auth.js";
 
@@ -29,14 +29,25 @@ const BOOK = {
 // One book-wide array of reading notes (comments and suggested edits), written by the
 // annotation layer on the chapter pages. Manuscript-adjacent, so it lives beside the
 // chapter bodies and never in this repository.
+//
+// The author's notes live under cg:notes. Since 2026-09-20 an invited outside reviewer writes
+// to a key of their own, cg:review:<slug>, resolved from the signed session role and never
+// from anything the client sends. Two properties follow from that and both are the point.
+// Attribution cannot be wrong, because the key is the identity. And one reviewer never reads
+// another, nor the author's own notes, so the readings stay independent: the value of an
+// outside perspective is that it was not anchored on somebody else's.
 const NOTES_KEY = "cg:notes";
+const notesKeyFor = (role) => {
+  const slug = reviewerOf(role);
+  return slug ? "cg:review:" + slug : NOTES_KEY;
+};
 
 // Stored as { v, notes } since the reliability-01 optimistic-concurrency fix
 // (2026-09-03/04); a bare array is the pre-fix shape and reads as v 0 so an old
 // stored value keeps working without a migration step.
-async function readNotesStore(env) {
+async function readNotesStore(env, key = NOTES_KEY) {
   let raw;
-  try { raw = JSON.parse(await env.GATED_DOCS.get(NOTES_KEY)); } catch { raw = null; }
+  try { raw = JSON.parse(await env.GATED_DOCS.get(key)); } catch { raw = null; }
   if (Array.isArray(raw)) return { v: 0, notes: raw };
   if (raw && typeof raw === "object" && Array.isArray(raw.notes)) {
     return { v: Number.isInteger(raw.v) ? raw.v : 0, notes: raw.notes };
@@ -51,10 +62,16 @@ async function readNotesStore(env) {
 // nothing else sitting in the shared namespace is reachable, and a chapter link the index
 // does not carry resolves to a key the publish step never wrote, which lands on the plain
 // "not published" page rather than leaking anything.
-const pageKey = (rest) => {
-  if (rest === "" || rest === "/") return "cg:index";
+//
+// `through` bounds a reviewer to the span they were invited to read: the index they get is the
+// one the publish step wrote for that span, and a chapter past it resolves to nothing, exactly
+// as a chapter that has not been published does. The author passes null and sees everything.
+const pageKey = (rest, through) => {
+  if (rest === "" || rest === "/") return through ? "cg:index-r" + through : "cg:index";
   const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);
-  return m ? "cg:ch-" + m[1] : null;
+  if (!m) return null;
+  if (through && Number(m[1]) > through) return null;
+  return "cg:ch-" + m[1];
 };
 
 const html = (body, status = 200, headers = {}) =>
@@ -108,8 +125,9 @@ export default {
     // arrives bare and stops at the login wall above.
     if (rest === "/api/notes") {
       const jsonHeaders = docHeaders({ "content-type": "application/json; charset=utf-8" });
+      const notesKey = notesKeyFor(role);
       if (request.method === "GET") {
-        const stored = await readNotesStore(env);
+        const stored = await readNotesStore(env, notesKey);
         return html(JSON.stringify(stored.notes), 200, jsonHeaders);
       }
       if (request.method === "POST") {
@@ -155,21 +173,21 @@ export default {
         // in between rather than clobbering it.
         let result = null;
         for (let attempt = 0; attempt < 5 && !result; attempt++) {
-          const before = await readNotesStore(env);
+          const before = await readNotesStore(env, notesKey);
           const merged = mergeOnto(before.notes);
-          const after = await readNotesStore(env);
+          const after = await readNotesStore(env, notesKey);
           if (after.v !== before.v) continue;   // something else wrote between our two reads; retry
           const nextV = after.v + 1;
-          await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify({ v: nextV, notes: merged }));
+          await env.GATED_DOCS.put(notesKey, JSON.stringify({ v: nextV, notes: merged }));
           result = merged;
         }
         if (!result) {
           // Every attempt raced with another writer. Fold onto whatever is live now and
           // write it anyway rather than dropping the client's notes entirely; this is the
           // one case left where two truly simultaneous writes can still interleave.
-          const before = await readNotesStore(env);
+          const before = await readNotesStore(env, notesKey);
           result = mergeOnto(before.notes);
-          await env.GATED_DOCS.put(NOTES_KEY, JSON.stringify({ v: before.v + 1, notes: result }));
+          await env.GATED_DOCS.put(notesKey, JSON.stringify({ v: before.v + 1, notes: result }));
         }
         return html(JSON.stringify({ ok: true, count: result.length }), 200, jsonHeaders);
       }
@@ -178,7 +196,7 @@ export default {
 
     if (request.method !== "GET") return html("Method Not Allowed", 405, loginHeaders());
 
-    const key = pageKey(rest);
+    const key = pageKey(rest, reviewerThrough(role, env));
     if (!key) return html("Not found", 404, docHeaders());
 
     const body = await env.GATED_DOCS.get(key);

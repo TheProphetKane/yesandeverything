@@ -3,7 +3,10 @@
 // Copied from workers/gated-docs/src/auth.js on 2026-08-27 rather than shared, because the two
 // Workers deploy separately and a shared module across deploy units is a coupling that buys
 // nothing here. The cookie prefix differs so a session for one is never a session for the other.
-// Single role: this manuscript has readers and nothing else, so roleFor returns "reader" or null.
+// Roles: "reader" is the author's own session. Since 2026-09-20 an invited outside reviewer
+// signs in with their own phrase and carries "r:<slug>", which the Worker uses to keep that
+// reviewer's annotations in their own key. The role is signed into the cookie, so a reviewer
+// cannot become the author or another reviewer by editing it.
 //
 // This is a copy of the model already proven on architecture.yesandeverything.com, widened to
 // carry a ROLE and to serve more than one document. The property that matters is unchanged:
@@ -55,16 +58,69 @@ async function passwordMatches(submitted, secret) {
   return ctEqual(a, b);
 }
 
+/** A reviewer slug is short, lowercase and safe to sign into a cookie and to use as a key. */
+const SLUG = /^[a-z0-9][a-z0-9-]{0,23}$/;
+
+/**
+ * The invited outside reviewers, from the REVIEWERS secret.
+ *
+ * Each entry is `"slug": "phrase"` for a reader who may see everything published, or
+ * `"slug": { "phrase": "...", "through": 30 }` for one invited to read a span. The span
+ * matters: a first draft goes out to a stranger one finished stretch at a time, and handing
+ * over the chapters that have not had their pass yet spends a reading on work that is known
+ * to be unfinished.
+ *
+ * One secret rather than one per reviewer, because adding a reader to a manuscript should not
+ * need a deploy or a config change: `wrangler secret put REVIEWERS` with the new map does it.
+ * A malformed secret yields no reviewers at all rather than a half-parsed map, so a typo locks
+ * the invitations out instead of letting an unintended phrase through.
+ */
+function reviewers(env) {
+  let raw;
+  try { raw = JSON.parse(env.REVIEWERS || "{}"); } catch { return []; }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const out = [];
+  for (const [slug, v] of Object.entries(raw)) {
+    if (!SLUG.test(slug)) continue;
+    const phrase = typeof v === "string" ? v : (v && typeof v.phrase === "string" ? v.phrase : null);
+    if (typeof phrase !== "string" || phrase.length < 8) continue;
+    const n = v && typeof v === "object" ? v.through : null;
+    const through = Number.isInteger(n) && n > 0 && n < 1000 ? n : null;
+    out.push([slug, phrase, through]);
+  }
+  return out;
+}
+
+/** How far into the book this reviewer was invited, or null for everything published. */
+export function reviewerThrough(role, env) {
+  const slug = reviewerOf(role);
+  if (!slug) return null;
+  const row = reviewers(env).find(([s]) => s === slug);
+  return row ? row[2] : null;
+}
+
 /**
  * Which role does this password unlock, if any?
  *
- * Two tiers, because the documents themselves have two. The editor phrase turns on in-document
- * editing (the Progress tab reads an access-mode flag); the viewer phrase does not. Both are
- * checked every time rather than short-circuiting on the first match, so the answer takes the
- * same work either way.
+ * "reader" is the author. "r:<slug>" is an invited outside reviewer, whose annotations the
+ * Worker then keeps under a key of their own. Every candidate is checked every time rather
+ * than short-circuiting on the first match, so the answer takes the same work either way and
+ * a wrong phrase cannot be told from a right one by how long the refusal took.
  */
 export async function roleFor(submitted, doc, env) {
-  return (await passwordMatches(submitted, env[doc.viewerSecret])) ? "reader" : null;
+  let found = null;
+  if (await passwordMatches(submitted, env[doc.viewerSecret])) found = "reader";
+  for (const [slug, phrase] of reviewers(env)) {
+    if (await passwordMatches(submitted, phrase) && !found) found = "r:" + slug;
+  }
+  return found;
+}
+
+/** The reviewer slug a role carries, or null for the author's own session. */
+export function reviewerOf(role) {
+  if (typeof role !== "string" || !role.startsWith("r:")) return null;
+  const slug = role.slice(2);
+  return SLUG.test(slug) ? slug : null;
 }
 
 // The cookie is stateless and signed: "<expiry>.<role>.<signature>". The signature covers the
@@ -98,7 +154,7 @@ export async function sessionRole(request, doc, env) {
   if (parts.length !== 3) return null;
   const [exp, role, sig] = parts;
   if (!/^\d+$/.test(exp)) return null;
-  if (role !== "reader") return null;
+  if (role !== "reader" && !reviewerOf(role)) return null;
 
   const expect = b64url(await hmac(env.SESSION_SECRET, `${doc.key}.${exp}.${role}`));
   if (!ctEqual(enc.encode(sig), enc.encode(expect))) return null;
