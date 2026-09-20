@@ -37,347 +37,194 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-09-16.md",
-    "latestReportAt": "2026-09-16T11:45:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-09-20.md",
+    "latestReportAt": "2026-09-20T11:55:22Z",
     "verdict": "working",
-    "topFinding": "Apothecary is healthy in code and behind in shipping. Nine of the 23 open actions from 2026-09-09 closed on verified commits dated 2026-09-11, the queue says so, and every lens re-read the code to confirm it. Health moves from 79 to 80. The gap that matters now is the release: 16 commits sit above the v1.1.14 pill, so the live mirror still serves the pre-split editor and still prints drug-interaction caution text with no qualifier on the label, even though c4afa68 fixed that in source five days ago. That one release closes the top action, the canonical audit's eleven-day-old finding, and most of the compliance lens's drop from 55 to 42. The strategic question carried as a deferral for two runs is decided under D52: maintenance, not retirement, recorded in PROJECT_SPEC.md section 9 by 55a33ff.",
-    "actionsOpen": 18,
-    "actionsClosed": 31,
+    "topFinding": "Seven findings closed this run and every one of the fixes is sitting uncommitted, which is the whole of what is left to do here. The application itself is complete and working: the mount helper stops a panel throw from blanking the page, the print stage coalesces behind one animation frame, the dashboard writer reads only release-shaped commits, and the push script routes every git call through its wrapper. What is shipped to the public still reads v1.1.14 while the tree holds two weeks of unreleased work on top of it. One release closes the gap.",
+    "actionsOpen": 10,
+    "actionsClosed": 39,
     "actions": [
       {
-        "severity": "HIGH",
-        "title": "Run scripts/release.ps1 to ship the 16 commits above the v1.1.14 pill, so the live mirror gets the split editor and the printed-label qualifier.",
-        "lens": "release-pipeline-gate-page-publish",
         "id": "release-pipeline-gate-page-publish-01",
+        "severity": "HIGH",
+        "title": "Run scripts/release.ps1 to commit and ship the pending work above the v1.1.14 pill.",
+        "lens": "release-pipeline-gate-page-publish",
         "priority": 20
       },
       {
-        "severity": "MED",
-        "title": "Coalesce the print-stage rebuild and its fit pass behind a frame or dirty flag, flushed before print and export.",
-        "lens": "performance",
-        "id": "performance-03",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Wrap each of the five mounter calls in src/ui/editor.js in a mountSafely helper so one panel failure does not blank the app.",
-        "lens": "reliability",
-        "id": "reliability-01",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Dispatch a document event from the notify() catch in src/state.js so a render failure shows on the status line.",
-        "lens": "reliability",
-        "id": "reliability-02",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Route the three raw git calls in push-to-github.ps1 (lines 87, 117, 148) through Invoke-Git and drop the 2>&1 redirect.",
-        "lens": "release-pipeline-per-project-ps1-stack",
-        "id": "release-pipeline-per-project-ps1-stack-02",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Restore the three pill-stamped files when release.ps1 step 1 fails, or name them in the re-run guard message.",
-        "lens": "release-pipeline-per-project-ps1-stack",
-        "id": "release-pipeline-per-project-ps1-stack-03",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Re-run update-project-pages.mjs through the YesAndEverything release so the homepage card and project page stop reading v1.1.11.",
-        "lens": "release-pipeline-gate-page-publish",
-        "id": "release-pipeline-gate-page-publish-02",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Add a sources field for herb records that name a drug or dose, or rewrite those fields to folklore framing.",
-        "lens": "compliance-data-steward",
-        "id": "compliance-data-steward-03",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Fill lastReleaseAt only from a vX.Y.Z: release commit in write-dashboard-status.ps1 and write the plain last commit to lastCommitAt.",
-        "lens": "observability",
-        "id": "observability-03",
-        "priority": 15
-      },
-      {
-        "severity": "MED",
-        "title": "Add a timeout to loadHtml2Canvas that rejects into the existing alert, and show a loading state on the export button.",
-        "lens": "reliability",
         "id": "reliability-04",
-        "priority": 12
+        "severity": "MED",
+        "title": "Add a timeout to the loader that rejects into the existing alert, and disable the export button while the promise is in flight.",
+        "lens": "reliability",
+        "priority": 15
       },
       {
-        "severity": "MED",
-        "title": "Give Layout Designer chips a tap or keyboard way to move between zones, since drag and drop is the only path today.",
-        "lens": "solo-tool-ux",
         "id": "solo-tool-ux-01",
-        "priority": 12
+        "severity": "MED",
+        "title": "Give layout designer chips a tap or keyboard way to move between zones alongside the drag path.",
+        "lens": "solo-tool-ux",
+        "priority": 15
       },
       {
+        "id": "compliance-data-steward-03",
         "severity": "MED",
-        "title": "Credit the two CC-BY Wikimedia Commons symbols (awen-solid, solar-wheel) in the footer or README, or swap them for public-domain art.",
+        "title": "Add a sources field for herb records that name a drug or a dose, or rewrite those fields to folklore framing.",
         "lens": "compliance-data-steward",
-        "id": "compliance-data-steward-04",
-        "priority": 12
+        "priority": 15
       },
       {
-        "severity": "MED",
-        "title": "Run check-version-pill.ps1 without -SkipTreeDriftCheck from the dashboard status writer as a warning, so pill staleness surfaces between releases.",
-        "lens": "release-pipeline-version-pill-drift",
         "id": "release-pipeline-version-pill-drift-02",
-        "priority": 12
+        "severity": "MED",
+        "title": "Run the version-pill check without the skip flag from the dashboard status writer as a warning.",
+        "lens": "release-pipeline-version-pill-drift",
+        "priority": 15
       },
       {
-        "severity": "MED",
-        "title": "Delete the unused patchNested and updateLabel and correct CLAUDE.md:78 to name state.set as the single write path.",
-        "lens": "maintainability",
-        "id": "maintainability-03",
-        "priority": 10
-      },
-      {
-        "severity": "MED",
-        "title": "Add CLAUDE.md file-layout rows for truncate.js, suggest.js, escape-html.js and resolve-illustration.js.",
-        "lens": "maintainability",
         "id": "maintainability-05",
-        "priority": 10
-      },
-      {
         "severity": "MED",
-        "title": "Rewrite the index.html:113-122 cache-bust comment, which lists four static-import gaps that no longer exist.",
+        "title": "Add file-layout rows for truncate.js, suggest.js, escape-html.js and resolve-illustration.js.",
         "lens": "maintainability",
+        "priority": 10
+      },
+      {
         "id": "maintainability-06",
+        "severity": "MED",
+        "title": "Rewrite the comment to match the specification's current state, or delete the stale list.",
+        "lens": "maintainability",
         "priority": 10
       },
       {
+        "id": "compliance-data-steward-04",
         "severity": "MED",
-        "title": "Change the boot-failure screen at src/main.js:363 from the #C4580A literal to var(--warn).",
-        "lens": "generative-art-palette-discipline",
-        "id": "generative-art-palette-discipline-02",
+        "title": "Credit the two symbols in the footer or the readme, or swap them for public-domain art.",
+        "lens": "compliance-data-steward",
         "priority": 10
       },
       {
-        "severity": "MED",
-        "title": "Extend the contrast check in test-data-integrity.mjs to each theme's shopColor, latinColor and descColor against paperGradEnd.",
-        "lens": "generative-art-palette-discipline",
         "id": "generative-art-palette-discipline-01",
-        "priority": 8
+        "severity": "MED",
+        "title": "Extend the contrast check to each theme's shop, latin and description colours.",
+        "lens": "generative-art-palette-discipline",
+        "priority": 10
+      },
+      {
+        "id": "generative-art-palette-discipline-02",
+        "severity": "MED",
+        "title": "Change the boot-failure screen to use the warn token.",
+        "lens": "generative-art-palette-discipline",
+        "priority": 10
       }
     ],
     "deferred": [
       {
-        "severity": "HIGH",
-        "lens": "compliance-data-steward",
-        "title": "The 75 shipped botanical illustrations carry no verified redistribution license (data/illustrations/SOURCES.md).",
-        "reason": "risk accepted 2026-07-11 in PROJECT_SPEC.md section 8; revisit on monetization or reuse elsewhere, neither has happened"
+        "severity": "MED",
+        "title": "The hub-side homepage and project-page version stamps were stale at the previous run and could not be re-read this run.",
+        "lens": "release-pipeline-gate-page-publish",
+        "reason": "verification needs a read outside the assigned project directory",
+        "id": "release-pipeline-gate-page-publish-02"
       }
     ],
-    "health": 80,
+    "health": 83,
     "lensScores": {
       "architecture": 93,
-      "reliability": 74,
+      "reliability": 86,
       "security": 94,
-      "performance": 80,
+      "performance": 89,
       "data-integrity": 91,
-      "maintainability": 81,
+      "maintainability": 85,
       "solo-tool-ux": 85,
-      "cost-economics": 90,
+      "cost-economics": 92,
       "dependency": 94,
-      "observability": 80,
-      "strategic-kill-this": 70,
+      "observability": 89,
+      "strategic-kill-this": 72,
       "compliance-data-steward": 42,
       "generative-art-schema-driven-correctness": 92,
       "generative-art-print-fidelity": 90,
       "generative-art-palette-discipline": 82,
-      "release-pipeline-per-project-ps1-stack": 66,
+      "release-pipeline-per-project-ps1-stack": 88,
       "release-pipeline-discord-notify-wiring": 85,
       "release-pipeline-version-pill-drift": 72,
-      "release-pipeline-gate-page-publish": 69
+      "release-pipeline-gate-page-publish": 64
     },
     "openFindings": [
       {
         "id": "release-pipeline-gate-page-publish-01",
-        "severity": "high",
+        "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "performance-03",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "reliability-01",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "reliability-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "release-pipeline-per-project-ps1-stack-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "release-pipeline-per-project-ps1-stack-03",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "release-pipeline-gate-page-publish-02",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "compliance-data-steward-03",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-09"
-      },
-      {
-        "id": "observability-03",
-        "severity": "medium",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-16"
       },
       {
         "id": "reliability-04",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-09-16"
       },
       {
         "id": "solo-tool-ux-01",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-09-16"
       },
       {
-        "id": "compliance-data-steward-04",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-16"
+        "id": "compliance-data-steward-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 3,
+        "firstSeen": "2026-09-09"
       },
       {
         "id": "release-pipeline-version-pill-drift-02",
-        "severity": "medium",
-        "priority": 12,
-        "runsOpen": 1,
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
         "firstSeen": "2026-09-16"
       },
       {
-        "id": "maintainability-03",
-        "severity": "medium",
+        "id": "maintainability-05",
+        "severity": "MED",
         "priority": 10,
         "runsOpen": 3,
-        "firstSeen": "2026-09-02"
-      },
-      {
-        "id": "maintainability-05",
-        "severity": "medium",
-        "priority": 10,
-        "runsOpen": 2,
         "firstSeen": "2026-09-09"
       },
       {
         "id": "maintainability-06",
-        "severity": "medium",
+        "severity": "MED",
         "priority": 10,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-16"
       },
       {
-        "id": "generative-art-palette-discipline-02",
-        "severity": "medium",
+        "id": "compliance-data-steward-04",
+        "severity": "MED",
         "priority": 10,
         "runsOpen": 2,
-        "firstSeen": "2026-09-09"
+        "firstSeen": "2026-09-16"
       },
       {
         "id": "generative-art-palette-discipline-01",
-        "severity": "medium",
-        "priority": 8,
-        "runsOpen": 2,
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 3,
+        "firstSeen": "2026-09-09"
+      },
+      {
+        "id": "generative-art-palette-discipline-02",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 3,
         "firstSeen": "2026-09-09"
       }
     ],
     "tensionsOpen": [
       {
         "lenses": [
-          "performance",
-          "solo-tool-ux"
+          "compliance-data-steward",
+          "strategic-kill-this"
         ],
         "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "reliability",
-          "maintainability"
-        ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "reliability",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "observability",
-          "release-pipeline-gate-page-publish"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "release-pipeline-version-pill-drift",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "maintainability",
-          "architecture"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "dependency",
-          "performance"
-        ],
-        "runsSeen": 1
       }
     ],
     "reconcileNote": "Closed on verified evidence 2026-09-16: release-pipeline-per-project-ps1-stack-01 (66feda7 routes every git call in scripts/write-dashboard-status.ps1 through Invoke-Git (lines 45-53, 192, 334), re-read this run); architecture-01 (7a3726f: src/util/resolve-illustration.js is the one resolver, called from src/render.js:256 and src/ui/illustration-picker.js:18-21); architecture-02 (b89fdf8: src/ui/editor.js:601-608 drives the live preview from the same rankSuggestions list the dropdown shows); performance-02 (a6cff2a: src/render.js:84-109 memoizes the parchment background on texture and gradient fields); observability-02 (X:/PortfolioOps/status/drift-fix-runs.jsonl carries a line per night for 2026-09-14 to 09-16 including zero-fix nights); compliance-data-steward-01 (c4afa68: src/render.js:494-517 and styles/label.css:457 print a qualifier whenever a compounds or cautions zone is placed; the unshipped half moves to release-pipeline-gate-page-publish-01); generative-art-schema-driven-correctness-01 (6c0bad9 drops the dead fields array; PROJECT_SPEC.md:174 and CLAUDE.md:71 say the Content markup is hand-authored); generative-art-print-fidelity-01 (494a719: test-export-print-parity.mjs compares LAYOUT_RULES to the print block and runs as suite five in scripts/preflight.ps1:21); release-pipeline-version-pill-drift-01 (af77a67: scripts/check-version-pill.ps1:143-144 now fails on src/** commits above the pill). Downgraded to low and dropped from the open list, not counted as closed: reliability-03 (the storage-error test gap, impact 2) and release-pipeline-discord-notify-wiring-01 (a duplicate dev-log post only on a forced retry). strategic-kill-this-01 left the deferred list: decided under D52 as maintenance, not retirement, 55a33ff.",
