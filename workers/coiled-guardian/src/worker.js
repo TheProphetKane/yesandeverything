@@ -15,6 +15,7 @@
 
 import {
   roleFor, issueCookie, sessionRole, clearCookie, reviewerOf, reviewerThrough,
+  matchesShare, shareLink, LINK_SLUG, LINK_TTL,
   loginPage, loginHeaders, docHeaders,
 } from "./auth.js";
 
@@ -110,6 +111,30 @@ export default {
       return html(loginPage(BOOK, "Incorrect password."), 401, loginHeaders());
     }
 
+    // The share link, added 2026-09-20 on Kane's ask for something he can paste into a message
+    // without also sending a phrase. The token in the path is the whole credential, so it is
+    // long enough not to be guessed, compared through digests, and it buys the same bounded
+    // reader session a phrase would. The reader is then an ordinary r:link session and every
+    // rule below applies to them unchanged: the span, the notes key, the refusals.
+    //
+    // The session lasts thirty days rather than twelve hours, because a link reader has no
+    // phrase to fall back on when one runs out. Landing them on a password form they cannot
+    // answer is how a shared link gets reported as broken.
+    const share = /^\/r\/([A-Za-z0-9_-]{24,128})$/.exec(rest);
+    if (share) {
+      if (await matchesShare(share[1], env)) {
+        return html("", 303, {
+          ...loginHeaders(),
+          location: BOOK.prefix + "/",
+          "set-cookie": await issueCookie(BOOK, "r:" + LINK_SLUG, env, LINK_TTL),
+        });
+      }
+      // The same delay a wrong phrase costs, and the same page, so a wrong token cannot be
+      // told from a dropped one or from a path that was never a link at all.
+      await new Promise((r) => setTimeout(r, 600));
+      return html(loginPage(BOOK), 200, loginHeaders());
+    }
+
     if (rest === "/logout") {
       return html(loginPage(BOOK, "Signed out."), 200, {
         ...loginHeaders(),
@@ -155,6 +180,11 @@ export default {
           const del = prev.del || n.del ? 1 : 0;
           const texty = (n.text || n.anchor) ? n : prev;
           const kept = { ...prev, ...texty };
+          // A self-declared name survives the fold whichever copy carries it. Readers coming in
+          // on one shared link have nothing else telling them apart, so losing it here would put
+          // two people's notes into one anonymous pile.
+          const who = prev.who || n.who;
+          if (who) kept.who = who; else delete kept.who;
           if (del) kept.del = 1; else delete kept.del;
           byId.set(n.id, kept);
         };

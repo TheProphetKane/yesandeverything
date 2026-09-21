@@ -10,7 +10,8 @@
 //     promote itself to the author by editing the role in its own cookie
 //   a cookie signed for another book's key does not validate here
 
-import { roleFor, reviewerOf, reviewerThrough, issueCookie, sessionRole } from "./auth.js";
+import { roleFor, reviewerOf, reviewerThrough, issueCookie, sessionRole,
+         shareLink, matchesShare, LINK_SLUG } from "./auth.js";
 
 const BOOK = { prefix: "/coiledguardian", key: "coiled-guardian", cookie: "coiled",
                title: "The Coiled Guardian", viewerSecret: "COILED_PASSWORD" };
@@ -24,7 +25,9 @@ const env = {
     "whole": { "phrase": "whole-book-phrase", "all": true },
     "typo": { "phrase": "typo-reader-phrase", "throgh": 45 },
     "liar": { "phrase": "liar-reader-phrase", "all": "true" },
+    "link": { "phrase": "reserved-slug-phrase", "all": true },
   }),
+  SHARE: JSON.stringify({ token: "TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1", through: 30 }),
 };
 
 let failed = 0;
@@ -89,6 +92,29 @@ is(await roleFor("whole-book-phrase", BOOK, env), "r:whole",
    "an all-true invitation unlocks its reviewer too");
 is(await roleFor("typo-reader-phrase", BOOK, env), "r:typo",
    "a misspelled span does not lock the reader out, it only bounds them");
+
+console.log("the share link");
+is(shareLink(env).token, "TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1", "the token reads back off the secret");
+is(shareLink(env).through, 30, "the link carries its span");
+is(shareLink({ ...env, SHARE: JSON.stringify("TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1") }).through, 30,
+   "a bare token string takes the default span");
+is(shareLink({ ...env, SHARE: JSON.stringify({ token: "tooshort" }) }), null,
+   "a token under twenty-four characters is refused rather than served");
+is(shareLink({ ...env, SHARE: "{broken" }), null, "a malformed secret opens no link");
+is(shareLink({ ...env, SHARE: undefined }), null, "no secret means no link");
+is(await matchesShare("TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1", env), true, "the right token opens it");
+is(await matchesShare("TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf0", env), false, "one character off does not");
+is(await matchesShare("TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1", { ...env, SHARE: undefined }), false,
+   "a dropped link stops opening for the token that used to work");
+is(reviewerThrough("r:link", env), 30, "the link session is bounded by the link's own span");
+is(reviewerThrough("r:link", { ...env, SHARE: JSON.stringify({ token: "TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1", through: 12 }) }),
+   12, "and follows it when the span changes");
+is(reviewerThrough("r:link", { ...env, SHARE: undefined }), 30,
+   "a link cookie outliving its link is still bounded");
+is(await roleFor("reserved-slug-phrase", BOOK, env), null,
+   "the link slug is reserved, so a named invitation cannot take it");
+const asLink = (await issueCookie(BOOK, "r:" + LINK_SLUG, env)).split(";")[0];
+is(await sessionRole(reqWith(asLink), BOOK, env), "r:link", "a link cookie round-trips");
 
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);

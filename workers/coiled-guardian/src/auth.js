@@ -20,7 +20,9 @@
 // payload. This repository is public, so both were readable without even loading the page.
 
 const COOKIE_PREFIX = "cg_";
-const TTL_MS = 12 * 60 * 60 * 1000; // 12h, matching the architecture gate
+const TTL_MS = 12 * 60 * 60 * 1000;             // 12h for a phrase, matching the architecture gate
+const LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;   // 30d for a share link, because the reader has no
+                                                // phrase to fall back on when a session runs out
 
 const enc = new TextEncoder();
 
@@ -61,6 +63,47 @@ async function passwordMatches(submitted, secret) {
 /** A reviewer slug is short, lowercase and safe to sign into a cookie and to use as a key. */
 const SLUG = /^[a-z0-9][a-z0-9-]{0,23}$/;
 
+// The slug the share link signs in as. Reserved, so a named invitation can never take it and
+// quietly inherit or overwrite the link's notes.
+export const LINK_SLUG = "link";
+export const LINK_TTL = LINK_TTL_MS;
+
+/**
+ * The open share link, from the SHARE secret, or null when there is none.
+ *
+ * Kane, 2026-09-20: "how about the fact that I have to share a password? Id rather just have it
+ * live an unbounded on my site, easy to share with anyone at a moment. Then drop it when I am
+ * ready to publish and put it back behind a gate."
+ *
+ * So the link is the whole credential. It carries enough random bits that it cannot be guessed
+ * or walked, which is what keeps an unpublished manuscript off the open web while still being
+ * one thing he can paste into a message. Nothing links to it and every page under this Worker
+ * is sent with noindex, so it reaches exactly the people he sends it to. Dropping it is one
+ * secret delete, after which the site is back to phrases only.
+ *
+ * The secret is {"token": "...", "through": 30}, or a bare token string for the default span.
+ * A token under 24 characters is refused rather than served, because a short one is guessable
+ * and a half-configured secret should close the door, not open it.
+ */
+export function shareLink(env) {
+  let raw;
+  try { raw = JSON.parse(env.SHARE || "null"); } catch { return null; }
+  const token = typeof raw === "string" ? raw
+    : (raw && typeof raw === "object" && typeof raw.token === "string" ? raw.token : null);
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{24,128}$/.test(token)) return null;
+  const n = raw && typeof raw === "object" ? raw.through : null;
+  const through = Number.isInteger(n) && n > 0 && n < 1000 ? n : DEFAULT_SPAN;
+  return { token, through };
+}
+
+/** Does this path token open the share link? Compared through digests, never by === . */
+export async function matchesShare(token, env) {
+  const live = shareLink(env);
+  if (!live || typeof token !== "string") return false;
+  const [a, b] = await Promise.all([sha256(token), sha256(live.token)]);
+  return ctEqual(a, b);
+}
+
 // How far an invited reader gets when the invitation does not say. The bound defaults closed
 // (Kane, 2026-09-20): he asked whether outside readers needed a subdomain of their own so the
 // rest of the book could be locked, and the honest answer was that the lock already held but
@@ -91,7 +134,7 @@ function reviewers(env) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
   const out = [];
   for (const [slug, v] of Object.entries(raw)) {
-    if (!SLUG.test(slug)) continue;
+    if (!SLUG.test(slug) || slug === LINK_SLUG) continue;
     const obj = v && typeof v === "object" && !Array.isArray(v) ? v : null;
     const phrase = typeof v === "string" ? v : (obj && typeof obj.phrase === "string" ? obj.phrase : null);
     if (typeof phrase !== "string" || phrase.length < 8) continue;
@@ -115,6 +158,10 @@ function reviewers(env) {
 export function reviewerThrough(role, env) {
   const slug = reviewerOf(role);
   if (!slug) return null;
+  if (slug === LINK_SLUG) {
+    const live = shareLink(env);
+    return live ? live.through : DEFAULT_SPAN;
+  }
   const row = reviewers(env).find(([s]) => s === slug);
   return row ? row[2] : DEFAULT_SPAN;
 }
@@ -146,8 +193,8 @@ export function reviewerOf(role) {
 // The cookie is stateless and signed: "<expiry>.<role>.<signature>". The signature covers the
 // document key as well as the expiry and role, so a session for one document is not a session
 // for another. Nothing in it is secret; it cannot be forged without SESSION_SECRET.
-export async function issueCookie(doc, role, env) {
-  const exp = String(Date.now() + TTL_MS);
+export async function issueCookie(doc, role, env, ttl = TTL_MS) {
+  const exp = String(Date.now() + ttl);
   const payload = `${doc.key}.${exp}.${role}`;
   const sig = b64url(await hmac(env.SESSION_SECRET, payload));
   return [
@@ -156,7 +203,7 @@ export async function issueCookie(doc, role, env) {
     "HttpOnly",
     "Secure",
     "SameSite=Strict",
-    `Max-Age=${TTL_MS / 1000}`,
+    `Max-Age=${ttl / 1000}`,
   ].join("; ");
 }
 
