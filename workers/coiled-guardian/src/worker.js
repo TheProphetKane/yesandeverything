@@ -63,9 +63,13 @@ async function readNotesStore(env, key = NOTES_KEY) {
 // does not carry resolves to a key the publish step never wrote, which lands on the plain
 // "not published" page rather than leaking anything.
 //
-// `through` bounds a reviewer to the span they were invited to read: the index they get is the
+// `through` bounds a reader to the span they were invited to read: the index they get is the
 // one the publish step wrote for that span, and a chapter past it resolves to nothing, exactly
-// as a chapter that has not been published does. The author passes null and sees everything.
+// as a chapter that has not been published does. Null means no bound, which is the author and
+// the one invitation that says `"all": true`. Everything else is bounded, including a mistyped
+// invitation, because auth.js defaults the span closed. If the bounded index has not been
+// published there is no fallback to the full one: the reader gets the plain not-published page,
+// which is the same refusal a stranger gets and leaks nothing about what lies past the span.
 const pageKey = (rest, through) => {
   if (rest === "" || rest === "/") return through ? "cg:index-r" + through : "cg:index";
   const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);

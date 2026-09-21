@@ -20,7 +20,10 @@ const env = {
   COILED_PASSWORD: "the-author-phrase",
   REVIEWERS: JSON.stringify({
     "nell": "nell-reader-phrase",
-    "ari-b": { "phrase": "ari-reader-phrase", "through": 30 },
+    "ari-b": { "phrase": "ari-reader-phrase", "through": 45 },
+    "whole": { "phrase": "whole-book-phrase", "all": true },
+    "typo": { "phrase": "typo-reader-phrase", "throgh": 45 },
+    "liar": { "phrase": "liar-reader-phrase", "all": "true" },
   }),
 };
 
@@ -69,14 +72,23 @@ is(await sessionRole(reqWith(`${name}=${exp}.r:nell.${sig}`), { ...BOOK, key: "o
 is(await sessionRole(reqWith(`${name}=1.r:nell.${sig}`), BOOK, env), null,
    "an expired cookie is refused");
 
-console.log("invited spans");
-is(reviewerThrough("r:nell", env), null, "a reviewer with no span sees everything published");
-is(reviewerThrough("r:ari-b", env), 30, "a reviewer invited through thirty carries thirty");
+console.log("invited spans, which default closed");
+is(reviewerThrough("r:nell", env), 30, "a bare phrase is bounded to the default span");
+is(reviewerThrough("r:ari-b", env), 45, "a reviewer invited through forty-five carries forty-five");
+is(reviewerThrough("r:whole", env), null, "all true is the one way to open the whole book");
+is(reviewerThrough("r:typo", env), 30, "a misspelled through bounds the reader rather than freeing them");
+is(reviewerThrough("r:liar", env), 30, "the string true is not true, and the reader stays bounded");
 is(reviewerThrough("reader", env), null, "the author is bounded by nothing");
-is(reviewerThrough("r:ari-b", { ...env, REVIEWERS: "{broken" }), null,
-   "a broken secret bounds nobody, because it invites nobody");
+is(reviewerThrough("r:nobody", env), 30,
+   "a slug the secret does not carry is bounded, though roleFor will never mint its cookie");
+is(reviewerThrough("r:ari-b", { ...env, REVIEWERS: "{broken" }), 30,
+   "a broken secret bounds every reader, and invites none of them in the first place");
 is(await roleFor("ari-reader-phrase", BOOK, env), "r:ari-b",
    "the object form of an invitation still unlocks its reviewer");
+is(await roleFor("whole-book-phrase", BOOK, env), "r:whole",
+   "an all-true invitation unlocks its reviewer too");
+is(await roleFor("typo-reader-phrase", BOOK, env), "r:typo",
+   "a misspelled span does not lock the reader out, it only bounds them");
 
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);

@@ -61,14 +61,24 @@ async function passwordMatches(submitted, secret) {
 /** A reviewer slug is short, lowercase and safe to sign into a cookie and to use as a key. */
 const SLUG = /^[a-z0-9][a-z0-9-]{0,23}$/;
 
+// How far an invited reader gets when the invitation does not say. The bound defaults closed
+// (Kane, 2026-09-20): he asked whether outside readers needed a subdomain of their own so the
+// rest of the book could be locked, and the honest answer was that the lock already held but
+// failed the wrong way. A bare phrase, or an entry whose `through` was mistyped, used to mean
+// everything published. One slip in a secret nobody reviews would have handed a stranger the
+// unfinished half of a first draft. Now a reader is bounded unless the invitation says
+// otherwise in as many words, so the slip locks down instead of opening up.
+const DEFAULT_SPAN = 30;
+
 /**
  * The invited outside reviewers, from the REVIEWERS secret.
  *
- * Each entry is `"slug": "phrase"` for a reader who may see everything published, or
- * `"slug": { "phrase": "...", "through": 30 }` for one invited to read a span. The span
- * matters: a first draft goes out to a stranger one finished stretch at a time, and handing
- * over the chapters that have not had their pass yet spends a reading on work that is known
- * to be unfinished.
+ * Each entry is `"slug": "phrase"` for a reader bounded to the default span, or
+ * `"slug": { "phrase": "...", "through": 45 }` for one invited to a span of their own, or
+ * `"slug": { "phrase": "...", "all": true }` for the one case that opens the whole book. The
+ * span matters: a first draft goes out to a stranger one finished stretch at a time, and
+ * handing over the chapters that have not had their pass spends a reading on known-unfinished
+ * work.
  *
  * One secret rather than one per reviewer, because adding a reader to a manuscript should not
  * need a deploy or a config change: `wrangler secret put REVIEWERS` with the new map does it.
@@ -82,21 +92,31 @@ function reviewers(env) {
   const out = [];
   for (const [slug, v] of Object.entries(raw)) {
     if (!SLUG.test(slug)) continue;
-    const phrase = typeof v === "string" ? v : (v && typeof v.phrase === "string" ? v.phrase : null);
+    const obj = v && typeof v === "object" && !Array.isArray(v) ? v : null;
+    const phrase = typeof v === "string" ? v : (obj && typeof obj.phrase === "string" ? obj.phrase : null);
     if (typeof phrase !== "string" || phrase.length < 8) continue;
-    const n = v && typeof v === "object" ? v.through : null;
-    const through = Number.isInteger(n) && n > 0 && n < 1000 ? n : null;
+    // The whole book takes an explicit true and nothing else. Any other value, including a
+    // string "true" out of a hand-edited secret, leaves the reader bounded.
+    if (obj && obj.all === true) { out.push([slug, phrase, null]); continue; }
+    const n = obj ? obj.through : null;
+    const through = Number.isInteger(n) && n > 0 && n < 1000 ? n : DEFAULT_SPAN;
     out.push([slug, phrase, through]);
   }
   return out;
 }
 
-/** How far into the book this reviewer was invited, or null for everything published. */
+/**
+ * How far into the book this reader was invited.
+ *
+ * A chapter number bounds them. Null means no bound, which is the author's session and an
+ * invited reader whose entry says `"all": true`. A reader the secret does not carry at all
+ * cannot hold a valid cookie, because roleFor is the only thing that mints one.
+ */
 export function reviewerThrough(role, env) {
   const slug = reviewerOf(role);
   if (!slug) return null;
   const row = reviewers(env).find(([s]) => s === slug);
-  return row ? row[2] : null;
+  return row ? row[2] : DEFAULT_SPAN;
 }
 
 /**
