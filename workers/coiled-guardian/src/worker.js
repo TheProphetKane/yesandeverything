@@ -71,8 +71,14 @@ async function readNotesStore(env, key = NOTES_KEY) {
 // invitation, because auth.js defaults the span closed. If the bounded index has not been
 // published there is no fallback to the full one: the reader gets the plain not-published page,
 // which is the same refusal a stranger gets and leaks nothing about what lies past the span.
+//
+// /print is the whole book on one page, set for paper (Kane, 2026-09-21: his grandmother reads
+// it and wanted a copy she could print and write on). It carries every chapter's text, so it is
+// bounded exactly as the contents page is: a bounded reader gets the print page written for
+// their span, cg:print-r<through>, and never the full one, with the same no-fallback refusal.
 const pageKey = (rest, through) => {
   if (rest === "" || rest === "/") return through ? "cg:index-r" + through : "cg:index";
+  if (rest === "/print") return through ? "cg:print-r" + through : "cg:print";
   const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);
   if (!m) return null;
   if (through && Number(m[1]) > through) return null;
