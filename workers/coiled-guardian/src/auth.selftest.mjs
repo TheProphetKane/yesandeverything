@@ -75,6 +75,11 @@ is(await sessionRole(reqWith(`${name}=${exp}.r:nell.${sig}`), { ...BOOK, key: "o
 is(await sessionRole(reqWith(`${name}=1.r:nell.${sig}`), BOOK, env), null,
    "an expired cookie is refused");
 
+is(/;\s*SameSite=Lax(;|$)/.test(await issueCookie(BOOK, "r:link", env)), true,
+   "the session cookie is SameSite=Lax, so a link tapped in a message app arrives signed in");
+is(/;\s*SameSite=Strict/.test(await issueCookie(BOOK, "reader", env)), false,
+   "and never Strict, which a phone withholds on the redirect after the share link");
+
 console.log("invited spans, which default closed");
 is(reviewerThrough("r:nell", env), 30, "a bare phrase is bounded to the default span");
 is(reviewerThrough("r:ari-b", env), 45, "a reviewer invited through forty-five carries forty-five");

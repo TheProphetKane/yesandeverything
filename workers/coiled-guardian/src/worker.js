@@ -156,8 +156,8 @@ export default {
     // device's localStorage alone, so a note made on the phone was invisible at the desk and
     // invisible to the sessions that apply the edits. The chapter pages now sync the whole
     // array through here (merge on the client, store whole). Behind the session on purpose:
-    // the notes quote the manuscript. The cookie is SameSite=Strict, so a cross-site POST
-    // arrives bare and stops at the login wall above.
+    // the notes quote the manuscript. The cookie is SameSite=Lax, which a browser never sends
+    // on a cross-site POST, so another site's form arrives bare and stops at the login wall.
     if (rest === "/api/notes") {
       const jsonHeaders = docHeaders({ "content-type": "application/json; charset=utf-8" });
       const notesKey = notesKeyFor(role);

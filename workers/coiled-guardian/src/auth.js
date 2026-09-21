@@ -193,6 +193,15 @@ export function reviewerOf(role) {
 // The cookie is stateless and signed: "<expiry>.<role>.<signature>". The signature covers the
 // document key as well as the expiry and role, so a session for one document is not a session
 // for another. Nothing in it is secret; it cannot be forged without SESSION_SECRET.
+//
+// SameSite=Lax, not Strict (Kane, 2026-09-21: the share link "worked for me on my desktop but
+// wont work for my mom or me on the phone"). A link tapped in a message app is a navigation
+// that starts outside the site, and a Strict cookie is withheld from every request in it, the
+// redirect after /r/<token> included. So the link set the cookie, redirected to the contents
+// page, and arrived there bare, which the reader saw as a password form. A pasted address bar
+// counts as the site's own navigation, which is why the desktop worked. Lax is sent on a
+// top-level GET from anywhere and never on a cross-site POST, so the notes store behind the
+// session stays out of reach of another site's forms, which is all Strict was doing here.
 export async function issueCookie(doc, role, env, ttl = TTL_MS) {
   const exp = String(Date.now() + ttl);
   const payload = `${doc.key}.${exp}.${role}`;
@@ -202,7 +211,7 @@ export async function issueCookie(doc, role, env, ttl = TTL_MS) {
     "Path=" + doc.prefix,
     "HttpOnly",
     "Secure",
-    "SameSite=Strict",
+    "SameSite=Lax",
     `Max-Age=${ttl / 1000}`,
   ].join("; ");
 }
@@ -230,7 +239,7 @@ export async function sessionRole(request, doc, env) {
 }
 
 export function clearCookie(doc) {
-  return `${COOKIE_PREFIX}${doc.cookie}=; Path=${doc.prefix}; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
+  return `${COOKIE_PREFIX}${doc.cookie}=; Path=${doc.prefix}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
 /**
