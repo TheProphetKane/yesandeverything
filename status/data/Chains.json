@@ -49,11 +49,11 @@
   },
   "barRaise": {
     "latestReportPath": "docs/BAR_RAISE-2026-09-22.md",
-    "latestReportAt": "2026-09-22T12:30:00Z",
+    "latestReportAt": "2026-09-22T23:55:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 51,
-    "actionsClosed": 100,
+    "actionsOpen": 52,
+    "actionsClosed": 102,
     "health": 68,
     "lensScores": {
       "architecture": 71,
@@ -75,9 +75,9 @@
       "release-pipeline-discord-notify-wiring": 30,
       "release-pipeline-version-pill-drift": 97,
       "release-pipeline-gate-page-publish": 76,
-      "reliability": 61,
-      "security": 70,
-      "data-integrity": 48,
+      "reliability": 58,
+      "security": 63,
+      "data-integrity": 54,
       "public-voice-solo-dev-voice-portfolio": 58
     },
     "closedLog": [
@@ -242,9 +242,24 @@
         "id": "data-integrity-30",
         "by": "backlog-burndown",
         "evidence": "commit 9f4f176, pull request https://github.com/TheProphetKane/yesandchains/pull/27 (not yet merged): the collection insert in src/cloud.ts passes id: d.id, upgrading a non-UUID id first, same as the bag-disc insert."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "data-integrity-24",
+        "by": "rotating bar-raise, evening delta pass",
+        "evidence": "worker/src/handlers/contribute.js:585 reads the canonical record and the merge loops at 646-745 only add layouts, holes and pins onto it, so an existing layout with no incoming counterpart is never dropped; line 764 writes that merged object back. Landed in 8b5eb6d, merged to main at 18:22:44 on 2026-09-22. Verified twice, by the money-path re-run and by an independent read-only audit of the same diff."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "version-pill-drift-02",
+        "by": "rotating bar-raise, evening delta pass",
+        "evidence": "CONTEXT.md:17, package.json:3 and the cache-buster at index.html:1397 all read 1.8.0, so no drift is present in this repository. The row had been reopened on 2026-09-22 because its earlier close keyed on a Hordes queue row; re-verified in-project this run rather than against a foreign project."
       }
     ],
-    "closedThisRun": [],
+    "closedThisRun": [
+      "data-integrity-24",
+      "version-pill-drift-02"
+    ],
     "actions": [
       {
         "id": "solo-dev-voice-portfolio-02",
@@ -264,13 +279,6 @@
         "id": "data-integrity-28",
         "severity": "HIGH",
         "title": "Add the column nullable with no default, run the backfill while it can still match, then add the default and the not-null constraint.",
-        "lens": "data-integrity",
-        "priority": 20
-      },
-      {
-        "id": "data-integrity-24",
-        "severity": "HIGH",
-        "title": "Merge pull request #27 and deploy it, and close findings only against origin/main from now on.",
         "lens": "data-integrity",
         "priority": 20
       },
@@ -605,11 +613,25 @@
         "redacted": true
       },
       {
-        "id": "version-pill-drift-02",
+        "id": "data-integrity-32",
         "severity": "MED",
-        "title": "Reopened by ruling on 2026-09-22, not re-verified: closed with no evidence by bar-raise-2026-07-26-hordes-version-pill-drift-02 (hordes, completed), a foreign project's row; reconcile-status-queue.py keyed a close on the finding identifier alone until it was fixed on 2026-09-02. Re-verify it, then close it or work it.",
-        "lens": "version-pill-drift",
-        "priority": 10
+        "title": "Rewrite migration 0027 to add the column nullable, backfill from the round end date, then set the default and the not-null constraint.",
+        "lens": "data-integrity",
+        "priority": 12
+      },
+      {
+        "id": "data-integrity-33",
+        "severity": "MED",
+        "title": "Read the period end from the subscription items array with the top-level field as fallback, and omit the renewal column rather than writing null.",
+        "lens": "data-integrity",
+        "priority": 6
+      },
+      {
+        "id": "per-project-ps1-stack-06",
+        "severity": "MED",
+        "title": "Raise the execution time limit in the decision record 0021 registration block from one hour to four, so a re-registration cannot reintroduce the 05:00 mid-scrape termination the 2026-09-22 fix just removed.",
+        "lens": "release-pipeline-per-project-ps1-stack",
+        "priority": 15
       }
     ],
     "deferred": [
@@ -622,9 +644,9 @@
       },
       {
         "severity": "HIGH",
-        "title": "The documented last-write-wins conflict policy is bypassed in production: because the migration has not been applied, every push for the affected tables takes the blind-upsert fallback, so a multi-device edit can silently overwrite a fresher one.",
+        "title": "Migrations 0025, 0026 and 0027 are all unapplied against the live database by the repository ledger at supabase/README.md:55, so collection pushes fail on a missing updated_at column, the course-favourite tombstone from 0026 matches no row under row-level security, and the round watermark pull-side merge that pull request #27 added has nothing to read. 0025 also cannot apply as written: its backfill names retired_at, renamed to collected_at by migration 0006.",
         "lens": "pwa-sync",
-        "reason": "blocked on Kane's hands to paste the migration into the database editor",
+        "reason": "blocked on Kane's hands to paste the migrations into the database editor, and 0025 and 0027 both need rewriting first",
         "id": "sync-01"
       },
       {
@@ -654,28 +676,21 @@
         "id": "reliability-16",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-09-15"
       },
       {
         "id": "data-integrity-28",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 3,
+        "runsOpen": 4,
         "firstSeen": "2026-09-15"
-      },
-      {
-        "id": "data-integrity-24",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-22"
       },
       {
         "id": "data-integrity-30",
         "severity": "HIGH",
         "priority": 20,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-22"
       },
       {
@@ -703,7 +718,7 @@
         "id": "data-integrity-23",
         "severity": "HIGH",
         "priority": 16,
-        "runsOpen": 4,
+        "runsOpen": 5,
         "firstSeen": "2026-09-08"
       },
       {
@@ -717,7 +732,7 @@
         "id": "reliability-17",
         "severity": "HIGH",
         "priority": 16,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-22"
       },
       {
@@ -899,7 +914,7 @@
         "id": "data-integrity-31",
         "severity": "MED",
         "priority": 12,
-        "runsOpen": 1,
+        "runsOpen": 2,
         "firstSeen": "2026-09-22"
       },
       {
@@ -996,13 +1011,22 @@
         "reopenedWhy": "closed with no evidence by ring-security-11 (ring, completed), a foreign project's row; reconcile-status-queue.py keyed a close on the finding identifier alone until it was fixed on 2026-09-02. Reopened by ruling, not re-verified: the next review of this project closes it if it is genuinely done."
       },
       {
-        "id": "version-pill-drift-02",
+        "id": "data-integrity-32",
         "severity": "MED",
-        "priority": 10,
         "runsOpen": 1,
-        "firstSeen": "2026-09-22",
-        "reopened": "2026-09-22",
-        "reopenedWhy": "closed with no evidence by bar-raise-2026-07-26-hordes-version-pill-drift-02 (hordes, completed), a foreign project's row; reconcile-status-queue.py keyed a close on the finding identifier alone until it was fixed on 2026-09-02. Reopened by ruling, not re-verified: the next review of this project closes it if it is genuinely done."
+        "firstSeen": "2026-09-22"
+      },
+      {
+        "id": "data-integrity-33",
+        "severity": "MED",
+        "runsOpen": 1,
+        "firstSeen": "2026-09-22"
+      },
+      {
+        "id": "per-project-ps1-stack-06",
+        "severity": "MED",
+        "runsOpen": 1,
+        "firstSeen": "2026-09-22"
       }
     ],
     "tensionsOpen": [
@@ -1028,7 +1052,7 @@
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "Close leg 2026-09-22: no openFindings id had a queue item completed, done, superseded or dropped since the 2026-09-20 run, checked against .work-queue.json and .work-queue-archive.json. Reopened, not new: data-integrity-24 and data-integrity-30, closed on 2026-09-20 against commit 9f4f176, which is on unmerged branch burndown-2026-09-18 and not on origin/main. observability-01 rests on the same commit and is covered by per-project-ps1-stack-05 rather than reopened, because this run did not re-run the observability lens."
+    "reconcileNote": "Close leg, evening pass 2026-09-22: reconcile-status-queue.py reports every open action still live in the queue, so no finding closed on a queue status this run. An independent audit of the archive found six apparent matches (gate-page-publish-01, reliability-04, performance-01, dependency-01, per-project-ps1-stack-02 on Chains, compliance-data-steward-02 on Budget) and every one was id recycling: the archived item described an earlier defect that reused the identifier. All six were re-read at HEAD and all six defects are still present, so all six stay open. Two findings closed on code evidence instead, data-integrity-24 and version-pill-drift-02. data-integrity-30 stays open: the retry-duplication half landed at src/cloud.ts:334-336, but the duplicate sweep over collection_discs for accounts that migrated on 1.x has not run and nothing in the repository records it. Enqueue leg: not run, and deliberately. heal-unqueued-findings.py was ruled superseded on 2026-09-22 under D53, because build-aged-packets.py already reads barRaise.openFindings directly and minting rows would put the same 134 findings in front of a session twice. Chains has 29 open findings with no live queue row and Budget has 2; the aged packets carry them."
   },
   "metrics": [
     {
