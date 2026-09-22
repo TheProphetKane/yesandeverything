@@ -11,10 +11,12 @@
 //   the share link reader is bounded the same way
 //   the chapter bound still holds beside the new route
 //   the author and the readers never share a cookie, the link never writes over the author,
-//     the author wins whenever both are present, his notes stay his, and a bounded session
-//     always offers him the sign-in form (Kane, 2026-09-21, the night the link locked him out)
+//     the author wins whenever both are present, his notes stay his, and a chapter past a
+//     bounded span is the plain password form, the same for a chapter written or not
+//     (Kane, 2026-09-21 and 22)
 
 import worker from "./worker.js";
+import { issueCookie } from "./auth.js";
 
 const store = new Map(Object.entries({
   "cg:index": "INDEX-FULL",
@@ -93,7 +95,7 @@ const nell = await signIn("nell-reader-phrase");
 const nellPrint = await get("/print", nell);
 is(nellPrint.body, "PRINT-R30", "a reader bounded to thirty gets the thirty-chapter print page");
 is(nellPrint.body.includes("FULL"), false, "and never the full one");
-is((await get("/", nell)).body.startsWith("INDEX-R30"), true, "their contents page is their span's");
+is((await get("/", nell)).body, "INDEX-R30", "their contents page is their span's, exactly as published");
 is((await get("/ch-30", nell)).body, "CH-30", "chapter thirty serves");
 is((await get("/ch-31", nell)).body.includes("CH-31"), false, "chapter thirty-one does not");
 
@@ -114,8 +116,11 @@ const link = cookieOf(open);
 is((await get("/print", link)).body, "PRINT-R30", "a link reader gets the link's span to print");
 const past = await get("/ch-31", link);
 is(past.body.includes("CH-31"), false, "and the chapter bound holds for them too");
-is(past.body.includes("Access password") && past.body.includes("chapters 1 to 30"), true,
-   "a chapter past the bound offers the author's sign-in instead of a dead end");
+is(past.body.includes("Access password"), true, "next on chapter thirty lands on the password form");
+is(past.body, (await get("/ch-31")).body, "the very form a stranger gets, with nothing added");
+is(past.body, (await get("/ch-999", link)).body,
+   "and the same answer as a chapter that was never written, so nothing past the span can be counted");
+is(/30|past|more chapters|further/i.test(past.body), false, "it says nothing about any span or what lies past it");
 is((await get("/ch-92", link)).body.includes("CH-92"), false, "chapter ninety-two stays shut to the link");
 is((await get("/print", link)).body.includes("FULL"), false, "the link never gets the full print page");
 
@@ -176,8 +181,8 @@ is((await get("/ch-92", fresh)).body, "CH-92", "and every chapter opens again");
 
 console.log("the way back in is always there");
 is((await get("/login", link)).body.includes("Access password"), true, "the sign-in form answers any session");
-is((await get("/", link)).body.includes("Author sign-in"), true, "a bounded contents page names the way in");
-is((await get("/", author)).body.includes("Author sign-in"), false, "the author's own contents page does not");
+is((await get("/", link)).body, "INDEX-R30", "a bounded contents page carries nothing the publish step did not write");
+is((await get("/ch-45", link)).body.includes("Access password"), true, "any chapter past the span is the author's door");
 const out = await worker.fetch(new Request(BASE + "/logout", { headers: { cookie: both } }), env);
 const cleared = setCookies(out).map(nameOf).sort().join(",");
 is(cleared, "cg_coiled,cg_coiled_r", "signing out clears both sessions");
@@ -189,6 +194,41 @@ is((await get("/ch-31", expiredAuthor + "; " + link)).body.includes("CH-31"), fa
 const forged = link.replace(/\.r:link\./, ".reader.");
 is((await get("/ch-31", forged)).body.includes("CH-31"), false,
    "a reader cookie edited to claim the author is refused");
+
+// Kane, 2026-09-22: every link reader once wrote to one shared key, and his own phone, sitting
+// on the link, posted his whole store of notes into it. Each browser now has a key of its own, and
+// no reader store ever holds or shows an id the author's store carries.
+console.log("every link reader is on their own, and never sees the author's notes");
+const roleOf = (c) => c.split("=")[1].split(".")[1];
+const ra = cookieOf(await worker.fetch(new Request(BASE + "/r/" + TOKEN), env));
+const rb = cookieOf(await worker.fetch(new Request(BASE + "/r/" + TOKEN), env));
+is(/^r:link-[a-z0-9]{10}$/.test(roleOf(ra)), true, "the link gives a browser a slug of its own");
+is(roleOf(ra) === roleOf(rb), false, "and two browsers never share one");
+await worker.fetch(new Request(BASE + "/api/notes", {
+  method: "POST", headers: { cookie: ra }, body: JSON.stringify([{ id: "ra", text: "reader a's note" }]),
+}), env);
+is((await get("/api/notes", ra)).body.includes("reader a's note"), true, "a reader reads their own note");
+is((await get("/api/notes", rb)).body.includes("reader a's note"), false, "and no other link reader does");
+const again = await worker.fetch(new Request(BASE + "/r/" + TOKEN, { headers: { cookie: ra } }), env);
+is(setCookies(again).length, 0, "reopening the link keeps the browser's own slug, and its notes with it");
+await worker.fetch(new Request(BASE + "/api/notes", {
+  method: "POST", headers: { cookie: ra },
+  body: JSON.stringify([{ id: "k1", text: "the author's note, from a phone on the link" },
+                        { id: "ra2", text: "reader a again" }]),
+}), env);
+const aKey = "cg:review:" + roleOf(ra).slice(2);
+is(store.get(aKey).includes("the author's note"), false, "an author's note posted on a reader session is dropped");
+is(store.get(aKey).includes("reader a again"), true, "while the reader's own note beside it lands");
+store.set(aKey, JSON.stringify({ v: 9, notes: [{ id: "k1", text: "the author's note, seeded" },
+                                               { id: "ra", text: "reader a's note" }] }));
+is((await get("/api/notes", ra)).body.includes("the author's note"), false,
+   "and one already sitting in a reader store is never shown");
+const shared = (await issueCookie({ prefix: "/coiledguardian", key: "coiled-guardian", cookie: "coiled" },
+  "r:link", env, 60000)).split(";")[0];
+const legacy = await worker.fetch(new Request(BASE + "/ch-1", { headers: { cookie: shared } }), env);
+is(await legacy.text(), "CH-1", "a session on the old shared slug still reads");
+is(/^cg_coiled_r=[0-9]+\.r:link-[a-z0-9]{10}\./.test(setCookies(legacy)[0] || ""), true,
+   "and is reissued a slug of its own on that same request");
 
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);

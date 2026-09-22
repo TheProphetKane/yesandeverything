@@ -15,7 +15,7 @@
 
 import {
   roleFor, issueCookie, sessionRole, clearCookies, isAuthor, reviewerOf, reviewerThrough,
-  matchesShare, shareLink, LINK_SLUG, LINK_TTL,
+  matchesShare, shareLink, LINK_SLUG, LINK_TTL, isLinkSlug, newLinkRole,
   loginPage, loginHeaders, docHeaders,
 } from "./auth.js";
 
@@ -99,7 +99,9 @@ const html = (body, status = 200, headers = {}) => {
 // A chapter-shaped path, whether or not this reader may have it.
 const CHAPTER = /^\/ch-[1-9][0-9]{0,2}$/;
 
-export default {
+// Two handlers on one object, named rather than reached through `this`, so the gate never
+// depends on how the runtime binds a method call.
+const handlers = {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -112,10 +114,9 @@ export default {
 
     const rest = path.slice(BOOK.prefix.length);
 
-    // The author's way back in from anywhere, whatever session the browser already holds. A
-    // bounded reader session never hides this form, so the author can always reach it by
-    // address, by the sign-in line under a bounded contents page, or from any chapter past the
-    // bound.
+    // The author's way back in from anywhere, whatever session the browser already holds: by
+    // this address, or from any chapter past a bounded reader's span, which answers with the same
+    // form.
     if (rest === "/login" && request.method === "GET") {
       return html(loginPage(BOOK), 200, loginHeaders());
     }
@@ -150,11 +151,17 @@ export default {
     // The link writes only the reader cookie, and never for a browser that already holds the
     // author's session (Kane, 2026-09-21): opening his own link to see what his readers see
     // used to replace his session with theirs and lock him out past chapter thirty.
+    //
+    // Each browser gets a link slug of its own, so one link reader never reads another's notes.
+    // A browser that already holds one keeps it, so reopening the link keeps a reader's notes
+    // where they were.
     if (share) {
       if (await matchesShare(share[1], env)) {
         const headers = { ...loginHeaders(), location: BOOK.prefix + "/" };
-        if (!isAuthor(await sessionRole(request, BOOK, env))) {
-          headers["set-cookie"] = await issueCookie(BOOK, "r:" + LINK_SLUG, env, LINK_TTL);
+        const held = await sessionRole(request, BOOK, env);
+        const slug = reviewerOf(held);
+        if (!isAuthor(held) && !(slug && slug !== LINK_SLUG && isLinkSlug(slug))) {
+          headers["set-cookie"] = await issueCookie(BOOK, newLinkRole(), env, LINK_TTL);
         }
         return html("", 303, headers);
       }
@@ -172,8 +179,23 @@ export default {
     }
 
     // --- the gate: nothing below here runs without a valid session ---
-    const role = await sessionRole(request, BOOK, env);
+    let role = await sessionRole(request, BOOK, env);
     if (!role) return html(loginPage(BOOK), 200, loginHeaders());
+
+    // A link session minted before every browser had a slug of its own carries the bare shared
+    // slug. It is reissued one of its own here, on whatever it asked for, so from this request on
+    // it reads and writes only its own notes.
+    let reissue = null;
+    if (role === "r:" + LINK_SLUG) {
+      role = newLinkRole();
+      reissue = await issueCookie(BOOK, role, env, LINK_TTL);
+    }
+    const res = await handlers.serve(request, env, role, rest);
+    if (reissue) res.headers.append("set-cookie", reissue);
+    return res;
+  },
+
+  async serve(request, env, role, rest) {
 
     // The notes store, added 2026-08-29. The annotation layer used to keep its notes in each
     // device's localStorage alone, so a note made on the phone was invisible at the desk and
@@ -184,9 +206,18 @@ export default {
     if (rest === "/api/notes") {
       const jsonHeaders = docHeaders({ "content-type": "application/json; charset=utf-8" });
       const notesKey = notesKeyFor(role);
+      // A reader's store never holds or shows the author's notes (Kane, 2026-09-22). His own
+      // phone, sitting on the share link, once posted its whole store of his notes into the
+      // link's key, where every link reader's page would have listed them. So on a reader
+      // session every note whose id the author's store carries is dropped on the way in and
+      // filtered on the way out, whatever a device sends.
+      const authorIds = reviewerOf(role)
+        ? new Set((await readNotesStore(env, NOTES_KEY)).notes.map((n) => n && n.id).filter(Boolean))
+        : null;
+      const notTheAuthors = (n) => !authorIds || !(n && n.id && authorIds.has(n.id));
       if (request.method === "GET") {
         const stored = await readNotesStore(env, notesKey);
-        return html(JSON.stringify(stored.notes), 200, jsonHeaders);
+        return html(JSON.stringify(stored.notes.filter(notTheAuthors)), 200, jsonHeaders);
       }
       if (request.method === "POST") {
         const text = await request.text();
@@ -194,6 +225,7 @@ export default {
         let notes;
         try { notes = JSON.parse(text); } catch { notes = null; }
         if (!Array.isArray(notes)) return html('{"error":"expected an array"}', 400, jsonHeaders);
+        notes = notes.filter(notTheAuthors);
 
         // Merge, never overwrite (2026-08-29, the night a refresh appeared to eat
         // annotations). A client posts its whole array, but another device or the
@@ -220,7 +252,7 @@ export default {
         const mergeOnto = (cur) => {
           const byId = new Map();
           const loose = [];
-          cur.forEach((n) => fold(byId, loose, n));
+          cur.filter(notTheAuthors).forEach((n) => fold(byId, loose, n));
           notes.forEach((n) => fold(byId, loose, n));
           return [...byId.values()].concat(loose)
             .sort((a, b) => ((a.at || "") < (b.at || "") ? -1 : (a.at || "") > (b.at || "") ? 1 : 0));
@@ -262,14 +294,14 @@ export default {
     const through = reviewerThrough(role, env);
     const key = pageKey(rest, through);
     if (!key) {
-      // A chapter past a bounded reader's span answers with the sign-in form rather than a bare
-      // 404, so the author holding a reader session in this browser always has a door to every
-      // chapter. The reader learns only that the link stops where it stops, which the contents
-      // page already told them, and a reader's phrase cannot open more than its own span.
+      // A chapter past a bounded reader's span answers with the plain password form and nothing
+      // else (Kane, 2026-09-22: "Make it a password prompt if they click next on 30", and "I dont
+      // want people to even know a chapter exists before I make it available"). Every
+      // chapter-shaped path past the span gets the same form, whether the chapter is written or
+      // not, so the answer cannot be used to count what lies past it. It is also the author's
+      // door: signed in there, every chapter opens, and no reader credential can take that away.
       if (through && CHAPTER.test(rest)) {
-        return html(loginPage(BOOK, "",
-          "This link opens chapters 1 to " + through + ". To read past it, sign in with the " +
-          "author's password."), 200, loginHeaders());
+        return html(loginPage(BOOK), 200, loginHeaders());
       }
       return html("Not found", 404, docHeaders());
     }
@@ -289,16 +321,8 @@ export default {
       );
     }
 
-    // A bounded contents page carries one quiet line naming the author's way in, so a browser
-    // holding a reader session never leaves him hunting for a sign-in form.
-    if (through && key.startsWith("cg:index-r")) {
-      const line = `<p style="text-align:center;font:12px/1.6 system-ui;opacity:.55;margin:40px 0">` +
-        `<a href="${BOOK.prefix}/login" style="color:inherit">Author sign-in</a></p>`;
-      const end = body.lastIndexOf("</body>");
-      const at = end < 0 ? body.length : end;
-      return html(body.slice(0, at) + line + body.slice(at), 200, docHeaders());
-    }
-
     return html(body, 200, docHeaders());
   },
 };
+
+export default handlers;

@@ -84,6 +84,20 @@ const SLUG = /^[a-z0-9][a-z0-9-]{0,23}$/;
 export const LINK_SLUG = "link";
 export const LINK_TTL = LINK_TTL_MS;
 
+// Every browser that opens the share link gets a slug of its own, link-<ten random characters>,
+// so its notes live under a key of their own and no link reader reads another's (Kane,
+// 2026-09-22). Until then every link reader wrote to the one key cg:review:link, and when his
+// own phone was on the link its whole store of his notes landed there too, where every other
+// link reader's page would have shown them. A session minted before this carries the bare slug
+// "link"; the gate reissues it a slug of its own on its next request.
+const LINK_ID = /^link-[a-z0-9]{10}$/;
+export const isLinkSlug = (slug) => slug === LINK_SLUG || LINK_ID.test(slug || "");
+export function newLinkRole() {
+  const a = new Uint8Array(10);
+  crypto.getRandomValues(a);
+  return "r:" + LINK_SLUG + "-" + Array.from(a, (x) => "abcdefghijklmnopqrstuvwxyz0123456789"[x % 36]).join("");
+}
+
 /**
  * The open share link, from the SHARE secret, or null when there is none.
  *
@@ -151,7 +165,7 @@ function reviewers(env) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
   const out = [];
   for (const [slug, v] of Object.entries(raw)) {
-    if (!SLUG.test(slug) || slug === LINK_SLUG) continue;
+    if (!SLUG.test(slug) || slug === LINK_SLUG || slug.startsWith(LINK_SLUG + "-")) continue;
     const obj = v && typeof v === "object" && !Array.isArray(v) ? v : null;
     const phrase = typeof v === "string" ? v : (obj && typeof obj.phrase === "string" ? obj.phrase : null);
     if (typeof phrase !== "string" || phrase.length < 8) continue;
@@ -175,7 +189,7 @@ function reviewers(env) {
 export function reviewerThrough(role, env) {
   const slug = reviewerOf(role);
   if (!slug) return null;
-  if (slug === LINK_SLUG) {
+  if (isLinkSlug(slug)) {
     const live = shareLink(env);
     return live ? live.through : DEFAULT_SPAN;
   }
@@ -341,11 +355,9 @@ padding:12px;font-family:ui-monospace,monospace;font-weight:700;font-size:14px;c
 button:hover{filter:brightness(1.06)}
 .err{background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.4);color:#f0888b;
 border-radius:9px;padding:9px 12px;font-size:13px;margin-bottom:16px}
-.note{color:var(--muted);font-size:11.5px;margin-top:16px;line-height:1.5}
-.info{background:rgba(90,209,200,.10);border:1px solid rgba(90,209,200,.35);color:var(--fg);
-border-radius:9px;padding:9px 12px;font-size:13px;margin-bottom:16px}`;
+.note{color:var(--muted);font-size:11.5px;margin-top:16px;line-height:1.5}`;
 
-export function loginPage(doc, error = "", notice = "") {
+export function loginPage(doc, error = "") {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -356,7 +368,6 @@ export function loginPage(doc, error = "", notice = "") {
   <div class="brand">Yes&amp;<b>Everything</b></div>
   <div class="sub">${esc(doc.title)}</div>
   ${error ? `<div class="err">${esc(error)}</div>` : ""}
-  ${notice ? `<div class="info">${esc(notice)}</div>` : ""}
   <label for="p">Access password</label>
   <input id="p" name="password" type="password" autofocus required>
   <button type="submit">Enter</button>

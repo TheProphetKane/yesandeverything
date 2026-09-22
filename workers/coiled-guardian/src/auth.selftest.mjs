@@ -11,7 +11,7 @@
 //   a cookie signed for another book's key does not validate here
 
 import { roleFor, reviewerOf, reviewerThrough, issueCookie, sessionRole,
-         shareLink, matchesShare, LINK_SLUG } from "./auth.js";
+         shareLink, matchesShare, LINK_SLUG, isLinkSlug, newLinkRole } from "./auth.js";
 
 const BOOK = { prefix: "/coiledguardian", key: "coiled-guardian", cookie: "coiled",
                title: "The Coiled Guardian", viewerSecret: "COILED_PASSWORD" };
@@ -26,6 +26,7 @@ const env = {
     "typo": { "phrase": "typo-reader-phrase", "throgh": 45 },
     "liar": { "phrase": "liar-reader-phrase", "all": "true" },
     "link": { "phrase": "reserved-slug-phrase", "all": true },
+    "link-abcdefghij": { "phrase": "stolen-link-slug-phrase", "all": true },
   }),
   SHARE: JSON.stringify({ token: "TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1", through: 30 }),
 };
@@ -120,6 +121,17 @@ is(await roleFor("reserved-slug-phrase", BOOK, env), null,
    "the link slug is reserved, so a named invitation cannot take it");
 const asLink = (await issueCookie(BOOK, "r:" + LINK_SLUG, env)).split(";")[0];
 is(await sessionRole(reqWith(asLink), BOOK, env), "r:link", "a link cookie round-trips");
+
+console.log("every link browser has a slug of its own");
+const r1 = newLinkRole(), r2 = newLinkRole();
+is(/^r:link-[a-z0-9]{10}$/.test(r1), true, "a link role is link and ten characters of its own");
+is(r1 === r2, false, "two browsers never share one");
+is(isLinkSlug("link") && isLinkSlug("link-abcdefghij"), true,
+   "the old shared slug and a browser's own are both link slugs");
+is(isLinkSlug("link-x"), false, "a short look-alike is not");
+is(reviewerThrough(r1, env), 30, "a browser's own link slug is bounded by the link's span");
+is(await roleFor("stolen-link-slug-phrase", BOOK, env), null,
+   "an invitation cannot take a link slug and read one browser's notes");
 
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);
