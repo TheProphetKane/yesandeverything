@@ -20,9 +20,25 @@
 // payload. This repository is public, so both were readable without even loading the page.
 
 const COOKIE_PREFIX = "cg_";
-const TTL_MS = 12 * 60 * 60 * 1000;             // 12h for a phrase, matching the architecture gate
+const TTL_MS = 12 * 60 * 60 * 1000;             // 12h for a reviewer's phrase
 const LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;   // 30d for a share link, because the reader has no
                                                 // phrase to fall back on when a session runs out
+const AUTHOR_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30d for the author, so his own session never
+                                                // runs out underneath a reader session and
+                                                // leaves him bounded without knowing why
+
+// Two cookies, one for the author and one for everybody else (Kane, 2026-09-21). Until then a
+// single cookie carried whichever role signed in last, so opening his own share link on his own
+// phone replaced his session with the link's, and he was locked out of every chapter past
+// thirty with nothing on the page telling him why. He had asked for readers on a host of their
+// own for exactly this separation, and the session that built the link kept one host and one
+// cookie instead. The share link stays where it was sent; the separation now lives in the
+// cookies. A reader session is written only to READER_SUFFIX, never over the author's, and a
+// valid author session wins whenever both are present, so no reader credential can bound him.
+const READER_SUFFIX = "_r";
+const isAuthor = (role) => role === "reader";
+const cookieName = (doc, role) =>
+  COOKIE_PREFIX + doc.cookie + (isAuthor(role) ? "" : READER_SUFFIX);
 
 const enc = new TextEncoder();
 
@@ -105,10 +121,11 @@ export async function matchesShare(token, env) {
 }
 
 // How far an invited reader gets when the invitation does not say. The bound defaults closed
-// (Kane, 2026-09-20): he asked whether outside readers needed a subdomain of their own so the
-// rest of the book could be locked, and the honest answer was that the lock already held but
-// failed the wrong way. A bare phrase, or an entry whose `through` was mistyped, used to mean
-// everything published. One slip in a secret nobody reviews would have handed a stranger the
+// (Kane, 2026-09-20). He asked for outside readers on a subdomain of their own so the rest of the
+// book stayed locked; the session kept one host instead, which was its call over his and led to
+// the lockout the two-cookie split above now prevents. The span lock itself failed the wrong way
+// at first: a bare phrase, or an entry whose `through` was mistyped, used to mean everything
+// published. One slip in a secret nobody reviews would have handed a stranger the
 // unfinished half of a first draft. Now a reader is bounded unless the invitation says
 // otherwise in as many words, so the slip locks down instead of opening up.
 const DEFAULT_SPAN = 30;
@@ -202,12 +219,13 @@ export function reviewerOf(role) {
 // counts as the site's own navigation, which is why the desktop worked. Lax is sent on a
 // top-level GET from anywhere and never on a cross-site POST, so the notes store behind the
 // session stays out of reach of another site's forms, which is all Strict was doing here.
-export async function issueCookie(doc, role, env, ttl = TTL_MS) {
+export async function issueCookie(doc, role, env, ttl) {
+  if (ttl === undefined) ttl = isAuthor(role) ? AUTHOR_TTL_MS : TTL_MS;
   const exp = String(Date.now() + ttl);
   const payload = `${doc.key}.${exp}.${role}`;
   const sig = b64url(await hmac(env.SESSION_SECRET, payload));
   return [
-    `${COOKIE_PREFIX}${doc.cookie}=${exp}.${role}.${sig}`,
+    `${cookieName(doc, role)}=${exp}.${role}.${sig}`,
     "Path=" + doc.prefix,
     "HttpOnly",
     "Secure",
@@ -216,21 +234,13 @@ export async function issueCookie(doc, role, env, ttl = TTL_MS) {
   ].join("; ");
 }
 
-/** The role this request carries for this document, or null. */
-export async function sessionRole(request, doc, env) {
-  if (!env.SESSION_SECRET) return null;
-  const name = COOKIE_PREFIX + doc.cookie;
-  const raw = (request.headers.get("cookie") || "")
-    .split(/;\s*/)
-    .find((c) => c.startsWith(name + "="));
-  if (!raw) return null;
-
-  const val = raw.slice(name.length + 1);
+// One cookie value checked: its signature, its expiry, and that the role is one this gate mints.
+async function validRole(val, doc, env) {
   const parts = val.split(".");
   if (parts.length !== 3) return null;
   const [exp, role, sig] = parts;
   if (!/^\d+$/.test(exp)) return null;
-  if (role !== "reader" && !reviewerOf(role)) return null;
+  if (!isAuthor(role) && !reviewerOf(role)) return null;
 
   const expect = b64url(await hmac(env.SESSION_SECRET, `${doc.key}.${exp}.${role}`));
   if (!ctEqual(enc.encode(sig), enc.encode(expect))) return null;
@@ -238,9 +248,36 @@ export async function sessionRole(request, doc, env) {
   return role;
 }
 
-export function clearCookie(doc) {
-  return `${COOKIE_PREFIX}${doc.cookie}=; Path=${doc.prefix}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+/**
+ * The role this request carries for this document, or null.
+ *
+ * Every cookie the gate could have set is read, the author's and the reader's, and a valid
+ * author session wins over any reader session beside it. The author's cookie can still hold a
+ * reader role, because before 2026-09-21 every session was written there; those link sessions
+ * keep working as reader sessions until they expire, and they lose to the author the same way.
+ */
+export async function sessionRole(request, doc, env) {
+  if (!env.SESSION_SECRET) return null;
+  const names = [COOKIE_PREFIX + doc.cookie, COOKIE_PREFIX + doc.cookie + READER_SUFFIX];
+  const jar = (request.headers.get("cookie") || "").split(/;\s*/);
+  let reader = null;
+  for (const c of jar) {
+    const name = names.find((n) => c.startsWith(n + "="));
+    if (!name) continue;
+    const role = await validRole(c.slice(name.length + 1), doc, env);
+    if (isAuthor(role)) return role;
+    if (role && !reader) reader = role;
+  }
+  return reader;
 }
+
+/** Set-Cookie values that sign this browser out of every session the gate could have set. */
+export function clearCookies(doc) {
+  return [COOKIE_PREFIX + doc.cookie, COOKIE_PREFIX + doc.cookie + READER_SUFFIX].map((n) =>
+    `${n}=; Path=${doc.prefix}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+}
+
+export { isAuthor };
 
 /**
  * Headers for the login page. Strict, because this page is ours and needs no scripts at all.
@@ -304,9 +341,11 @@ padding:12px;font-family:ui-monospace,monospace;font-weight:700;font-size:14px;c
 button:hover{filter:brightness(1.06)}
 .err{background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.4);color:#f0888b;
 border-radius:9px;padding:9px 12px;font-size:13px;margin-bottom:16px}
-.note{color:var(--muted);font-size:11.5px;margin-top:16px;line-height:1.5}`;
+.note{color:var(--muted);font-size:11.5px;margin-top:16px;line-height:1.5}
+.info{background:rgba(90,209,200,.10);border:1px solid rgba(90,209,200,.35);color:var(--fg);
+border-radius:9px;padding:9px 12px;font-size:13px;margin-bottom:16px}`;
 
-export function loginPage(doc, error = "") {
+export function loginPage(doc, error = "", notice = "") {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -317,6 +356,7 @@ export function loginPage(doc, error = "") {
   <div class="brand">Yes&amp;<b>Everything</b></div>
   <div class="sub">${esc(doc.title)}</div>
   ${error ? `<div class="err">${esc(error)}</div>` : ""}
+  ${notice ? `<div class="info">${esc(notice)}</div>` : ""}
   <label for="p">Access password</label>
   <input id="p" name="password" type="password" autofocus required>
   <button type="submit">Enter</button>

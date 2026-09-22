@@ -14,7 +14,7 @@
 // runs, and a gate that can be skipped by a path is not a gate.
 
 import {
-  roleFor, issueCookie, sessionRole, clearCookie, reviewerOf, reviewerThrough,
+  roleFor, issueCookie, sessionRole, clearCookies, isAuthor, reviewerOf, reviewerThrough,
   matchesShare, shareLink, LINK_SLUG, LINK_TTL,
   loginPage, loginHeaders, docHeaders,
 } from "./auth.js";
@@ -85,8 +85,19 @@ const pageKey = (rest, through) => {
   return "cg:ch-" + m[1];
 };
 
-const html = (body, status = 200, headers = {}) =>
-  new Response(body, { status, headers });
+// A header given as an array is appended once per value, which is how a sign-out clears both
+// session cookies in one response.
+const html = (body, status = 200, headers = {}) => {
+  const h = new Headers();
+  for (const [k, v] of Object.entries(headers)) {
+    if (Array.isArray(v)) v.forEach((x) => h.append(k, x));
+    else h.set(k, v);
+  }
+  return new Response(body, { status, headers: h });
+};
+
+// A chapter-shaped path, whether or not this reader may have it.
+const CHAPTER = /^\/ch-[1-9][0-9]{0,2}$/;
 
 export default {
   async fetch(request, env) {
@@ -100,6 +111,14 @@ export default {
     }
 
     const rest = path.slice(BOOK.prefix.length);
+
+    // The author's way back in from anywhere, whatever session the browser already holds. A
+    // bounded reader session never hides this form, so the author can always reach it by
+    // address, by the sign-in line under a bounded contents page, or from any chapter past the
+    // bound.
+    if (rest === "/login" && request.method === "GET") {
+      return html(loginPage(BOOK), 200, loginHeaders());
+    }
 
     if (rest === "/login" && request.method === "POST") {
       const form = await request.formData().catch(() => null);
@@ -127,13 +146,17 @@ export default {
     // phrase to fall back on when one runs out. Landing them on a password form they cannot
     // answer is how a shared link gets reported as broken.
     const share = /^\/r\/([A-Za-z0-9_-]{24,128})$/.exec(rest);
+    //
+    // The link writes only the reader cookie, and never for a browser that already holds the
+    // author's session (Kane, 2026-09-21): opening his own link to see what his readers see
+    // used to replace his session with theirs and lock him out past chapter thirty.
     if (share) {
       if (await matchesShare(share[1], env)) {
-        return html("", 303, {
-          ...loginHeaders(),
-          location: BOOK.prefix + "/",
-          "set-cookie": await issueCookie(BOOK, "r:" + LINK_SLUG, env, LINK_TTL),
-        });
+        const headers = { ...loginHeaders(), location: BOOK.prefix + "/" };
+        if (!isAuthor(await sessionRole(request, BOOK, env))) {
+          headers["set-cookie"] = await issueCookie(BOOK, "r:" + LINK_SLUG, env, LINK_TTL);
+        }
+        return html("", 303, headers);
       }
       // The same delay a wrong phrase costs, and the same page, so a wrong token cannot be
       // told from a dropped one or from a path that was never a link at all.
@@ -144,7 +167,7 @@ export default {
     if (rest === "/logout") {
       return html(loginPage(BOOK, "Signed out."), 200, {
         ...loginHeaders(),
-        "set-cookie": clearCookie(BOOK),
+        "set-cookie": clearCookies(BOOK),
       });
     }
 
@@ -236,8 +259,20 @@ export default {
 
     if (request.method !== "GET") return html("Method Not Allowed", 405, loginHeaders());
 
-    const key = pageKey(rest, reviewerThrough(role, env));
-    if (!key) return html("Not found", 404, docHeaders());
+    const through = reviewerThrough(role, env);
+    const key = pageKey(rest, through);
+    if (!key) {
+      // A chapter past a bounded reader's span answers with the sign-in form rather than a bare
+      // 404, so the author holding a reader session in this browser always has a door to every
+      // chapter. The reader learns only that the link stops where it stops, which the contents
+      // page already told them, and a reader's phrase cannot open more than its own span.
+      if (through && CHAPTER.test(rest)) {
+        return html(loginPage(BOOK, "",
+          "This link opens chapters 1 to " + through + ". To read past it, sign in with the " +
+          "author's password."), 200, loginHeaders());
+      }
+      return html("Not found", 404, docHeaders());
+    }
 
     const body = await env.GATED_DOCS.get(key);
     if (!body) {
@@ -252,6 +287,16 @@ export default {
         `<code>${key}</code>. The book's publish step writes it; run that and reload.</p></body>`,
         503, docHeaders()
       );
+    }
+
+    // A bounded contents page carries one quiet line naming the author's way in, so a browser
+    // holding a reader session never leaves him hunting for a sign-in form.
+    if (through && key.startsWith("cg:index-r")) {
+      const line = `<p style="text-align:center;font:12px/1.6 system-ui;opacity:.55;margin:40px 0">` +
+        `<a href="${BOOK.prefix}/login" style="color:inherit">Author sign-in</a></p>`;
+      const end = body.lastIndexOf("</body>");
+      const at = end < 0 ? body.length : end;
+      return html(body.slice(0, at) + line + body.slice(at), 200, docHeaders());
     }
 
     return html(body, 200, docHeaders());
