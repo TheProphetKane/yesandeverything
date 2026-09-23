@@ -50,6 +50,14 @@ $payload = [ordered]@{
   tags = $(if ($ctx -and $ctx.tags) { $ctx.tags } else { @("static-site", "orchestration", "release-pipeline", "public-voice") })
 }
 
+# paused / retired: a project Kane has paused (D81, 2026-09-22) or retired carries the block
+# in this same file, written by the portfolio session that applied the ruling. This writer
+# rebuilds the payload from the context and the repo, so without this the next status write
+# erased the block (Agents lost its paused block at 20:09 on 2026-09-22, minutes after it was
+# written). Preserved verbatim like audit and barRaise; absent keys stay absent.
+if ($existing -and $existing.paused) { $payload.paused = $existing.paused }
+if ($existing -and $existing.retired) { $payload.retired = $existing.retired }
+
 $json = ($payload | ConvertTo-Json -Depth 6) -replace "`r`n", "`n"
 if (-not $json.EndsWith("`n")) { $json += "`n" }
 $tmp = "$JsonPath.tmp"
