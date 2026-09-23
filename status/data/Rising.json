@@ -49,8 +49,8 @@
     "latestReportAt": "2026-09-21T11:48:54Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a HIGH severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 31,
-    "actionsClosed": 84,
+    "actionsOpen": 30,
+    "actionsClosed": 85,
     "actions": [
       {
         "id": "reliability-06",
@@ -163,13 +163,6 @@
         "severity": "MED",
         "title": "Profile the baked draw path in isolation and re-justify LIVE_RIG_BUDGET against the current number.",
         "lens": "performance",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-02",
-        "severity": "MED",
-        "title": "Clamp or reject out-of-bounds restored tile positions against the live grid.",
-        "lens": "data-integrity",
         "priority": 12
       },
       {
@@ -454,13 +447,6 @@
         "priority": 12,
         "runsOpen": 1,
         "firstSeen": "2026-09-21"
-      },
-      {
-        "id": "data-integrity-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-14"
       },
       {
         "id": "data-integrity-03",
@@ -825,6 +811,12 @@
         "id": "voice-and-tone-05",
         "by": "aged-packet pass 2026-09-22, oldest first",
         "evidence": "skirmish.tres is called Skirmish in the play menu and every save slot, and its briefing describes the mode rather than the art preview it stopped being: one Lantern, one map, no campaign orders, and a seed that replays the same ground."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "data-integrity-02",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "save_load.gd gained _tile_in_bounds, and both _recreate_building and _recreate_unit refuse a saved tile that falls outside the live grid, warning with the class and the tile. Refuse rather than clamp: clamping stacks every out-of-bounds entity on one edge tile, which reads as a wall the player never built and is harder to explain than one that is missing, and the caller already reports a refusal the way it reports a missing scene. A grid that cannot say how big it is gets the benefit of the doubt, since the guard exists to catch a mismatch rather than to refuse a load. Nine checks in run_tests.gd cover the corners, the negatives, the unsized grid and the null grid; shipped in v0.70.0 with 1983 tests passing."
       }
     ]
   },
