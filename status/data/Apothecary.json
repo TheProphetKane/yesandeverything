@@ -38,131 +38,313 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-09-20.md",
-    "latestReportAt": "2026-09-20T12:02:57Z",
-    "verdict": "working",
-    "topFinding": "Seven findings closed this run and every fix is sitting uncommitted, which is all that remains here. The application itself works: the mount helper stops a panel throw from blanking the page, the print stage coalesces behind one animation frame, the dashboard writer reads only release-shaped commits, and the push script routes each git call through its wrapper. What ships to the public still reads v1.1.14 while the tree holds two weeks of unreleased work above it. One release closes the gap.",
-    "actionsOpen": 6,
-    "actionsClosed": 44,
+    "latestReportPath": "docs/BAR_RAISE-2026-09-23.md",
+    "latestReportAt": "2026-09-23T11:45:00Z",
+    "verdict": "needs-attention",
+    "topFinding": "Four lenses landed on one file this run and the file is src/state.js. defaultState() hand-copies a herb record data/herbs.json owns, and the copy never moved when the data did: src/state.js:167-168 still carries the GABA-A receptor and warfarin phrasing v1.2.0 spent a release removing. The same file's colour defaults never reach the contrast gate the project runs over herbs.json, so shopColor #E8C172 at :192 renders the shop name at 1.17 to 1 on the default parchment, which is invisible, and accent #A77C24 at :153 measures 2.59 against a 4.5 bar. Three more defects sit beside it: typing one character into a section title destroys the input that has focus (src/ui/title-editor.js:24-45 with src/state.js:31-34), flushPrintStage() is exported at src/render.js:682 and called from nowhere although the queue row asking for it is marked completed, and the dev-log dedupe file still reads v1.1.14 twenty days after v1.2.0 shipped. The application works and the release pipeline is sound; what is broken is the one data source no gate reads.",
+    "actionsOpen": 19,
+    "actionsClosed": 45,
     "actions": [
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "title": "Derive the default state's herb fields from data/herbs.json['chamomile'], or add a test asserting the two agree field for field.",
+        "lens": "data-integrity",
+        "priority": 20
+      },
+      {
+        "id": "performance-01",
+        "severity": "HIGH",
+        "title": "Sync the changed value onto the existing input nodes instead of rebuilding the subtree in title-editor.js and custom-items.js.",
+        "lens": "performance",
+        "priority": 20
+      },
+      {
+        "id": "generative-art-palette-discipline-01",
+        "severity": "HIGH",
+        "title": "Split shopColor into an editor-header field and a label field, with the label side defaulting to the theme's own value.",
+        "lens": "generative-art-palette-discipline",
+        "priority": 20
+      },
+      {
+        "id": "generative-art-print-fidelity-01",
+        "severity": "HIGH",
+        "title": "Call flushPrintStage() at the top of printLabel() and exportPng(), then re-verify the always-fresh invariant.",
+        "lens": "generative-art-print-fidelity",
+        "priority": 20
+      },
       {
         "id": "reliability-04",
         "severity": "MED",
-        "title": "Add a timeout to the loader that rejects into the existing alert, and disable the export button while the promise is in flight.",
+        "title": "Race the html2canvas load against a timeout and disable the export button while an export is in flight.",
+        "lens": "reliability",
+        "priority": 15
+      },
+      {
+        "id": "reliability-02",
+        "severity": "MED",
+        "title": "Set a non-zero exit code on a failed dev-log post and check it in release step 5.",
         "lens": "reliability",
         "priority": 15
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
-        "title": "Give layout designer chips a tap or keyboard way to move between zones alongside the drag path.",
+        "title": "Give the layout designer chips a keyboard and click path that moves the real instance, including out of the hidden rail.",
         "lens": "solo-tool-ux",
         "priority": 15
       },
       {
         "id": "release-pipeline-version-pill-drift-02",
         "severity": "MED",
-        "title": "Run the version-pill check without the skip flag from the dashboard status writer as a warning.",
+        "title": "Call the version-pill check with no flags inside the dashboard status writer, warning on drift.",
         "lens": "release-pipeline-version-pill-drift",
         "priority": 15
       },
       {
-        "id": "maintainability-06",
+        "id": "performance-02",
         "severity": "MED",
-        "title": "Rewrite the comment to match the specification's current state, or delete the stale list.",
+        "title": "Gate the illustration grid HTML on gridOpen and have the four other subscribers diff their own state slice.",
+        "lens": "performance",
+        "priority": 15
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "MED",
+        "title": "Run the duplicate-key scanner over data/aliases.json and both maps in data/herb-to-illustration.json.",
+        "lens": "data-integrity",
+        "priority": 15
+      },
+      {
+        "id": "compliance-data-steward-03",
+        "severity": "MED",
+        "title": "Rewrite the six cited herb records to folklore framing and widen the clinical pattern list to the spelled-out terms.",
+        "lens": "compliance-data-steward",
+        "priority": 15
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "MED",
+        "title": "Add a row for each gate and utility script to the file-layout table.",
+        "lens": "maintainability",
+        "priority": 15
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "title": "Delete outputs/new_herbs_batch2.json and its sources file, and drop the ignore carve-out.",
+        "lens": "strategic-kill-this",
+        "priority": 15
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-03",
+        "severity": "MED",
+        "title": "Add a cache-busting query string to the live check and assert the body carries the new build stamp.",
+        "lens": "release-pipeline-gate-page-publish",
+        "priority": 15
+      },
+      {
+        "id": "generative-art-palette-discipline-02",
+        "severity": "MED",
+        "title": "Derive the default accent from the default herb's record, or add the src/state.js literals to the contrast test.",
+        "lens": "generative-art-palette-discipline",
+        "priority": 12
+      },
+      {
+        "id": "generative-art-print-fidelity-02",
+        "severity": "MED",
+        "title": "Add the shrink declaration to the print block and extend the parity test to PRINT_STAGE_RULES.",
+        "lens": "generative-art-print-fidelity",
+        "priority": 12
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "title": "Delete the duplicate file-layout row and move the stranded row into its own block.",
         "lens": "maintainability",
         "priority": 10
       },
       {
         "id": "compliance-data-steward-04",
         "severity": "MED",
-        "title": "Credit the two symbols in the footer or the readme, or swap them for public-domain art.",
+        "title": "Credit the two attribution-licensed symbols, or swap them for the public-domain alternates.",
         "lens": "compliance-data-steward",
         "priority": 10
       },
       {
-        "id": "reliability-02",
+        "id": "release-pipeline-gate-page-publish-04",
         "severity": "MED",
-        "title": "Reopened by ruling on 2026-09-22, not re-verified: closed with no evidence by bar-raise-2026-07-17-hordes-reliability-02 (hordes, completed), a foreign project's row; reconcile-status-queue.py keyed a close on the finding identifier alone until it was fixed on 2026-09-02. Re-verify it, then close it or work it.",
-        "lens": "reliability",
-        "priority": 10
+        "title": "Compare source and destination after the index.html copy and abort the mirror on a mismatch.",
+        "lens": "release-pipeline-gate-page-publish",
+        "priority": 8
       }
     ],
     "deferred": [
       {
-        "severity": "MED",
-        "title": "The hub-side homepage and project-page version stamps were stale at the previous run and could not be re-read this run.",
-        "lens": "release-pipeline-gate-page-publish",
-        "reason": "verification needs a read outside the assigned project directory",
-        "id": "release-pipeline-gate-page-publish-02"
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "severity": "HIGH",
+        "lens": "release-pipeline-discord-notify-wiring",
+        "title": "The dev-log post has no recorded successful delivery for v1.2.0 although that release fully shipped, and the failure is silent by design.",
+        "reason": "needs Kane's own eyes on the channel to say whether the post arrived; the code half of the fix is reliability-02"
       }
     ],
-    "health": 83,
+    "health": 78,
     "lensScores": {
-      "architecture": 93,
-      "reliability": 86,
-      "security": 94,
-      "performance": 89,
-      "data-integrity": 91,
-      "maintainability": 85,
-      "solo-tool-ux": 85,
-      "cost-economics": 92,
-      "dependency": 94,
-      "observability": 89,
-      "strategic-kill-this": 72,
-      "compliance-data-steward": 42,
-      "generative-art-schema-driven-correctness": 92,
-      "generative-art-print-fidelity": 90,
-      "generative-art-palette-discipline": 82,
-      "release-pipeline-per-project-ps1-stack": 88,
-      "release-pipeline-discord-notify-wiring": 85,
-      "release-pipeline-version-pill-drift": 72,
-      "release-pipeline-gate-page-publish": 64
+      "architecture": 94,
+      "reliability": 82,
+      "security": 95,
+      "performance": 58,
+      "data-integrity": 72,
+      "maintainability": 80,
+      "solo-tool-ux": 78,
+      "cost-economics": 95,
+      "dependency": 95,
+      "observability": 94,
+      "strategic-kill-this": 85,
+      "compliance-data-steward": 58,
+      "generative-art-schema-driven-correctness": 94,
+      "generative-art-print-fidelity": 58,
+      "generative-art-palette-discipline": 58,
+      "release-pipeline-per-project-ps1-stack": 92,
+      "release-pipeline-discord-notify-wiring": 45,
+      "release-pipeline-version-pill-drift": 80,
+      "release-pipeline-gate-page-publish": 76
     },
     "openFindings": [
+      {
+        "id": "data-integrity-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "performance-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "generative-art-palette-discipline-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "generative-art-print-fidelity-01",
+        "severity": "HIGH",
+        "priority": 20,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
       {
         "id": "reliability-04",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-09-16"
+      },
+      {
+        "id": "reliability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-09-22",
+        "reopened": "2026-09-22",
+        "reopenedWhy": "closed with no evidence by bar-raise-2026-07-17-hordes-reliability-02 (hordes, completed), a foreign project's row; reconcile-status-queue.py keyed a close on the finding identifier alone until it was fixed on 2026-09-02. Reopened by ruling, not re-verified: the next review of this project closes it if it is genuinely done."
       },
       {
         "id": "solo-tool-ux-01",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-09-16"
       },
       {
         "id": "release-pipeline-version-pill-drift-02",
         "severity": "MED",
         "priority": 15,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-09-16"
       },
       {
-        "id": "maintainability-06",
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "compliance-data-steward-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "maintainability-02",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "release-pipeline-gate-page-publish-03",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "generative-art-palette-discipline-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "generative-art-print-fidelity-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
+      },
+      {
+        "id": "maintainability-01",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-16"
+        "runsOpen": 1,
+        "firstSeen": "2026-09-23"
       },
       {
         "id": "compliance-data-steward-04",
         "severity": "MED",
         "priority": 10,
-        "runsOpen": 2,
+        "runsOpen": 3,
         "firstSeen": "2026-09-16"
       },
       {
-        "id": "reliability-02",
+        "id": "release-pipeline-gate-page-publish-04",
         "severity": "MED",
-        "priority": 10,
+        "priority": 8,
         "runsOpen": 1,
-        "firstSeen": "2026-09-22",
-        "reopened": "2026-09-22",
-        "reopenedWhy": "closed with no evidence by bar-raise-2026-07-17-hordes-reliability-02 (hordes, completed), a foreign project's row; reconcile-status-queue.py keyed a close on the finding identifier alone until it was fixed on 2026-09-02. Reopened by ruling, not re-verified: the next review of this project closes it if it is genuinely done."
+        "firstSeen": "2026-09-23"
       }
     ],
     "tensionsOpen": [
@@ -171,10 +353,32 @@
           "compliance-data-steward",
           "strategic-kill-this"
         ],
-        "runsSeen": 2
+        "runsSeen": 3,
+        "note": "promote via adr-promoter: how much provenance and medical-register work a finished personal tool owes"
+      },
+      {
+        "lenses": [
+          "data-integrity",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "generative-art-print-fidelity",
+          "performance"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
+          "release-pipeline-discord-notify-wiring"
+        ],
+        "runsSeen": 1
       }
     ],
-    "reconcileNote": "Closed on verified evidence 2026-09-16: release-pipeline-per-project-ps1-stack-01 (66feda7 routes every git call in scripts/write-dashboard-status.ps1 through Invoke-Git (lines 45-53, 192, 334), re-read this run); architecture-01 (7a3726f: src/util/resolve-illustration.js is the one resolver, called from src/render.js:256 and src/ui/illustration-picker.js:18-21); architecture-02 (b89fdf8: src/ui/editor.js:601-608 drives the live preview from the same rankSuggestions list the dropdown shows); performance-02 (a6cff2a: src/render.js:84-109 memoizes the parchment background on texture and gradient fields); observability-02 (X:/PortfolioOps/status/drift-fix-runs.jsonl carries a line per night for 2026-09-14 to 09-16 including zero-fix nights); compliance-data-steward-01 (c4afa68: src/render.js:494-517 and styles/label.css:457 print a qualifier whenever a compounds or cautions zone is placed; the unshipped half moves to release-pipeline-gate-page-publish-01); generative-art-schema-driven-correctness-01 (6c0bad9 drops the dead fields array; PROJECT_SPEC.md:174 and CLAUDE.md:71 say the Content markup is hand-authored); generative-art-print-fidelity-01 (494a719: test-export-print-parity.mjs compares LAYOUT_RULES to the print block and runs as suite five in scripts/preflight.ps1:21); release-pipeline-version-pill-drift-01 (af77a67: scripts/check-version-pill.ps1:143-144 now fails on src/** commits above the pill). Downgraded to low and dropped from the open list, not counted as closed: reliability-03 (the storage-error test gap, impact 2) and release-pipeline-discord-notify-wiring-01 (a duplicate dev-log post only on a forced retry). strategic-kill-this-01 left the deferred list: decided under D52 as maintenance, not retirement, 55a33ff.",
+    "reconcileNote": "Closed on verified evidence 2026-09-23: maintainability-06 (data/label-templates.js:61-71 describes the removal of the dead fields list accurately and cites PROJECT_SPEC.md section 4.7 at :139-160, which carries no such list). Deferred finding release-pipeline-gate-page-publish-02 also closed on evidence, outside the actionsClosed count because a deferred row is not an open action: X:/YesAndEverything/index.html:1829 and X:/YesAndEverything/projects/apothecary/index.html:102 both read v1.2.0 against the source pill at index.html:101, and the mirror is byte-identical across all 156 files. Re-verified as STILL TRUE rather than closed: reliability-04 (no timeout at src/util/export-png.js:27-45, no button disable at src/ui/editor.js:775-779), solo-tool-ux-01 (no tabindex and no keydown anywhere in src/ui/layout-designer.js), reliability-02 (the catch at scripts/discord-notify.ps1:126-129 sets no exit code and release.ps1:330-332 checks none, unlike steps 4 and 6), compliance-data-steward-04 (data/symbols/SOURCES.md:21-22 and :36-38 still unresolved, no credit in index.html or README.md), release-pipeline-version-pill-drift-02 (the writer never calls check-version-pill.ps1 at all, in any mode, which corrects the previous run's premise). The enqueue backfill for carried findings did not run, per the ruling of 2026-09-22 in DECISION_BATCH-2026-08-31.md item 0: build-aged-packets.py reads openFindings directly, so minting rows would put the same work in front of a session twice.",
     "closedLog": [
       {
         "date": "2026-09-02",
@@ -295,6 +499,14 @@
         "id": "release-pipeline-gate-page-publish-01",
         "by": "aged-packet pass 2026-09-22, oldest first",
         "evidence": "REDACTED: this text named a weakness and the file it lives in, which together are an address. Severity and project are kept; the location is in the project's own report under X:\\PortfolioOps."
+      },
+      {
+        "at": "2026-09-23",
+        "ids": [
+          "maintainability-06",
+          "release-pipeline-gate-page-publish-02 (deferred)"
+        ],
+        "note": "maintainability-06 closed on the template comment; the deferred hub-stamp finding closed on the v1.2.0 agreement across both hub pages and the mirror."
       }
     ],
     "agentRouting": {
@@ -313,13 +525,15 @@
         "compliance-data-steward",
         "generative-art-schema-driven-correctness",
         "generative-art-print-fidelity",
-        "generative-art-palette-discipline",
+        "generative-art-palette-discipline"
+      ],
+      "code-auditor": [
         "release-pipeline-per-project-ps1-stack",
         "release-pipeline-discord-notify-wiring",
         "release-pipeline-version-pill-drift",
         "release-pipeline-gate-page-publish"
       ],
-      "fallback": null
+      "fallbacks": []
     }
   },
   "metrics": [
