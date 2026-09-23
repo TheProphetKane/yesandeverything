@@ -22,9 +22,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;700;900&family=IM+Fell+English:ital@1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles/base.css" />
-  <link rel="stylesheet" href="styles/editor.css" />
-  <link rel="stylesheet" href="styles/label.css" />
+  <!-- gh-pages-quirks-02 (2026-09-23): the three stylesheets carry the same
+       build query the module imports carry, stamped by release.ps1, so an
+       edited stylesheet is never served stale from the edge cache. -->
+  <link rel="stylesheet" href="styles/base.css?v=20260923134741" />
+  <link rel="stylesheet" href="styles/editor.css?v=20260923134741" />
+  <link rel="stylesheet" href="styles/label.css?v=20260923134741" />
   <!-- html2canvas (PNG export) is no longer loaded up front; export-png.js
        lazy-loads it from cdnjs with an SRI pin on the first export click. -->
   <style>
@@ -98,7 +101,7 @@
 
     <footer class="app-footer">
       <a href="https://github.com/TheProphetKane/yesandapothecary" rel="noopener" target="_blank">source</a>
-      <span class="version-pill">v1.3.0</span>
+      <span class="version-pill">v1.3.1</span>
       <p class="footer-disclaimer">Decorative labels for the shelf. The herb notes are folklore and general reference, not medical advice; check with a professional before ingesting anything.</p>
       <p class="footer-credits">Symbol art: the Awen and the solar wheel are redrawn from Wikimedia Commons works shared under Creative Commons Attribution; every candidate source is listed in <a href="https://github.com/TheProphetKane/yesandapothecary/blob/main/data/symbols/SOURCES.md" rel="noopener" target="_blank">data/symbols/SOURCES.md</a>.</p>
     </footer>
@@ -111,17 +114,14 @@
     // The entry script and every module main.js imports dynamically carry the
     // build as a ?v= query, so a deploy changes those URLs and the edge cache
     // can't hand back a stale copy of them.
-    // Coverage is partial as of 2026-08-19: util/autofit.js, util/print.js and
-    // util/truncate.js are now dynamically imported here and ARE busted. Still
-    // open, because a static `import ... from` inside another dynamically
-    // imported module resolves at a bare URL with no ?v=: state.js (statically
-    // imported by util/migrate.js), util/persist.js (statically imported by
-    // util/saved-labels.js), data/label-templates.js (statically imported by
-    // state.js), and util/saved-labels.js itself (statically imported by
-    // ui/saved-labels-ui.js, and never reached by a dynamic import directly).
-    // Don't read this block as a whole-graph guarantee until those four routes
-    // are also broken up into dynamic imports carrying ?v=.
-    window.__APOTHECARY_BUILD = "20260923132649";
+    // Coverage is the whole graph as of 2026-09-23 (gh-pages-quirks-01): the
+    // four static routes an earlier note listed as open (state.js through
+    // migrate.js, persist.js through saved-labels.js, label-templates.js
+    // through state.js, saved-labels.js through saved-labels-ui.js) were
+    // broken up into dynamic imports carrying ?v= in v1.1.9, and a grep for a
+    // static `import ... from` across src/ finds none. The three stylesheets
+    // carry the same query since v1.3.1.
+    window.__APOTHECARY_BUILD = "20260923134741";
     await import("./src/main.js?v=" + window.__APOTHECARY_BUILD);
   </script>
 </body>
