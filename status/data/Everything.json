@@ -15,8 +15,8 @@
     "latestReportAt": "2026-09-20T12:02:57Z",
     "verdict": "needs-attention",
     "topFinding": "The design-page exposure that led the last three reports is fixed, verified on both pages: each now carries a short summary beside a pointer, with no encoded payload, no hidden text. In its place sits a smaller version of the same mistake. Three files that ship in this public repository state the private manuscript's name, its status as an unpublished work intended to sell, plus the local path it is written at, each in the same breath as the promise that nothing about it may reach here. The homepage cards also disagree with every linked project's own status file on version, Gnosis by more than a hundred and fifty releases.",
-    "actionsOpen": 7,
-    "actionsClosed": 69,
+    "actionsOpen": 6,
+    "actionsClosed": 70,
     "actions": [
       {
         "id": "compliance-data-steward-03",
@@ -52,13 +52,6 @@
         "title": "Add the social and canonical block from each project index page to its design page, reusing that project's social image.",
         "lens": "static-site-seo-and-open-graph",
         "priority": 15
-      },
-      {
-        "id": "data-integrity-03",
-        "severity": "MED",
-        "title": "Write a boolean stale flag plus a separate reason string in the failure path, and render the reason on the card when present.",
-        "lens": "data-integrity",
-        "priority": 10
       },
       {
         "id": "maintainability-04",
@@ -147,13 +140,6 @@
         "priority": 15,
         "runsOpen": 2,
         "firstSeen": "2026-09-17"
-      },
-      {
-        "id": "data-integrity-03",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-10"
       },
       {
         "id": "maintainability-04",
@@ -318,6 +304,12 @@
         "id": "solo-tool-ux-02",
         "by": "aged-packet pass 2026-09-22, oldest first",
         "evidence": "The status page and the sitemap are in the homepage navigation and the command palette, from one SITE_PAGES list both read, so a third page is added in one place. They carry real hrefs rather than hashes, since neither is a section of that page. Each also links to the other from its breadcrumb. Verified in a browser: the navigation reads about, projects, notice, status and sitemap, and the palette carries both as page targets among its twenty-three."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "data-integrity-03",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "stale is a boolean and staleReason carries the sentence. The finding is worse than it reads: the failure path in release.ps1 wrote the whole sentence into `stale`, and the dashboard counts a stale project with a strict `stale === true`, so a card recorded stale WITH its reason did not register as stale at all and the counter read zero. One field doing two jobs, two consumers disagreeing about its type. The failure path sets the flag true and the reason beside it, a successful write clears the reason so it cannot outlive the failure it described, project-status.py carries staleReason to the public card, and the badge uses it as its title when present while a flag with no reason keeps the generic sentence. check-status-json.ps1 asserts both types rather than trusting the writers: proved by planting a string in stale, which failed at exit 1 naming the file and the type, and the card was restored and the check reads clean."
       }
     ],
     "closedThisRun": [

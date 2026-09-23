@@ -143,6 +143,16 @@ $targets | ForEach-Object {
               $bad += "${name}: missing required key '$key' (status-card contract v$SchemaVersion)"
             }
           }
+          # data-integrity-03: stale is a boolean and the dashboard counts it with
+          # a strict comparison, so a writer that put a sentence there produced a
+          # card that WAS stale and did not register as one. The sentence belongs
+          # in staleReason. Assert the type rather than trusting the writers.
+          if ($propNames -contains "stale" -and $parsed.stale -isnot [bool]) {
+            $bad += "${name}: 'stale' is $($parsed.stale.GetType().Name), not a boolean; a reason belongs in 'staleReason'"
+          }
+          if ($propNames -contains "staleReason" -and $null -ne $parsed.staleReason -and $parsed.staleReason -isnot [string]) {
+            $bad += "${name}: 'staleReason' is $($parsed.staleReason.GetType().Name), not a string"
+          }
           if ($propNames -notcontains "schemaVersion") {
             $bad += "${name}: missing schemaVersion (expected $SchemaVersion)"
           }

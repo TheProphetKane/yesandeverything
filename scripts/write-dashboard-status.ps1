@@ -47,6 +47,9 @@ $payload = [ordered]@{
   audit = $(if ($existing -and $existing.audit) { $existing.audit } else { $null })
   barRaise = $(if ($existing -and $existing.barRaise) { $existing.barRaise } else { $null })
   stale = $false
+  # Cleared on every successful write, so a reason from a previous failure
+  # cannot outlive the failure it described (data-integrity-03).
+  staleReason = $null
   tags = $(if ($ctx -and $ctx.tags) { $ctx.tags } else { @("static-site", "orchestration", "release-pipeline", "public-voice") })
 }
 

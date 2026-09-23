@@ -59,9 +59,16 @@ try {
             if (Test-Path $canon) {
                 $j = Get-Content -Encoding utf8 -Raw $canon | ConvertFrom-Json
                 $stamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-                $note = "status write FAILED at $stamp -- this card is stale: $msg"
-                if ($j.PSObject.Properties["stale"]) { $j.stale = $note }
-                else { $j | Add-Member -NotePropertyName stale -NotePropertyValue $note }
+                # data-integrity-03: this used to write the sentence into `stale`
+                # itself. The dashboard counts a stale project with a strict
+                # `stale === true`, so a card recorded stale with its reason did
+                # not register as stale at all and the counter read zero. The flag
+                # is a boolean and the sentence has its own field.
+                $note = "the status write failed at $stamp, so this card is stale: $msg"
+                if ($j.PSObject.Properties["stale"]) { $j.stale = $true }
+                else { $j | Add-Member -NotePropertyName stale -NotePropertyValue $true }
+                if ($j.PSObject.Properties["staleReason"]) { $j.staleReason = $note }
+                else { $j | Add-Member -NotePropertyName staleReason -NotePropertyValue $note }
                 $out = ($j | ConvertTo-Json -Depth 30) -replace "`r`n", "`n"
                 [System.IO.File]::WriteAllText($canon, $out, [System.Text.UTF8Encoding]::new($false))
                 Write-Host "Recorded the failure on the canonical status file so the card says so." -ForegroundColor Yellow

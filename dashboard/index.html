@@ -3568,7 +3568,19 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       name.appendChild(el("a", { className: "repo", href: status.liveUrl, target: "_blank", rel: "noopener", text: "▶", title: "open the live site: " + status.liveUrl }));
     }
     if (status && status.stale === true) {
-      name.appendChild(el("span", { className: "stale-badge", text: "stale", title: "this project has published no fresh status since its last run; the numbers below are the last known values" }));
+      // data-integrity-03: the badge said stale and nothing said why. The
+      // failure path records staleReason now, so when there is one it becomes
+      // the badge's own title instead of the generic sentence. A card with the
+      // flag and no reason is a project that simply went quiet, which the
+      // generic sentence still describes.
+      var why = status.staleReason;
+      name.appendChild(el("span", {
+        className: "stale-badge",
+        text: "stale",
+        title: (typeof why === "string" && why)
+          ? why
+          : "this project has published no fresh status since its last run; the numbers below are the last known values",
+      }));
     }
     name.appendChild(el("span", { className: "spot-pos", text: (SEL + 1) + " / " + CYCLE.length, title: "position on the wheel" }));
     head.appendChild(name);
