@@ -104,6 +104,7 @@ webhook exists on the Discord side AND a script in that repo reads its file (202
 - **Mono-font headings, sans body** is the established aesthetic. Don't introduce serif unless you have a reason.
 - **No JS frameworks.** Vanilla DOM only. Bundle size is part of the brand.
 - **External links open in new tab** with `target="_blank" rel="noopener"`.
+- **One project registry, and it is `data/projects.json`** (bar-raise architecture-01, 2026-09-22). The list used to be hand-kept in four places with four memberships, so adding or retiring a project meant editing several files from memory and the status page had quietly been missing five of them. Node consumers read the file through `scripts/registry.mjs`; the browser pages cannot import it, because every page here is self-contained, so `scripts/stamp-project-registry.mjs` writes the list into each page between its registry markers, and the same script under `--check` is step 2.3 of `scripts/release.ps1`, which aborts the release when a stamped copy has drifted. Edit the file, run the stamper, commit both.
 
 ## Things that will bite you
 
@@ -118,7 +119,7 @@ webhook exists on the Discord side AND a script in that repo reads its file (202
 
 1. `DEPLOY.md` has the one-time setup notes, and anything DNS or Pages-config-related is documented there.
 2. For the two gated design documents, work flows from each project's own repo (`X:\HereBeHordes\scripts\publish-gdd.ps1`, `X:\BrackishRising\scripts\publish-gdd.ps1`), never the other way. See "Publishing the gated design documents" above.
-3. For per-project page content, mirror what the project's own canonical doc says (GDD for HBH, DESIGN.md for Scheduler). Don't fabricate.
+3. For per-project page content, mirror what the project's own canonical doc says, which is `docs/GDD.html` for Brackish Rising and `PROJECT_SPEC.md` for Apothecary, Gnosis and Coiled Guardian. Don't fabricate. Corrected 2026-09-23: the line named Scheduler's `DESIGN.md`, and Scheduler was retired on 2026-08-25.
 
 ## Hard-won hazards
 

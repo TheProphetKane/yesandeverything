@@ -9,8 +9,8 @@
 //
 // The two browser pages cannot import this, because the site has no build step
 // and every page is self-contained by convention, so stamp-project-registry.mjs
-// writes their lists into them between markers and check-project-registry.mjs
-// fails the release when a stamped copy has drifted.
+// writes their lists into them between markers, and that same script under
+// --check is step 2.3 of release.ps1, which aborts when a stamped copy drifted.
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
