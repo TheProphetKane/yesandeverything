@@ -52,8 +52,8 @@
     "latestReportAt": "2026-09-22T23:55:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 27,
-    "actionsClosed": 127,
+    "actionsOpen": 25,
+    "actionsClosed": 129,
     "health": 68,
     "lensScores": {
       "architecture": 71,
@@ -404,6 +404,18 @@
         "id": "security-11",
         "by": "stalled-project drain 2026-09-22, Kane's ask",
         "evidence": "Closed as unrecoverable, not as fixed. This was reopened earlier on 2026-09-22 because a foreign project's queue row had closed it on a colliding finding identifier, which is not evidence. The reconstruction then failed: no bar-raise report in this repository carries an entry under this identifier, the ledger holds no prior evidence, and the title was overwritten by the reopening note, so nothing anywhere records what the finding said. There is no defect to verify and none to fix. Reopening it was right and leaving it open is not: an item nobody can read is not work, it is a row. The project's next review re-raises it with its own evidence if the underlying defect is still there, and the identifier collision that caused this is itself closed, since reconcile-status-queue.py now keys a close on the project as well as the finding."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "reliability-16",
+        "by": "stalled-project drain 2026-09-22, Kane's ask",
+        "evidence": "A reversal cancels the subscription the refunded charge paid for, not every subscription on the customer. The chain from charge to invoice to subscription is followed; a charge with no invoice, or an invoice naming no subscription, still falls back to cancelling everything, which is the old behaviour kept for the case with nothing better to aim at and is the safe direction because the money has already gone back. The stored status is recomputed from what is left rather than written as canceled outright, since a customer still holding an entitled subscription is still entitled, and the subscription just cancelled is excluded by id because Stripe's list can report it active for a moment after the delete returns. A new test pins the case the old behaviour got wrong: a customer with two subscriptions, refunded for one, keeps the other and stays active. Full suite and the 14-gate preship pass."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "reliability-17",
+        "by": "stalled-project drain 2026-09-22, Kane's ask",
+        "evidence": "A charge.dispute.created event carries a Dispute, which has no customer field, so obj.customer read as undefined on every real chargeback and the handler logged 'is not a full reversal' while the payer kept Pro after taking their money back. The Dispute names its charge, so the charge is fetched and the customer comes off it. A failure to fetch throws into the outer catch and the webhook answers 5xx so Stripe retries: refusing to guess is right when the alternative is leaving entitlement with somebody who charged it back. The old fixture put a customer on the dispute, which a real one never has, and that is exactly what hid this; both fixtures carry the shapes Stripe sends now."
       }
     ],
     "closedThisRun": [
@@ -411,13 +423,6 @@
       "version-pill-drift-02"
     ],
     "actions": [
-      {
-        "id": "reliability-16",
-        "severity": "HIGH",
-        "title": "Resolve the subscription id from the refunded charge in the webhook payload and cancel only that subscription, recomputing the stored status from what Stripe still reports.",
-        "lens": "reliability",
-        "priority": 20
-      },
       {
         "id": "data-integrity-28",
         "severity": "HIGH",
@@ -437,13 +442,6 @@
         "severity": "HIGH",
         "title": "Add an update policy scoped to the owning account to migration 0026 before it is next handed over for the paste into the database editor.",
         "lens": "data-integrity",
-        "priority": 16
-      },
-      {
-        "id": "reliability-17",
-        "severity": "HIGH",
-        "title": "For charge.dispute.created, fetch the charge named by obj.charge and take the customer from it, return a 5xx when that fetch fails, and rewrite the test fixture to the real Dispute shape.",
-        "lens": "reliability",
         "priority": 16
       },
       {
@@ -638,13 +636,6 @@
     ],
     "openFindings": [
       {
-        "id": "reliability-16",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-15"
-      },
-      {
         "id": "data-integrity-28",
         "severity": "HIGH",
         "priority": 20,
@@ -664,13 +655,6 @@
         "priority": 16,
         "runsOpen": 5,
         "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "reliability-17",
-        "severity": "HIGH",
-        "priority": 16,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-22"
       },
       {
         "id": "security-23",
