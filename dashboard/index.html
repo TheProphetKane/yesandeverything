@@ -2750,6 +2750,30 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     var st = LAST && LAST.statuses ? staleFor(FILTER) : null;
     if (st != null) num("stale", String(st), st > 0 ? "#cc8400" : "#00d68f", "projects publishing no fresh status" + scopeTag, function () { openStats(); });
   }
+  /* Live counts for the rollup band: open actions summed over the projects the rollup
+     scored, and closed-log rows dated after the rollup ran. A closed-log row is either
+     {date, id} (one closure) or {at, ids: [...]} (one batch); both shapes are counted. */
+  function liveRollupCounts(c) {
+    var st = LAST && LAST.statuses; if (!st || !c || !c.generatedAt) return null;
+    var since = String(c.generatedAt);
+    var sinceDay = since.slice(0, 10);
+    var open = 0, closed = 0, n = 0;
+    (c.projects || Object.keys(st)).forEach(function (name) {
+      var pm = projByLoose(name);
+      var s = st[pm.id] || st[name];
+      if (!s || !s.barRaise) return;
+      n++;
+      if (s.barRaise.actionsOpen != null) open += s.barRaise.actionsOpen;
+      (s.barRaise.closedLog || []).forEach(function (row) {
+        var when = String(row.date || row.at || row.closedAt || "");
+        if (!when) return;
+        var after = when.length > 10 ? when > since : when > sinceDay;
+        if (!after) return;
+        closed += Array.isArray(row.ids) ? row.ids.length : 1;
+      });
+    });
+    return n ? { open: open, closed: closed, projects: n } : null;
+  }
   function renderBand() {
     var c = LAST && LAST.constellation;
     var box = $("band");
@@ -2766,11 +2790,21 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     var vEl = $("band-verdict-word");
     vEl.textContent = c.portfolioVerdict || "";
     vEl.style.color = col;
-    var opened = c.totalOpenActions, closedC = c.totalClosedSinceLastConstellation;
+    // The rollup runs once a week, but its two counts describe the status files, which
+    // change every day as findings close. Count them live from the statuses the page
+    // already holds, so the band cannot say "213 open" three days after the last one
+    // closed (2026-09-23). The rollup's own numbers stay as the fallback and in the tip.
+    var live = liveRollupCounts(c);
+    var opened = live ? live.open : c.totalOpenActions;
+    var closedC = live ? live.closed : c.totalClosedSinceLastConstellation;
     var sub = $("band-sub");
     sub.innerHTML = "";
     if (opened != null) sub.appendChild(txt(opened + " open / " + (closedC != null ? closedC : "?") + " closed"));
-    sub.title = (opened != null ? opened + " open against " + closedC + " closed since the previous rollup. " : "") +
+    sub.title = (live
+      ? opened + " review actions open right now across the " + live.projects + " projects the rollup scored, and " + closedC +
+        " closed since it ran, both counted live from the status files. The rollup itself said " +
+        c.totalOpenActions + " open / " + c.totalClosedSinceLastConstellation + " closed when it ran. "
+      : (opened != null ? opened + " open against " + closedC + " closed since the previous rollup. " : "")) +
       (c.generatedAt ? "Rolled up " + fmtAgo(c.generatedAt) + "." : "");
     var acts = $("band-actions");
     acts.innerHTML = "";
