@@ -24,6 +24,11 @@
 #   3. the newest day present in it is today or yesterday, so a fresh stamp on an
 #      empty payload cannot pass
 #   4. statuses.json is reachable, parses, and carries at least -MinProjects
+#   5. the weekly rollup (constellation.json, Pages-served) is reachable and younger
+#      than -MaxRollupAgeDays, because the band's health score and verdict come from
+#      it and nothing else; its open and closed counts the page recounts live from
+#      the statuses since 2026-09-23, after the band read "213 open" for three days
+#      with every one of them closed
 #
 # Exit 0 clean, exit 1 listing what failed. Called by the routine watchdog and
 # runnable standalone any time the page looks wrong.
@@ -32,7 +37,10 @@ param(
   # The collector runs every 4 hours. 5.5 catches a single missed or failed tick
   # without alarming on ordinary jitter.
   [double]$MaxAgeHours = 5.5,
-  [int]$MinProjects = 8
+  [int]$MinProjects = 8,
+  # The rollup runs on Sundays. Eight days catches a missed run without alarming on
+  # a run that finished late in the day.
+  [double]$MaxRollupAgeDays = 8
 )
 
 $ErrorActionPreference = "Continue"
@@ -40,6 +48,7 @@ $ErrorActionPreference = "Continue"
 
 $USAGE_URL    = "https://usage.yesandeverything.com/usage.json"
 $STATUSES_URL = "https://usage.yesandeverything.com/statuses.json"
+$ROLLUP_URL   = "https://yesandeverything.com/status/data/constellation.json"
 
 $fail = @()
 $note = @()
@@ -100,6 +109,23 @@ try {
   if ($count -lt $MinProjects) { $fail += "statuses.json carries only $count projects (expected at least $MinProjects)" }
 } catch {
   $fail += "statuses.json unreachable: $($_.Exception.Message)"
+}
+
+# ----- 5: the weekly rollup behind the band ------------------------------------
+try {
+  $rollup = Get-LiveJson $ROLLUP_URL
+  if (-not $rollup.generatedAt) {
+    $fail += "constellation.json carries no generatedAt stamp"
+  } else {
+    $rgen = [datetime]::Parse($rollup.generatedAt, $null, [Globalization.DateTimeStyles]::AdjustToUniversal)
+    $ageD = ([datetime]::UtcNow - $rgen).TotalDays
+    $note += ("rollup generated {0:yyyy-MM-dd HH:mm}Z, {1:N1} days old, health {2} {3}" -f $rgen, $ageD, $rollup.portfolioHealth, $rollup.portfolioVerdict)
+    if ($ageD -gt $MaxRollupAgeDays) {
+      $fail += ("the rollup is {0:N1} days old (limit {1}); the band's score and verdict are stale, run the constellation bar-raise" -f $ageD, $MaxRollupAgeDays)
+    }
+  }
+} catch {
+  $fail += "constellation.json unreachable: $($_.Exception.Message)"
 }
 
 # ----- verdict ---------------------------------------------------------------
