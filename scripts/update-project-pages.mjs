@@ -18,6 +18,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { writeFileAtomic } from "./atomic-write.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { PUBLIC_COPY, SLUGS } from "./registry.mjs";   // data/projects.json is the source (architecture-01)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -28,33 +29,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 // slug -> dashboard identifier (the status/data/<id>.json name).
 // Agents is delisted from all public surfaces (2026-07-06); never add it here.
-const SLUGS = {
-  "apothecary": "Apothecary",
-  "brackish-rising": "Rising",
-  "budget": "Budget",
-  "cattery": "Cattery",
-  "chains": "Chains",
-  "gnosis": "Gnosis",
-  "here-be-hordes": "Hordes",
-  "ring": "Ring",
-  "scheduler": "Scheduler",
-};
 
 // Public-facing copy for the four machine-readable homepage enumerations
 // (meta description, og:description, twitter:description, JSON-LD hasPart).
 // Keyed by the same slugs that gate the cards so a new project cannot ship a
 // card and miss every description of the site the way cattery and gnosis did.
-const PUBLIC_COPY = {
-  "here-be-hordes":  { name: "Here Be Hordes", blurb: "grim-dark survival RTS games in Godot", pair: "brackish-rising", ld: { "@type": "VideoGame" } },
-  "brackish-rising": { name: "Brackish Rising", blurb: null, ld: { "@type": "VideoGame" } },
-  "chains":          { name: "Chains", blurb: "a live disc-golf caddy PWA at yesandchains.com", ld: { "@type": "SoftwareApplication", applicationCategory: "SportsApplication", url: "https://yesandchains.com" } },
-  "scheduler":       { name: "Scheduler", blurb: "a multi-tenant employee-scheduling SaaS", ld: { "@type": "SoftwareApplication", applicationCategory: "BusinessApplication" } },
-  "apothecary":      { name: "Apothecary", blurb: "a browser-based Celtic label designer", ld: { "@type": "WebApplication" } },
-  "budget":          { name: "Budget", blurb: "a local-first personal budget tool", ld: { "@type": "WebApplication", applicationCategory: "FinanceApplication" } },
-  "ring":            { name: "Ring", blurb: "a cat-show point tracker for TICA exhibitors", ld: { "@type": "WebApplication", url: "https://ring.yesandeverything.com" } },
-  "cattery":         { name: "Cattery", blurb: "a two-sided marketplace for cat breeders and buyers", ld: { "@type": "WebApplication" } },
-  "gnosis":          { name: "Gnosis", blurb: "a gated worldbuilding wiki for a tabletop campaign", ld: { "@type": "WebSite", url: "https://gnosis.yesandeverything.com" } },
-};
 for (const slug of Object.keys(SLUGS)) {
   if (!PUBLIC_COPY[slug]) throw new Error(`PUBLIC_COPY is missing ${slug}; add it before shipping the card`);
 }

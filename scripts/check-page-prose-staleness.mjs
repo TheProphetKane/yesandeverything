@@ -32,23 +32,13 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { SLUGS } from "./registry.mjs";   // data/projects.json is the source (architecture-01)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const QUIET = process.argv.includes("--quiet");
 
 // Same map the stamper uses. Its own copy rather than an import, because the stamper is a
 // script with side effects at import time.
-const SLUGS = {
-  "apothecary": "Apothecary",
-  "brackish-rising": "Rising",
-  "budget": "Budget",
-  "cattery": "Cattery",
-  "chains": "Chains",
-  "gnosis": "Gnosis",
-  "here-be-hordes": "Hordes",
-  "ring": "Ring",
-  "scheduler": "Scheduler",
-};
 
 /** Everything a reader actually sees: no head, no stamped spans, no comments, no code. */
 function visibleBody(html) {

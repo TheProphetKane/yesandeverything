@@ -15,8 +15,8 @@
     "latestReportAt": "2026-09-20T12:02:57Z",
     "verdict": "needs-attention",
     "topFinding": "The design-page exposure that led the last three reports is fixed, verified on both pages: each now carries a short summary beside a pointer, with no encoded payload, no hidden text. In its place sits a smaller version of the same mistake. Three files that ship in this public repository state the private manuscript's name, its status as an unpublished work intended to sell, plus the local path it is written at, each in the same breath as the promise that nothing about it may reach here. The homepage cards also disagree with every linked project's own status file on version, Gnosis by more than a hundred and fifty releases.",
-    "actionsOpen": 5,
-    "actionsClosed": 71,
+    "actionsOpen": 4,
+    "actionsClosed": 72,
     "actions": [
       {
         "id": "compliance-data-steward-03",
@@ -31,13 +31,6 @@
         "title": "Compute the flag from the real age of the last audit, review or release, and check the other per-project writers for the same literal.",
         "lens": "observability",
         "priority": 20
-      },
-      {
-        "id": "architecture-01",
-        "severity": "MED",
-        "title": "Extract one canonical project registry every consumer reads, keeping the per-surface fields as thin overlays keyed off that list.",
-        "lens": "architecture",
-        "priority": 15
       },
       {
         "id": "seo-open-graph-06",
@@ -112,13 +105,6 @@
         "priority": 20,
         "runsOpen": 2,
         "firstSeen": "2026-09-17"
-      },
-      {
-        "id": "architecture-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-10"
       },
       {
         "id": "seo-open-graph-06",
@@ -302,6 +288,12 @@
         "id": "performance-01",
         "by": "aged-packet pass 2026-09-22, oldest first",
         "evidence": "The worker answers a conditional request and the dashboard sends one. Every open tab refetched the whole growing usage file once a minute with caching off at both ends, so the same bytes crossed the wire sixty times an hour per tab whether or not anything had changed. no-store stays, deliberately: the freshness rule is unchanged and an entity tag is a different promise from a cache lifetime, saying only whether the answer changed rather than how long it is good for. The tag is over the payload rather than a write stamp, because the collector rewrites these keys on every run whether or not the contents moved. The page holds the tag itself rather than relying on the browser cache, which the deliberate cache-bust defeats, and keeps the last parsed answer to return on a 304, with a 304 and nothing held treated as a miss rather than an empty payload. Fifteen checks in dashboard-api/worker.selftest.mjs cover the tag, the 304 with no body, a changed payload, an identical rewrite, an unknown tag and the missing-key path; all pass. Also fixed while wiring it: two of the three self-test paths in release.ps1 carried a mangled byte from a heredoc, so Test-Path read false and the loop skipped them without a word. All five run now, and a missing file fails the release."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "architecture-01",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "data/projects.json is the one registry and scripts/registry.mjs derives every per-surface shape from it. There were four hand-kept copies with four memberships and four field sets: two identical SLUGS literals in the page scripts, a PUBLIC_COPY map, and a PROJECTS array in each of the dashboard and the status page. The status page had quietly been missing five projects, which it now carries; it renders eleven cards where it rendered ten, and the one it gains is Everything itself. The two Node consumers import the module. The two browser pages cannot, because this site has no build step and every page is self-contained by convention and a runtime fetch would add a request and a failure mode to a list that never changes between deploys, so scripts/stamp-project-registry.mjs writes their lists in between markers and its --check mode is release step 2.3. Proved both ways: the stamp ran and both pages render, the status page with eleven cards and no console error and the dashboard still setting the attributes its script sets; and a hand-edited row made the check exit 1 naming the page, after which it was restored and the check reads clean. D81's six stalled projects are recorded in the registry at the same time, which is the kind of edit that used to mean four files from memory."
       }
     ],
     "closedThisRun": [

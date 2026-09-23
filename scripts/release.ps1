@@ -97,6 +97,17 @@ try {
     # the endpoint answers a private sentinel instead of 404ing. Nothing checked
     # that it holds, and the way it stops holding is quiet: a collector change
     # writes rows to the public key and every card still renders normally.
+    # architecture-01: data/projects.json is the one registry, and the two
+    # browser pages carry stamped copies of it because this site has no build
+    # step and every page is self-contained. A stamped copy that drifted is a
+    # page back to being hand-kept, which is what the finding was about.
+    Write-Host "==== Step 2.3/6: project registry ====" -ForegroundColor Magenta
+    & node (Join-Path $here "stamp-project-registry.mjs") --check
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: a page has drifted from data/projects.json. Run node scripts/stamp-project-registry.mjs" -ForegroundColor Red
+        exit 1
+    }
+
     Write-Host "==== Step 2.4/6: queue privacy ====" -ForegroundColor Magenta
     & (Join-Path $here "check-queue-privacy.ps1")
     if ($LASTEXITCODE -ne 0) {
