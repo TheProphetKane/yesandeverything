@@ -33,21 +33,6 @@ export function createState(initial) {
     notify();
   }
 
-  function patchNested(path, value) {
-    const parts = path.split('.');
-    const next = structuredClone(state);
-    let cur = next;
-    for (let i = 0; i < parts.length - 1; i++) {
-      // Create missing intermediate objects instead of throwing on a path a
-      // migration hasn't backfilled yet (e.g. old saved state).
-      if (cur[parts[i]] === undefined || cur[parts[i]] === null) cur[parts[i]] = {};
-      cur = cur[parts[i]];
-    }
-    cur[parts[parts.length - 1]] = value;
-    state = next;
-    notify();
-  }
-
   function subscribe(fn) {
     listeners.add(fn);
     return () => listeners.delete(fn);
@@ -58,12 +43,22 @@ export function createState(initial) {
       try {
         fn(state);
       } catch (err) {
+        // A throwing subscriber (usually the render/paint listener) used to
+        // freeze the preview with nothing on screen and nothing but a
+        // console line, which the user never sees (bar-raise reliability-02).
+        // Mirror src/util/persist.js's yaa:storage-error broadcast so the
+        // editor status line can say something instead of going silent.
         console.error('state listener failed:', err);
+        if (typeof document !== 'undefined') {
+          document.dispatchEvent(new CustomEvent('yaa:render-error', {
+            detail: { error: err && err.name ? err.name : 'RenderError', message: err && err.message ? err.message : String(err) },
+          }));
+        }
       }
     }
   }
 
-  return { get, set, patchNested, subscribe };
+  return { get, set, subscribe };
 }
 
 // --- Layout shape helpers ---------------------------------------------------

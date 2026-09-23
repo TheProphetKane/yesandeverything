@@ -26,6 +26,7 @@ const [
   printMod,
   truncateMod,
   suggestMod,
+  resolveIllustrationMod,
 ] = await Promise.all([
   import("./state.js" + V),
   import("./render.js" + V),
@@ -58,6 +59,10 @@ const [
   // it could be unit-tested; forwarded per the same cache-bust contract as
   // the block above rather than statically imported into editor.js.
   import("./util/suggest.js" + V),
+  // bar-raise 2026-09-09 architecture-01: the botanical-illustration
+  // resolution order, shared with editor.js's illustration picker via its
+  // own dynamic-import graph so both call sites run the same chain.
+  import("./util/resolve-illustration.js" + V),
 ]);
 
 const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
@@ -78,6 +83,7 @@ const { autofitText } = autofitMod;
 const { printLabel } = printMod;
 const { truncateAtWordBoundary } = truncateMod;
 const { rankSuggestions } = suggestMod;
+const { resolveIllustration } = resolveIllustrationMod;
 
 // v1.1.9: inject persist.js's notifyStorageError into saved-labels.js instead
 // of letting saved-labels.js statically import persist.js itself (same
@@ -183,6 +189,9 @@ async function main() {
     // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
     // architecture-01). Do not add these back as static imports in render.js.
     autofitText, resolveSize,
+    // bar-raise 2026-09-09 architecture-01: shared botanical-illustration
+    // resolution order, same instance the illustration picker uses.
+    resolveIllustration,
   };
   function paint(s) { render(s, { preview: previewMount, printStage: printStageMount }, ctx); }
   state.subscribe(paint);
@@ -351,7 +360,10 @@ main().catch(err => {
   // Build the failure screen with textContent, never innerHTML: error text can
   // echo request URLs and other unescaped input.
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:20px; font-family:monospace; color:#C4580A;';
+  // generative-art-palette-discipline-02: the literal was #C4580A, which is what
+  // --warn holds in styles/base.css. Two copies of one colour drift the day the
+  // token moves, and this screen is the one nobody looks at until it matters.
+  wrap.style.cssText = 'padding:20px; font-family:monospace; color:var(--warn);';
   const headline = document.createElement('p');
   headline.style.cssText = 'margin:0 0 12px; font-weight:700;';
   headline.textContent = 'The label designer failed to start. Reload the page to retry; details below.';

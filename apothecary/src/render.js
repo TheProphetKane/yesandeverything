@@ -73,22 +73,40 @@ function parchmentSvg(theme) {
 // layered over the SVG gradient fallback. Each slot's manifest entry may carry
 // an opacity (slots 9-16 in the dark half use 0.80 -> 0.50 to keep text legible).
 // Missing-file onerror reveals the gradient.
+//
+// bar-raise 2026-09-09 performance-02: render() runs on every state.set, and
+// previewCardHtml/printCardHtml both call this unconditionally, so it used to
+// rebuild the gradient SVG and texture <img> tag from scratch on every
+// keystroke even though the output only depends on the parchment texture and
+// the theme's gradient/grain fields. Memoized on those, kept inside render.js
+// (module-scoped, not shared state) so the pure-renderer rule still holds:
+// same inputs always produce the same output, computed once and reused.
+let _parchmentBgCache = null; // { key, html } | null
 function parchmentBg(state, theme, ctx) {
   const id = state.parchmentTexture;
+  const key = `${id}|${theme.paperGradStart}|${theme.paperGradEnd}|${theme.paperGrain}`;
+  if (_parchmentBgCache && _parchmentBgCache.key === key) return _parchmentBgCache.html;
+
   const textures = ctx.parchmentTextures || [];
   const slot = textures.find(t => t.id === id);
   const svg = parchmentSvg(theme);
-  if (!slot || !slot.file) return svg;
-  const op = (typeof slot.opacity === 'number') ? slot.opacity : 1;
-  // v0.15: per-slot scale override for textures that sit too narrow inside
-  // the label and leak white on the edges. scale > 1 overruns the box;
-  // overflow on the parent clips it cleanly. Default 1.
-  const scale = (typeof slot.scale === 'number') ? slot.scale : 1;
-  const styleParts = [];
-  if (op < 1) styleParts.push(`opacity:${op}`);
-  if (scale !== 1) styleParts.push(`transform:scale(${scale})`);
-  const styleAttr = styleParts.length ? ` style="${styleParts.join(';')}"` : '';
-  return `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${styleAttr} onerror="this.remove()"/>`;
+  let html;
+  if (!slot || !slot.file) {
+    html = svg;
+  } else {
+    const op = (typeof slot.opacity === 'number') ? slot.opacity : 1;
+    // v0.15: per-slot scale override for textures that sit too narrow inside
+    // the label and leak white on the edges. scale > 1 overruns the box;
+    // overflow on the parent clips it cleanly. Default 1.
+    const scale = (typeof slot.scale === 'number') ? slot.scale : 1;
+    const styleParts = [];
+    if (op < 1) styleParts.push(`opacity:${op}`);
+    if (scale !== 1) styleParts.push(`transform:scale(${scale})`);
+    const styleAttr = styleParts.length ? ` style="${styleParts.join(';')}"` : '';
+    html = `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${styleAttr} onerror="this.remove()"/>`;
+  }
+  _parchmentBgCache = { key, html };
+  return html;
 }
 
 // v0.11: border style variants. The 'celtic' style is the canonical v0.8
@@ -226,24 +244,16 @@ export const ITEM_RENDERERS = {
     </div>`;
   },
   botanical: (s, ctx, inst) => {
-    // Resolution order for the botanical slot:
+    // Resolution order for the botanical slot lives in the shared
+    // resolveIllustration (src/util/resolve-illustration.js), forwarded via
+    // ctx so this renderer and the illustration picker (editor.js) run the
+    // same chain (bar-raise 2026-09-09 architecture-01):
     //   1. state.illustration override -> data/illustrations/<keyword>.png
     //   2. herb-name auto-match via ctx.herbAutoMatch -> same dir
     //   3. v0.18 generic category fallback via ctx.herbCategoryFallback
     //      keyed on state.botanical -> a generic library image for the category
     //   4. hide the slot
-    let keyword = null;
-    if (s.illustration && typeof s.illustration === 'string') {
-      keyword = s.illustration;
-    } else if (ctx.herbAutoMatch) {
-      const key = String(s.herbName ?? '').toLowerCase().trim();
-      keyword = ctx.herbAutoMatch[key] || null;
-    }
-    // v0.18: generic category fallback when the herb name has no auto-match.
-    if (!keyword && ctx.herbCategoryFallback) {
-      const cat = String(s.botanical ?? '').toLowerCase().trim();
-      keyword = ctx.herbCategoryFallback[cat] || null;
-    }
+    const { keyword } = ctx.resolveIllustration(s, ctx);
     if (!keyword) return '';
     const glow = instanceGlow(inst);
     const style = glow ? ` style="filter:${imageGlow(glow)}"` : '';
@@ -481,9 +491,30 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
   `;
 }
 
+// compliance-data-steward-01 (bar-raise 2026-09-09): the only disclaimer in
+// the app lives in index.html, a direct <body> child that @media print hides
+// along with every other body child in favor of #print-stage (styles/label.css).
+// So a printed label carrying real drug-interaction text (data/herbs.json
+// cautions, e.g. chamomile's "May potentiate warfarin and CNS depressants")
+// shipped with no qualifier anywhere on the page. This mirrors the wording
+// already on screen at index.html's footer-disclaimer, shortened to fit the
+// smallest type the label already uses.
+const PRINT_QUALIFIER_TEXT = 'Folklore and general reference, not medical advice. Consult a professional before ingesting anything.';
+const INTERACTION_ITEM_KEYS = new Set(['compounds', 'cautions', 'notes']); // notes merges compounds + cautions text
+
+function zonesCarryInteractionInfo(zones) {
+  return (zones || []).some(z => (z.items || []).some(raw => {
+    const key = normalizeItem(raw).key;
+    return key && INTERACTION_ITEM_KEYS.has(resolveItemKey(key));
+  }));
+}
+
 function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme }) {
   const { wIn: designW, hIn: designH } = designSize;
   const physicalScale = phys.wIn / designW;
+  const qualifier = zonesCarryInteractionInfo(zones)
+    ? `<div class="print-qualifier">${esc(PRINT_QUALIFIER_TEXT)}</div>`
+    : '';
   return `
     <div class="label-card label-card--${side}" style="
       width:${phys.wIn}in;
@@ -499,6 +530,7 @@ function printCardHtml({ state, fullCtx, designSize, phys, side, zones, theme })
         <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
           ${zonesHtml(zones, state, fullCtx)}
         </div>
+        ${qualifier}
       </div>
     </div>
   `;
@@ -575,21 +607,23 @@ export function render(state, mounts, ctx) {
     });
   });
 
+  // The print-stage rebuild + its fit pass (fitPrintStage forces the stage
+  // visible for layout measurement) used to run synchronously on every
+  // keystroke, since state.set -> notify -> paint -> render runs with no
+  // batching. The stage is invisible on screen until the user actually
+  // prints or exports, so that work is coalesced behind one requestAnimationFrame
+  // per burst of state changes instead (bar-raise performance-03, 2026-09-16).
+  // schedulePrintStage/flushPrintStage live at module scope below so
+  // printLabel and exportPng can force it to run right now, synchronously,
+  // before they act - a print or export can never read a stage still waiting
+  // on a queued frame.
   if (mounts.printStage) {
-    const printCards = [
-      printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
-                      zones: frontZones, theme }),
-      ...(showBack ? [printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
-                      side: 'back', zones: backZones, theme })] : []),
-    ].join('');
-    mounts.printStage.innerHTML = printCards;
-    mounts.printStage.className = pickPrintLayout(phys, cardCount);
+    schedulePrintStage({ mounts, state, fullCtx, tmpl, phys, frontZones, backZones, showBack, cardCount, theme, ctx });
   }
 
   const fits = mounts.preview.querySelectorAll('[data-autofit]');
   if (fontsReady) {
     fits.forEach(el => ctx.autofitText(el));
-    fitPrintStage(mounts, ctx.autofitText);
   } else {
     // Every render before the fonts land queues its own .then holding that
     // render's NodeList. A later render replaces the preview's innerHTML, so
@@ -598,8 +632,63 @@ export function render(state, mounts, ctx) {
     document.fonts.ready.then(() => {
       fontsReady = true;
       fits.forEach(el => { if (el.isConnected) ctx.autofitText(el); });
+    });
+  }
+}
+
+// --- Print-stage coalescing (bar-raise performance-03) ---------------------
+// Builds the print-stage's HTML + layout class and runs its fit pass. Broken
+// out of render() so it can run either on the next animation frame
+// (schedulePrintStage) or immediately (flushPrintStage).
+function commitPrintStage({ mounts, state, fullCtx, tmpl, phys, frontZones, backZones, showBack, cardCount, theme, ctx }) {
+  if (!mounts.printStage) return;
+  const printCards = [
+    printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys, side: 'front',
+                    zones: frontZones, theme }),
+    ...(showBack ? [printCardHtml({ state, fullCtx, designSize: tmpl.designSize, phys,
+                    side: 'back', zones: backZones, theme })] : []),
+  ].join('');
+  mounts.printStage.innerHTML = printCards;
+  mounts.printStage.className = pickPrintLayout(phys, cardCount);
+  if (fontsReady) {
+    fitPrintStage(mounts, ctx.autofitText);
+  } else {
+    document.fonts.ready.then(() => {
+      fontsReady = true;
       fitPrintStage(mounts, ctx.autofitText);
     });
+  }
+}
+
+let printStageFrame = null;
+let pendingPrintStageArgs = null;
+
+function schedulePrintStage(args) {
+  pendingPrintStageArgs = args;
+  if (printStageFrame !== null) return; // a frame is already queued; it will pick up the latest args
+  const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 0);
+  printStageFrame = raf(() => {
+    printStageFrame = null;
+    const args2 = pendingPrintStageArgs;
+    pendingPrintStageArgs = null;
+    if (args2) commitPrintStage(args2);
+  });
+}
+
+// Runs any coalesced print-stage rebuild right now instead of waiting for the
+// queued animation frame. printLabel (src/util/print.js) and exportPng
+// (src/util/export-png.js) call this, via main.js's wrapping, before they
+// act, so the stage they read is always the one matching the current state.
+export function flushPrintStage() {
+  if (printStageFrame !== null) {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(printStageFrame);
+    else clearTimeout(printStageFrame);
+    printStageFrame = null;
+  }
+  if (pendingPrintStageArgs) {
+    const args = pendingPrintStageArgs;
+    pendingPrintStageArgs = null;
+    commitPrintStage(args);
   }
 }
 

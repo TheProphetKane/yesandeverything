@@ -47,7 +47,10 @@ function loadHtml2Canvas() {
 // Per-layout box, lifted from the four #print-stage.layout-* rules in
 // styles/label.css. layout-separate drops the page padding and the gap because
 // each card carries its own 0.25in margin instead.
-const LAYOUT_RULES = {
+// Exported so test-export-print-parity.mjs can assert this stays in step
+// with the @media print rules in styles/label.css without duplicating the
+// values a third time (bar-raise 2026-09-09 generative-art-print-fidelity-01).
+export const LAYOUT_RULES = {
   'layout-single':       { flexDirection: 'row',    padding: '0.25in', gap: '0.15in' },
   'layout-side-by-side': { flexDirection: 'row',    padding: '0.25in', gap: '0.15in' },
   'layout-stacked':      { flexDirection: 'column', padding: '0.25in', gap: '0.15in' },

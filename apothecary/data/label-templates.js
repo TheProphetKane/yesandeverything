@@ -58,12 +58,17 @@ export const TEMPLATES = {
       { id: 'back-bottom',  width: 100, layoutMode: 'row',   items: ['notes', 'pairings'] },
     ],
 
-    fields: [
-      'shopName', 'herbName', 'latin', 'props', 'description',
-      'accent', 'symbol', 'rune1', 'rune2', 'rune3', 'physicalSize',
-      'backEnabled', 'descFull', 'historicUses', 'compounds', 'cautions', 'pairings',
-    ],
-
+    // A 'fields' list used to live here, naming the seventeen state keys the
+    // Content accordion exposes. Nothing under src/ ever read it (bar-raise
+    // 2026-09-09 generative-art-schema-driven-correctness-01): editor.js
+    // hand-authors that accordion's markup directly, one input per field,
+    // because there's only ever been the one template. Zone and item
+    // composition (what goes where) is schema-driven, through state.layout
+    // and ITEM_RENDERERS; which individual form fields the Content section
+    // shows is not, and PROJECT_SPEC.md section 4.7 says so now. Removed
+    // rather than kept as an unread list a second template could mistake for
+    // a real contract; a second template designer's own field markup can
+    // reintroduce a per-template list once there's a consumer for it.
     descMaxChars: 120,
     descLineHint: '~2 lines',
 

@@ -66,16 +66,6 @@ export function saveLabel(name, snapshot) {
   return entry;
 }
 
-export function updateLabel(id, snapshot) {
-  const list = read();
-  const e = list.find(x => x.id === id);
-  if (!e) return null;
-  e.state = structuredClone(snapshot);
-  e.updatedAt = Date.now();
-  write(list);
-  return e;
-}
-
 export function loadLabel(id) {
   return read().find(e => e.id === id) ?? null;
 }
