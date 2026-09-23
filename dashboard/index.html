@@ -1739,10 +1739,11 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       var r = byId[p.id] || { id: p.id, tag: p.tag, hue: p.hue, val: 0 };
       var dim = (FILTER !== "ALL" && !inFilter(p.id)) || r.val <= 0;
       var share = sum > 0 ? Math.round((r.val / sum) * 100) : 0;
-      var li = el("span", { title: p.tag + (VIEW === "health" ? " share of the open findings" : " share of today"), className: dim ? "dim" : "" });
+      var held = VIEW !== "health" && isWithheld(p.id);
+      var li = el("span", { title: held ? p.tag + ": daily figures are withheld from the public feed; the all-time total is on the card" : p.tag + (VIEW === "health" ? " share of the open findings" : " share of today"), className: dim ? "dim" : "" });
       var sw = el("span", { className: "sw" }); sw.style.background = r.hue;
       li.appendChild(sw);
-      li.appendChild(txt(p.tag + " " + fmt(r.val) + " · " + share + "%"));
+      li.appendChild(txt(held ? p.tag + " private" : p.tag + " " + fmt(r.val) + " · " + share + "%"));
       legend.appendChild(li);
     });
     var note = rosterNote();
@@ -2750,6 +2751,13 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     var st = LAST && LAST.statuses ? staleFor(FILTER) : null;
     if (st != null) num("stale", String(st), st > 0 ? "#cc8400" : "#00d68f", "projects publishing no fresh status" + scopeTag, function () { openStats(); });
   }
+  /* True for a project whose daily curve the public feed withholds (Guardian, Skylight and
+     the other private trees, D64). The feed still lists the project, so every per-day read
+     comes back 0, which is a number and a false one. Print "private" where a total would go. */
+  function isWithheld(id) {
+    var w = LAST && LAST.usage && LAST.usage.dailyCurvesWithheld;
+    return !!w && w.indexOf(id) >= 0;
+  }
   /* Live counts for the rollup band: open actions summed over the projects the rollup
      scored, and closed-log rows dated after the rollup ran. A closed-log row is either
      {date, id} (one closure) or {at, ids: [...]} (one batch); both shapes are counted. */
@@ -2808,7 +2816,18 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       (c.generatedAt ? "Rolled up " + fmtAgo(c.generatedAt) + "." : "");
     var acts = $("band-actions");
     acts.innerHTML = "";
-    (c.topActions || []).slice(0, 3).forEach(function (a) {
+    // A rollup action names a project. Once that project's status reads zero open, the
+    // action closed after the rollup ran, and "do these first" must not still show it
+    // (two of three did on 2026-09-23). Cross-cutting actions have no project to check.
+    var stNow = LAST && LAST.statuses;
+    var stillOpen = (c.topActions || []).filter(function (a) {
+      var pm = projByLoose(a.project);
+      if (!stNow || pm.id === "ALL") return true;
+      var s = stNow[pm.id];
+      if (!s || !s.barRaise || s.barRaise.actionsOpen == null) return true;
+      return s.barRaise.actionsOpen > 0;
+    });
+    stillOpen.slice(0, 3).forEach(function (a) {
       var sev = String(a.severity || "").toUpperCase();
       var row = el("div", { className: "band-act" });
       var sv = el("span", { className: "ba-sev", text: sev || "·" });
@@ -3573,7 +3592,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     gh.dot.style.background = m.hue;
     gh.dot.style.boxShadow = "0 0 8px " + m.hue + "66";
     gh.nm.textContent = m.displayName;
-    gh.tk.textContent = fmtTok(tok) + " today" + (st && st.completion ? " · " + st.completion.pct + "%" : "");
+    gh.tk.textContent = (isWithheld(id) ? "private" : fmtTok(tok) + " today") + (st && st.completion ? " · " + st.completion.pct + "%" : "");
     if (!REDUCED) { gh.g.classList.remove("swap"); void gh.g.offsetWidth; gh.g.classList.add("swap"); }
   }
   function updateGhosts() {
@@ -3960,7 +3979,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
       left.appendChild(md);
       left.appendChild(txt(meta.tag));
       mh.appendChild(left);
-      mh.appendChild(el("span", { className: "mtok", text: fmtTok(todayTok), title: "tokens burned today" }));
+      mh.appendChild(el("span", { className: "mtok", text: isWithheld(id) ? "private" : fmtTok(todayTok), title: isWithheld(id) ? "daily figures withheld from the public feed" : "tokens burned today" }));
       mini.appendChild(mh);
       var svg = svgEl("svg", { viewBox: "0 0 100 22", preserveAspectRatio: "none" });
       var t30 = svgEl("title"); t30.textContent = TIPS.spark; svg.appendChild(t30);
