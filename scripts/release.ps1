@@ -106,12 +106,21 @@ try {
 
     Write-Host "==== Step 2.5/6: Worker self-tests ====" -ForegroundColor Magenta
     foreach ($t in @(
-        "workers\gated-docs\srcttempts.selftest.mjs",
+        "dashboard-api\worker.selftest.mjs",
+        "workers\gated-docs\src\attempts.selftest.mjs",
+        "workers\coiled-guardian\src\attempts.selftest.mjs",
         "workers\coiled-guardian\src\worker.selftest.mjs",
-        "workers\coiled-guardian\srcuth.selftest.mjs"
+        "workers\coiled-guardian\src\auth.selftest.mjs"
     )) {
         $full = Join-Path (Split-Path $here -Parent) $t
-        if (-not (Test-Path $full)) { continue }
+        # A missing file is a fault, not a skip. Two of these paths shipped with a
+        # mangled byte in them on 2026-09-22, Test-Path read false, and the loop
+        # skipped both without a word. A gate that goes quiet when it cannot find
+        # its own test is the worst shape a gate can fail in.
+        if (-not (Test-Path $full)) {
+            Write-Host "Aborting release: self-test not found at $t" -ForegroundColor Red
+            exit 1
+        }
         & node $full | Out-Null
         if ($LASTEXITCODE -ne 0) {
             Write-Host "Aborting release: $t failed. Re-run it to see which check." -ForegroundColor Red

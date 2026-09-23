@@ -15,8 +15,8 @@
     "latestReportAt": "2026-09-20T12:02:57Z",
     "verdict": "needs-attention",
     "topFinding": "The design-page exposure that led the last three reports is fixed, verified on both pages: each now carries a short summary beside a pointer, with no encoded payload, no hidden text. In its place sits a smaller version of the same mistake. Three files that ship in this public repository state the private manuscript's name, its status as an unpublished work intended to sell, plus the local path it is written at, each in the same breath as the promise that nothing about it may reach here. The homepage cards also disagree with every linked project's own status file on version, Gnosis by more than a hundred and fifty releases.",
-    "actionsOpen": 6,
-    "actionsClosed": 70,
+    "actionsOpen": 5,
+    "actionsClosed": 71,
     "actions": [
       {
         "id": "compliance-data-steward-03",
@@ -37,13 +37,6 @@
         "severity": "MED",
         "title": "Extract one canonical project registry every consumer reads, keeping the per-surface fields as thin overlays keyed off that list.",
         "lens": "architecture",
-        "priority": 15
-      },
-      {
-        "id": "performance-01",
-        "severity": "MED",
-        "title": "Apply the lean daily-file-first pattern from the status page to the dashboard refresh, or have the worker answer conditional requests.",
-        "lens": "performance",
         "priority": 15
       },
       {
@@ -122,13 +115,6 @@
       },
       {
         "id": "architecture-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-10"
-      },
-      {
-        "id": "performance-01",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 3,
@@ -310,6 +296,12 @@
         "id": "data-integrity-03",
         "by": "aged-packet pass 2026-09-22, oldest first",
         "evidence": "stale is a boolean and staleReason carries the sentence. The finding is worse than it reads: the failure path in release.ps1 wrote the whole sentence into `stale`, and the dashboard counts a stale project with a strict `stale === true`, so a card recorded stale WITH its reason did not register as stale at all and the counter read zero. One field doing two jobs, two consumers disagreeing about its type. The failure path sets the flag true and the reason beside it, a successful write clears the reason so it cannot outlive the failure it described, project-status.py carries staleReason to the public card, and the badge uses it as its title when present while a flag with no reason keeps the generic sentence. check-status-json.ps1 asserts both types rather than trusting the writers: proved by planting a string in stale, which failed at exit 1 naming the file and the type, and the card was restored and the check reads clean."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "performance-01",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "The worker answers a conditional request and the dashboard sends one. Every open tab refetched the whole growing usage file once a minute with caching off at both ends, so the same bytes crossed the wire sixty times an hour per tab whether or not anything had changed. no-store stays, deliberately: the freshness rule is unchanged and an entity tag is a different promise from a cache lifetime, saying only whether the answer changed rather than how long it is good for. The tag is over the payload rather than a write stamp, because the collector rewrites these keys on every run whether or not the contents moved. The page holds the tag itself rather than relying on the browser cache, which the deliberate cache-bust defeats, and keeps the last parsed answer to return on a 304, with a 304 and nothing held treated as a miss rather than an empty payload. Fifteen checks in dashboard-api/worker.selftest.mjs cover the tag, the 304 with no body, a changed payload, an identical rewrite, an unknown tag and the missing-key path; all pass. Also fixed while wiring it: two of the three self-test paths in release.ps1 carried a mangled byte from a heredoc, so Test-Path read false and the loop skipped them without a word. All five run now, and a missing file fails the release."
       }
     ],
     "closedThisRun": [

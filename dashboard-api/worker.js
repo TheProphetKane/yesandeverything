@@ -11,9 +11,14 @@
 // owner's authenticated wrangler CLI, so there is no ingest secret to leak.
 
 const CORS = {
+  // The entity tag is useless to a cross-origin caller it is not exposed to,
+  // and the dashboard is cross-origin to this worker (performance-01).
+  "Access-Control-Expose-Headers": "ETag",
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  // If-None-Match has to be allowed on the preflight or the browser strips it
+  // and every conditional request arrives unconditional (performance-01).
+  "Access-Control-Allow-Headers": "Content-Type, If-None-Match",
 };
 const KEYS = { "/usage.json": "usage", "/queue.json": "queue", "/statuses.json": "statuses" };
 
@@ -48,8 +53,54 @@ export default {
         headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
       });
     }
+    // performance-01: every open tab refetched the whole growing usage file once a
+    // minute, and both ends had caching off, so the same bytes crossed the wire
+    // sixty times an hour per tab whether or not anything had changed.
+    //
+    // A conditional request fixes the transfer without touching the freshness
+    // rule. no-store stays: the dashboard must never render a cached payload, and
+    // the collector rewrites these keys on a cadence nothing here can predict. An
+    // entity tag is a different promise from a cache lifetime. It says nothing
+    // about how long the answer is good for, only whether the answer changed, so
+    // the tab still asks every sixty seconds and still gets a current answer.
+    // What it stops paying for is the body when the answer is the one it holds.
+    //
+    // The tag is over the value itself rather than a version stamp, because the
+    // collector writes these keys on every run whether or not the contents moved,
+    // and a stamp would change on a rewrite that changed nothing.
+    const etag = await weakEtag(val);
+    const inm = request.headers.get("if-none-match");
+    if (inm && inm === etag) {
+      return new Response(null, {
+        status: 304,
+        headers: { ...CORS, ETag: etag, "Cache-Control": "no-store" },
+      });
+    }
     return new Response(val, {
-      headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+      headers: {
+        ...CORS,
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        ETag: etag,
+      },
     });
   },
 };
+
+/* A weak entity tag over the payload.
+ *
+ * Weak rather than strong, and that is the honest label: this compares the bytes
+ * the worker is about to send, not a byte-for-byte identity of a stored entity,
+ * and a weak tag is what the specification asks for in that case.
+ *
+ * SHA-256 truncated to sixteen hex characters. The whole digest would be exact
+ * and is a longer header on every request and every response for a comparison
+ * that is already a hash comparison; sixteen characters is sixty-four bits,
+ * which no dashboard payload is going to collide inside. */
+async function weakEtag(text) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  const hex = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `W/"${hex.slice(0, 16)}"`;
+}

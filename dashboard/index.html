@@ -1448,14 +1448,40 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     }
     requestAnimationFrame(tick);
   }
+  // performance-01: what the last answer for each path was, and the entity tag
+  // that came with it. The dashboard refetches every sixty seconds per open tab
+  // and the usage file only grows, so the same bytes crossed the wire sixty
+  // times an hour per tab whether or not anything had changed.
+  //
+  // The browser's own cache cannot help here and should not: the cache-bust
+  // below defeats it deliberately, because the CDN edge will otherwise serve a
+  // stale file. Holding the tag in the page instead keeps both properties. The
+  // request is still unique and still no-store, so nothing between here and the
+  // worker can answer it from a cache, and the worker still decides whether
+  // anything changed rather than a timer deciding for it.
+  var ETAGS = {};
+  var LAST_BODY = {};
+
   function fetchJson(path) {
     // Cache-bust: GitHub Pages' CDN can serve a stale data file even when the
     // page is fresh, and {cache:"no-store"} only governs the browser, not the
     // CDN edge. A unique query string per load forces a fresh fetch every time.
     var bust = (path.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
-    return fetch(path + bust, { cache: "no-store" }).then(function (r) {
+    var opts = { cache: "no-store" };
+    if (ETAGS[path]) opts.headers = { "If-None-Match": ETAGS[path] };
+    return fetch(path + bust, opts).then(function (r) {
+      // Nothing changed: the worker sent no body, and the one held here is the
+      // answer. A 304 with nothing held is treated as a miss rather than as an
+      // empty payload, which would render zeroes over good data.
+      if (r.status === 304) {
+        return Object.prototype.hasOwnProperty.call(LAST_BODY, path) ? LAST_BODY[path] : null;
+      }
       if (!r.ok) return null;
-      return r.json().catch(function () { return null; });
+      var tag = r.headers.get("etag");
+      return r.json().then(function (j) {
+        if (tag && j != null) { ETAGS[path] = tag; LAST_BODY[path] = j; }
+        return j;
+      }).catch(function () { return null; });
     }).catch(function () { return null; });
   }
   // Live data is served by the usage-yesandeverything Worker (KV-backed): it updates
