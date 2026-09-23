@@ -51,9 +51,9 @@
     "latestReportPath": "docs/BAR_RAISE-2026-09-22.md",
     "latestReportAt": "2026-09-22T23:55:00Z",
     "verdict": "needs-attention",
-    "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 22,
-    "actionsClosed": 132,
+    "topFinding": "Pull request #27 merged at 18:22:44 today and closed the contribution merge that dropped alternate layouts, so the headline finding of this morning's pass is gone. What the merge did not touch is the money path. A chargeback still revokes nothing: worker/src/handlers/billing.js:967 reads a customer field off a Stripe dispute object, which carries a charge and a payment intent and no customer, so the guard fires, the handler answers 200 and the account keeps Pro with the money clawed back. A full refund still cancels every live subscription on the customer rather than the one the refunded charge belongs to (billing.js:990 into lib.js:1809). Both tests pass only because the fixture at worker/tests/billing_webhook.test.mjs:180 invents the missing field. Behind that, migrations 0025, 0026 and 0027 are all unapplied against the live database by this repository's own ledger at supabase/README.md:55, so signed-in collection pushes are failing on a missing column right now and the round watermark #27 added is inert.",
+    "actionsOpen": 0,
+    "actionsClosed": 154,
     "health": 68,
     "lensScores": {
       "architecture": 71,
@@ -434,171 +434,145 @@
         "id": "security-22",
         "by": "stalled-project drain 2026-09-22, Kane's ask",
         "evidence": "shared_round_players_update is recreated with a with-check clause. It had a using clause alone, which decides which rows a caller may touch and says nothing about what the row may become, so a player could update their own row into a host row, move it onto another round, or flip an expired invitation back to accepted, all permitted because the row was theirs when they started. The with check splits the two callers the using clause already allows: a host may still write any row on their own round, which scorekeeper mode needs, and a player may write only their own row without changing its round or promoting themselves. Status stays theirs, because accepting or declining is the one thing a participant is meant to do with their own row. In 0026 with the favourites policy, ahead of the paste."
+      },
+      {
+        "date": "2026-09-23",
+        "id": "architecture-03",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "The four AI handlers moved verbatim to worker/src/handlers/caddy.js (603 lines), billing.js is down to 834, index.js imports each from its own file, and the six now-unused lib.js imports are pruned. The webhook suite passes unchanged. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "auth-token-hygiene-07",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/billing.js handleCourseAdminRequest verifies the Supabase session and takes the identifier off it, ignoring body.userId entirely rather than comparing it. No client calls this route, so nothing needed a matching change. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "compliance-03",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "tools/course_parser.py: the identity string is 'YesAndChains/1.x (personal disc golf tool; +https://yesandchains.com)' with a COURSE_PARSER_UA override, and _respect_crawl_policy reads robots.txt once per host, raises on a disallowed path and waits out a stated crawl delay. That is what ADR 0005 named when it accepted the scraping risk. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-25",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/contribute.js: a _rev counter on the course record (added to COURSE_FIELDS so sanitizeCourse keeps it), a _mutateCourse helper that runs the mutation against a fresh read, re-reads immediately before the put and re-runs once on a mismatch, 409 on a second collision. The three contribute handlers take the mutator; the scrape merge, which cannot re-run its pass, checks the counter and answers 409. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-26",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "src/cloud.ts: the overlay push splits fresh from known on a _cloudUpdatedAt watermark recorded at load, upserting the first and running a conditional update guarded on the watermark for the second. Written inline rather than reusing _pushRowsWithStaleGuard, which keys on an id column while overlays key on (user_id, course_slug). shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-27",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "src/cloud.ts cloudClearActiveRound: the delete result is read (supabase-js resolves with an { error } object rather than rejecting, so the bare await could not catch it) and the outbox key clears only after it comes back clean. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-28",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "supabase/migrations/0025: rewritten to add the column nullable, backfill from collected_at (the name 0006 renamed retired_at to, which is why the old form rolled back on paste), then set the default and the not-null constraint. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-30",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "supabase/migrations/0029: the duplicate collection rows the old first-sign-in upload left are swept, matched on every user-visible column including the client-supplied collected_at and keeping the oldest of each group by ctid. The code fault itself shipped in pull request 27. Needs the hand paste. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-31",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "src/cloud.ts cloudSyncRoundHistory: rounds this device has seen from cloud go through a conditional update guarded on the watermark; rounds it has not, and tombstones, keep the plain upsert. A schema without migration 0027 falls back to the old upsert. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-32",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "supabase/migrations/0027: same reordering. The old form would have stamped every pre-existing round with the migration instant, and since no device holds a round watermark yet the first pull would have adopted the cloud copy for every round and discarded local edits still in the outbox. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "data-integrity-33",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/billing.js: current_period_end is read off the subscription and off items[].current_period_end, latest item winning, and the column is left out of the profile row entirely when neither is present so a shape nobody has learned cannot blank a correct date. A deletion still clears it deliberately. Four assertions. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "kv-data-shape-01",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "DECISIONS_NEEDED.md carries a pending entry for course-index sharding: all three options, what each costs, the recommendation (move it to Postgres rather than shard, since the other two each make one access pattern worse to fix the other) and the trigger to take it. The courses.js comment that had called it blocked on a decision existing nowhere now points at it. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "kv-data-shape-02",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/lib.js: the rule that a NEW key family carries a version segment is written where the ten families are defined, with why the ten existing ones are not renamed. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "kv-data-shape-05",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/caddy.js handleAdminCaddyUsage reads its keys thirty-two at a time with Promise.all rather than awaiting one read per key inside the loop. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "reliability-04",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "Same change as security-16: the 72-hour claim no longer goes in before any handler runs, so an isolate that dies mid-handler leaves a claim that expires in two minutes rather than swallowing every retry for three days. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "reliability-05",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "src/profile.ts deleteMyAccount: a billingCancelled flag set right after the cancel, and the failure message now says whether the subscription was already cancelled or whether nothing changed. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "reliability-14",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/billing.js reconcileSubscriptions: the profile select is ordered by user_id and resumed from a cursor in the key-value store, so consecutive runs walk the whole customer base instead of an arbitrary 500. A filled page logs an [ALERT] line; a short page clears the cursor. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "reliability-15",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/lib.js _checkSubscriptionEntitled answers 'entitled', 'unentitled' or 'unknown'. The two spend gates and the research gate refuse unknown with 503 and a try-again, keeping the fail-closed posture; the checkout precheck treats unknown as not-already-subscribed, since the idempotency key stops the double subscription and refusing a real new subscriber over a blip costs a sale. Three existing assertions updated to check by name rather than truthiness. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "reliability-18",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "Same function: a Stripe lookup failure is counted separately, the summary reports checked, failed and scanned, and any failure raises an [ALERT] line, so a revoked key stops producing a run that logs a clean pass over nobody. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "security-16",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/billing.js: the replay claim is written as a two-minute 'pending' marker before the work and replaced with the 72-hour 'done' marker only after the handler finished, through one applied() helper every success path returns via. A retry meeting 'pending' gets 409 so Stripe comes back. Four assertions cover the three claim states plus the legacy '1' marker. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "security-23",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "worker/src/handlers/caddy.js: the hole key is bounded to 160 characters before it is folded into a key-value key, the four cap counters are read separately rather than in one Promise.all, and a failed read of the GLOBAL counter refuses with 503 instead of running the model call with the kill switch reading zero. The three per-user counters still fail open, stated and reasoned in the comment. The body is capped at 32 kilobytes and the bag at thirty discs, matching the chat handler. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
+      },
+      {
+        "date": "2026-09-23",
+        "id": "security-24",
+        "by": "stalled-project burndown 2026-09-23, before the D81 stall",
+        "evidence": "supabase/migrations/0029: shared_round_scores_upsert recreated with public.is_shared_round_member on the self-write branch, so a round id stops being a write key for anyone holding it. The host scorekeeper branch is untouched. Needs the hand paste. shipped in 1.9.0, pull request 31, merged as 76844de; preship gauntlet green and the webhook suite green with nine new assertions"
       }
     ],
     "closedThisRun": [
       "data-integrity-24",
       "version-pill-drift-02"
     ],
-    "actions": [
-      {
-        "id": "data-integrity-28",
-        "severity": "HIGH",
-        "title": "Add the column nullable with no default, run the backfill while it can still match, then add the default and the not-null constraint.",
-        "lens": "data-integrity",
-        "priority": 20
-      },
-      {
-        "id": "data-integrity-30",
-        "severity": "HIGH",
-        "title": "Merge pull request #27 and deploy it, then sweep collection_discs for duplicates on user, mold, maker and collected date for accounts that migrated on 1.x.",
-        "lens": "data-integrity",
-        "priority": 20
-      },
-      {
-        "id": "security-23",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 16,
-        "redacted": true
-      },
-      {
-        "id": "compliance-03",
-        "severity": "HIGH",
-        "title": "Change the identity string to the self-identifying form the decision record specifies and add a crawl-policy check before each scrape, or amend the record.",
-        "lens": "compliance-data-steward",
-        "priority": 15
-      },
-      {
-        "id": "architecture-03",
-        "severity": "MED",
-        "title": "Move the four caddy and chat handlers out of the billing file into their own handler file.",
-        "lens": "architecture",
-        "priority": 15
-      },
-      {
-        "id": "data-integrity-27",
-        "severity": "MED",
-        "title": "Route the delete through the error-raising helper and clear the outbox only after it returns.",
-        "lens": "data-integrity",
-        "priority": 15
-      },
-      {
-        "id": "reliability-15",
-        "severity": "MED",
-        "title": "Give a lookup failure its own state and show a could-not-check notice instead of the upgrade card.",
-        "lens": "reliability",
-        "priority": 15
-      },
-      {
-        "id": "reliability-14",
-        "severity": "MED",
-        "title": "Page the reconcile select with a stable ordered cursor across runs and log an alert line when a run returns exactly the ceiling.",
-        "lens": "reliability",
-        "priority": 15
-      },
-      {
-        "id": "auth-token-hygiene-07",
-        "severity": "MED",
-        "title": "Verify the session in that handler and derive the identifier from it.",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "priority": 15
-      },
-      {
-        "id": "reliability-18",
-        "severity": "MED",
-        "title": "Count failed lookups separately, return them in the result, and log an [ALERT] line whenever any lookup fails.",
-        "lens": "reliability",
-        "priority": 15
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "title": "Write the claim with a lifetime of minutes at the top of the handler and extend it to seventy-two hours only after the event applies.",
-        "lens": "reliability",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-25",
-        "severity": "MED",
-        "title": "Store a revision counter on course records and compare-and-retry on a mismatch.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-26",
-        "severity": "MED",
-        "title": "Give course overlays the same watermark and route the push through the stale-guard helper.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-31",
-        "severity": "MED",
-        "title": "Before merging pull request #27, push known rounds through a conditional update guarded on the cloud watermark, keeping the plain upsert only for rounds with no watermark and for tombstones.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "kv-data-shape-02",
-        "severity": "MED",
-        "title": "Prefix new key families with a version segment.",
-        "lens": "cloud-edge-kv-data-shape",
-        "priority": 10
-      },
-      {
-        "id": "reliability-05",
-        "severity": "MED",
-        "title": "Track whether the cancel succeeded before the later failure and say so explicitly in the catch message.",
-        "lens": "reliability",
-        "priority": 10
-      },
-      {
-        "id": "kv-data-shape-05",
-        "severity": "MED",
-        "title": "Batch the per-key reads in chunks.",
-        "lens": "cloud-edge-kv-data-shape",
-        "priority": 10
-      },
-      {
-        "id": "security-16",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 9,
-        "redacted": true
-      },
-      {
-        "id": "kv-data-shape-01",
-        "severity": "MED",
-        "title": "Add a pending-decision entry for course-index sharding.",
-        "lens": "cloud-edge-kv-data-shape",
-        "priority": 8
-      },
-      {
-        "id": "security-24",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 8,
-        "redacted": true
-      },
-      {
-        "id": "data-integrity-32",
-        "severity": "MED",
-        "title": "Rewrite migration 0027 to add the column nullable, backfill from the round end date, then set the default and the not-null constraint.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "data-integrity-33",
-        "severity": "MED",
-        "title": "Read the period end from the subscription items array with the top-level field as fallback, and omit the renewal column rather than writing null.",
-        "lens": "data-integrity",
-        "priority": 6
-      }
-    ],
+    "actions": [],
     "deferred": [
       {
         "severity": "MED",
@@ -629,160 +603,7 @@
         "id": "auth-token-hygiene-04"
       }
     ],
-    "openFindings": [
-      {
-        "id": "data-integrity-28",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-15"
-      },
-      {
-        "id": "data-integrity-30",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "security-23",
-        "severity": "MED",
-        "priority": 16,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "compliance-03",
-        "severity": "HIGH",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-15"
-      },
-      {
-        "id": "architecture-03",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "data-integrity-27",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "reliability-15",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "reliability-14",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "auth-token-hygiene-07",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-15"
-      },
-      {
-        "id": "reliability-18",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "reliability-04",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "data-integrity-25",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "data-integrity-26",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "data-integrity-31",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 2,
-        "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "kv-data-shape-02",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "reliability-05",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "kv-data-shape-05",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 3,
-        "firstSeen": "2026-09-15"
-      },
-      {
-        "id": "security-16",
-        "severity": "MED",
-        "priority": 9,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "kv-data-shape-01",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "security-24",
-        "severity": "MED",
-        "priority": 8,
-        "runsOpen": 1,
-        "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "data-integrity-32",
-        "severity": "MED",
-        "runsOpen": 1,
-        "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "data-integrity-33",
-        "severity": "MED",
-        "runsOpen": 1,
-        "firstSeen": "2026-09-22"
-      }
-    ],
+    "openFindings": [],
     "tensionsOpen": [
       {
         "lenses": [
