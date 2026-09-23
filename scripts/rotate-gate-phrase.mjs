@@ -39,7 +39,8 @@
 //
 // --set never prints the phrase back, and the phrase never lands in a file.
 
-import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { writeFileAtomic } from "./atomic-write.mjs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
@@ -133,7 +134,11 @@ for (const p of pages) {
   }
 
   if (out !== p.src) {
-    writeFileSync(p.file, out, "utf8");
+    // reliability-03: this was a plain write on a mount that truncates a large
+    // write mid-flight, and the file it truncates is the gate page itself. The
+    // shared writer renames a temp file over the target and reads it back, so a
+    // short write throws naming the path rather than shipping a broken gate.
+    writeFileAtomic(p.file, out);
     console.log(`  rewrote ${p.rel}`);
     changed++;
   }

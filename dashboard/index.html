@@ -4168,7 +4168,10 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
   });
   $("overlay").addEventListener("click", function (e) { if (e.target === $("overlay")) closeOverlay(); });
   $("glass-close").addEventListener("click", closeOverlay);
-  $("panel-core").addEventListener("click", openCoreBig);
+  // accessibility-02: these two were the last click-only panels. activatable
+  // gives each a button role, a tab stop and an Enter/Space handler, which is
+  // the same triple every other control on this page already goes through.
+  activatable($("panel-core"), openCoreBig);
   // One panel, two views. Both were worth a panel each and the page has room for one.
   var SIDE2 = "radar";
   try { SIDE2 = localStorage.getItem("dashSide2") || "radar"; } catch (e) {}
@@ -4186,7 +4189,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
   Array.prototype.forEach.call(document.querySelectorAll("#panel-radar .ptab"), function (b) {
     b.addEventListener("click", function (e) { e.stopPropagation(); setSide2(b.getAttribute("data-v")); });
   });
-  $("side2-body").addEventListener("click", function () { if (SIDE2 === "radar") openRadarBig(); else openLensBig(); });
+  activatable($("side2-body"), function () { if (SIDE2 === "radar") openRadarBig(); else openLensBig(); });
   setSide2(SIDE2);
   $("ticker").classList.add("clickable");
   $("ticker").addEventListener("click", openReleases);

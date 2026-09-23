@@ -21,10 +21,37 @@ foreach ($doc in @(
     Write-Host ""
     Write-Host "==== $($doc.name)  $url ====" -ForegroundColor Magenta
 
-    $r = Invoke-WebRequest -Uri $url -UseBasicParsing -MaximumRedirection 0 -ErrorAction SilentlyContinue
+    # reliability-02: this used to suppress the error and carry on. A request
+    # that never reached the origin left $r null, so $body was empty and $len
+    # zero, and then EVERY assertion below passed: a zero-byte response is
+    # smaller than 8000, contains no ENCODED variable, and leaks no password.
+    # A gate that reports all-clear when it could not reach the thing it guards
+    # is worse than no gate, because somebody reads the green and stops looking.
+    $r = $null
+    try {
+        $r = Invoke-WebRequest -Uri $url -UseBasicParsing -MaximumRedirection 0 -ErrorAction Stop
+    } catch {
+        # A 401 or a 403 is the expected answer from a gate and arrives as a
+        # terminating error under -ErrorAction Stop, so the response on the
+        # exception is the real one and the checks below run against it.
+        $r = $_.Exception.Response
+        if ($r -eq $null) {
+            Check "$($doc.name): the gate answered at all" $false "no response from $url : $($_.Exception.Message)"
+            continue
+        }
+    }
     $body = $r.Content
+    if ($null -eq $body -and $r -is [Net.HttpWebResponse]) {
+        $reader = New-Object IO.StreamReader($r.GetResponseStream())
+        $body = $reader.ReadToEnd()
+        $reader.Close()
+    }
+    if ($null -eq $body) { $body = '' }
     $len = $body.Length
     Write-Host "  unauthenticated response: $($r.StatusCode), $len bytes"
+    # Zero bytes is not a small login form, it is nothing. Say so rather than
+    # letting the size assertion below read it as a pass.
+    Check "$($doc.name): the gate returned a body" ($len -gt 0) "got an empty response"
 
     Check "$($doc.name): response is small (a login form, not a document)" ($len -lt 8000) "got $len bytes"
     Check "$($doc.name): no base64 payload variable" ($body -notmatch 'var\s+ENCODED') "ENCODED is present"
@@ -45,8 +72,24 @@ foreach ($doc in @(
     Check "$($doc.name): a wrong password is refused" ($wrongCode -eq 401) "got $wrongCode"
 
     # And the document itself must not be reachable by guessing a deeper path.
-    $deep = Invoke-WebRequest -Uri ($url.TrimEnd('/') + '/index.html') -UseBasicParsing -ErrorAction SilentlyContinue
-    Check "$($doc.name): a deeper path does not bypass the gate" ($deep.Content.Length -lt 8000) "got $($deep.Content.Length) bytes"
+    # Same reasoning as the first request: a suppressed failure gave this check
+    # a zero-length body, which passed (reliability-02).
+    $deep = $null
+    try {
+        $deep = Invoke-WebRequest -Uri ($url.TrimEnd('/') + '/index.html') -UseBasicParsing -ErrorAction Stop
+    } catch { $deep = $_.Exception.Response }
+    if ($null -eq $deep) {
+        Check "$($doc.name): the deeper path answered at all" $false "no response"
+    } else {
+        $deepBody = $deep.Content
+        if ($null -eq $deepBody -and $deep -is [Net.HttpWebResponse]) {
+            $dr = New-Object IO.StreamReader($deep.GetResponseStream())
+            $deepBody = $dr.ReadToEnd()
+            $dr.Close()
+        }
+        if ($null -eq $deepBody) { $deepBody = '' }
+        Check "$($doc.name): a deeper path does not bypass the gate" ($deepBody.Length -lt 8000) "got $($deepBody.Length) bytes"
+    }
 }
 
 Write-Host ""

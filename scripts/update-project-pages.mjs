@@ -14,32 +14,17 @@
 // fresh numbers. Also runnable locally: node scripts/update-project-pages.mjs
 // Idempotent; skips cleanly when a marker or JSON is absent.
 
-import { readFileSync, writeFileSync, existsSync, renameSync, unlinkSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { writeFileAtomic } from "./atomic-write.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-// Every tracked file this script touches (index.html is on the critical-write
-// list) goes through here rather than a raw writeFileSync. Write to a sibling
-// temp file on the same volume, rename it over the target (atomic on the same
-// filesystem, unlike a direct write that can be caught mid-write), then read
-// the target back and confirm it holds exactly what was intended. A mismatch
-// throws naming the path instead of shipping a silently short file.
-function writeFileAtomic(p, content) {
-  const tmp = `${p}.tmp-${process.pid}`;
-  try {
-    writeFileSync(tmp, content, "utf8");
-    renameSync(tmp, p);
-  } catch (e) {
-    try { unlinkSync(tmp); } catch {}
-    throw e;
-  }
-  const onDisk = readFileSync(p, "utf8");
-  if (onDisk !== content) {
-    throw new Error(`writeFileAtomic: verification failed, ${p} does not match the content just written`);
-  }
-}
+// The atomic writer moved to scripts/atomic-write.mjs on 2026-09-22
+// (reliability-03), because rotate-gate-phrase.mjs was rewriting every design
+// page with a plain write and needed the same function rather than a second
+// copy of it.
 
 // slug -> dashboard identifier (the status/data/<id>.json name).
 // Agents is delisted from all public surfaces (2026-07-06); never add it here.
