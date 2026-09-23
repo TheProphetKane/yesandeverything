@@ -495,10 +495,14 @@
       // the full one carries every day and has to be filtered. Reading whichever arrived
       // keeps one code path instead of two loaders.
       var u = USAGE.projects[proj.id];
+      // The same measure the dashboard card prints: prompt + cache read + cache write +
+      // output. The lean file carries the cache counters since 2026-09-23; an older copy
+      // without them still sums to prompt + output rather than breaking.
+      function allTok(r) { return (r.input || 0) + (r.cacheRead || 0) + (r.cacheWrite || 0) + (r.output || 0); }
       if (u.daily) {
-        (u.daily || []).forEach(function (d) { if (d.d === todayIso) tt += (d.input || 0) + (d.output || 0); });
+        (u.daily || []).forEach(function (d) { if (d.d === todayIso) tt += allTok(d); });
       } else {
-        tt += (u.input || 0) + (u.output || 0);
+        tt += allTok(u);
       }
       var tk = el("div");
       tk.setAttribute("title", "tokens burned on this project today");
@@ -598,7 +602,17 @@
     return card;
   }
 
-  function renderConstellation(data) {
+  // A rollup action names a project. Once that project's own status reads zero open
+  // actions, the action closed after the rollup ran and the list must not still carry
+  // it (four of five did on 2026-09-23). Cross-cutting actions have no project to check.
+  function stillOpenActions(list, byId) {
+    return (list || []).filter(function (a) {
+      var s = byId && byId[a.project];
+      if (!s || !s.barRaise || s.barRaise.actionsOpen == null) return true;
+      return s.barRaise.actionsOpen > 0;
+    });
+  }
+  function renderConstellation(data, byId) {
     var verdict = $("cn-verdict");
     var summary = $("cn-summary");
     var actions = $("cn-top-actions");
@@ -633,11 +647,12 @@
     verdict.style.color = "";
     summary.textContent = data.summary || "";
     actions.innerHTML = "";
-    if (data.topActions && data.topActions.length) {
+    var openActs = stillOpenActions(data.topActions, byId);
+    if (openActs.length) {
       var heading = el("div", { className: "label", text: "top actions" });
       actions.appendChild(heading);
       var ul = el("ul");
-      data.topActions.slice(0, 5).forEach(function (a) {
+      openActs.slice(0, 5).forEach(function (a) {
         var li = el("li");
         li.appendChild(el("span", { className: "tag", text: (a.severity || "") + " / " + (a.project || "") }));
         li.appendChild(txt(" " + (a.label || "")));
@@ -686,7 +701,9 @@
         delete USAGE.projects.Scheduler;
       }
       var projData = results.slice(2);
-      renderConstellation(cn);
+      var byId = {};
+      PROJECTS.forEach(function (p, i) { if (projData[i]) byId[p.id] = projData[i]; });
+      renderConstellation(cn, byId);
       grid.innerHTML = "";
       var anyData = false;
       projData.forEach(function (data, i) {
