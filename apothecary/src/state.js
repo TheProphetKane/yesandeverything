@@ -140,33 +140,68 @@ export const DEFAULT_SECTION_TITLES = {
 
 // --- Default state ---------------------------------------------------------
 
-export function defaultState(templates, defaultTemplateId) {
+// data-integrity-01 (2026-09-23): the default label is the chamomile record
+// and nothing else. The literal below is a copy of data/herbs.json's entry,
+// kept so defaultState() works with no data loaded (tests, the migration
+// harness); main.js passes the live herb table and the record wins. A test
+// in test-data-integrity.mjs holds the copy to the record field for field,
+// so it cannot drift again the way the v1.2.0 register sweep showed it had.
+export const DEFAULT_HERB_ID = 'chamomile';
+
+// The label fields a herb record supplies, in the shape state carries them.
+// Mirrors the autofill mapping in src/ui/editor.js, minus the caps, which
+// the record already respects.
+export function herbFields(rec) {
+  return {
+    latin: rec.latin,
+    props: rec.props,
+    description: rec.desc,
+    accent: rec.accent,
+    symbol: rec.symbol,
+    botanical: rec.botanical,
+    runes: (rec.runes || []).map(r => ({ c: r.c, m: r.m })),
+    descFull: rec.descFull ?? rec.desc,
+    historicUses: rec.historicUses ?? '',
+    compounds: rec.compounds ?? '',
+    cautions: rec.cautions ?? '',
+    pairings: rec.pairings ?? '',
+  };
+}
+
+export const DEFAULT_HERB_LITERALS = {
+  latin: 'Matricaria chamomilla',
+  props: 'Healing · Sleep · Peace · Solar Magic',
+  description: 'Sun-blessed and gentle. Heals the body, quiets the restless mind. The Celts drank it at dawn to greet the light.',
+  accent: '#775819',
+  symbol: 'solar-wheel',
+  botanical: 'flower',
+  runes: [
+    { c: 'ᛚ', m: 'Healing Flow' },
+    { c: 'ᛁ', m: 'Stillness & Peace' },
+    { c: 'ᛜ', m: 'Inner Peace' },
+  ],
+  descFull: "Beloved of the sun and the hearth, chamomile heals the body and stills the restless mind. Ancient Celts honored it as a solar herb, drunk at dawn to greet the light. Sacred to Brigid; gathered on Imbolc for the year's hearth-fires.",
+  historicUses: 'Druidic dawn-rite tea. Strewn on Beltane fires. Pressed into salves for sun-burned skin and into pillows for restless children.',
+  compounds: 'Apigenin, bisabolol, chamazulene; flavonoids. Long held to quiet the nerves. Anti-inflammatory. Antispasmodic. Caffeine-free.',
+  cautions: 'Ragweed (Asteraceae) allergy cross-reaction possible. Traditionally avoided in pregnancy, and not taken alongside other calming or blood-thinning remedies.',
+  pairings: 'Honey · Lavender · Lemon balm · Vanilla',
+};
+
+export function defaultState(templates, defaultTemplateId, herbs = null) {
+  const rec = herbs && herbs[DEFAULT_HERB_ID];
+  const herb = rec ? herbFields(rec) : DEFAULT_HERB_LITERALS;
   return {
     __schemaVersion: 1,
     templateId: 'apothecary-3x1.5',
     sizeId: 'medium',
     shopName: "Lynn's Apothecary",
     herbName: 'Chamomile',
-    latin: 'Matricaria chamomilla',
-    props: 'Healing · Sleep · Peace · Solar Magic',
-    description: 'Sun-blessed and gentle. Heals the body, quiets the restless mind. The Celts drank it at dawn to greet the light.',
-    accent: '#A77C24',
-    symbol: 'solar-wheel',
-    botanical: 'flower',
     icon: 'chamomile',
-    runes: [
-      { c: 'ᛚ', m: 'Healing Flow' },
-      { c: 'ᛁ', m: 'Stillness & Peace' },
-      { c: 'ᛜ', m: 'Inner Peace' },
-    ],
+    ...structuredClone(herb),
 
-    // Back-label fields.
+    // Back-label fields ride in from the record above (descFull, historicUses,
+    // compounds, cautions, pairings); the back itself starts closed.
     backEnabled: false,
-    descFull: "Beloved of the sun and the hearth, chamomile heals the body and stills the restless mind. Ancient Celts honored it as a solar herb, drunk at dawn to greet the light. Sacred to Brigid; gathered on Imbolc for the year's hearth-fires.",
-    historicUses: 'Druidic dawn-rite tea. Strewn on Beltane fires. Pressed into salves for sun-burned skin and into pillows for restless children.',
-    compounds: 'Apigenin, bisabolol, chamazulene. Mild sedative and anti-inflammatory via GABA-A receptor binding. Rich in flavonoids.',
-    cautions: 'Ragweed allergy cross-reaction possible. Avoid therapeutic doses in pregnancy. May potentiate warfarin and CNS depressants.',
-    pairings: 'Honey · Lavender · Lemon balm · Vanilla',
 
     // v0.9: zone layout owned by state, not template.
     layout: defaultLayout(undefined, templates, defaultTemplateId),
@@ -189,6 +224,11 @@ export function defaultState(templates, defaultTemplateId) {
     previewCollapse: { front: false, back: false },
 
     parchmentTexture: 'parchment-01',
+    // shopColor paints the dark editor header only. The printed shop name
+    // takes the theme's own ink, or a per-instance colour set on the shop
+    // chip in the layout designer (generative-art-palette-discipline-01,
+    // 2026-09-23: this gold read 1.17 to 1 against the parchment).
     shopColor: '#E8C172',
+    __shopColorSplit: true,
   };
 }

@@ -298,5 +298,32 @@ export function normalizeState(initial, ctx) {
   }));
   while (initial.runes.length < 3) initial.runes.push({ ...defaults.runes[initial.runes.length] });
 
+  // generative-art-palette-discipline-01 (2026-09-23): shopColor stopped
+  // reaching the printed label. A saved label whose owner had picked a header
+  // colour other than the old default was showing that colour on the label
+  // too, so the one-time migration carries it onto the front shop chip as a
+  // per-instance colour, which is the field render.js now reads. Runs once:
+  // the flag rides in the saved state afterwards.
+  if (initial.__shopColorSplit !== true) {
+    const OLD_HEADER_DEFAULT = '#E8C172';
+    const picked = typeof initial.shopColor === 'string'
+      && HEX_COLOR_RE.test(initial.shopColor)
+      && initial.shopColor.toLowerCase() !== OLD_HEADER_DEFAULT.toLowerCase();
+    if (picked) {
+      for (const side of ['front', 'back']) {
+        for (const z of (initial.layout?.[side] ?? [])) {
+          z.items = (z.items ?? []).map(it => {
+            const key = typeof it === 'string' ? it : it?.key;
+            if (key !== 'shop') return it;
+            const obj = typeof it === 'string' ? { key: it } : { ...it };
+            if (!obj.color) obj.color = initial.shopColor;
+            return obj;
+          });
+        }
+      }
+    }
+    initial.__shopColorSplit = true;
+  }
+
   return initial;
 }

@@ -23,10 +23,14 @@ const ZONE_ALIGN_LABELS = {
 export function mountLayoutDesigner(root, state, deps) {
   const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone, esc, preserveScroll } = deps;
   let dragPayload = null;
+  let lastLayout = null;
+  let lastCustom = null;
 
   function paint() { preserveScroll(root, () => {
     const s = state.get();
     const layout = s.layout;
+    lastLayout = s.layout;
+    lastCustom = s.customItems;
     if (!layout) {
       root.innerHTML = '<div class="layout-empty">No layout configured.</div>';
       return;
@@ -63,7 +67,98 @@ export function mountLayoutDesigner(root, state, deps) {
 
     wireDragAndDrop();
     wireControls();
+    wireKeyboardAndClick();
+    restoreFocus();
   }); }
+
+  // solo-tool-ux-01: after a move, focus lands on the moved chip in its new
+  // zone, so a keyboard user can keep going without hunting for it.
+  let pendingFocus = null;
+  function restoreFocus() {
+    if (!pendingFocus) return;
+    const { key, zoneId } = pendingFocus;
+    pendingFocus = null;
+    const chips = [...root.querySelectorAll('.layout-chip')]
+      .filter(c => c.dataset.item === key && c.dataset.fromZone === zoneId);
+    const chip = chips[chips.length - 1];
+    if (chip) chip.focus();
+  }
+
+  function wireKeyboardAndClick() {
+    root.querySelectorAll('.layout-chip').forEach(chip => {
+      chip.addEventListener('keydown', (e) => {
+        if (e.target !== chip) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openMovePopover(chip);
+        } else if ((e.key === 'Delete' || e.key === 'Backspace') && chip.dataset.fromZone !== 'hidden') {
+          e.preventDefault();
+          pendingFocus = { key: chip.dataset.item, zoneId: 'hidden' };
+          moveItem(chip.dataset.item, chip.dataset.fromZone, parseInt(chip.dataset.fromIndex, 10), 'hidden', null);
+        }
+      });
+      const label = chip.querySelector('[data-chip-move]');
+      if (label) {
+        label.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openMovePopover(chip);
+        });
+      }
+    });
+  }
+
+  // The move list: every zone on both sides plus the hidden rail, minus the
+  // one the chip is in. Same instance semantics as a drop: moveItem carries
+  // the colour and glow with it.
+  function openMovePopover(chip) {
+    document.querySelectorAll('.layout-move-popover').forEach(p => p.remove());
+    const layout = state.get().layout;
+    const key = chip.dataset.item;
+    const fromZoneId = chip.dataset.fromZone;
+    const fromIndex = parseInt(chip.dataset.fromIndex, 10);
+    const targets = [];
+    for (const side of ['front', 'back']) {
+      (layout[side] || []).forEach((z, i) => {
+        if (z.id !== fromZoneId) targets.push({ id: z.id, label: `${side === 'front' ? 'Front' : 'Back'} zone ${i + 1}` });
+      });
+    }
+    if (fromZoneId !== 'hidden') targets.push({ id: 'hidden', label: 'Hidden (off the label)' });
+
+    const pop = document.createElement('div');
+    pop.className = 'layout-item-picker layout-move-popover';
+    pop.setAttribute('role', 'menu');
+    pop.innerHTML = `
+      <div class="layout-item-picker-title">Move ${esc(labelFor(key, state.get().customItems ?? []))} to</div>
+      <div class="layout-item-picker-list">
+        ${targets.map(t => `<button type="button" class="layout-pick" role="menuitem" data-move-to="${esc(t.id)}">${esc(t.label)}</button>`).join('')}
+      </div>
+    `;
+    document.body.appendChild(pop);
+    const rect = chip.getBoundingClientRect();
+    pop.style.position = 'fixed';
+    pop.style.top = `${rect.bottom + 6}px`;
+    let left = rect.left;
+    if (left + pop.offsetWidth > window.innerWidth - 8) left = window.innerWidth - pop.offsetWidth - 8;
+    if (left < 8) left = 8;
+    pop.style.left = `${left}px`;
+
+    const close = () => { pop.remove(); document.removeEventListener('click', onDocClick); };
+    const onDocClick = (e) => { if (!pop.contains(e.target) && e.target !== chip) close(); };
+    pop.querySelectorAll('[data-move-to]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const toZoneId = btn.dataset.moveTo;
+        close();
+        pendingFocus = { key, zoneId: toZoneId };
+        moveItem(key, fromZoneId, fromIndex, toZoneId, null);
+      });
+    });
+    pop.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); chip.focus(); }
+    });
+    setTimeout(() => document.addEventListener('click', onDocClick), 0);
+    const first = pop.querySelector('[data-move-to]');
+    if (first) first.focus();
+  }
 
   function labelFor(itemKey, customItems) {
     if (itemKey.startsWith('custom-')) {
@@ -123,15 +218,23 @@ export function mountLayoutDesigner(root, state, deps) {
               data-glow-pick data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
               title="Set glow (current: ${esc(inst.glow || 'none')})" ${glowDot}>*</button>
     `;
-    return `<div class="layout-chip${customCls}" draggable="true"
-                 data-item="${esc(key)}" data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
-                 title="Drag to move">
-      <span class="layout-chip-handle" aria-hidden="true">⋮⋮</span>
-      <span class="layout-chip-label">${esc(label)}</span>
-      ${dots}
+    // solo-tool-ux-01 (2026-09-23): a chip is focusable and carries a
+    // keyboard path (Enter or Space opens the move list, Delete hides) and a
+    // click path (the label opens the same list), both moving the real
+    // instance through moveItem. A chip in the hidden rail gets no hide
+    // button, since hiding a hidden item did nothing.
+    const hideBtn = (fromZoneId === 'hidden') ? '' : `
       <button type="button" class="layout-chip-hide"
               data-hide-item="${esc(key)}" data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
-              aria-label="Hide this item">×</button>
+              aria-label="Hide this item">×</button>`;
+    const where = (fromZoneId === 'hidden') ? 'hidden' : 'placed';
+    return `<div class="layout-chip${customCls}" draggable="true" tabindex="0" role="button"
+                 data-item="${esc(key)}" data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
+                 aria-label="${esc(label)}, ${where}. Enter opens the move list${where === 'placed' ? ', Delete hides it' : ''}."
+                 title="Drag to move, or click the name to pick a zone">
+      <span class="layout-chip-handle" aria-hidden="true">⋮⋮</span>
+      <span class="layout-chip-label" data-chip-move>${esc(label)}</span>
+      ${dots}${hideBtn}
     </div>`;
   }
 
@@ -521,6 +624,11 @@ export function mountLayoutDesigner(root, state, deps) {
     return null;
   }
 
+  // performance-02 (2026-09-23): the designer draws the layout and the custom
+  // sections, so only a change to one of those repaints it.
   paint();
-  state.subscribe(paint);
+  state.subscribe(s => {
+    if (s.layout === lastLayout && s.customItems === lastCustom) return;
+    paint();
+  });
 }

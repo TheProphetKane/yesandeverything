@@ -66,7 +66,7 @@ const [
 ]);
 
 const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
-const { render, ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS } = renderMod;
+const { render, flushPrintStage, ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS } = renderMod;
 const { mountEditor } = editorMod;
 const { mountShopName } = shopMod;
 const { mountSavedLabels } = savedMod;
@@ -127,8 +127,14 @@ async function main() {
     symbolIds: new Set([...Object.keys(SYMBOL_LABELS), ...Object.keys(SYMBOL_ALIASES), 'none']),
     illustrationKeywords: new Set(illustrations.map(i => i.keyword)),
   };
+  // generative-art-print-fidelity-01: the flush was exported in v1.1.14 and
+  // never called. These two wrappers are its only call sites; the editor gets
+  // them under the same names it always had.
+  const printLabelFresh = () => { flushPrintStage(); printLabel(); };
+  const exportPngFresh = (filename) => { flushPrintStage(); return exportPng(filename); };
+
   const persisted = loadState();
-  const initial = normalizeState(persisted ?? defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID), migrateCtx);
+  const initial = normalizeState(persisted ?? defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID, herbDB), migrateCtx);
 
   const state = createState(initial);
 
@@ -158,16 +164,19 @@ async function main() {
     // v0.14: illustration library + auto-match table for the picker UI.
     illustrations, herbAutoMatch, herbCategoryFallback,
     // v1.1.0: PNG export handler, forwarded per the cache-bust contract.
-    exportPng,
+    // generative-art-print-fidelity-01 (2026-09-23): both act on the
+    // print-stage, whose rebuild is coalesced to an animation frame, so each
+    // flushes that rebuild first and reads the stage the current state built.
+    exportPng: exportPngFresh,
     // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
     // architecture-01). Do not add these back as static imports in editor.js.
-    printLabel, truncateAtWordBoundary,
+    printLabel: printLabelFresh, truncateAtWordBoundary,
     // maintainability-04: forwarded per the same contract. Do not add this
     // back as a static import in editor.js.
     rankSuggestions,
     onReset: () => {
       clearState();
-      state.set(defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID));
+      state.set(defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID, herbDB));
     },
   });
 
@@ -251,9 +260,10 @@ async function main() {
   // v0.16: global keyboard shortcuts.
   //   ?               -> open the shortcut help dialog
   //   Esc             -> close any open popover or open dialog
-  //   Ctrl/Cmd + P    -> print. Handled natively by the browser (no JS handler
-  //                      here); the print-stage is already fresh because
-  //                      render() rebuilds it on every state change.
+  //   Ctrl/Cmd + P    -> print. The browser opens the dialog itself; the
+  //                      capture-phase listener below flushes the coalesced
+  //                      print-stage rebuild first, so the dialog reads the
+  //                      stage the current state built.
   //   Ctrl/Cmd + K    -> focus the herb search input
   //   Ctrl/Cmd + S    -> force an immediate persist + flash save indicator
   //   Alt + 1..4      -> toggle Content / Style / Layout / Output sections
@@ -272,12 +282,18 @@ async function main() {
   });
 
   document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && typeof e.key === 'string' && e.key.toLowerCase() === 'p') {
+      flushPrintStage();
+    }
+  }, true);
+
+  document.addEventListener('keydown', (e) => {
     const inField = e.target instanceof HTMLElement &&
       (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable);
 
     // ESC: cascading dismiss. Popovers first; then open dialog.
     if (e.key === 'Escape') {
-      const popovers = document.querySelectorAll('.layout-color-popover, .layout-item-picker');
+      const popovers = document.querySelectorAll('.layout-color-popover, .layout-item-picker, .layout-move-popover');
       if (popovers.length) {
         popovers.forEach(p => p.remove());
         e.preventDefault();

@@ -68,7 +68,7 @@ export function mountIllustrationPicker(root, state, { illustrations, herbAutoMa
       <div class="illu-grid-wrap" ${gridOpen ? '' : 'hidden'}>
         <input type="search" class="illu-search field-input" placeholder="Filter (e.g. lobster, chiles, peppercorns)..." data-illu-search value="${esc(searchTerm)}" />
         <div class="illu-grid" data-illu-grid>
-          ${buildGridHtml(res.keyword)}
+          ${gridOpen ? buildGridHtml(res.keyword) : ''}
         </div>
       </div>
     `;
@@ -134,6 +134,18 @@ export function mountIllustrationPicker(root, state, { illustrations, herbAutoMa
     });
   }
 
+  // performance-02 (2026-09-23): the grid HTML is generated only while the
+  // library is open (above), and a state change that touches neither the
+  // illustration, the herb name nor the custom items does not repaint at all.
+  let last = null;
+  function slice(s) { return [s.illustration, s.herbName, s.botanical, s.customItems]; }
+  function changed(s) {
+    const cur = slice(s);
+    if (!last) { last = cur; return true; }
+    const diff = cur.some((v, i) => v !== last[i]);
+    last = cur;
+    return diff;
+  }
   paint();
-  state.subscribe(paint);
+  state.subscribe(s => { if (changed(s)) paint(); });
 }

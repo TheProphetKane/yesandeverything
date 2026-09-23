@@ -772,10 +772,17 @@ export function mountEditor(root, ctx) {
 
   printBtn.addEventListener('click', printLabel);
 
-  exportBtn.addEventListener('click', () => {
-    if (typeof exportPng !== 'function') return;
+  exportBtn.addEventListener('click', async () => {
+    if (typeof exportPng !== 'function' || exportBtn.disabled) return;
     const name = (state.get().herbName || 'apothecary-label').trim();
-    exportPng(name + '.png');
+    // reliability-04 (2026-09-23): one export at a time. A second click while
+    // the renderer was still downloading re-entered the loader.
+    exportBtn.disabled = true;
+    try {
+      await exportPng(name + '.png');
+    } finally {
+      exportBtn.disabled = false;
+    }
   });
 
   resetBtn.addEventListener('click', () => {

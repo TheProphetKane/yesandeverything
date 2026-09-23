@@ -20,19 +20,19 @@ const TITLE_FIELDS = [
 ];
 
 export function mountTitleEditor(root, state, deps) {
-  const { esc, preserveScroll } = deps;
-  function paint() { preserveScroll(root, () => {
-    const s = state.get();
-    const titles = s.sectionTitles ?? {};
-    root.innerHTML = TITLE_FIELDS.map(field => {
-      const v = titles[field.key] ?? '';
-      return `
+  const { esc } = deps;
+
+  // performance-01 (2026-09-23): the rows are built once. Every state change
+  // used to replace root.innerHTML, which destroyed the input that had focus
+  // on each keystroke; now a change syncs values onto the existing inputs,
+  // the way editor.js's syncFromState does for the main fields.
+  function build() {
+    root.innerHTML = TITLE_FIELDS.map(field => `
         <div class="title-editor-row">
           <span class="title-editor-label">${field.label}</span>
-          <input type="text" class="title-editor-input" data-title-key="${field.key}" value="${esc(v)}" placeholder="${esc(field.key === 'back-desc-full' ? '(no title)' : '(hidden)')}" />
+          <input type="text" class="title-editor-input" data-title-key="${field.key}" value="" placeholder="${esc(field.key === 'back-desc-full' ? '(no title)' : '(hidden)')}" />
         </div>
-      `;
-    }).join('');
+      `).join('');
     root.querySelectorAll('[data-title-key]').forEach(inp => {
       inp.addEventListener('input', () => {
         const next = { ...(state.get().sectionTitles ?? {}) };
@@ -40,7 +40,17 @@ export function mountTitleEditor(root, state, deps) {
         state.set({ sectionTitles: next });
       });
     });
-  }); }
-  paint();
-  state.subscribe(paint);
+  }
+
+  function sync() {
+    const titles = state.get().sectionTitles ?? {};
+    root.querySelectorAll('[data-title-key]').forEach(inp => {
+      const v = titles[inp.dataset.titleKey] ?? '';
+      if (inp.value !== v) inp.value = v;
+    });
+  }
+
+  build();
+  sync();
+  state.subscribe(sync);
 }

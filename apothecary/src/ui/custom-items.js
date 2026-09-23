@@ -11,8 +11,14 @@
 
 export function mountCustomItems(root, state, deps) {
   const { esc, preserveScroll } = deps;
-  function paint() { preserveScroll(root, () => {
-    const items = state.get().customItems ?? [];
+
+  // performance-01 (2026-09-23): the cards are rebuilt only when the set of
+  // custom sections changes (one added or removed). A keystroke in a title or
+  // body used to replace root.innerHTML and destroy the focused field; now it
+  // syncs the changed value onto the existing inputs.
+  let builtIds = null;
+
+  function build(items) {
     if (items.length === 0) {
       root.innerHTML = '<div class="custom-items-empty">No custom sections yet. Click below to add one.</div>';
       return;
@@ -21,7 +27,7 @@ export function mountCustomItems(root, state, deps) {
       <div class="custom-item-card" data-custom-id="${esc(item.id)}">
         <div class="custom-item-head">
           <input type="text" class="custom-item-title field-input" data-custom-title value="${esc(item.title)}" placeholder="Section title" />
-          <button type="button" class="custom-item-remove" data-custom-remove aria-label="Delete custom section">×</button>
+          <button type="button" class="custom-item-remove" data-custom-remove aria-label="Delete custom section">\u00d7</button>
         </div>
         <textarea class="custom-item-body field-input" data-custom-body rows="2" placeholder="Section body text">${esc(item.body)}</textarea>
       </div>
@@ -36,7 +42,28 @@ export function mountCustomItems(root, state, deps) {
       bodyInp.addEventListener('input',  () => updateCustom(id, c => ({ ...c, body:  bodyInp.value  })));
       rmBtn.addEventListener('click',    () => removeCustom(id));
     });
-  }); }
+  }
+
+  function sync(items) {
+    for (const item of items) {
+      const card = root.querySelector(`[data-custom-id="${CSS.escape(item.id)}"]`);
+      if (!card) continue;
+      const titleInp = card.querySelector('[data-custom-title]');
+      const bodyInp  = card.querySelector('[data-custom-body]');
+      if (titleInp && titleInp.value !== item.title) titleInp.value = item.title;
+      if (bodyInp && bodyInp.value !== item.body) bodyInp.value = item.body;
+    }
+  }
+
+  function paint() {
+    const items = state.get().customItems ?? [];
+    const ids = items.map(i => i.id).join('|');
+    if (ids !== builtIds) {
+      preserveScroll(root, () => build(items));
+      builtIds = ids;
+    }
+    sync(items);
+  }
   function updateCustom(id, fn) {
     const items = (state.get().customItems ?? []).map(c => c.id === id ? fn(c) : c);
     state.set({ customItems: items });

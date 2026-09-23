@@ -9,6 +9,7 @@
 
 export function mountPresets({ select, saveBtn, actions }, state, deps) {
   const { esc, FACTORY_PRESETS, DEFAULT_SECTION_TITLES } = deps;
+  let lastPresets = null;
   function allPresets() {
     return [
       ...FACTORY_PRESETS.map(p => ({ ...p, kind: 'factory' })),
@@ -17,6 +18,7 @@ export function mountPresets({ select, saveBtn, actions }, state, deps) {
   }
 
   function paint() {
+    lastPresets = state.get().layoutPresets;
     const presets = allPresets();
     select.innerHTML = '<option value="">Load a preset...</option>' +
       presets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}${p.kind === 'user' ? ' (saved)' : ''}</option>`).join('');
@@ -79,6 +81,12 @@ export function mountPresets({ select, saveBtn, actions }, state, deps) {
     paint();
   });
 
+  // performance-02 (2026-09-23): the select lists presets, so only a change
+  // to the presets themselves repaints it.
   paint();
-  state.subscribe(paint);
+  state.subscribe(s => {
+    if (s.layoutPresets === lastPresets) return;
+    lastPresets = s.layoutPresets;
+    paint();
+  });
 }

@@ -260,7 +260,11 @@ export const ITEM_RENDERERS = {
     return `<div class="lbl-botanical"${style}><img class="lbl-botanical-img" src="data/illustrations/${keyword}.png" alt="" width="44" height="50" onerror="this.parentElement.style.display='none'"/></div>`;
   },
   shop: (s, ctx, inst) => {
-    const color = (inst && inst.color) || s.shopColor || ctx.theme.shopColor;
+    // The header's shopColor no longer reaches the label: it is tuned for
+    // a dark editor and gave 1.17 to 1 on parchment (palette-discipline-01,
+    // 2026-09-23). The label takes the theme's ink unless the shop chip in
+    // the layout designer carries its own colour.
+    const color = (inst && inst.color) || ctx.theme.shopColor;
     const glow  = instanceGlow(inst);
     const shadow = glow ? textGlow(glow) : ctx.theme.shopShadow;
     return `<div class="lbl-shop" style="color:${color}; text-shadow:${shadow}">${esc(s.shopName)}</div>`;
