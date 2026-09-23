@@ -2483,12 +2483,27 @@
       })();
 
       // ---- top nav with scrollspy ----
+      // The two pages this site ships that are not sections of this page. One
+      // list, read by the navigation and by the command palette, so a third page
+      // is added in one place rather than two (solo-tool-ux-02).
+      var SITE_PAGES = [
+        { label: 'status', href: '/status/' },
+        { label: 'sitemap', href: '/sitemap/' }
+      ];
+
       (function topnav() {
         var nav = document.createElement('nav');
         nav.className = 'topnav';
         nav.setAttribute('aria-label', 'Site');
         var links = Object.keys(sectionMap).map(function (id) {
           return '<a href="#' + id + '">' + sectionMap[id] + '</a>';
+        }).join('');
+        // solo-tool-ux-02: both pages ship and neither was reachable from here or
+        // from the palette. They are not sections of this page, so they carry a
+        // real href rather than a hash, and they sit after the sections because
+        // they are about the site rather than part of it.
+        links += SITE_PAGES.map(function (p) {
+          return '<a href="' + p.href + '">' + p.label + '</a>';
         }).join('');
         nav.innerHTML =
           '<a class="brand" href="#main"><span class="amp">&amp;</span> yesandeverything</a>' +
@@ -2565,6 +2580,9 @@
         var targets = [];
         Object.keys(sectionMap).forEach(function (id) {
           targets.push({ label: sectionMap[id], meta: 'section', kind: 'scroll', to: '#' + id, ic: '#' });
+        });
+        SITE_PAGES.forEach(function (p) {
+          targets.push({ label: p.label, meta: 'page', kind: 'link', to: p.href, ic: '\u2192' });
         });
         cards.forEach(function (card) {
           var name = card.dataset.name;

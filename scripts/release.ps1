@@ -82,6 +82,37 @@ try {
         exit 1
     }
 
+    # The Worker self-tests. They run offline against stand-in stores, they take
+    # under a second each, and nothing else ran them: the gate attempt counter
+    # (security-03) and the Guardian's session rules would both have shipped
+    # unexercised. A gate is the last place to find out a test was never run.
+    # security-02: the work queue came off every public surface on 2026-08-19 and
+    # the endpoint answers a private sentinel instead of 404ing. Nothing checked
+    # that it holds, and the way it stops holding is quiet: a collector change
+    # writes rows to the public key and every card still renders normally.
+    Write-Host "==== Step 2.4/6: queue privacy ====" -ForegroundColor Magenta
+    & (Join-Path $here "check-queue-privacy.ps1")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: the live queue feed is not private." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "==== Step 2.5/6: Worker self-tests ====" -ForegroundColor Magenta
+    foreach ($t in @(
+        "workers\gated-docs\srcttempts.selftest.mjs",
+        "workers\coiled-guardian\src\worker.selftest.mjs",
+        "workers\coiled-guardian\srcuth.selftest.mjs"
+    )) {
+        $full = Join-Path (Split-Path $here -Parent) $t
+        if (-not (Test-Path $full)) { continue }
+        & node $full | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Aborting release: $t failed. Re-run it to see which check." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host ("  ok  " + $t) -ForegroundColor Green
+    }
+
     Write-Host "==== Step 3/6: project-page prose staleness guard ====" -ForegroundColor Magenta
     # Prose-staleness guard. The version pill on every project page is stamped from that
     # project status JSON, so it is right the moment a release pushes, while the prose

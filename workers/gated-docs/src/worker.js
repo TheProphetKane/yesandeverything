@@ -11,6 +11,7 @@
 // arrangement committed the entire document here as base64 with the password in a variable
 // above it.
 
+import { ATTEMPT_MAX, clearFailures, lockedOut, recordFailure } from "./attempts.mjs";
 import {
   roleFor, issueCookie, sessionRole, clearCookie,
   loginPage, loginHeaders, docHeaders,
@@ -91,17 +92,31 @@ export default {
 
     // --- login (unauthenticated) ---
     if (rest === "/login" && request.method === "POST") {
+      // security-03: the 600 millisecond delay below is the floor and was the
+      // whole of it, so a run from one address could still spend all day at
+      // ninety guesses a minute with nothing recording that it happened. A
+      // locked-out caller never reaches the comparison.
+      if (await lockedOut(env.GATED_DOCS, doc.id || doc.prefix, request)) {
+        await new Promise((r) => setTimeout(r, 600));
+        return html(loginPage(doc, "Too many attempts. Try again shortly."), 429, loginHeaders());
+      }
       const form = await request.formData().catch(() => null);
       const role = form ? await roleFor(form.get("password"), doc, env) : null;
       if (role) {
+        // Clear the count, so somebody who mistyped twice does not carry it.
+        await clearFailures(env.GATED_DOCS, doc.id || doc.prefix, request);
         return html("", 303, {
           ...loginHeaders(),
           location: doc.prefix + "/",
           "set-cookie": await issueCookie(doc, role, env),
         });
       }
-      // Blunt brute-force cost, same as the architecture gate. Not a rate limiter: it makes a
-      // guessing run expensive without any state to keep or to get wrong.
+      // Blunt brute-force cost, same as the architecture gate. The counter above
+      // is the state; this is still the per-try price underneath it.
+      const n = await recordFailure(env.GATED_DOCS, doc.id || doc.prefix, request);
+      if (n >= ATTEMPT_MAX) {
+        console.warn(`[gate] ${doc.prefix}: ${n} wrong passwords from one address; locked out`);
+      }
       await new Promise((r) => setTimeout(r, 600));
       return html(loginPage(doc, "Incorrect password."), 401, loginHeaders());
     }

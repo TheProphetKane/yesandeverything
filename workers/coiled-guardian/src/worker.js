@@ -13,6 +13,7 @@
 // There is deliberately no assets binding. An assets binding serves static files before fetch()
 // runs, and a gate that can be skipped by a path is not a gate.
 
+import { ATTEMPT_MAX, clearFailures, lockedOut, recordFailure } from "./attempts.mjs";
 import {
   roleFor, issueCookie, sessionRole, clearCookies, isAuthor, reviewerOf, reviewerThrough,
   matchesShare, shareLink, LINK_SLUG, LINK_TTL, isLinkSlug, newLinkRole,
@@ -122,17 +123,29 @@ const handlers = {
     }
 
     if (rest === "/login" && request.method === "POST") {
+      // security-03, same as the sibling gate: the delay below was the whole of
+      // the defence, so a run from one address could keep guessing all day with
+      // nothing recording it. A locked-out caller never reaches the comparison.
+      if (await lockedOut(env.GATED_DOCS, "cg", request)) {
+        await new Promise((r) => setTimeout(r, 600));
+        return html(loginPage(BOOK, "Too many attempts. Try again shortly."), 429, loginHeaders());
+      }
       const form = await request.formData().catch(() => null);
       const role = form ? await roleFor(form.get("password"), BOOK, env) : null;
       if (role) {
+        await clearFailures(env.GATED_DOCS, "cg", request);
         return html("", 303, {
           ...loginHeaders(),
           location: BOOK.prefix + "/",
           "set-cookie": await issueCookie(BOOK, role, env),
         });
       }
-      // Blunt brute-force cost, the same as the other gate. Not a rate limiter: it makes a
-      // guessing run expensive without any state to keep or to get wrong.
+      // Blunt brute-force cost, the same as the other gate. The counter above is
+      // the state; this is still the per-try price underneath it.
+      const nAttempts = await recordFailure(env.GATED_DOCS, "cg", request);
+      if (nAttempts >= ATTEMPT_MAX) {
+        console.warn(`[gate] coiled-guardian: ${nAttempts} wrong passwords from one address; locked out`);
+      }
       await new Promise((r) => setTimeout(r, 600));
       return html(loginPage(BOOK, "Incorrect password."), 401, loginHeaders());
     }
