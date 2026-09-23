@@ -33,6 +33,35 @@ if (Test-Path $JsonPath) {
 $msg = $head[2]
 if ($msg -and $msg.Length -gt 160) { $msg = $msg.Substring(0, 157) + "..." }
 
+# observability-05 (2026-09-23): stale used to be a literal false, so the
+# dashboard's freshness badge and its stale-project counter could never fire
+# for this project. It is computed from the real age of the newest signal:
+# the last commit (this site has no releases apart from commits), the last
+# review report, or the last audit. Fourteen days with none of the three is
+# stale, and the reason names the ages so the card can say why.
+$staleFlag = $false
+$staleReason = $null
+try {
+  $signals = @()
+  if ($head[1]) { $signals += @{ name = "last commit"; at = [DateTimeOffset]::Parse($head[1]) } }
+  if ($existing -and $existing.barRaise -and $existing.barRaise.latestReportAt) {
+    $signals += @{ name = "last review"; at = [DateTimeOffset]::Parse($existing.barRaise.latestReportAt) }
+  }
+  if ($existing -and $existing.audit -and $existing.audit.lastRunAt) {
+    $signals += @{ name = "last audit"; at = [DateTimeOffset]::Parse($existing.audit.lastRunAt) }
+  }
+  if ($signals.Count -gt 0) {
+    $newest = $signals | Sort-Object { $_.at } -Descending | Select-Object -First 1
+    $ageDays = [math]::Floor(([DateTimeOffset]::Now - $newest.at).TotalDays)
+    if ($ageDays -ge 14) {
+      $staleFlag = $true
+      $staleReason = "nothing published for $ageDays days; the newest signal is the $($newest.name) at $($newest.at.ToString('yyyy-MM-dd'))"
+    }
+  }
+} catch {
+  # An unparseable timestamp is not staleness; the write goes on with the flag down.
+}
+
 $payload = [ordered]@{
   project = "Everything"
   displayName = $(if ($ctx -and $ctx.display_name) { $ctx.display_name } else { "Yes& Everything" })
@@ -46,10 +75,11 @@ $payload = [ordered]@{
   workTreeClean = $true   # the release commits everything, this file included
   audit = $(if ($existing -and $existing.audit) { $existing.audit } else { $null })
   barRaise = $(if ($existing -and $existing.barRaise) { $existing.barRaise } else { $null })
-  stale = $false
+  stale = $staleFlag
   # Cleared on every successful write, so a reason from a previous failure
-  # cannot outlive the failure it described (data-integrity-03).
-  staleReason = $null
+  # cannot outlive the failure it described (data-integrity-03). Set here only
+  # when the age rule above fired.
+  staleReason = $staleReason
   tags = $(if ($ctx -and $ctx.tags) { $ctx.tags } else { @("static-site", "orchestration", "release-pipeline", "public-voice") })
 }
 

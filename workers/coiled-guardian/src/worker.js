@@ -1,9 +1,9 @@
-// worker.js: the gate in front of the private manuscript at /coiledguardian.
+// worker.js: the gate in front of a private page set at /coiledguardian.
 //
-// The Coiled Guardian is an unpublished novel series written in X:\CoiledGuardian. It is not
-// public, it is intended to sell, and nothing about it may reach this repository, which is
-// public. The chapter bodies live in the GATED_DOCS key-value namespace, written by that
-// project's publish step, and are read back only after a session cookie validates.
+// The pages behind this gate are private and none of their content may reach this
+// repository, which is public. Their bodies live in the GATED_DOCS key-value namespace,
+// written by the owning project's own publish step, and are read back only after a session
+// cookie validates. This file holds no phrase and no page.
 //
 // Same shape as workers/gated-docs, with one difference that matters: that Worker serves one
 // document per prefix, and this one serves many pages under a single prefix. So the page is
