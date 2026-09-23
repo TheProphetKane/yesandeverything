@@ -3586,7 +3586,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     var m = metaFor(id);
     var todayK = dayKey(0), tok = 0;
     var byDay = byDayFor(id);
-    if (byDay[todayK]) tok = byDay[todayK].input + byDay[todayK].output;
+    if (byDay[todayK]) tok = totalTok(byDay[todayK]);
     var st = id !== "ALL" && LAST ? LAST.statuses[id] : null;
     gh.g.title = (gh.dir > 0 ? "next: " : "previous: ") + m.displayName;
     gh.dot.style.background = m.hue;
@@ -3670,11 +3670,17 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     var ul = el("div", { className: "usage-line", title: bfI
       ? "today's burn + lifetime incl. ~" + fmtTok(bfI.estTokens) + " / ~" + fmtUSD(bfI.estCostUSD) + " estimated from pre-log commits"
       : "today's burn and the all-time totals" });
+    var heldHere = !isAll && isWithheld(id);
     ul.appendChild(txt("today "));
-    ul.appendChild(el("b", { text: fmtTok(today.tok) }));
-    ul.appendChild(txt(" ("));
-    ul.appendChild(el("span", { className: "cost", text: fmtUSD(today.cost) }));
-    ul.appendChild(txt(") / all-time "));
+    if (heldHere) {
+      ul.appendChild(el("b", { text: "private", title: "daily figures are withheld from the public feed; the all-time total still counts them" }));
+      ul.appendChild(txt(" / all-time "));
+    } else {
+      ul.appendChild(el("b", { text: fmtTok(today.tok) }));
+      ul.appendChild(txt(" ("));
+      ul.appendChild(el("span", { className: "cost", text: fmtUSD(today.cost) }));
+      ul.appendChild(txt(") / all-time "));
+    }
     ul.appendChild(el("b", { text: fmtTok(allTok + (bfI ? bfI.estTokens : 0)) }));
     ul.appendChild(txt(" ("));
     ul.appendChild(el("span", { className: "cost", text: fmtUSD(allCost + (bfI ? bfI.estCostUSD : 0)) }));
@@ -3683,7 +3689,11 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     head.appendChild(ul);
     inner.appendChild(head);
 
-    inner.appendChild(buildFlow(id, byDay));
+    if (heldHere) {
+      inner.appendChild(el("div", { className: "list-sub", text: "The thirty-day curve for this project is withheld from the public feed, so no daily figure here is real. The all-time total above still counts every day." }));
+    } else {
+      inner.appendChild(buildFlow(id, byDay));
+    }
 
     var gauges = el("div", { className: "gauges" });
     // Chip vocabulary, identical in both branches and matching the three list tabs:
