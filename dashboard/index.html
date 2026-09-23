@@ -1122,6 +1122,10 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
   // project is never named here.
   // Guardian (the Coiled Guardian book) joined 2026-08-30 on the same usageOnly shape as
   // Skylight: tokens and cost from the collector, no status file and no queue rows ever.
+  // stalled: paused by Kane (D81, 2026-09-22: the survivors are Gnosis, Rising, Apothecary and
+  //   Guardian; the rest are stalled or dead). A stalled project keeps its slot, its card and its
+  //   history, and the card says so. The date normally comes from the paused block in the
+  //   project status file; the flag here is only for a project that publishes no status file.
   var PROJECTS = [
     { id: "Agents",       tag: "Agents",       displayName: "Yes& Agents",       hue: "#2f5fd0" },
     { id: "Apothecary",   tag: "Apothecary",   displayName: "Yes& Apothecary",   hue: "#c2b24a" },
@@ -1137,7 +1141,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     { id: "Ring",         tag: "Ring",         displayName: "Yes& Ring",         hue: "#ff5e7e" },
     { id: "Rising",       tag: "Rising",       displayName: "Brackish Rising",   hue: "#5fd6ff" },
     { id: "Scheduler",    tag: "Scheduler",    displayName: "Yes& Scheduler",    hue: "#b88aff", retired: "2026-08-25" },
-    { id: "Skylight",     tag: "Skylight",     displayName: "Yes& Skylight",     hue: "#82aaff", usageOnly: true }
+    { id: "Skylight",     tag: "Skylight",     displayName: "Yes& Skylight",     hue: "#82aaff", usageOnly: true, stalled: "2026-09-22" }
   ];
   // One project is excluded from the usage payload by the collector ($USAGE_EXCLUDE in
   // collect-usage.ps1), so it can never have a card. Counted, never named, so an absent
@@ -1172,6 +1176,7 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     ship: "how recently a commit was pushed",
     actions: "open findings from the latest review",
     milestone: "active milestone from the project context",
+    stalled: "paused by Kane: no review, no routine and no queue work until he brings it back; the repository, backups and pages stay",
     queue: "items waiting in the shared work queue",
     readout: "computed from the repo at release time",
     spark: "30 days of daily token totals",
@@ -1720,6 +1725,15 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
   // is a bug, a retired project is history, and a private one is a decision. It lives in
   // the legend spare cell because the footer is hidden on any screen under 1160px tall,
   // which is the whole fleet, and because the page must not grow a line to say it.
+  // The date a project was paused, from the paused block in its status file, or from the
+  // roster flag for a project that publishes none. Null for a project that is running.
+  function stalledSince(pid) {
+    var s = LAST && LAST.statuses && LAST.statuses[pid];
+    if (s && s.paused && s.paused.since) return s.paused.since;
+    var meta = null;
+    PROJECTS.forEach(function (pp) { if (pp.id === pid) meta = pp; });
+    return meta && meta.stalled ? meta.stalled : null;
+  }
   function rosterNote() {
     var bits = [], full = [];
     var orphans = unregisteredIds();
@@ -1731,6 +1745,12 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
     if (ret.length) {
       bits.push(ret.map(function (pp) { return pp.tag; }).join(", ") + " retired");
       full.push("retired, lifetime totals still counted, no slot on the wheel: " + ret.map(function (pp) { return pp.tag + " (" + pp.retired + ")"; }).join(", "));
+    }
+    var stalled = PROJECTS.filter(function (pp) { return !pp.retired && stalledSince(pp.id); });
+    if (stalled.length) {
+      bits.push(stalled.map(function (pp) { return pp.tag; }).join(", ") + " stalled");
+      full.push("stalled by Kane (D81, 2026-09-22): no review, no routine and no queue work until he brings them back; the repository, backups and pages stay: "
+        + stalled.map(function (pp) { return pp.tag + " (since " + stalledSince(pp.id) + ")"; }).join(", "));
     }
     if (PRIVATE_COUNT) {
       bits.push(PRIVATE_COUNT + " private");
@@ -3697,6 +3717,14 @@ Local session logs via <code>collect-usage.ps1</code> on a schedule &middot; cos
         c2.appendChild(txt(status.milestone.id + " " + mlabel + (status.milestone.status ? " (" + status.milestone.status + ")" : "")));
         activatable(c2, function (e) { e.stopPropagation(); openLists("done", id); });
         chips.appendChild(c2);
+      }
+      var since = stalledSince(id);
+      if (since) {
+        var pz = status.paused || {};
+        var c3 = el("span", { className: "chip stalled", title: TIPS.stalled + " · since " + since + (pz.reason ? " · " + pz.reason : "") });
+        c3.appendChild(el("span", { className: "k", text: "stalled" }));
+        c3.appendChild(txt("since " + since));
+        chips.appendChild(c3);
       }
       var gP = gatesOf(status);
       if (gP != null && gP > 0) bucketChip(chips, "to done", null, gP + " left", "the owner-anchored conditions standing between here and 100 percent complete", "done", id);

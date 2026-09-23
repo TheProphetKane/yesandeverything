@@ -52,8 +52,8 @@
     "latestReportAt": "2026-09-22T23:55:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 52,
-    "actionsClosed": 102,
+    "actionsOpen": 46,
+    "actionsClosed": 108,
     "health": 68,
     "lensScores": {
       "architecture": 71,
@@ -254,6 +254,42 @@
         "id": "version-pill-drift-02",
         "by": "rotating bar-raise, evening delta pass",
         "evidence": "CONTEXT.md:17, package.json:3 and the cache-buster at index.html:1397 all read 1.8.0, so no drift is present in this repository. The row had been reopened on 2026-09-22 because its earlier close keyed on a Hordes queue row; re-verified in-project this run rather than against a foreign project."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "auth-token-hygiene-02",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "The caddy recommendation and chat handlers take the account identity from the verified Supabase session rather than from the request body, which is the same fix auth-01 made for the research route in 0.59.0 applied to the two handlers it missed. The body value is ignored entirely rather than compared, because a comparison invites a later caller to trust the body half. Both client modules send the access token through the exported bearerHeader helper, so a call without it is a 401 rather than a recommendation charged to whoever the body named."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "data-integrity-15",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "Migration 0028 adds an append-only billing_events table keyed on the Stripe event id, with no foreign key to profiles, which is the whole point: it has to outlive the profile, and a foreign key would take the rows with it when an account is deleted. The worker writes the row before the entitlement upsert, so a crash between the two leaves a record with no entitlement rather than entitlement with no record. A conflict on the event id is the idempotency guard for a redelivery. Row-level security is on with no policy, so only the service key reaches it. The migration is on the pending list in supabase/README.md with a note that it is the only pending one on the money path."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "reliability-07",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "Every subscription event is checked against the newest one already applied before it touches the profile. An older event is acknowledged with a 200 and a reason rather than applied, which also stops Stripe retrying something that would be skipped every time. An event for a different subscription is skipped while the recorded one is still entitled. A profile with no stamp yet accepts its event, so accounts predating the migration are not frozen. The stamp is written as its own guarded upsert, never folded into the entitlement write: a profiles upsert naming a column the live schema lacks answers 400 and throws, and entitlement must never depend on a migration landing first. Seven checks in the webhook test cover it, including that last rule."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "security-17",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "The pre-commit scanner reads the role claim rather than the token shape. It decodes the middle segment of every signed token in the staged diff and blocks one whose claim is the service role, which is the credential that bypasses every row-level policy. The publishable key has the same shape and decodes to anon, so shape-matching alone would have blocked the key that is public by design; both cases are proved against invented fixtures, anon passing at exit 0 and service role blocking at exit 1. The Supabase secret-key prefix and the Mapbox secret-token prefix joined the pattern list at the same time."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "security-20",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "The AI proxy only forwards a model that is in the pricing table, and refuses an unknown one with a 400 naming the allowed set rather than substituting silently. The pricing fallback that priced an unknown model as Sonnet is gone, so an Opus call can no longer cost five times what the daily cap counted. Total characters across the system prompt and every message are capped at sixty thousand, which the message-count cap of fifty never bounded, and temperature is clamped to the zero-to-one range. Nothing else from the request body reaches Anthropic."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "solo-dev-voice-portfolio-02",
+        "by": "aged-packet pass 2026-09-22, oldest first",
+        "evidence": "216 long dashes in reader-facing lines across 29 files are recast to commas. Comments are deliberately exempt: they never render, and rewriting the other six hundred would have buried the change that matters. scripts/recast-long-dashes.py owns the rule and its --check mode is gate 0c of the preship gauntlet, so one cannot come back. The sign-in line also drops the collective voice: the magic-link sentence no longer says what somebody else will do for you. Every remaining first-person-plural hit in src is a code comment."
       }
     ],
     "closedThisRun": [
@@ -261,13 +297,6 @@
       "version-pill-drift-02"
     ],
     "actions": [
-      {
-        "id": "solo-dev-voice-portfolio-02",
-        "severity": "HIGH",
-        "title": "Recast each shipped string carrying a long dash to a comma, a period or a plain joining word, starting with the sign-in modal, the round view and the profile view, and rewrite the sign-in line to first-person singular.",
-        "lens": "public-voice-solo-dev-voice-portfolio",
-        "priority": 20
-      },
       {
         "id": "reliability-16",
         "severity": "HIGH",
@@ -286,20 +315,6 @@
         "id": "data-integrity-30",
         "severity": "HIGH",
         "title": "Merge pull request #27 and deploy it, then sweep collection_discs for duplicates on user, mold, maker and collected date for accounts that migrated on 1.x.",
-        "lens": "data-integrity",
-        "priority": 20
-      },
-      {
-        "id": "auth-token-hygiene-02",
-        "severity": "MED",
-        "title": "Route both handlers through the session verifier and send the access token from the two client modules.",
-        "lens": "cloud-edge-auth-token-hygiene",
-        "priority": 20
-      },
-      {
-        "id": "data-integrity-15",
-        "severity": "MED",
-        "title": "Add an append-only billing events table with no foreign key to profiles and insert a row there before each entitlement upsert.",
         "lens": "data-integrity",
         "priority": 20
       },
@@ -358,29 +373,6 @@
         "severity": "HIGH",
         "title": "Change the identity string to the self-identifying form the decision record specifies and add a crawl-policy check before each scrape, or amend the record.",
         "lens": "compliance-data-steward",
-        "priority": 15
-      },
-      {
-        "id": "security-17",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 15,
-        "redacted": true
-      },
-      {
-        "id": "security-20",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 15,
-        "redacted": true
-      },
-      {
-        "id": "reliability-07",
-        "severity": "MED",
-        "title": "Persist the Stripe event created timestamp beside the status and skip an incoming event older than what is stored for that customer.",
-        "lens": "reliability",
         "priority": 15
       },
       {
@@ -666,13 +658,6 @@
     ],
     "openFindings": [
       {
-        "id": "solo-dev-voice-portfolio-02",
-        "severity": "HIGH",
-        "priority": 20,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
         "id": "reliability-16",
         "severity": "HIGH",
         "priority": 20,
@@ -692,20 +677,6 @@
         "priority": 20,
         "runsOpen": 2,
         "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "auth-token-hygiene-02",
-        "severity": "MED",
-        "priority": 20,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "data-integrity-15",
-        "severity": "MED",
-        "priority": 20,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
       },
       {
         "id": "per-project-ps1-stack-05",
@@ -762,27 +733,6 @@
         "priority": 15,
         "runsOpen": 3,
         "firstSeen": "2026-09-15"
-      },
-      {
-        "id": "security-17",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "security-20",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "reliability-07",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-01"
       },
       {
         "id": "architecture-03",
@@ -1081,5 +1031,10 @@
     "release-pipeline",
     "public-voice"
   ],
+  "paused": {
+    "since": "2026-09-22",
+    "reason": "stalled under D81 (Kane, 2026-09-22): not among the four survivors, so no review, no routine and no development until he brings it back. The live service stays up for its paying customers, so its money path is still maintained: D-OPEN-35-style integrity briefs for it (D-OPEN-48) and the migration errand stay open.",
+    "evidence": "X:/DECISIONS.md D81; open queue rows dropped to the archive the same day with D81 in their drainNote, refound from the archive if the project returns"
+  },
   "schemaVersion": 1
 }
