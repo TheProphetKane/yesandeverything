@@ -52,8 +52,8 @@
     "latestReportAt": "2026-09-22T23:55:00Z",
     "verdict": "needs-attention",
     "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 25,
-    "actionsClosed": 129,
+    "actionsOpen": 22,
+    "actionsClosed": 132,
     "health": 68,
     "lensScores": {
       "architecture": 71,
@@ -416,6 +416,24 @@
         "id": "reliability-17",
         "by": "stalled-project drain 2026-09-22, Kane's ask",
         "evidence": "A charge.dispute.created event carries a Dispute, which has no customer field, so obj.customer read as undefined on every real chargeback and the handler logged 'is not a full reversal' while the payer kept Pro after taking their money back. The Dispute names its charge, so the charge is fetched and the customer comes off it. A failure to fetch throws into the outer catch and the webhook answers 5xx so Stripe retries: refusing to guess is right when the alternative is leaving entitlement with somebody who charged it back. The old fixture put a customer on the dispute, which a real one never has, and that is exactly what hid this; both fixtures carry the shapes Stripe sends now."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "data-integrity-23",
+        "by": "stalled-project drain 2026-09-22, Kane's ask",
+        "evidence": "Migration 0026 carries an owner-scoped update policy on course_favorites, on both the using and the with-check side. The table had select, insert and delete policies and no update policy, so row-level security denied every update on it, and the tombstones 0026 exists for ARE an update: the courses sync was broken for any account that had ever unstarred a course. The policy joins 0026 rather than taking a migration of its own because 0026 has not been pasted into the database editor yet and can still go in as one piece, which is what the finding asked for. supabase/README.md's pending row says what the migration now carries."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "security-21",
+        "by": "stalled-project drain 2026-09-22, Kane's ask",
+        "evidence": "The deployed allow-list carries the three real origins. Four loopback origins sat in it, so the live worker accepted http://localhost:8000 as a checkout and billing-portal return address, which means a live checkout session could be told to send a paying customer back to a local address. Local development puts them back through worker/.dev.vars, which wrangler reads for a local run and never deploys, and worker/.dev.vars.example carries the whole list with the reason. Fixing it also fixed the gate that would have blocked it: the secret scanner's filename rule refused the .example outright, so the only way past was an override that turns off the content patterns too. An .example is exempt while it still reads as a template, proved both ways, which is the same fix Ring's scanner took the same day."
+      },
+      {
+        "date": "2026-09-22",
+        "id": "security-22",
+        "by": "stalled-project drain 2026-09-22, Kane's ask",
+        "evidence": "shared_round_players_update is recreated with a with-check clause. It had a using clause alone, which decides which rows a caller may touch and says nothing about what the row may become, so a player could update their own row into a host row, move it onto another round, or flip an expired invitation back to accepted, all permitted because the row was theirs when they started. The with check splits the two callers the using clause already allows: a host may still write any row on their own round, which scorekeeper mode needs, and a player may write only their own row without changing its round or promoting themselves. Status stays theirs, because accepting or declining is the one thing a participant is meant to do with their own row. In 0026 with the favourites policy, ahead of the paste."
       }
     ],
     "closedThisRun": [
@@ -436,13 +454,6 @@
         "title": "Merge pull request #27 and deploy it, then sweep collection_discs for duplicates on user, mold, maker and collected date for accounts that migrated on 1.x.",
         "lens": "data-integrity",
         "priority": 20
-      },
-      {
-        "id": "data-integrity-23",
-        "severity": "HIGH",
-        "title": "Add an update policy scoped to the owning account to migration 0026 before it is next handed over for the paste into the database editor.",
-        "lens": "data-integrity",
-        "priority": 16
       },
       {
         "id": "security-23",
@@ -544,22 +555,6 @@
         "priority": 10
       },
       {
-        "id": "security-22",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 10,
-        "redacted": true
-      },
-      {
-        "id": "security-21",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "security",
-        "priority": 10,
-        "redacted": true
-      },
-      {
         "id": "kv-data-shape-05",
         "severity": "MED",
         "title": "Batch the per-key reads in chunks.",
@@ -648,13 +643,6 @@
         "priority": 20,
         "runsOpen": 2,
         "firstSeen": "2026-09-22"
-      },
-      {
-        "id": "data-integrity-23",
-        "severity": "HIGH",
-        "priority": 16,
-        "runsOpen": 5,
-        "firstSeen": "2026-09-08"
       },
       {
         "id": "security-23",
@@ -753,20 +741,6 @@
         "priority": 10,
         "runsOpen": 5,
         "firstSeen": "2026-09-01"
-      },
-      {
-        "id": "security-22",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
-      },
-      {
-        "id": "security-21",
-        "severity": "MED",
-        "priority": 10,
-        "runsOpen": 4,
-        "firstSeen": "2026-09-08"
       },
       {
         "id": "kv-data-shape-05",
