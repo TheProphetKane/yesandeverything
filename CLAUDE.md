@@ -119,7 +119,7 @@ webhook exists on the Discord side AND a script in that repo reads its file (202
 
 1. `DEPLOY.md` has the one-time setup notes, and anything DNS or Pages-config-related is documented there.
 2. For the two gated design documents, work flows from each project's own repo (`X:\HereBeHordes\scripts\publish-gdd.ps1`, `X:\BrackishRising\scripts\publish-gdd.ps1`), never the other way. See "Publishing the gated design documents" above.
-3. For per-project page content, mirror what the project's own canonical doc says, which is `docs/GDD.html` for Brackish Rising and `PROJECT_SPEC.md` for Apothecary, Gnosis and Coiled Guardian. Don't fabricate. Corrected 2026-09-23: the line named Scheduler's `DESIGN.md`, and Scheduler was retired on 2026-08-25.
+3. For per-project page content, mirror what the project's own source of truth says. Brackish Rising keeps its in `docs/GDD.html`; Apothecary, Gnosis and Coiled Guardian each keep theirs in a `PROJECT_SPEC.md` in their own repo, never in this one. Don't fabricate. Corrected 2026-09-23: the line named Scheduler's `DESIGN.md`, and Scheduler was retired on 2026-08-25.
 
 ## Hard-won hazards
 
