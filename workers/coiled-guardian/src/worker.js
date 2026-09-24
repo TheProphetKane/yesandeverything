@@ -77,9 +77,24 @@ async function readNotesStore(env, key = NOTES_KEY) {
 // it and wanted a copy she could print and write on). It carries every chapter's text, so it is
 // bounded exactly as the contents page is: a bounded reader gets the print page written for
 // their span, cg:print-r<through>, and never the full one, with the same no-fallback refusal.
+// Book two lives under /two (2026-09-23, the night its first chapter was written): the same
+// shape of keys with a book segment in them, cg:two:index, cg:two:ch-N and cg:two:print, all
+// written by the same publish step. It is the author's alone. A bounded reader was invited to
+// a stretch of book one, so every path under /two answers them the way a chapter past their
+// span does: the plain password form, which is the author's door and says nothing about what
+// stands behind it.
+const TWO = /^\/two(\/.*)?$/;
 const pageKey = (rest, through) => {
   if (rest === "" || rest === "/") return through ? "cg:index-r" + through : "cg:index";
   if (rest === "/print") return through ? "cg:print-r" + through : "cg:print";
+  if (TWO.test(rest)) {
+    if (through) return null;
+    const sub = rest.slice("/two".length);
+    if (sub === "" || sub === "/") return "cg:two:index";
+    if (sub === "/print") return "cg:two:print";
+    const t = /^\/ch-([1-9][0-9]{0,2})$/.exec(sub);
+    return t ? "cg:two:ch-" + t[1] : null;
+  }
   const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);
   if (!m) return null;
   if (through && Number(m[1]) > through) return null;
@@ -313,7 +328,7 @@ const handlers = {
       // chapter-shaped path past the span gets the same form, whether the chapter is written or
       // not, so the answer cannot be used to count what lies past it. It is also the author's
       // door: signed in there, every chapter opens, and no reader credential can take that away.
-      if (through && CHAPTER.test(rest)) {
+      if (through && (CHAPTER.test(rest) || TWO.test(rest))) {
         return html(loginPage(BOOK), 200, loginHeaders());
       }
       return html("Not found", 404, docHeaders());

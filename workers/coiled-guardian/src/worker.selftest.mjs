@@ -27,6 +27,9 @@ const store = new Map(Object.entries({
   "cg:ch-30": "CH-30",
   "cg:ch-31": "CH-31",
   "cg:ch-92": "CH-92",
+  "cg:two:index": "TWO-INDEX",
+  "cg:two:ch-1": "TWO-CH-1",
+  "cg:two:print": "TWO-PRINT",
 }));
 
 const TOKEN = "TvQ2m8Lx4Kd9Rb7Nw3Yc6Hf1";
@@ -229,6 +232,26 @@ const legacy = await worker.fetch(new Request(BASE + "/ch-1", { headers: { cooki
 is(await legacy.text(), "CH-1", "a session on the old shared slug still reads");
 is(/^cg_coiled_r=[0-9]+\.r:link-[a-z0-9]{10}\./.test(setCookies(legacy)[0] || ""), true,
    "and is reissued a slug of its own on that same request");
+
+// Book two, under /two, added 2026-09-23. The author reads it; nobody invited to a stretch of book
+// one learns that it exists, and the answer they get is the same password form a chapter past
+// their span gives, so nothing under /two can be counted or told apart from an unwritten page.
+console.log("book two is the author's alone");
+is((await get("/two", author)).body, "TWO-INDEX", "the author gets book two's contents page");
+is((await get("/two/", author)).body, "TWO-INDEX", "with or without the slash");
+is((await get("/two/ch-1", author)).body, "TWO-CH-1", "and its chapters");
+is((await get("/two/print", author)).body, "TWO-PRINT", "and its print edition");
+is((await get("/two/x", author)).status, 404, "a path under it that is not a page is nothing");
+is((await get("/twox", author)).status, 404, "and a path that only starts like it is nothing");
+is((await get("/two/ch-1", whole)).body, "TWO-CH-1", "the all-true invitation reads book two too");
+for (const [who, c] of [["a stranger", null], ["a bounded reader", nell], ["the link", link]]) {
+  for (const p of ["/two", "/two/ch-1", "/two/print"]) {
+    const r = await get(p, c);
+    is(r.status, 200, `${who} asking for ${p} gets the password form`);
+    is(r.body.includes("TWO"), false, `and no page of book two`);
+    is(r.body, (await get("/ch-999", c)).body, `the same answer as a chapter never written`);
+  }
+}
 
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);
