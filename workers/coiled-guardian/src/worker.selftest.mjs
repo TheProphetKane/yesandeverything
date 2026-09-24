@@ -253,5 +253,28 @@ for (const [who, c] of [["a stranger", null], ["a bounded reader", nell], ["the 
   }
 }
 
+// A note amended in its margin card (Kane, 2026-09-24) carries ed, the moment of the edit. A
+// device still holding the old words must not post them back over the new ones, in either order.
+console.log("an amended note keeps its amendment");
+store.set("cg:notes", JSON.stringify({ v: 1, notes: [
+  { id: "e1", at: "2026-09-24T10:00:00Z", text: "first words", kind: "comment" }] }));
+const post = (notes) => worker.fetch(new Request(BASE + "/api/notes", {
+  method: "POST", headers: { cookie: author }, body: JSON.stringify(notes),
+}), env);
+const e1 = async () => JSON.parse(store.get("cg:notes")).notes.find((n) => n.id === "e1");
+await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "amended words", kind: "edit",
+              ed: "2026-09-24T11:00:00Z" }]);
+is((await e1()).text, "amended words", "the edit lands over the stored words");
+is((await e1()).kind, "edit", "with its kind");
+await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "first words", kind: "comment" }]);
+is((await e1()).text, "amended words", "a stale copy with no edit stamp does not undo it");
+await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "older edit", ed: "2026-09-24T10:30:00Z" }]);
+is((await e1()).text, "amended words", "nor does an older edit");
+await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "newest", ed: "2026-09-24T12:00:00Z" }]);
+is((await e1()).text, "newest", "a newer edit wins");
+await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "newest", ed: "2026-09-24T12:00:00Z", del: 1, rm: 1 }]);
+await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "newest", ed: "2026-09-24T12:00:00Z" }]);
+is((await e1()).rm === 1 && (await e1()).del === 1, true, "a reader's delete holds against a copy from before it");
+
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);
