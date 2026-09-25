@@ -311,9 +311,18 @@ is((await get("/login", author)).body.includes("Access password"), true, "a rese
 is((await get("/rv/", author)).status, 404, "an entry pointing at the reader stores is dropped");
 is((await get("/ext/", author)).status, 404, "as is one pointing outside the book's keys");
 is((await get("/ch-9", author)).location, at("/book-a/ch-9"), "and a chapter-shaped slug never shadows a chapter");
+// Before the first publish that writes a table, the gate serves the addresses it served before
+// the retitle, with their old bounds, so a deploy ahead of the publish breaks nothing.
 store.delete("cg:books");
-is((await get("/book-a/ch-1", author)).status, 503, "with no table the author is told nothing is published");
-is((await get("/book-a/ch-1", author)).body.includes("cg:books"), true, "and which key is missing");
+is((await get("/", author)).body, "INDEX-FULL", "with no table the bare prefix is book one's contents page again");
+is((await get("/ch-92", author)).body, "CH-92", "book one's chapters answer at their old address");
+is((await get("/two/ch-1", author)).body, "TWO-CH-1", "and book two's under /two");
+is((await get("/book-a/ch-1", author)).status, 404, "while an address from the table is nothing yet");
+is((await get("/", nell)).body, "INDEX-R30", "a bounded reader keeps their span's contents page");
+is((await get("/ch-31", nell)).body.includes("CH-31"), false, "and their bound");
+is((await get("/two/ch-1", link)).body, (await get("/ch-999", link)).body,
+   "and book two is the same password form to the link as a chapter never written");
+is((await get("/two", link)).body.includes("TWO"), false, "with no page of it");
 store.set("cg:books", table);
 
 // A note amended in its margin card (Kane, 2026-09-24) carries ed, the moment of the edit. A

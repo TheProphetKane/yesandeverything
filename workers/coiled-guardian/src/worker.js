@@ -138,6 +138,28 @@ async function readSite(env) {
 // Location would name a book they were not invited to.
 const FORMER_ONE = /^\/(print|ch-[1-9][0-9]{0,2})$/;
 
+// The addresses as they were before the table, kept for the one moment the store has no table:
+// between this gate's deploy and the first publish that writes one. Book one at the bare prefix,
+// book two under /two and shut to every bounded reader, exactly as the gate served them, so the
+// order of the deploy and the publish costs nothing.
+const formerKey = (rest, through) => {
+  if (rest === "" || rest === "/") return through ? "cg:index-r" + through : "cg:index";
+  if (rest === "/print") return through ? "cg:print-r" + through : "cg:print";
+  const two = /^\/two(\/.*)?$/.exec(rest);
+  if (two) {
+    if (through) return null;
+    const sub = two[1] || "";
+    if (sub === "" || sub === "/") return "cg:two:index";
+    if (sub === "/print") return "cg:two:print";
+    const t = /^\/ch-([1-9][0-9]{0,2})$/.exec(sub);
+    return t ? "cg:two:ch-" + t[1] : null;
+  }
+  const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);
+  if (!m) return null;
+  if (through && Number(m[1]) > through) return null;
+  return "cg:ch-" + m[1];
+};
+
 const pageKey = (rest, through, books) => {
   const m = /^\/([a-z0-9-]+)(\/.*)?$/.exec(rest);
   const book = m && books.find((b) => b.slug === m[1]);
@@ -399,7 +421,14 @@ const handlers = {
 
     const through = reviewerThrough(role, env);
     const site = await readSite(env);
-    if (!site.home) return notPublished(SITE_KEY);
+    if (!site.home) {
+      const key = formerKey(rest, through);
+      if (!key) {
+        return through ? html(loginPage(BOOK), 200, loginHeaders()) : html("Not found", 404, docHeaders());
+      }
+      const body = await env.GATED_DOCS.get(key);
+      return body ? html(body, 200, docHeaders()) : notPublished(key);
+    }
 
     // The bare prefix is the home book's contents page, and book one's addresses from before
     // the retitle land where their page lives now. A bounded reader always lands on book one,
