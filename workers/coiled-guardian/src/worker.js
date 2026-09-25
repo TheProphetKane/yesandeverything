@@ -44,6 +44,25 @@ const notesKeyFor = (role) => {
   return slug ? "cg:review:" + slug : NOTES_KEY;
 };
 
+// Bar-raise 2026-09-24, security-02: the POST body was capped at 512 kilobytes on the wire,
+// but nothing checked what was inside it, and nothing capped how many notes could pile up in
+// the store across repeated posts. A note is small by nature: an id, the text or anchor it
+// quotes, who wrote it, and the stamps around it. Anything shaped wrong is dropped before the
+// merge rather than stored, the same way a note from the author's own store is already
+// dropped on a reader session. NOTES_STORE_MAX bounds the store itself, per key, so an
+// unbounded stream of posts cannot grow one key forever even where every single note is valid.
+const NOTE_TEXT_MAX = 20000;   // one margin comment or quoted anchor, generous for anything typed by hand
+const NOTE_FIELD_MAX = 300;    // id, who, at, ed, kind: identifiers and stamps, never prose
+const NOTES_STORE_MAX = 4000;  // notes per key; oldest by "at" are dropped first past this
+
+function isValidNote(n) {
+  if (!n || typeof n !== "object" || Array.isArray(n)) return false;
+  const str = (v, max) => v === undefined || (typeof v === "string" && v.length <= max);
+  return str(n.id, NOTE_FIELD_MAX) && str(n.who, NOTE_FIELD_MAX) && str(n.at, NOTE_FIELD_MAX)
+    && str(n.ed, NOTE_FIELD_MAX) && str(n.kind, NOTE_FIELD_MAX)
+    && str(n.text, NOTE_TEXT_MAX) && str(n.anchor, NOTE_TEXT_MAX);
+}
+
 // Stored as { v, notes } since the reliability-01 optimistic-concurrency fix
 // (2026-09-03/04); a bare array is the pre-fix shape and reads as v 0 so an old
 // stored value keeps working without a migration step.
@@ -253,7 +272,7 @@ const handlers = {
         let notes;
         try { notes = JSON.parse(text); } catch { notes = null; }
         if (!Array.isArray(notes)) return html('{"error":"expected an array"}', 400, jsonHeaders);
-        notes = notes.filter(notTheAuthors);
+        notes = notes.filter(notTheAuthors).filter(isValidNote);
 
         // Merge, never overwrite (2026-08-29, the night a refresh appeared to eat
         // annotations). A client posts its whole array, but another device or the
@@ -291,8 +310,12 @@ const handlers = {
           const loose = [];
           cur.filter(notTheAuthors).forEach((n) => fold(byId, loose, n));
           notes.forEach((n) => fold(byId, loose, n));
-          return [...byId.values()].concat(loose)
+          const merged = [...byId.values()].concat(loose)
             .sort((a, b) => ((a.at || "") < (b.at || "") ? -1 : (a.at || "") > (b.at || "") ? 1 : 0));
+          // Cap the store so it cannot grow forever across repeated posts. Sorted ascending
+          // by "at" above, so the slice below keeps the newest NOTES_STORE_MAX and drops the
+          // oldest first; a note with no "at" sorts first and is the first dropped too.
+          return merged.length > NOTES_STORE_MAX ? merged.slice(merged.length - NOTES_STORE_MAX) : merged;
         };
 
         // Optimistic-concurrency check (bar-raise 2026-09-03, reliability-01). Workers KV

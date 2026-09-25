@@ -17,11 +17,15 @@ $here = $PSScriptRoot
 $secretsDir = "X:\.secrets\YesAndEverything"
 $secretsFile = Join-Path $secretsDir "gated-docs-access.txt"
 
+# The one pinned wrangler version every deploy script in this repository reads
+# (bar-raise 2026-09-24, dependency-01); see scripts/wrangler-version.ps1.
+. (Join-Path $here "..\..\scripts\wrangler-version.ps1")
+
 $env:CLOUDFLARE_API_TOKEN = (Get-Content 'X:\.secrets\.cloudflare-token' -Raw).Trim()
 
 # ---------------------------------------------------------------- 1. the namespace
 Write-Host "==== 1/4: key-value namespace ====" -ForegroundColor Magenta
-$existing = cmd /c "npx wrangler kv namespace list 2>&1" | Out-String
+$existing = cmd /c "npx --yes wrangler@$WranglerVersion kv namespace list 2>&1" | Out-String
 $nsId = $null
 try {
     $parsed = $existing | ConvertFrom-Json
@@ -32,7 +36,7 @@ try {
 if ($nsId) {
     Write-Host "namespace already exists; reusing it." -ForegroundColor Green
 } else {
-    $created = cmd /c "npx wrangler kv namespace create GATED_DOCS 2>&1" | Out-String
+    $created = cmd /c "npx --yes wrangler@$WranglerVersion kv namespace create GATED_DOCS 2>&1" | Out-String
     Write-Host $created
     if ($created -match '"?id"?\s*[:=]\s*"([0-9a-f]{32})"') { $nsId = $Matches[1] }
     if (-not $nsId) { throw "could not read the new namespace id out of wrangler's output" }
@@ -126,4 +130,4 @@ Write-Host ""
 Write-Host "==== 4/4: next ====" -ForegroundColor Magenta
 Write-Host "  publish the documents:  X:\HereBeHordes\scripts\publish-gdd.ps1"
 Write-Host "                          X:\BrackishRising\scripts\publish-gdd.ps1"
-Write-Host "  then deploy the gate:   npx wrangler deploy   (from this folder)"
+Write-Host "  then deploy the gate:   npx --yes wrangler@$WranglerVersion deploy   (from this folder)"

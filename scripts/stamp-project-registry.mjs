@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeFileAtomic } from "./atomic-write.mjs";
-import { DASHBOARD_ROWS, STATUS_ROWS } from "./registry.mjs";
+import { PROJECTS, DASHBOARD_ROWS, STATUS_ROWS } from "./registry.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
@@ -75,6 +75,41 @@ for (const t of TARGETS) {
   }
   writeFileAtomic(t.file, out);
   console.log(`  stamped  ${t.rel}`);
+}
+
+// The homepage's Live / Pre-MVP / Post-MVP badges are a human's call, and this registry
+// has no field for that nuance and never should. What it does own is stalled and retired,
+// each a single dated fact, and a hand-authored badge already drifted from both once
+// (bar-raise 2026-09-24, strategic-kill-this-01): four cards still read Live or Pre-MVP
+// weeks after D81 stalled the projects behind them. So a card whose project is stalled or
+// retired gets its badge driven from here, through the same <!--live:key--> marker shape
+// update-project-pages.mjs already uses for version and milestone spans; a card whose
+// project is neither keeps whatever a person wrote, since there is nothing here to drive
+// it from.
+{
+  const file = join(ROOT, "index.html");
+  const rel = "index.html";
+  const src = readFileSync(file, "utf8");
+  let out = src;
+  for (const p of PROJECTS) {
+    if (!p.slug) continue;
+    const badge = p.retired ? '<span class="status retired">Retired</span>'
+      : p.stalled ? '<span class="status stalled">Stalled</span>'
+      : null;
+    if (!badge) continue;
+    const re = new RegExp(`(<!--live:status:${p.id}-->)([\\s\\S]*?)(<!--/live-->)`);
+    if (!re.test(out)) throw new Error(`${rel}: no live:status marker for ${p.id}`);
+    out = out.replace(re, (_, a, _old, b) => a + badge + b);
+  }
+  if (out === src) {
+    console.log(`  current  ${rel}`);
+  } else if (check) {
+    console.error(`  DRIFT    ${rel} badges do not match data/projects.json`);
+    drift++;
+  } else {
+    writeFileAtomic(file, out);
+    console.log(`  stamped  ${rel}`);
+  }
 }
 
 if (check && drift) {

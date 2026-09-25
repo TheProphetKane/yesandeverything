@@ -21,6 +21,26 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const REGISTRY = JSON.parse(readFileSync(join(ROOT, "data", "projects.json"), "utf8"));
 export const PROJECTS = REGISTRY.projects;
 
+/* Bar-raise 2026-09-24, data-integrity-01: SLUGS and PUBLIC_COPY below are built with
+ * Object.fromEntries, which keeps whichever entry sharing a key comes last and throws the
+ * rest away with no error. A duplicate id or slug in data/projects.json would silently drop
+ * a project out of the sitemap and the homepage stamping rather than fail the release, and
+ * nobody would learn why the project's card stopped updating. Checked once, right after the
+ * registry loads, so a duplicate is a thrown error every consumer hits at import time. */
+export function assertUnique(field, projects) {
+  const seen = new Set();
+  for (const p of projects) {
+    const value = p[field];
+    if (value === undefined) continue;
+    if (seen.has(value)) {
+      throw new Error(`data/projects.json: duplicate ${field} "${value}" (every project needs a unique ${field})`);
+    }
+    seen.add(value);
+  }
+}
+assertUnique("id", PROJECTS);
+assertUnique("slug", PROJECTS);
+
 /* Every project with a public page, slug to dashboard id, in slug order so the
  * shape matches the literal this replaced. */
 export const SLUGS = Object.fromEntries(

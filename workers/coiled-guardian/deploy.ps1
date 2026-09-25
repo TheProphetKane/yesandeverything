@@ -12,6 +12,10 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+# The one pinned wrangler version every deploy script in this repository reads
+# (bar-raise 2026-09-24, dependency-01); see scripts/wrangler-version.ps1.
+. (Join-Path $PSScriptRoot "..\..\scripts\wrangler-version.ps1")
+
 if (-not $env:CLOUDFLARE_API_TOKEN) {
     $tokenFile = "X:\.secrets\.cloudflare-token"
     if (Test-Path $tokenFile) { $env:CLOUDFLARE_API_TOKEN = (Get-Content $tokenFile -Raw).Trim() }
@@ -25,7 +29,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host "worker self-test failed; nothing deployed
 
 Write-Host "==== deploy ====" -ForegroundColor Magenta
 $ErrorActionPreference = "Continue"
-& npx --yes wrangler deploy
+& npx --yes "wrangler@$WranglerVersion" deploy
 if ($LASTEXITCODE -ne 0) { Write-Host "wrangler deploy failed." -ForegroundColor Red; exit 1 }
 
 Write-Host "==== live gate check ====" -ForegroundColor Magenta

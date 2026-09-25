@@ -276,5 +276,35 @@ await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "newest", ed: "2026-09
 await post([{ id: "e1", at: "2026-09-24T10:00:00Z", text: "newest", ed: "2026-09-24T12:00:00Z" }]);
 is((await e1()).rm === 1 && (await e1()).del === 1, true, "a reader's delete holds against a copy from before it");
 
+// bar-raise 2026-09-24, security-02: the notes POST took any array under 512 kilobytes and
+// merged it in with no check on what a single note held and no cap on how large the store
+// could grow. These prove both guards actually bite.
+console.log("malformed notes are dropped, not stored");
+store.set("cg:notes", JSON.stringify({ v: 1, notes: [] }));
+await post([
+  { id: "v1", at: "2026-09-24T13:00:00Z", text: "a fine note" },
+  { id: "v2", at: "2026-09-24T13:00:00Z", text: 12345 },             // text must be a string
+  { id: 999, at: "2026-09-24T13:00:00Z", text: "id is a number" },   // id must be a string
+  "not even an object",
+  { id: "v3", at: "2026-09-24T13:00:00Z", text: "x".repeat(30000) }, // text over the cap
+]);
+const notesNow = () => JSON.parse(store.get("cg:notes")).notes.map((n) => n.id);
+is(notesNow().includes("v1"), true, "a well-formed note is stored");
+is(notesNow().includes("v2"), false, "a non-string text is dropped");
+is(notesNow().includes("v3"), false, "text over the field cap is dropped");
+is(notesNow().length, 1, "the number-id and bare-string entries never made it in either");
+
+console.log("the store caps its size");
+const seeded = [];
+for (let i = 0; i < 4000; i++) {
+  seeded.push({ id: "seed-" + i, at: "2026-01-01T00:00:00." + String(i).padStart(4, "0") + "Z", text: "seed" });
+}
+store.set("cg:notes", JSON.stringify({ v: 1, notes: seeded }));
+await post([{ id: "newest", at: "2099-01-01T00:00:00Z", text: "pushes the store over the cap" }]);
+const capped = JSON.parse(store.get("cg:notes")).notes;
+is(capped.length, 4000, "the store never grows past its cap");
+is(capped.some((n) => n.id === "newest"), true, "the newest note survives the cap");
+is(capped.some((n) => n.id === "seed-0"), false, "the oldest note is dropped to make room");
+
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);
