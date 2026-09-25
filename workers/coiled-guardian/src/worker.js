@@ -96,28 +96,60 @@ async function readNotesStore(env, key = NOTES_KEY) {
 // it and wanted a copy she could print and write on). It carries every chapter's text, so it is
 // bounded exactly as the contents page is: a bounded reader gets the print page written for
 // their span, cg:print-r<through>, and never the full one, with the same no-fallback refusal.
-// Book two lives under /two (2026-09-23, the night its first chapter was written): the same
-// shape of keys with a book segment in them, cg:two:index, cg:two:ch-N and cg:two:print, all
-// written by the same publish step. It is the author's alone. A bounded reader was invited to
-// a stretch of book one, so every path under /two answers them the way a chapter past their
-// span does: the plain password form, which is the author's door and says nothing about what
-// stands behind it.
-const TWO = /^\/two(\/.*)?$/;
-const pageKey = (rest, through) => {
-  if (rest === "" || rest === "/") return through ? "cg:index-r" + through : "cg:index";
-  if (rest === "/print") return through ? "cg:print-r" + through : "cg:print";
-  if (TWO.test(rest)) {
-    if (through) return null;
-    const sub = rest.slice("/two".length);
-    if (sub === "" || sub === "/") return "cg:two:index";
-    if (sub === "/print") return "cg:two:print";
-    const t = /^\/ch-([1-9][0-9]{0,2})$/.exec(sub);
-    return t ? "cg:two:ch-" + t[1] : null;
-  }
-  const m = /^\/ch-([1-9][0-9]{0,2})$/.exec(rest);
-  if (!m) return null;
-  if (through && Number(m[1]) > through) return null;
-  return "cg:ch-" + m[1];
+// Every book lives at /coiledguardian/<its title> (Kane, 2026-09-25: "it should be
+// /coiledguardian/<title>"). The titles are not in this file, because this repository is public
+// and the book is not. The owning project's publish step writes the address table into the
+// store beside the pages, under cg:books:
+//
+//   { "home": "<slug>", "books": [ { "slug": "<slug>", "keys": "cg:" }, ... ] }
+//
+// so a retitle moves the addresses with the next publish and needs no deploy. The keys never
+// follow a retitle: cg:* for book one and cg:two:* for book two, as they have always been
+// written, so a note, a reader span or a page already in the store stays where it is.
+//
+// The table names addresses and nothing more. Who reads what stays in this file: the reader
+// spans and the share link belong to book one, the book whose pages sit at the bare cg:
+// prefix, and every other book is the author's (and the all-true invitation's). Book two opened
+// 2026-09-23. A bounded reader was invited to a stretch of book one, so every path into another
+// book answers them the way a chapter past their span does: the plain password form, which is
+// the author's door and says nothing about what stands behind it. An entry the gate cannot use,
+// with a reserved slug or keys outside the page prefixes, is dropped rather than served.
+const SITE_KEY = "cg:books";
+const SPAN_KEYS = "cg:";
+const SLUG_OK = /^[a-z0-9][a-z0-9-]{0,39}$/;
+const KEYS_OK = /^cg:(?:[a-z0-9]+:)?$/;
+const RESERVED = new Set(["login", "logout", "r", "api", "print", "review", "notes"]);
+
+async function readSite(env) {
+  let raw;
+  try { raw = JSON.parse(await env.GATED_DOCS.get(SITE_KEY)); } catch { raw = null; }
+  const books = (raw && Array.isArray(raw.books) ? raw.books : []).filter((b) =>
+    b && typeof b.slug === "string" && typeof b.keys === "string" && SLUG_OK.test(b.slug)
+    && !RESERVED.has(b.slug) && !/^ch-/.test(b.slug) && KEYS_OK.test(b.keys)
+    && b.keys !== "cg:review:");
+  const home = books.find((b) => b.slug === (raw && raw.home))
+    || books.find((b) => b.keys === SPAN_KEYS) || null;
+  return { books, home };
+}
+
+// The addresses served before the retitle: book one's pages at the bare prefix, book two's
+// under /two, the segment of its keys. Anybody allowed the page is sent on to where it lives
+// now. A bounded reader asking under /two gets the password form and never the redirect, whose
+// Location would name a book they were not invited to.
+const FORMER_ONE = /^\/(print|ch-[1-9][0-9]{0,2})$/;
+
+const pageKey = (rest, through, books) => {
+  const m = /^\/([a-z0-9-]+)(\/.*)?$/.exec(rest);
+  const book = m && books.find((b) => b.slug === m[1]);
+  if (!book) return null;
+  if (through && book.keys !== SPAN_KEYS) return null;
+  const sub = m[2] || "";
+  if (sub === "" || sub === "/") return book.keys + (through ? "index-r" + through : "index");
+  if (sub === "/print") return book.keys + (through ? "print-r" + through : "print");
+  const c = /^\/ch-([1-9][0-9]{0,2})$/.exec(sub);
+  if (!c) return null;
+  if (through && Number(c[1]) > through) return null;
+  return book.keys + "ch-" + c[1];
 };
 
 // A header given as an array is appended once per value, which is how a sign-out clears both
@@ -131,8 +163,22 @@ const html = (body, status = 200, headers = {}) => {
   return new Response(body, { status, headers: h });
 };
 
-// A chapter-shaped path, whether or not this reader may have it.
-const CHAPTER = /^\/ch-[1-9][0-9]{0,2}$/;
+// A redirect inside the gate, never cached, so a retitle can move an address again.
+const moved = (to) => html("", 302, docHeaders({ location: BOOK.prefix + to }));
+
+// Signed in and there is nothing to serve: the publish step has not run, or it wrote under a
+// different key. Said plainly rather than as a 404, because a 404 here would read as a wrong link
+// and send somebody looking in the wrong place.
+function notPublished(key) {
+  console.error("GATED_DOCS has no body under key " + key);
+  return html(
+    `<!doctype html><meta charset="utf-8"><title>Not published</title>` +
+    `<body style="font:16px/1.6 system-ui;padding:48px;max-width:60ch">` +
+    `<h1>Not published yet</h1><p>You are signed in, but nothing has been published under ` +
+    `<code>${key}</code>. The book's publish step writes it; run that and reload.</p></body>`,
+    503, docHeaders()
+  );
+}
 
 // Two handlers on one object, named rather than reached through `this`, so the gate never
 // depends on how the runtime binds a method call.
@@ -352,34 +398,38 @@ const handlers = {
     if (request.method !== "GET") return html("Method Not Allowed", 405, loginHeaders());
 
     const through = reviewerThrough(role, env);
-    const key = pageKey(rest, through);
+    const site = await readSite(env);
+    if (!site.home) return notPublished(SITE_KEY);
+
+    // The bare prefix is the home book's contents page, and book one's addresses from before
+    // the retitle land where their page lives now. A bounded reader always lands on book one,
+    // whatever the table calls home, so no redirect ever names another book to them.
+    const one = site.books.find((b) => b.keys === SPAN_KEYS);
+    if (rest === "" || rest === "/") {
+      const land = through ? one : site.home;
+      return land ? moved("/" + land.slug + "/") : html(loginPage(BOOK), 200, loginHeaders());
+    }
+    if (one && FORMER_ONE.test(rest)) return moved("/" + one.slug + rest);
+
+    const key = pageKey(rest, through, site.books);
     if (!key) {
       // A chapter past a bounded reader's span answers with the plain password form and nothing
       // else (Kane, 2026-09-22: "Make it a password prompt if they click next on 30", and "I dont
-      // want people to even know a chapter exists before I make it available"). Every
-      // chapter-shaped path past the span gets the same form, whether the chapter is written or
-      // not, so the answer cannot be used to count what lies past it. It is also the author's
-      // door: signed in there, every chapter opens, and no reader credential can take that away.
-      if (through && (CHAPTER.test(rest) || TWO.test(rest))) {
-        return html(loginPage(BOOK), 200, loginHeaders());
-      }
+      // want people to even know a chapter exists before I make it available"). Every path a
+      // bounded reader may not have gets the same form, whether the chapter is written or not
+      // and whether the book exists or not, so the answer cannot be used to count what lies past
+      // the span or to find a book by its name. It is also the author's door: signed in there,
+      // every chapter opens, and no reader credential can take that away.
+      if (through) return html(loginPage(BOOK), 200, loginHeaders());
+      // A book's address from before the retitle is the segment of its keys (/two for cg:two:).
+      const m = /^\/([a-z0-9]+)(\/.*)?$/.exec(rest);
+      const was = m && site.books.find((b) => b.keys === "cg:" + m[1] + ":");
+      if (was) return moved("/" + was.slug + (m[2] || "/"));
       return html("Not found", 404, docHeaders());
     }
 
     const body = await env.GATED_DOCS.get(key);
-    if (!body) {
-      // Signed in and there is nothing to serve: the publish step has not run, or it wrote
-      // under a different key. Said plainly rather than as a 404, because a 404 here would read
-      // as a wrong link and send somebody looking in the wrong place.
-      console.error("GATED_DOCS has no body under key " + key);
-      return html(
-        `<!doctype html><meta charset="utf-8"><title>Not published</title>` +
-        `<body style="font:16px/1.6 system-ui;padding:48px;max-width:60ch">` +
-        `<h1>Not published yet</h1><p>You are signed in, but nothing has been published under ` +
-        `<code>${key}</code>. The book's publish step writes it; run that and reload.</p></body>`,
-        503, docHeaders()
-      );
-    }
+    if (!body) return notPublished(key);
 
     return html(body, 200, docHeaders());
   },
