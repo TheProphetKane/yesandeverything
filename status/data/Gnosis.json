@@ -6,19 +6,19 @@
     "pct": 55,
     "anchored": "2026-09-23"
   },
-  "version": "0.3.651",
+  "version": "0.3.652",
   "lastCommit": {
-    "message": "REDACTED: this text named a weakness and the file it lives in, which together are an address. Severity and project are kept; the location is in the project's own report under X:\\PortfolioOps.",
-    "at": "2026-09-25T12:16:53-05:00",
-    "sha": "2807361c"
+    "message": "Answer ingest 2026-09-26: three questions minted with proposals (Lead Dragon Wyrmling, Time and Place, Embershade); both pending answers already folded; link graph clean",
+    "at": "2026-09-26T06:08:10-05:00",
+    "sha": "0b83dc8b"
   },
   "liveUrl": "https://gnosis.yesandeverything.com",
   "repoUrl": "https://github.com/TheProphetKane/yesandgnosis",
-  "lastReleaseAt": "2026-09-25T12:16:53-05:00",
-  "lastReleaseMessage": "REDACTED: this text named a weakness and the file it lives in, which together are an address. Severity and project are kept; the location is in the project's own report under X:\\PortfolioOps.",
-  "workTreeClean": true,
+  "lastReleaseAt": "2026-09-26T06:08:10-05:00",
+  "lastReleaseMessage": "Answer ingest 2026-09-26: three questions minted with proposals (Lead Dragon Wyrmling, Time and Place, Embershade); both pending answers already folded; link graph clean",
+  "workTreeClean": false,
   "stale": false,
-  "updatedAt": "2026-09-25T12:18:00-05:00",
+  "updatedAt": "2026-09-26T06:08:59-05:00",
   "backlog": {
     "count": 0,
     "items": []
@@ -50,7 +50,7 @@
     },
     {
       "k": "changelog entries",
-      "v": "651"
+      "v": "652"
     },
     {
       "k": "build.mjs lines",
@@ -65,59 +65,208 @@
     "release-pipeline"
   ],
   "barRaise": {
-    "latestReportPath": "docs/audits/markdown files/BAR_RAISE-2026-09-20.md",
-    "latestReportAt": "2026-09-20T12:02:57Z",
-    "verdict": "needs-attention",
-    "topFinding": "The release pipeline cannot run. Six questions were minted today against a ceiling of three, so the build exits non-zero at its own cap gate and the release script throws before it reaches push, deploy or notify. Behind that sit 327 uncommitted paths left by a session that stopped at 01:36 this morning, including two core documents modified in both the index and the working tree and five staged deletions. The oldest defect is still the worst: three key-value writers fall back to an empty map when their read fails and write that empty map over everyone's data. Ten findings from 2026-09-05 have sat in the queue for fifteen days with nothing draining them.",
-    "actionsOpen": 0,
+    "latestReportPath": "docs/audits/markdown files/BAR_RAISE-2026-09-26.md",
+    "latestReportAt": "2026-09-26T11:50:00Z",
+    "verdict": "working",
+    "topFinding": "Gnosis is healthy: every finding from 2026-09-20 stayed closed, the release pipeline ran clean through 107 commits, and health rose from 72 to 85. The worst open item is a lost-update race. The standing and downtime endpoints write shared records without the revision check that /api/pc, the fog store and the shop endpoints all enforce, and downtime shares pc:<name> with the character sheet and shop trades. Behind it sit three guard gaps: the lore-audit checks for the two source-material hard rules still look for the retired K:\\~DnD path, gate-auth.mjs has no tests, and nothing notices when the daily ingest or lore audit skips a day, as both did on 2026-09-25.",
+    "actionsOpen": 9,
     "actionsClosed": 73,
-    "health": 72,
+    "health": 85,
     "lensScores": {
-      "architecture": 60,
-      "reliability": 68,
-      "security": 80,
-      "performance": 66,
-      "data-integrity": 58,
-      "maintainability": 72,
-      "solo-tool-ux": 82,
-      "cost-economics": 90,
-      "dependency": 79,
-      "observability": 76,
-      "strategic-kill-this": 64,
-      "compliance-data-steward": 66,
-      "cloud-edge-worker-cpu-budget": 70,
-      "cloud-edge-kv-data-shape": 60,
-      "cloud-edge-auth-token-hygiene": 70,
-      "release-pipeline-ps1-stack": 76,
-      "release-pipeline-discord-notify": 68,
-      "release-pipeline-version-pill-drift": 90,
-      "release-pipeline-gate-page-publish": 78
+      "architecture": 72,
+      "reliability": 80,
+      "security": 90,
+      "performance": 82,
+      "data-integrity": 80,
+      "maintainability": 78,
+      "solo-tool-ux": 88,
+      "cost-economics": 92,
+      "dependency": 87,
+      "observability": 80,
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 78,
+      "cloud-edge-worker-cpu-budget": 85,
+      "cloud-edge-kv-data-shape": 90,
+      "cloud-edge-auth-token-hygiene": 92,
+      "release-pipeline-ps1-stack": 85,
+      "release-pipeline-discord-notify": 85,
+      "release-pipeline-version-pill-drift": 93,
+      "release-pipeline-gate-page-publish": 92
     },
-    "actions": [],
+    "actions": [
+      {
+        "severity": "MED",
+        "title": "Require the caller's last-seen rev in both endpoints and refuse with 409 stale on a mismatch, matching /api/pc, /api/fog and the shop endpoints.",
+        "lens": "data-integrity",
+        "id": "data-integrity-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Add tests/gate-auth.test.mjs covering token expiry, signature tampering, a malformed session id, and revocation followed by a read.",
+        "lens": "maintainability",
+        "id": "maintainability-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Continue the extraction that produced web/renderers.mjs, web/build-gates.mjs and web/shop-page.mjs, one page type per module, so build.mjs only orchestrates.",
+        "lens": "architecture",
+        "id": "architecture-01",
+        "priority": 15
+      },
+      {
+        "severity": "MED",
+        "title": "Update the CODE-07 pathspec and the CODE-08 pattern in tools/lore-audit/audit.mjs to match G:\\Archive\\Tabletop and its Books folder as well as the old path.",
+        "lens": "compliance-data-steward",
+        "id": "compliance-data-steward-01",
+        "priority": 12
+      },
+      {
+        "severity": "MED",
+        "title": "Wrap both env.QA.get calls in /api/pc in the same try/catch with console.error and a named fallback that loadShop and the standing loader use.",
+        "lens": "reliability",
+        "id": "reliability-02",
+        "priority": 12
+      },
+      {
+        "severity": "MED",
+        "title": "Record the Chrome version beside SIGNED_OFF.json and have check_fit.py warn when the installed version differs, the way release.ps1 floors Node and wrangler.",
+        "lens": "dependency",
+        "id": "dependency-01",
+        "priority": 12
+      },
+      {
+        "severity": "MED",
+        "title": "Add a freshness check for the ingest and lore-audit dates beside tools/check-snapshot-fresh.mjs so a stale routine shows up in release.ps1 rather than by reading changelog dates.",
+        "lens": "observability",
+        "id": "observability-01",
+        "priority": 12
+      },
+      {
+        "severity": "MED",
+        "title": "Give both items a disposition in PROJECT_SPEC.md: a section 5b entry or backlog row with a plan, or a recorded cut in section 5's history, and drop them from completion.remaining if cut.",
+        "lens": "strategic-kill-this",
+        "id": "strategic-kill-this-01",
+        "priority": 8
+      },
+      {
+        "severity": "MED",
+        "title": "Precompile one regular expression per gated term outside the per-page loop and reuse it across every page.",
+        "lens": "performance",
+        "id": "performance-01",
+        "priority": 6
+      }
+    ],
     "deferred": [
       {
         "severity": "LOW",
-        "title": "A resumed release after a crash between the post and the marker cleanup can repost the same version notification.",
+        "id": "release-pipeline-discord-notify-05",
         "lens": "release-pipeline-discord-notify",
-        "reason": "low severity, only reachable through a crash in a narrow window",
-        "id": "release-pipeline-discord-notify-05"
+        "title": "A resumed release after a crash between the notification post and the in-flight marker cleanup reposts the same notification.",
+        "reason": "low severity, only reachable through a crash in a narrow window; re-verified 2026-09-26 at scripts/release.ps1:715-722 (also reported as reliability-03)"
       }
     ],
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "data-integrity-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "architecture-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "compliance-data-steward-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "reliability-02",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "dependency-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "observability-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "medium",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      },
+      {
+        "id": "performance-01",
+        "severity": "medium",
+        "priority": 6,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-26"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
           "data-integrity",
-          "release-pipeline-ps1-stack"
+          "solo-tool-ux"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "reliability",
+          "architecture",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
           "solo-tool-ux"
         ],
-        "runsSeen": 2
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "dependency",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "maintainability",
+          "security"
+        ],
+        "runsSeen": 1
       }
     ],
     "closedLog": [
