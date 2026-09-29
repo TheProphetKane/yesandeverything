@@ -38,8 +38,8 @@
   "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
   "workTreeClean": false,
   "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-09-28.md",
-    "latestReportAt": "2026-09-28T06:11:53Z",
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-09-29.md",
+    "latestReportAt": "2026-09-29T06:12:25Z",
     "findings": {
       "critical": 0,
       "high": 0,
@@ -48,95 +48,196 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-09-21.md",
-    "latestReportAt": "2026-09-21T11:48:54Z",
-    "verdict": "needs-attention",
-    "topFinding": "The campaign that four releases built does not survive a restart: campaign.gd saves after every mission but nothing in source/ ever calls its load_from, so relaunching the game throws away every held site, record page and Faculty point while a valid save sits on disk (reliability-06). The same week's release back half also stopped short: v0.65.3 shipped with every version marker agreeing, yet the release marker, the dev-log post, the backlog notify and the audit digest still sit at v0.65.2, and release.ps1 now carries a duplicate play-test step whose first copy names a path that cannot exist. The first real profile of the played build reads about half the frame-rate target at the target load, but its own baseline drifted 27.8 percent, past the 15 percent limit the project set for trusting a bench. Hook the campaign load first; it is one call and it is the defect a player meets.",
-    "actionsOpen": 0,
-    "actionsClosed": 116,
-    "actions": [],
-    "deferred": [
+    "latestReportPath": "docs/BAR_RAISE-2026-09-28.md",
+    "latestReportAt": "2026-09-28T12:02:41Z",
+    "verdict": "in-progress",
+    "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+    "actionsOpen": 6,
+    "actionsClosed": 120,
+    "actions": [
       {
-        "id": "playability-05",
-        "severity": "HIGH",
-        "title": "Hatchery destruction and terrain reclamation are still scaffolding while ten live missions place hatcheries.",
-        "lens": "game-design-playability",
-        "reason": "Brackish Rising design ruling"
+        "id": "performance-09",
+        "severity": "MED",
+        "title": "Profile the baked draw path in isolation, then either fix its draw cost or raise LIVE_RIG_BUDGET to match the measurement.",
+        "lens": "performance",
+        "priority": 20
       },
       {
-        "id": "playability-09",
+        "id": "architecture-08",
         "severity": "MED",
-        "title": "The wave pulse fires every 600 seconds against a locked 90-180 second cadence.",
+        "title": "Add a FRAME_BUCKETS pair to check_dual_path_drift.py PAIRS, or hoist the constant into one shared source both paths read.",
+        "lens": "architecture",
+        "priority": 15
+      },
+      {
+        "id": "maintainability-07",
+        "severity": "MED",
+        "title": "Split run_tests.gd by subsystem or add #region groups, and extend the file-size ratchet to tests/.",
+        "lens": "maintainability",
+        "priority": 15
+      },
+      {
+        "id": "playability-05",
+        "severity": "MED",
+        "title": "Wire a per-structure spawn timer that consumes the declared spawn constants, and play c03 headless to confirm it.",
         "lens": "game-design-playability",
-        "reason": "Brackish Rising design ruling"
+        "priority": 15
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "title": "Enable debug/file_logging/enable_file_logging in project.godot before the first external build.",
+        "lens": "observability",
+        "priority": 12
+      },
+      {
+        "id": "security-04",
+        "severity": "MED",
+        "title": "REDACTED: a MED severity finding in the security lens is withheld from the public copy. See this project's own bar-raise report for detail.",
+        "lens": "security",
+        "priority": 8,
+        "redacted": true
+      }
+    ],
+    "deferred": [
+      {
+        "id": "performance-10",
+        "severity": "MED",
+        "title": "The target-load frame time (400 enemies plus 40 units) is on record only from a debug binary, at about double the 16.67 ms budget.",
+        "lens": "performance",
+        "reason": "needs the Godot 4.6.2 export templates installed on the profiling machine"
       },
       {
         "id": "playability-10",
         "severity": "LOW",
-        "title": "The Sonic Pressure meter is still a color-and-text readout pending the artist's gauge.",
+        "title": "The Sonic Pressure gauge is still a text readout pending the artist's treatment.",
         "lens": "game-design-playability",
-        "reason": "waiting on an artist delivery"
+        "reason": "waiting on the artist's gauge delivery"
+      },
+      {
+        "id": "sound-design-discipline-02",
+        "severity": "LOW",
+        "title": "The game still ships mute; the audio is commissioned externally with no delivery date.",
+        "lens": "game-design-sound-design-discipline",
+        "reason": "waiting on the externally commissioned audio"
+      },
+      {
+        "id": "scale-architecture-08",
+        "severity": "LOW",
+        "title": "Four files have sat uncommitted in the main tree since 2026-09-23: the Lantern go-opaque implementation, which removes the horde-fade chain from occluder_fades.gd, enemy_pool.gd and enemy_spatial.gd.",
+        "lens": "game-design-scale-architecture",
+        "reason": "Waiting on Kane's Brackish Rising design ruling, which OPEN-LOOPS.md has carried since 2026-09-23: keep the half-alpha show-through, one rule for a building over a friendly unit and over the horde alike, or hold the building opaque and let it hide the rank standing in front of it. Re-verified 2026-09-28: the working tree parses, the headless suite passes 2241 of 2241 on it, no caller of the removed chain survives, and both screenshots are already rendered (docs/proofs/v0.72.0-lantern-stackcheck-2026-09-23.png for the half-alpha reading, docs/proofs/v0.72.0-lantern-stackcheck-opaque-2026-09-23.png for the opaque one). The work is backed up as origin branch lantern-opaque-wip at 5a6e0b6 and as docs/proofs/lantern-opaque.patch, so nothing is at risk while it waits. Not committed to main, because shipping it decides the ruling."
       }
     ],
-    "health": 65,
+    "health": 82,
     "lensScores": {
-      "architecture": 78,
-      "reliability": 58,
-      "security": 68,
-      "performance": 58,
-      "data-integrity": 74,
-      "maintainability": 62,
-      "solo-tool-ux": 74,
-      "cost-economics": 68,
-      "dependency": 74,
+      "architecture": 82,
+      "reliability": 84,
+      "security": 84,
+      "performance": 76,
+      "data-integrity": 80,
+      "maintainability": 80,
+      "solo-tool-ux": 92,
+      "cost-economics": 90,
+      "dependency": 76,
       "observability": 78,
-      "strategic-kill-this": 56,
-      "compliance-data-steward": 92,
-      "game-design-playability": 62,
-      "game-design-scope-discipline": 66,
-      "game-design-scale-architecture": 58,
-      "game-design-asset-pipeline": 68,
-      "game-design-voice-and-tone": 55,
-      "game-design-sound-design-discipline": 58,
-      "game-design-art-direction-consistency": 30,
-      "game-design-save-format-stability": 74,
-      "release-pipeline-per-project-ps1-stack": 64,
-      "release-pipeline-discord-notify-wiring": 45,
-      "release-pipeline-version-pill-drift": 92,
-      "release-pipeline-gate-page-publish": 63
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 88,
+      "game-design-playability": 68,
+      "game-design-scope-discipline": 82,
+      "game-design-scale-architecture": 78,
+      "game-design-asset-pipeline": 80,
+      "game-design-voice-and-tone": 82,
+      "game-design-sound-design-discipline": 78,
+      "game-design-art-direction-consistency": 80,
+      "game-design-save-format-stability": 78,
+      "release-pipeline-per-project-ps1-stack": 85,
+      "release-pipeline-discord-notify-wiring": 90,
+      "release-pipeline-version-pill-drift": 95,
+      "release-pipeline-gate-page-publish": 92
     },
-    "openFindings": [],
-    "tensionsOpen": [
+    "openFindings": [
       {
-        "lenses": [
-          "strategic-kill-this",
-          "game-design-scope-discipline"
-        ],
-        "runsSeen": 1
+        "id": "performance-09",
+        "severity": "MED",
+        "priority": 20,
+        "runsOpen": 2,
+        "firstSeen": "2026-09-21"
       },
+      {
+        "id": "architecture-08",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-28"
+      },
+      {
+        "id": "maintainability-07",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-28"
+      },
+      {
+        "id": "playability-05",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 2,
+        "firstSeen": "2026-09-21"
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-28"
+      },
+      {
+        "id": "security-04",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-28"
+      }
+    ],
+    "tensionsOpen": [
       {
         "lenses": [
           "performance",
           "maintainability"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
+      },
+      {
+        "lenses": [
+          "game-design-playability",
+          "strategic-kill-this"
+        ],
+        "runsSeen": 1
       },
       {
         "lenses": [
           "security",
-          "performance"
+          "solo-tool-ux"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "architecture",
-          "data-integrity"
+          "strategic-kill-this",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "data-integrity",
+          "reliability"
         ],
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-09-21: closed on verification: architecture-03 (mirror guard in scripts/check_best_practices.py and tests/run_tests.gd). sound-design-discipline-02 re-graded LOW under locked decision v0.57.8 and left the action list without closing. Return leg found no queue closure for any other open id that the code confirms fixed.",
+    "reconcileNote": "2026-09-28: previous openFindings was empty, so no queue closures to verify. 37 of the 44 findings in BAR_RAISE-2026-09-21 were re-verified fixed in the tree by the discovery pass, 2 closed by ruling (D82, D-OPEN-47). Auto-enqueued: 10 (performance-09, architecture-08, maintainability-06, maintainability-07, playability-05, scope-discipline-05, strategic-kill-this-05, observability-02, asset-pipeline-06, security-04) Second pass 2026-09-28 18:36-19:18 -05:00 (the Monday slot fired twice): the review was not re-run, since the 12:02Z run of the same day holds the full 24-lens fan-out. Four record findings were fixed in the tree instead and closed with evidence (maintainability-06, asset-pipeline-06, strategic-kill-this-05, scope-discipline-05), shipped as commit dbeeac3 plus the ignored .project-context.json, with the whole preship gauntlet green on the pre-commit hook including 2241 headless tests. scale-architecture-08 moved to deferred on Kane's ruling rather than staying an open finding nobody may act on.",
     "closedLog": [
       {
         "date": "2026-09-22",
@@ -550,6 +651,30 @@
         "id": "strategic-kill-this-01",
         "by": "orchestrator session 2026-09-23, working the work-available layout",
         "evidence": "Ruled by Kane on 2026-09-22 (D82, D-OPEN-38): the combat tuning pass shipped in v0.73.0 and the Hatchery build is next week's backlog P1. The question the finding asked is answered."
+      },
+      {
+        "date": "2026-09-28",
+        "id": "maintainability-06",
+        "by": "rotating bar-raise second pass 2026-09-28 18:36-19:18 -05:00",
+        "evidence": "Fixed and verified: .project-context.json M1 bullet now records the destruction handler that shipped in BrackishRising commit 3ead8e4 on 2026-09-26, read back at hatchery.gd:44-50 where take_damage calls CoralRecedingLib.trigger at zero hit points, the same line brood_mound.gd:44 and leviathan_cyst.gd:41 carry. The bullet keeps the still-true gap, the spawn loop that nothing reads."
+      },
+      {
+        "date": "2026-09-28",
+        "id": "asset-pipeline-06",
+        "by": "rotating bar-raise second pass 2026-09-28 18:36-19:18 -05:00",
+        "evidence": "Fixed and verified: the stale bake bullet is gone from .project-context.json. tools/bake_spine_sheets.gd carries five configs (shambler, scout, lunger, rifleman, marksman), scripts/check_baked_sheets.py reports OK on five baked sheets, and KNOWN_UNBAKED is an empty set."
+      },
+      {
+        "date": "2026-09-28",
+        "id": "strategic-kill-this-05",
+        "by": "rotating bar-raise second pass 2026-09-28 18:36-19:18 -05:00",
+        "evidence": "Fixed and shipped in commit dbeeac3: BACKLOG.md M3 reads Missions 2 through 5 as CUT against the ten authored campaign missions c01_coldwater through c10_one_league, with the Leviathan Cyst boss fight named as the one piece still owed on bk-cyst. The difficulty row reads DONE against the five tiers on mission.gd difficulty and the design document's bk-difficulty default of done; the inter-mission save row reads DONE 2026-09-23 with v0.65.0 for the write and v0.73.0 for the read-back."
+      },
+      {
+        "date": "2026-09-28",
+        "id": "scope-discipline-05",
+        "by": "rotating bar-raise second pass 2026-09-28 18:36-19:18 -05:00",
+        "evidence": "Fixed and shipped in commit dbeeac3: the M5+ V2 row for Tommy and Harpoonist now points at bk-units-v1, following the table's own MOVED to V1 precedent. Verified against docs/GDD.html:1436 (bk-units-v1, scope v1, names both), the v1 unit chart that prices the Harpoonist in Food and Gold, and its four-tier research doctrine."
       }
     ]
   },
