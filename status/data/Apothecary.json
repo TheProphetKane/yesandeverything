@@ -38,69 +38,78 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-09-23.md",
-    "latestReportAt": "2026-09-23T23:44:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-09-30.md",
+    "latestReportAt": "2026-09-30T11:39:39Z",
     "verdict": "working",
-    "topFinding": "Every defect the morning review named is fixed and shipped, checked file by file tonight rather than taken from the commit messages: the default label follows the chamomile record with a test holding the two together, typing into a section title no longer destroys the focused input, the printed label takes the theme ink in place of the invisible gold, flushPrintStage runs before both print and export. All five test suites pass at v1.3.1. One closure did not hold. The duplicate-key guard written for data/aliases.json and the two maps in data/herb-to-illustration.json sits nested inside the herbs.json loop at test-data-integrity.mjs:450-458, so it runs only when herbs.json itself carries a duplicate top-level key, which it does not; the suite reports success without the scan having looked. An independent scan tonight found no duplicate keys in any of the three files, so the data is sound today, while the guard meant to catch tomorrow's is dead code.",
-    "actionsOpen": 0,
+    "topFinding": "Apothecary holds at v1.3.2 with every closure from the 2026-09-23 review still true on a file-by-file re-read, including the duplicate-key guard that was dead code last week: test-data-integrity.mjs:147-154 now runs the aliases and illustration-map scans at top level. The one open action is on the release pipeline. The dev-log dedupe file still reads v1.3.1, last written 2026-09-23 13:47, while v1.3.2 shipped 2026-09-24 22:21 and its mirror and dashboard steps landed, so the step 5 post for v1.3.2 failed or was skipped and nothing recorded it beyond a console line. Six low findings are polish; none touches runtime behaviour.",
+    "actionsOpen": 1,
     "actionsClosed": 66,
-    "actions": [],
+    "actions": [
+      {
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "severity": "MED",
+        "title": "Run scripts/discord-notify.ps1 for v1.3.2, confirm the dev-log post lands and the dedupe file advances, and if the webhook itself fails, record why in DEPLOY.md.",
+        "lens": "release-pipeline-discord-notify-wiring",
+        "priority": 12
+      }
+    ],
     "deferred": [],
-    "health": 85,
+    "health": 92,
     "lensScores": {
-      "architecture": 94,
-      "reliability": 82,
+      "architecture": 95,
+      "reliability": 92,
       "security": 95,
-      "performance": 89,
-      "data-integrity": 72,
-      "maintainability": 80,
-      "solo-tool-ux": 78,
-      "cost-economics": 95,
+      "performance": 90,
+      "data-integrity": 95,
+      "maintainability": 92,
+      "solo-tool-ux": 90,
+      "cost-economics": 97,
       "dependency": 95,
       "observability": 94,
-      "strategic-kill-this": 85,
-      "compliance-data-steward": 58,
+      "strategic-kill-this": 90,
+      "compliance-data-steward": 88,
       "generative-art-schema-driven-correctness": 94,
       "generative-art-print-fidelity": 90,
-      "generative-art-palette-discipline": 82,
+      "generative-art-palette-discipline": 92,
       "release-pipeline-per-project-ps1-stack": 92,
-      "release-pipeline-discord-notify-wiring": 85,
-      "release-pipeline-version-pill-drift": 80,
-      "release-pipeline-gate-page-publish": 76
+      "release-pipeline-discord-notify-wiring": 80,
+      "release-pipeline-version-pill-drift": 95,
+      "release-pipeline-gate-page-publish": 92
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-09-30"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
           "compliance-data-steward",
           "strategic-kill-this"
         ],
-        "runsSeen": 3,
+        "runsSeen": 4,
         "note": "promote via adr-promoter: how much provenance and medical-register work a finished personal tool owes"
-      },
-      {
-        "lenses": [
-          "data-integrity",
-          "maintainability"
-        ],
-        "runsSeen": 1
       },
       {
         "lenses": [
           "generative-art-print-fidelity",
           "performance"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
-          "reliability",
-          "release-pipeline-discord-notify-wiring"
+          "release-pipeline-discord-notify-wiring",
+          "reliability"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       }
     ],
-    "reconcileNote": "Closed on verified evidence 2026-09-23: maintainability-06 (data/label-templates.js:61-71 describes the removal of the dead fields list accurately and cites PROJECT_SPEC.md section 4.7 at :139-160, which carries no such list). Deferred finding release-pipeline-gate-page-publish-02 also closed on evidence, outside the actionsClosed count because a deferred row is not an open action: X:/YesAndEverything/index.html:1829 and X:/YesAndEverything/projects/apothecary/index.html:102 both read v1.2.0 against the source pill at index.html:101, and the mirror is byte-identical across all 156 files. Re-verified as STILL TRUE rather than closed: reliability-04 (no timeout at src/util/export-png.js:27-45, no button disable at src/ui/editor.js:775-779), solo-tool-ux-01 (no tabindex and no keydown anywhere in src/ui/layout-designer.js), reliability-02 (the catch at scripts/discord-notify.ps1:126-129 sets no exit code and release.ps1:330-332 checks none, unlike steps 4 and 6), compliance-data-steward-04 (data/symbols/SOURCES.md:21-22 and :36-38 still unresolved, no credit in index.html or README.md), release-pipeline-version-pill-drift-02 (the writer never calls check-version-pill.ps1 at all, in any mode, which corrects the previous run's premise). The enqueue backfill for carried findings did not run, per the ruling of 2026-09-22 in DECISION_BATCH-2026-08-31.md item 0: build-aged-packets.py reads openFindings directly, so minting rows would put the same work in front of a session twice. Evening verification pass 2026-09-23 23:44 UTC, second firing of the rotating slot: every one of the nineteen action items in this morning's report was re-checked against the code at v1.3.1 (87687b7) rather than against its closure note. Eighteen hold on evidence; the five findings the morning note re-verified as STILL TRUE (reliability-04, reliability-02, solo-tool-ux-01, compliance-data-steward-04, release-pipeline-version-pill-drift-02) all shipped later the same day in v1.3.0. One closure is withdrawn: data-integrity-02 was logged closed on the claim that the duplicate-key scan covers data/aliases.json and both maps in data/herb-to-illustration.json, and the scan is dead code, nested inside the herbs.json duplicate loop at test-data-integrity.mjs:450-458 whose body never executes. Its closedLog entry is removed and the finding is re-filed as data-integrity-02-v2 with the new evidence. actionsClosed stays at 65, because that field is the cumulative count of everything ever closed and the status contract holds that it may rise and never fall; the withdrawal is carried by the reopened finding and by the missing closedLog entry, which is what the drain and the dashboard read. Health moves 78 to 85 and the verdict moves needs-attention to working: the four lens scores the morning report attributed to now-verified-fixed regressions are restored to the pre-regression values that report names (performance 58 to 89, print fidelity 58 to 90, palette discipline 58 to 82, dev-log notify wiring 45 to 85), and no other score was touched, because no lens was re-run. An independent duplicate-key scan of herbs.json, aliases.json and herb-to-illustration.json found none, so no data defect is hiding behind the dead guard.",
+    "reconcileNote": "2026-09-30: previous run carried no openFindings, so no close leg applied. Re-verified on evidence rather than closure notes: data-integrity-02-v2 holds (test-data-integrity.mjs:147-154 and :451-459 scan aliases.json and both herb-to-illustration maps at top level), the version pill agrees at v1.3.2 across PROJECT_SPEC.md:5, CHANGELOG.md:5 and index.html:108, and the YesAndEverything mirror carries v1.3.2. New MEDIUM release-pipeline-discord-notify-wiring-01 confirmed by reading scripts/.discord_last_posted.txt and its modified time this run.",
     "closedLog": [
       {
         "date": "2026-09-02",
