@@ -20,55 +20,107 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-09-24.md",
-    "latestReportAt": "2026-09-24T11:47:12Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-10-01.md",
+    "latestReportAt": "2026-10-01T11:40:37Z",
     "verdict": "working",
-    "topFinding": "The hub is live and healthy, and the one real exposure this run found was closed in the same pass: the dashboard audit tool added 2026-09-23 left an 81 MB headless Chrome profile, cookies and history included, unignored in scripts/, where the next plain release's git add -A would have published it; .gitignore now excludes it. What remains is the homepage, whose prose and four status badges still present Chains, Hordes, Budget and Ring as live two days after D81 stalled them, while data/projects.json already carries the stalled field nothing propagates.",
-    "actionsOpen": 0,
+    "topFinding": "The hub is live and every action from the 2026-09-24 review is verified fixed in the code. The real defect this week was in the repository, not the site: a pull --rebase --autostash at 2026-09-30 06:40 left dashboard/data/usage.json unmerged, so the hub index could not build a tree and any plain commit failed for a full day with nothing raising it. This run cleared the entry and kept the working file; the open work is to stop the autostash path from conflicting on generated files and to make a stuck merge fail loudly. DEPLOY.md still documents the retired deploy and DNS setup.",
+    "actionsOpen": 3,
     "actionsClosed": 86,
-    "actions": [],
-    "deferred": [],
-    "health": 83,
-    "lensScores": {
-      "architecture": 80,
-      "reliability": 92,
-      "security": 66,
-      "performance": 87,
-      "data-integrity": 85,
-      "maintainability": 84,
-      "solo-tool-ux": 90,
-      "cost-economics": 79,
-      "dependency": 80,
-      "observability": 78,
-      "strategic-kill-this": 70,
-      "compliance-data-steward": 86,
-      "static-site-build-config": 84,
-      "static-site-page-weight": 88,
-      "static-site-link-rot": 94,
-      "static-site-gh-pages-quirks": 84,
-      "static-site-seo-and-open-graph": 88,
-      "static-site-accessibility-baseline": 84
-    },
-    "openFindings": [],
-    "tensionsOpen": [
+    "actions": [
       {
-        "lenses": [
-          "dependency",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
+        "id": "maintainability-01",
+        "severity": "MED",
+        "title": "Rewrite DEPLOY.md to the Actions-source Pages deploy, Cloudflare DNS and scripts/release.ps1, or cut it to a pointer and drop the CLAUDE.md 'When in doubt' reference to it.",
+        "lens": "maintainability",
+        "priority": 15
       },
+      {
+        "id": "data-integrity-02",
+        "severity": "MED",
+        "title": "Make the hub status-commit path set aside the generated dashboard/data files before its pull --rebase --autostash, so a usage-refresh rewrite cannot leave the hub index unmerged again.",
+        "lens": "data-integrity",
+        "priority": 12
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "title": "Add an unmerged-index and conflict-marker check over dashboard/data and status/data to a routine that runs at least daily, so a stuck merge in the hub fails loudly the same day.",
+        "lens": "observability",
+        "priority": 12
+      }
+    ],
+    "deferred": [
+      {
+        "id": "gh-pages-quirks-01",
+        "severity": "MED",
+        "lens": "static-site-gh-pages-quirks",
+        "title": "Pages certificate authorization last reported stuck at bad_authz; the served certificate is good to 2026-11-25.",
+        "reason": "needs Kane's hands: remove and re-add the custom domain in the Pages settings before 2026-11-25, then confirm Enforce HTTPS"
+      }
+    ],
+    "health": 89,
+    "lensScores": {
+      "architecture": 84,
+      "reliability": 91,
+      "security": 91,
+      "performance": 88,
+      "data-integrity": 88,
+      "maintainability": 82,
+      "solo-tool-ux": 91,
+      "cost-economics": 91,
+      "dependency": 88,
+      "observability": 84,
+      "strategic-kill-this": 90,
+      "compliance-data-steward": 90,
+      "static-site-build-config": 86,
+      "static-site-page-weight": 90,
+      "static-site-link-rot": 93,
+      "static-site-gh-pages-quirks": 84,
+      "static-site-seo-and-open-graph": 93,
+      "static-site-accessibility-baseline": 92
+    },
+    "openFindings": [
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-01"
+      },
+      {
+        "id": "data-integrity-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-01"
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-01"
+      }
+    ],
+    "tensionsOpen": [
       {
         "lenses": [
           "architecture",
           "security"
         ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "reliability",
+          "observability"
+        ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "performance",
-          "maintainability"
+          "strategic-kill-this",
+          "static-site-seo-and-open-graph"
         ],
         "runsSeen": 1
       }
