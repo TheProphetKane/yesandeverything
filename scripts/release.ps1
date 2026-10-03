@@ -28,6 +28,12 @@ $here = $PSScriptRoot
 # repo; if it exits leaving the cwd elsewhere, callers get stranded.
 Push-Location
 
+# The pre-commit hook (2026-10-02): scripts/hooks/pre-commit is the tracked source; this puts it
+# back in .git/hooks when it is missing or has drifted, so an ordinary commit meets the same
+# secret scan as this release.
+& python (Join-Path $here "hooks\install-hooks.py")
+if ($LASTEXITCODE -ne 0) { Write-Host "release stopped: the pre-commit hook could not be installed." -ForegroundColor Red; Pop-Location; exit 1 }
+
 try {
     Write-Host "==== Step 1/6: dashboard JSON integrity guard ====" -ForegroundColor Magenta
     & (Join-Path $here "check-status-json.ps1")

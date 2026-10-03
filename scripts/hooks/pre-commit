@@ -1,0 +1,73 @@
+#!/bin/sh
+# Tracked source for .git/hooks/pre-commit, written 2026-10-02 on the Scheduler pattern: a
+# hook that lives only under .git/ is lost by a fresh clone or a wiped hooks folder, and
+# nothing says so. scripts/hooks/install-hooks.py copies this file into place when the
+# installed hook is missing or differs from it, and
+# X:\PortfolioOps\scripts\check-precommit-hook-source.py compares the two every night.
+#
+# Gates: secret shapes and file names, Python parse, the index-state check, and the prose
+# ratchet on staged files. Routines commit dashboard/data and status/data JSON unattended, so
+# a commit that stages only those files meets the secret scan and the index check, nothing
+# else. Nothing here prompts or touches the network.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+root=$(pwd)
+blocked=0
+
+# 1. Secret shapes in the lines this commit adds, and secret file names among the files it
+# stages. The token patterns are put together from pieces, so this file never matches its
+# own text when it is the thing being committed. GUARD_OVERRIDE=1 lets a known false match
+# through, the same escape scripts/check-secrets.ps1 offers in the other repositories.
+u=_
+pats="sk${u}live${u}[A-Za-z0-9]{8}|rk${u}live${u}[A-Za-z0-9]{8}|whsec${u}[A-Za-z0-9]{16}"
+pats="$pats|ghp${u}[A-Za-z0-9]{30}|github${u}pat${u}[A-Za-z0-9_]{30}|sk-ant-[A-Za-z0-9_-]{20}"
+pats="$pats|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|sbp${u}[a-f0-9]{40}"
+pats="$pats|\bre${u}[A-Za-z0-9]{24,}|discord(app)?\.com/api/webhooks/[0-9]"
+pats="$pats|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+hits=$(git diff --cached -U0 --no-color --no-ext-diff | grep '^+' | grep -v '^+++' \
+       | grep -E -e "$pats" | cut -c1-120)
+names=$(git diff --cached --name-only --diff-filter=ACMR \
+        | grep -E -e '(^|/)\.env($|\.)|\.dev\.vars$|\.pem$|\.token$|(^|/)\.secrets/|\.cloudflare-token|\.github-pat|(^|/)id_(rsa|ed25519)$')
+if [ -n "$hits$names" ]; then
+    echo "pre-commit: refused, the staged change carries a secret shape:"
+    [ -n "$hits" ] && echo "$hits" | sed 's/^/  line: /'
+    [ -n "$names" ] && echo "$names" | sed 's/^/  file: /'
+    echo "Move the secret to X:\\.secrets and unstage it."
+    if [ "$GUARD_OVERRIDE" = "1" ]; then
+        echo "GUARD_OVERRIDE=1 is set, so the commit goes ahead."
+    else
+        blocked=1
+    fi
+fi
+
+# 2. Every staged Python file parses, read from the index rather than the working copy.
+git diff --cached --name-only -z --diff-filter=ACMR -- '*.py' | python -c "
+import subprocess, sys
+bad = 0
+for p in sys.stdin.buffer.read().split(b'\x00'):
+    if not p:
+        continue
+    src = subprocess.run(['git', 'show', b':' + p], capture_output=True).stdout
+    try:
+        compile(src, p.decode('utf-8', 'replace'), 'exec')
+    except SyntaxError as e:
+        print('pre-commit: refused, %s does not parse: %s' % (p.decode('utf-8', 'replace'), e))
+        bad = 1
+sys.exit(bad)
+" || blocked=1
+
+# 3. No unmerged entry, half-finished merge, or conflict marker in the generated data. Cheap
+# and offline; a commit with an unmerged index fails anyway, so this only names the cause.
+python scripts/check-index-state.py > /dev/null || {
+    echo "pre-commit: refused, python scripts/check-index-state.py reports a stuck index."
+    blocked=1
+}
+
+# 4. Staged prose may not get worse (X:\WRITING.md). Skipped when every staged file is
+# generated data, which routines commit unattended.
+if git diff --cached --name-only | grep -qv -e '^dashboard/data/' -e '^status/data/'; then
+    if [ -f X:/prose.py ]; then
+        python X:/prose.py --staged --repo "$root" || blocked=1
+    fi
+fi
+
+exit $blocked
