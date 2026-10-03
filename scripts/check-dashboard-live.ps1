@@ -30,6 +30,9 @@
 #      the statuses since 2026-09-23, after the band read "213 open" for three days
 #      with every one of them closed
 #
+#   6. the repository holds no unmerged index entry, unfinished merge or rebase, or
+#      conflict marker in dashboard/data or status/data (check-index-state.py)
+#
 # Exit 0 clean, exit 1 listing what failed. Called by the routine watchdog and
 # runnable standalone any time the page looks wrong.
 
@@ -126,6 +129,18 @@ try {
   }
 } catch {
   $fail += "constellation.json unreachable: $($_.Exception.Message)"
+}
+
+# ----- 6: a stuck merge in this repository ---------------------------------------
+# 2026-09-30: a pull left dashboard/data/usage.json unmerged and every commit failed
+# for a day with nothing raising it. The check only ran inside release.ps1. It runs
+# here because the routine health watch calls this script daily.
+$indexCheck = Join-Path $PSScriptRoot "check-index-state.py"
+$indexOut = & python $indexCheck 2>&1 | Out-String
+if ($LASTEXITCODE -ne 0) {
+  $fail += "the repository is stuck mid-merge or holds conflict markers: " + (($indexOut.Trim().Split([char]10) | ForEach-Object { $_.Trim() }) -join " | ")
+} else {
+  $note += "index clean: no unmerged entries, no conflict markers"
 }
 
 # ----- verdict ---------------------------------------------------------------
