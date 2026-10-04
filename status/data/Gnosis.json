@@ -6,26 +6,26 @@
     "pct": 55,
     "anchored": "2026-09-23"
   },
-  "version": "0.3.664",
+  "version": "0.3.665",
   "lastCommit": {
-    "message": "Daily ingest: no new answers; wired Brasshollow and Aestaria links on Cyric; 3 new DM questions (Ceralla Munn, The Saltings, Bahamut)",
-    "at": "2026-10-02T05:55:21-05:00",
-    "sha": "a0ea9940"
+    "message": "Daily ingest: no new answers, link report empty; 3 new DM questions (Grey Mereda, Panshallow, Callum Drass)",
+    "at": "2026-10-03T05:54:28-05:00",
+    "sha": "a37cc9b7"
   },
   "liveUrl": "https://gnosis.yesandeverything.com",
   "repoUrl": "https://github.com/TheProphetKane/yesandgnosis",
-  "lastReleaseAt": "2026-10-02T05:55:21-05:00",
-  "lastReleaseMessage": "Daily ingest: no new answers; wired Brasshollow and Aestaria links on Cyric; 3 new DM questions (Ceralla Munn, The Saltings, Bahamut)",
+  "lastReleaseAt": "2026-10-03T05:54:28-05:00",
+  "lastReleaseMessage": "Daily ingest: no new answers, link report empty; 3 new DM questions (Grey Mereda, Panshallow, Callum Drass)",
   "workTreeClean": true,
   "stale": false,
-  "updatedAt": "2026-10-02T05:56:14-05:00",
+  "updatedAt": "2026-10-03T05:55:18-05:00",
   "backlog": {
     "count": 0,
     "items": []
   },
   "itemsLeft": {
-    "open": 5,
-    "queue": 1,
+    "open": 4,
+    "queue": 0,
     "backlog": 0,
     "gates": 4,
     "items": [
@@ -50,14 +50,14 @@
     },
     {
       "k": "changelog entries",
-      "v": "664"
+      "v": "665"
     },
     {
       "k": "build.mjs lines",
       "v": "9382"
     }
   ],
-  "workQueueDepth": 1,
+  "workQueueDepth": 0,
   "tags": [
     "worker",
     "cloud-edge",
@@ -65,50 +65,87 @@
     "release-pipeline"
   ],
   "barRaise": {
-    "latestReportPath": "docs/audits/markdown files/BAR_RAISE-2026-09-26.md",
-    "latestReportAt": "2026-09-26T11:50:00Z",
+    "latestReportPath": "docs/audits/markdown files/BAR_RAISE-2026-10-03.md",
+    "latestReportAt": "2026-10-03T11:50:00Z",
     "verdict": "working",
-    "topFinding": "Gnosis is healthy: every finding from 2026-09-20 stayed closed, the release pipeline ran clean through 107 commits, and health rose from 72 to 85. The worst open item is a lost-update race. The standing and downtime endpoints write shared records without the revision check that /api/pc, the fog store and the shop endpoints all enforce, and downtime shares pc:<name> with the character sheet and shop trades. Behind it sit three guard gaps: the lore-audit checks for the two source-material hard rules still look for the retired K:\\~DnD path, gate-auth.mjs has no tests, and nothing notices when the daily ingest or lore audit skips a day, as both did on 2026-09-25.",
-    "actionsOpen": 0,
+    "topFinding": "Healthy and moving: twelve releases in eight days, a clean tree, verify.ps1 at exit 0, and all nine mediums from 2026-09-26 verified closed in code. Two new mediums: .project-context.json still lists the cut save-to-vault flow as open work, and the worker list-then-get loops issue one key-value read per key with no bound against the per-invocation cap. The new per-character answer gate trusts the caller-declared character, fine for a trusted table but not yet written down as a courtesy in the spec.",
+    "actionsOpen": 2,
     "actionsClosed": 82,
-    "health": 85,
+    "health": 89,
     "lensScores": {
-      "architecture": 72,
-      "reliability": 80,
-      "security": 90,
-      "performance": 82,
-      "data-integrity": 80,
-      "maintainability": 78,
+      "architecture": 76,
+      "reliability": 87,
+      "security": 88,
+      "performance": 86,
+      "data-integrity": 88,
+      "maintainability": 80,
       "solo-tool-ux": 88,
       "cost-economics": 92,
-      "dependency": 87,
-      "observability": 80,
-      "strategic-kill-this": 80,
-      "compliance-data-steward": 78,
-      "cloud-edge-worker-cpu-budget": 85,
-      "cloud-edge-kv-data-shape": 90,
+      "dependency": 92,
+      "observability": 88,
+      "strategic-kill-this": 88,
+      "compliance-data-steward": 90,
+      "cloud-edge-worker-cpu-budget": 90,
+      "cloud-edge-kv-data-shape": 92,
       "cloud-edge-auth-token-hygiene": 92,
-      "release-pipeline-ps1-stack": 85,
-      "release-pipeline-discord-notify": 85,
-      "release-pipeline-version-pill-drift": 93,
-      "release-pipeline-gate-page-publish": 92
+      "release-pipeline-ps1-stack": 88,
+      "release-pipeline-discord-notify": 88,
+      "release-pipeline-version-pill-drift": 95,
+      "release-pipeline-gate-page-publish": 95
     },
-    "actions": [],
-    "deferred": [
+    "actions": [
       {
-        "severity": "LOW",
-        "id": "release-pipeline-discord-notify-05",
-        "lens": "release-pipeline-discord-notify",
-        "title": "A resumed release after a crash between the notification post and the in-flight marker cleanup reposts the same notification.",
-        "reason": "low severity, only reachable through a crash in a narrow window; re-verified 2026-09-26 at scripts/release.ps1:715-722 (also reported as reliability-03)"
+        "id": "maintainability-08",
+        "severity": "MED",
+        "priority": 10,
+        "lens": "maintainability",
+        "title": "Rewrite the save-to-vault line in .project-context.json completion.remaining so it records the 2026-09-26 cut."
+      },
+      {
+        "id": "performance-06",
+        "severity": "MED",
+        "priority": 9,
+        "lens": "performance",
+        "title": "Measure keys per KV prefix and bound the list-then-get loops below the per-invocation operation cap."
       }
     ],
-    "openFindings": [],
+    "deferred": [
+      {
+        "id": "release-pipeline-discord-notify-05",
+        "severity": "LOW",
+        "lens": "release-pipeline-discord-notify",
+        "title": "A resumed release after a crash between the notification post and the in-flight marker cleanup reposts the same notification.",
+        "reason": "low severity, only reachable through a crash in a narrow window; re-verified 2026-10-03 at scripts/release.ps1:721-728"
+      }
+    ],
+    "openFindings": [
+      {
+        "id": "maintainability-08",
+        "severity": "MED",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-03"
+      },
+      {
+        "id": "performance-06",
+        "severity": "MED",
+        "priority": 9,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-03"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
-          "data-integrity",
+          "security",
           "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
+          "cost-economics"
         ],
         "runsSeen": 1
       },
@@ -117,26 +154,12 @@
           "architecture",
           "maintainability"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
-          "observability",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "dependency",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "maintainability",
-          "security"
+          "strategic-kill-this",
+          "observability"
         ],
         "runsSeen": 1
       }
