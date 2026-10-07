@@ -76,6 +76,56 @@ async function readNotesStore(env, key = NOTES_KEY) {
   return { v: 0, notes: [] };
 }
 
+// The author's layer, added 2026-10-06 (Kane: "never shown to beta readers"). The owning
+// project's publish step may write one script under cg:author-js and, beside each chapter, a
+// small array of marks on that chapter's sentences under <the book's keys>marks-ch-<n>. Both are
+// the author's working material and both are served to the author's session alone. The script
+// tag is added to a chapter page only on its way to him, so the page any reader is served is
+// byte for byte the page the publish step wrote. For every other session the two paths below do
+// not exist: a request for either one falls through and is answered exactly as any unknown
+// path is, the password form for a bounded reader and a plain 404 for the all-true one.
+//
+// His answers to the marks are kept under cg:verdicts, one small record per mark id, the later
+// stamp winning, so the same answers stand on every device he reads on and in reach of the
+// owning project's tools. A mark id is <book>:<chapter>:<hex>, where the book is the segment of
+// its keys and book one, at the bare prefix, is written "one".
+const AUTHOR_JS_KEY = "cg:author-js";
+const AUTHOR_TAG = '<script src="' + BOOK.prefix + '/api/author.js"></script>';
+const VERDICTS_KEY = "cg:verdicts";
+const MARK_BOOK = /^[a-z0-9]{1,12}$/;
+const MARK_CHAPTER = /^[1-9][0-9]{0,2}$/;
+const MARK_ID = /^[a-z0-9]{1,12}:[1-9][0-9]{0,2}:[a-f0-9]{6,16}$/;
+const VERDICT_WORDS = new Set(["", "agree", "disagree", "approve", "deny"]);
+const VERDICT_STAMP_MAX = 40;
+const VERDICTS_MAX = 20000;    // records in the store; oldest by "at" are dropped first past this
+const CHAPTER_KEY = /(?:^|:)ch-[1-9][0-9]{0,2}$/;
+
+// "one" is book one, whose pages sit at the bare prefix. The reader stores live under
+// cg:review:, so that segment is never a book here.
+const marksKey = (book, chapter) =>
+  "cg:" + (book === "one" ? "" : book + ":") + "marks-ch-" + chapter;
+
+async function readVerdicts(env) {
+  let raw;
+  try { raw = JSON.parse(await env.GATED_DOCS.get(VERDICTS_KEY)); } catch { raw = null; }
+  const ok = raw && typeof raw === "object" && raw.verdicts && typeof raw.verdicts === "object"
+    && !Array.isArray(raw.verdicts);
+  return { v: ok && Number.isInteger(raw.v) ? raw.v : 0, verdicts: ok ? raw.verdicts : {} };
+}
+
+// Only records shaped like a verdict are kept: a mark id, one of the five words, a stamp.
+function cleanVerdicts(sent) {
+  const out = {};
+  if (!sent || typeof sent !== "object" || Array.isArray(sent)) return out;
+  for (const [id, r] of Object.entries(sent)) {
+    if (!MARK_ID.test(id) || !r || typeof r !== "object" || Array.isArray(r)) continue;
+    if (typeof r.v !== "string" || !VERDICT_WORDS.has(r.v)) continue;
+    if (typeof r.at !== "string" || !r.at || r.at.length > VERDICT_STAMP_MAX) continue;
+    out[id] = { v: r.v, at: r.at };
+  }
+  return out;
+}
+
 // Every page this Worker will serve. The index maps by name; chapters map by a bounded
 // numeric pattern, added 2026-08-27 when the book outgrew the hand-kept five-row list and
 // its chapters started returning this Worker's 404 the night Kane sat down to read them.
@@ -312,6 +362,71 @@ const handlers = {
 
   async serve(request, env, role, rest) {
 
+    // The author's layer: its script, and the marks and verdicts for one chapter. Each branch
+    // opens only on the author's session, so for anyone else these paths are unknown ones.
+    if (rest === "/api/author.js" && isAuthor(role) && request.method === "GET") {
+      const js = (await env.GATED_DOCS.get(AUTHOR_JS_KEY)) || "";
+      return html(js, 200, docHeaders({ "content-type": "text/javascript; charset=utf-8" }));
+    }
+    if (rest === "/api/marks" && isAuthor(role)) {
+      const jsonHeaders = docHeaders({ "content-type": "application/json; charset=utf-8" });
+      if (request.method === "GET") {
+        const q = new URL(request.url).searchParams;
+        const book = q.get("b") || "", chapter = q.get("c") || "";
+        if (!MARK_BOOK.test(book) || book === "review" || !MARK_CHAPTER.test(chapter)) {
+          return html('{"error":"which chapter"}', 400, jsonHeaders);
+        }
+        let marks;
+        try { marks = JSON.parse(await env.GATED_DOCS.get(marksKey(book, chapter))); } catch { marks = null; }
+        if (!Array.isArray(marks)) marks = [];
+        const all = (await readVerdicts(env)).verdicts;
+        const mine = book + ":" + chapter + ":";
+        const verdicts = {};
+        for (const id of Object.keys(all)) if (id.startsWith(mine)) verdicts[id] = all[id];
+        return html(JSON.stringify({ marks, verdicts }), 200, jsonHeaders);
+      }
+      if (request.method === "POST") {
+        const text = await request.text();
+        if (text.length > 64 * 1024) return html('{"error":"too large"}', 413, jsonHeaders);
+        let sent;
+        try { sent = JSON.parse(text); } catch { sent = null; }
+        if (!sent || typeof sent !== "object" || Array.isArray(sent)) {
+          return html('{"error":"expected an object"}', 400, jsonHeaders);
+        }
+        const incoming = cleanVerdicts(sent.verdicts);
+        // The later stamp wins, per mark, whichever device sent it. The same read, fold, read
+        // again and put as the notes store, for the same reason: no compare-and-swap here.
+        const foldOnto = (cur) => {
+          const out = { ...cur };
+          for (const [id, r] of Object.entries(incoming)) {
+            if (!out[id] || (out[id].at || "") < r.at) out[id] = r;
+          }
+          const ids = Object.keys(out);
+          if (ids.length > VERDICTS_MAX) {
+            ids.sort((a, b) => ((out[a].at || "") < (out[b].at || "") ? -1 : 1));
+            for (const id of ids.slice(0, ids.length - VERDICTS_MAX)) delete out[id];
+          }
+          return out;
+        };
+        let result = null;
+        for (let attempt = 0; attempt < 5 && !result; attempt++) {
+          const before = await readVerdicts(env);
+          const folded = foldOnto(before.verdicts);
+          const after = await readVerdicts(env);
+          if (after.v !== before.v) continue;
+          await env.GATED_DOCS.put(VERDICTS_KEY, JSON.stringify({ v: after.v + 1, verdicts: folded }));
+          result = folded;
+        }
+        if (!result) {
+          const before = await readVerdicts(env);
+          result = foldOnto(before.verdicts);
+          await env.GATED_DOCS.put(VERDICTS_KEY, JSON.stringify({ v: before.v + 1, verdicts: result }));
+        }
+        return html(JSON.stringify({ ok: true, count: Object.keys(result).length }), 200, jsonHeaders);
+      }
+      return html("Method Not Allowed", 405, docHeaders());
+    }
+
     // The notes store, added 2026-08-29. The annotation layer used to keep its notes in each
     // device's localStorage alone, so a note made on the phone was invisible at the desk and
     // invisible to the sessions that apply the edits. The chapter pages now sync the whole
@@ -459,6 +574,13 @@ const handlers = {
 
     const body = await env.GATED_DOCS.get(key);
     if (!body) return notPublished(key);
+
+    // The author's chapter page carries his layer's script tag, added here and nowhere else.
+    // Every other session gets the stored page untouched.
+    if (isAuthor(role) && CHAPTER_KEY.test(key)) {
+      const at = body.lastIndexOf("</body>");
+      if (at >= 0) return html(body.slice(0, at) + AUTHOR_TAG + body.slice(at), 200, docHeaders());
+    }
 
     return html(body, 200, docHeaders());
   },

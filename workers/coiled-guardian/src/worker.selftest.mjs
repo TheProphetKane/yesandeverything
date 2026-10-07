@@ -14,6 +14,9 @@
 //     the author wins whenever both are present, his notes stay his, and a chapter past a
 //     bounded span is the plain password form, the same for a chapter written or not
 //     (Kane, 2026-09-21 and 22)
+//   the author's layer, its script, its marks and his verdicts, reaches the author's session
+//     and no other: a reader's chapter page is the stored page byte for byte, and the layer's
+//     two paths answer a reader exactly as a path that was never there (Kane, 2026-10-06)
 
 import worker from "./worker.js";
 import { issueCookie } from "./auth.js";
@@ -377,6 +380,95 @@ const capped = JSON.parse(store.get("cg:notes")).notes;
 is(capped.length, 4000, "the store never grows past its cap");
 is(capped.some((n) => n.id === "newest"), true, "the newest note survives the cap");
 is(capped.some((n) => n.id === "seed-0"), false, "the oldest note is dropped to make room");
+
+// Kane, 2026-10-06: "never shown to beta readers". The author's layer is a script, a small array
+// of marks beside each chapter, and his verdicts on them. All three are his session's alone.
+console.log("the author's layer is the author's alone");
+const PAGE = "<html><body><p>CH-2 TEXT</p></body></html>";
+const TAG = '<script src="/coiledguardian/api/author.js"></script>';
+store.set("cg:ch-2", PAGE);
+store.set("cg:two:ch-2", PAGE);
+store.set("cg:author-js", "AUTHOR-LAYER-SCRIPT");
+store.set("cg:marks-ch-2", JSON.stringify([{ id: "one:2:abc123", t: "MARK-ONE" }]));
+store.set("cg:two:marks-ch-2", JSON.stringify([{ id: "two:2:def456", t: "MARK-TWO" }]));
+store.delete("cg:verdicts");
+const raw = (path, cookie, init = {}) => worker.fetch(new Request(BASE + path, {
+  ...init, headers: { ...(cookie ? { cookie } : {}), ...(init.headers || {}) },
+}), env);
+is((await get("/book-a/ch-2", author)).body, PAGE.replace("</body>", TAG + "</body>"),
+   "the author's chapter page carries his layer's script tag, just inside the end of the body");
+is((await get("/book-b/ch-2", author)).body.includes(TAG), true, "in every book");
+is((await get("/book-a/ch-1", author)).body, "CH-1", "a page with no body end is served as stored");
+is((await get("/book-a/", author)).body, "INDEX-FULL", "the contents page never carries the tag");
+is((await get("/book-a/print", author)).body, "PRINT-FULL", "nor does the print page");
+const layer = await raw("/api/author.js", author);
+is(await layer.text(), "AUTHOR-LAYER-SCRIPT", "the author is served the layer's script");
+is((layer.headers.get("content-type") || "").startsWith("text/javascript"), true, "as a script");
+is((layer.headers.get("cache-control") || "").includes("no-store"), true, "never cached");
+const mine = JSON.parse((await get("/api/marks?b=one&c=2", author)).body);
+is(mine.marks.length === 1 && mine.marks[0].t, "MARK-ONE", "the author reads a chapter's marks");
+is(JSON.parse((await get("/api/marks?b=two&c=2", author)).body).marks[0].t, "MARK-TWO", "in a later book too");
+is(JSON.parse((await get("/api/marks?b=one&c=9", author)).body).marks.length, 0, "a chapter with none is an empty list");
+for (const bad of ["?b=review&c=2", "?b=one&c=0", "?b=one&c=x", "?b=ONE&c=2", "?b=one%3Amarks&c=2", "?c=2", ""]) {
+  is((await get("/api/marks" + bad, author)).status, 400, `a malformed ask (${bad || "no query"}) is refused`);
+}
+store.set("cg:review:marks-ch-2", JSON.stringify({ v: 1, notes: [{ id: "x", text: "A READER STORE" }] }));
+is((await get("/api/marks?b=review&c=2", author)).body.includes("A READER STORE"), false,
+   "and the reader stores can never be read through it");
+
+for (const [who, c] of [["a stranger", null], ["a bounded reader", nell], ["the link", link]]) {
+  is((await get("/book-a/ch-2", c)).body, c ? PAGE : (await get("/book-a/ch-999", c)).body,
+     `${who} gets the chapter exactly as stored, or the form, with no tag added`);
+  for (const p of ["/api/author.js", "/api/marks?b=one&c=2", "/api/marks"]) {
+    const r = await get(p, c);
+    is(r.body, (await get("/book-a/ch-999", c)).body, `${who} asking for ${p} gets the answer an unknown path gets`);
+    is(/AUTHOR-LAYER|MARK-ONE|MARK-TWO/.test(r.body), false, "and nothing of the layer");
+  }
+  const sent = await raw("/api/marks", c, {
+    method: "POST", body: JSON.stringify({ verdicts: { "one:2:abc123": { v: "agree", at: "2026-10-06T10:00:00Z" } } }),
+  });
+  is(sent.status === 200 && (await sent.text()).includes('"ok"'), false, `${who} cannot write a verdict`);
+  is(store.has("cg:verdicts"), false, "and none is stored");
+}
+is((await get("/book-a/ch-2", whole)).body, PAGE, "the all-true reader gets the chapter as stored too");
+for (const p of ["/api/author.js", "/api/marks?b=one&c=2"]) {
+  const r = await get(p, whole);
+  is(r.status, 404, `the all-true reader asking for ${p} gets a plain 404`);
+  is(/AUTHOR-LAYER|MARK-ONE/.test(r.body), false, "and nothing of the layer");
+}
+is((await raw("/api/marks", whole, { method: "POST", body: "{}" })).status, 405, "and cannot write to it");
+is((await get("/book-a/ch-2", both)).body.includes(TAG), true, "with both cookies he is the author, and gets his layer");
+is((await get("/api/author.js", both)).body, "AUTHOR-LAYER-SCRIPT", "script and all");
+
+console.log("his verdicts");
+const say = (verdicts, cookie = author) => raw("/api/marks", cookie, { method: "POST", body: JSON.stringify({ verdicts }) });
+const held = () => (store.has("cg:verdicts") ? JSON.parse(store.get("cg:verdicts")).verdicts : {});
+await say({ "one:2:abc123": { v: "agree", at: "2026-10-06T10:00:00Z" } });
+is(held()["one:2:abc123"].v, "agree", "a verdict lands in the store");
+await say({ "one:2:abc123": { v: "disagree", at: "2026-10-06T09:00:00Z" } });
+is(held()["one:2:abc123"].v, "agree", "an older stamp does not undo it");
+await say({ "one:2:abc123": { v: "approve", at: "2026-10-06T11:00:00Z" } });
+is(held()["one:2:abc123"].v, "approve", "a newer one replaces it");
+await say({ "one:2:abc123": { v: "", at: "2026-10-06T12:00:00Z" } });
+is(held()["one:2:abc123"].v, "", "an undo is a verdict with no word, and wins by its stamp");
+await say({ "two:2:def456": { v: "deny", at: "2026-10-06T12:00:00Z" },
+            "one:3:0a1b2c": { v: "agree", at: "2026-10-06T12:00:00Z" } });
+const back = JSON.parse((await get("/api/marks?b=one&c=2", author)).body);
+is(Object.keys(back.verdicts).join(","), "one:2:abc123", "a chapter is sent its own verdicts and no other chapter's");
+is(JSON.parse((await get("/api/marks?b=two&c=2", author)).body).verdicts["two:2:def456"].v, "deny", "each book's are its own");
+const before = Object.keys(held()).length;
+await say({ "one:2:abc123": { v: "perhaps", at: "2026-10-06T13:00:00Z" },
+            "one:2:nothex": { v: "agree", at: "2026-10-06T13:00:00Z" },
+            "review:2:abc123x": { v: "agree" },
+            "one:2:ffffff": { v: "agree", at: "x".repeat(60) },
+            "one:2:eeeeee": "agree",
+            "../cg:notes": { v: "agree", at: "2026-10-06T13:00:00Z" } });
+is(Object.keys(held()).length, before, "a verdict shaped wrong is dropped, not stored");
+is(held()["one:2:abc123"].v, "", "and changes nothing that was there");
+is((await raw("/api/marks", author, { method: "POST", body: "[]" })).status, 400, "a post that is not an object is refused");
+is((await raw("/api/marks", author, { method: "POST", body: "x".repeat(70000) })).status, 413, "as is one too large");
+is((await raw("/api/marks", author, { method: "PUT" })).status, 405, "and any other method");
+is(JSON.parse(store.get("cg:notes")).notes.length, 4000, "the notes store is untouched by any of it");
 
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);
