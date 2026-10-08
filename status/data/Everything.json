@@ -25,7 +25,7 @@
     "verdict": "working",
     "topFinding": "REDACTED: this run's top-finding narrative names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
     "actionsOpen": 2,
-    "actionsClosed": 89,
+    "actionsClosed": 90,
     "actions": [
       {
         "id": "reliability-01",
@@ -43,15 +43,7 @@
         "title": "Add an ahead and behind check of local main against origin/main to check-dashboard-live.ps1 check 6, failing when either side is non-zero past a set age."
       }
     ],
-    "deferred": [
-      {
-        "id": "gh-pages-quirks-01",
-        "severity": "MED",
-        "lens": "static-site-gh-pages-quirks",
-        "title": "Pages certificate authorization last reported stuck at bad_authz; the served certificate is good to 2026-11-25.",
-        "reason": "needs Kane's hands: remove and re-add the custom domain in the Pages settings before 2026-11-25, then confirm Enforce HTTPS"
-      }
-    ],
+    "deferred": [],
     "health": 90,
     "lensScores": {
       "architecture": 88,
@@ -323,10 +315,18 @@
         "id": "gh-pages-quirks-01",
         "by": "orchestrator session 2026-09-23, working the work-available layout",
         "evidence": "Apothecary v1.3.1 rewrites the module-route note: the four routes it called open were closed in v1.1.9."
+      },
+      {
+        "date": "2026-10-08",
+        "id": "gh-pages-quirks-01",
+        "by": "rotating bar-raise, second Thursday firing 2026-10-08 18:36 local",
+        "evidence": "Measured 2026-10-08 18:36 local. The GitHub Pages API for TheProphetKane/yesandeverything returns status built, cname yesandeverything.com, https_enforced true, protected_domain_state null, and no https_certificate block at all, so the bad_authz state the row was raised on is not present. The certificate a visitor is served comes from Cloudflare, which proxies the site: Google Trust Services WE1, valid 2026-09-17 to 2026-12-16, and https://yesandeverything.com/ answers 200 with a github request id behind it. The 2026-11-25 date in the row belonged to a Pages-side certificate that no longer serves anyone. Removing and re-adding the custom domain cannot mint a Pages certificate while Cloudflare terminates the connection, so the errand could not have succeeded as written and is not owed."
       }
     ],
-    "closedThisRun": [],
-    "reconcileNote": "2026-10-08: previous run left openFindings empty, nothing to close. Enqueued reliability-01 and observability-01; data-integrity-01 left to the cross-cutting constellation action."
+    "closedThisRun": [
+      "gh-pages-quirks-01"
+    ],
+    "reconcileNote": "2026-10-08: previous run left openFindings empty, nothing to close. Enqueued reliability-01 and observability-01; data-integrity-01 left to the cross-cutting constellation action. 2026-10-08 18:36 local, second firing of the Thursday slot: no second review, the 06:44 report stands. Closed the one deferred row, gh-pages-quirks-01, against the live Pages API and the served certificate; nothing in this project now waits on Kane."
   },
   "stale": false,
   "staleReason": null,
