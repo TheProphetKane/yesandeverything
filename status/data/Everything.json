@@ -20,13 +20,29 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-10-01.md",
-    "latestReportAt": "2026-10-01T11:40:37Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-10-08.md",
+    "latestReportAt": "2026-10-08T11:50:00Z",
     "verdict": "working",
-    "topFinding": "The hub is live and every action from the 2026-09-24 review is verified fixed in the code. The real defect this week was in the repository, not the site: a pull --rebase --autostash at 2026-09-30 06:40 left dashboard/data/usage.json unmerged, so the hub index could not build a tree and any plain commit failed for a full day with nothing raising it. This run cleared the entry and kept the working file; the open work is to stop the autostash path from conflicting on generated files and to make a stuck merge fail loudly. DEPLOY.md still documents the retired deploy and DNS setup.",
-    "actionsOpen": 0,
+    "topFinding": "REDACTED: this run's top-finding narrative names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+    "actionsOpen": 2,
     "actionsClosed": 89,
-    "actions": [],
+    "actions": [
+      {
+        "id": "reliability-01",
+        "severity": "MED",
+        "lens": "reliability",
+        "priority": 12,
+        "title": "REDACTED: a MED severity finding in the reliability lens names a project that is private by rule. Full detail is in this project's own bar-raise report; withheld from the public copy.",
+        "redacted": true
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "lens": "observability",
+        "priority": 12,
+        "title": "Add an ahead and behind check of local main against origin/main to check-dashboard-live.ps1 check 6, failing when either side is non-zero past a set age."
+      }
+    ],
     "deferred": [
       {
         "id": "gh-pages-quirks-01",
@@ -36,47 +52,69 @@
         "reason": "needs Kane's hands: remove and re-add the custom domain in the Pages settings before 2026-11-25, then confirm Enforce HTTPS"
       }
     ],
-    "health": 89,
+    "health": 90,
     "lensScores": {
-      "architecture": 84,
-      "reliability": 91,
-      "security": 91,
+      "architecture": 88,
+      "reliability": 84,
+      "security": 94,
       "performance": 88,
-      "data-integrity": 88,
-      "maintainability": 82,
+      "data-integrity": 84,
+      "maintainability": 90,
       "solo-tool-ux": 91,
-      "cost-economics": 91,
-      "dependency": 88,
-      "observability": 84,
+      "cost-economics": 92,
+      "dependency": 91,
+      "observability": 87,
       "strategic-kill-this": 90,
-      "compliance-data-steward": 90,
-      "static-site-build-config": 86,
+      "compliance-data-steward": 91,
+      "static-site-build-config": 94,
       "static-site-page-weight": 90,
       "static-site-link-rot": 93,
-      "static-site-gh-pages-quirks": 84,
+      "static-site-gh-pages-quirks": 90,
       "static-site-seo-and-open-graph": 93,
-      "static-site-accessibility-baseline": 92
+      "static-site-accessibility-baseline": 91
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "reliability-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-08"
+      },
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-08"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
           "architecture",
           "security"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
           "reliability",
-          "observability"
+          "maintainability"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
-          "strategic-kill-this",
-          "static-site-seo-and-open-graph"
+          "performance",
+          "reliability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
+          "cost-economics"
         ],
         "runsSeen": 1
       }
@@ -287,27 +325,8 @@
         "evidence": "Apothecary v1.3.1 rewrites the module-route note: the four routes it called open were closed in v1.1.9."
       }
     ],
-    "closedThisRun": [
-      {
-        "id": "observability-04",
-        "closedAt": "2026-09-17",
-        "closedBy": "bar-raise-rotating-2026-09-17",
-        "evidence": "Verified: X:/PortfolioOps/status/drift-fix-runs.jsonl carries a YesAndEverything line for every day checked back to 2026-09-12 (latest 2026-09-17T06:10:45Z), and the liveness check reads that record since 2026-09-11, not docs/drift-fixes-*.md."
-      },
-      {
-        "id": "page-weight-02",
-        "closedAt": "2026-09-17",
-        "closedBy": "bar-raise-rotating-2026-09-17",
-        "evidence": "Not fixed: re-graded from medium to low this run because the duplicate selector blocks sit well under the lens size bar. Carried as a low finding in the report, off the open-action count."
-      },
-      {
-        "id": "observability-01",
-        "closedAt": "2026-09-17",
-        "closedBy": "bar-raise-rotating-2026-09-17",
-        "evidence": "Verified in code: .github/workflows/sync-dashboard-data.yml (commit 459f9667, 2026-09-12) now dispatches deploy-pages.yml after its own commit, and scripts/check-dashboard-live.ps1 exists; queue row constellation-2026-09-06-dashboard-not-published completed 2026-09-12."
-      }
-    ],
-    "reconcileNote": "2026-09-24: previous ledger empty, nothing to close from the queue; security-01 (unignored Chrome profile with cookies and history in scripts/) found and fixed in the same run by a .gitignore entry; 7 enqueued."
+    "closedThisRun": [],
+    "reconcileNote": "2026-10-08: previous run left openFindings empty, nothing to close. Enqueued reliability-01 and observability-01; data-integrity-01 left to the cross-cutting constellation action."
   },
   "stale": false,
   "staleReason": null,
