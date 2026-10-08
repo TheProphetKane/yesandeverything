@@ -463,6 +463,7 @@ const handlers = {
         // copy is folded in: union by id, a delete anywhere wins everywhere, and the
         // copy that still carries its text beats a stripped one. Notes without ids
         // (there should be none) are kept rather than dropped.
+        const NOTE_PLACE = ["bk", "ch", "para", "off", "anchor"];
         const fold = (byId, loose, n) => {
           if (!n || typeof n !== "object") return;
           if (!n.id) { loose.push(n); return; }
@@ -471,12 +472,18 @@ const handlers = {
           const del = prev.del || n.del ? 1 : 0;
           // A note amended in its margin card carries ed, the moment of its last edit (Kane,
           // 2026-09-24). The copy with the later ed wins the text, so a device still holding
-          // the words from before the edit cannot post them back over it. With no ed on either
-          // side the incoming copy wins, as it always has.
+          // the words from before the edit cannot post them back over it. When the stamps
+          // tie, or neither copy has one, the store keeps the copy it holds (2026-10-08). The
+          // incoming copy used to win a tie, and on 2026-10-07 one stale tab posted
+          // thirty-six notes back onto the chapters they had been moved off: the tab had
+          // taken the later stamp from the store and kept its own chapter number, so its
+          // copy tied and won. The later copy also decides where the note stands, so a
+          // place field it does not carry is dropped rather than left over from the loser.
           const texted = (x) => !!(x.text || x.anchor);
           const texty = !texted(n) ? prev : !texted(prev) ? n
-            : (prev.ed || "") > (n.ed || "") ? prev : n;
+            : (n.ed || "") > (prev.ed || "") ? n : prev;
           const kept = { ...prev, ...texty };
+          for (const k of NOTE_PLACE) if (!(k in texty)) delete kept[k];
           // rm marks a note the reader deleted, as against one a session resolved; the margin
           // hides the first and shows the second as applied. Like del, it wins everywhere.
           if (prev.rm || n.rm) kept.rm = 1; else delete kept.rm;

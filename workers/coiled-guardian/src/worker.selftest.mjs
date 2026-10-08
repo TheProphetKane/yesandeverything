@@ -177,6 +177,40 @@ await worker.fetch(new Request(BASE + "/api/notes", {
 is(store.get("cg:notes").includes("written with both"), true, "a note he writes lands in his own store");
 is(store.get("cg:review:link").includes("written with both"), false, "and never in the link's");
 
+// 2026-10-07: thirty-six notes were moved to their chapters' new numbers after a renumber, and
+// within the hour one stale tab had put them back. The tab had taken the store's later stamp
+// and kept its own chapter, so its copy tied with the store's, and the incoming copy won a tie.
+console.log("a moved note stays moved");
+const postNotes = (notes) => worker.fetch(new Request(BASE + "/api/notes", {
+  method: "POST", headers: { cookie: author }, body: JSON.stringify(notes),
+}), env);
+const noteNow = (id) => JSON.parse(store.get("cg:notes")).notes.find((n) => n.id === id);
+const heldNotes = JSON.parse(store.get("cg:notes"));
+store.set("cg:notes", JSON.stringify({ v: heldNotes.v, notes: heldNotes.notes.concat([
+  { id: "m1", ch: 94, para: 14, off: 3, anchor: "stater", text: "a note that was moved",
+    at: "2026-10-01T00:00:00Z", ed: "2026-10-07T17:00:00Z" },
+  { id: "m2", ch: 92, para: 5, anchor: "the bar", text: "a note with no stamp", at: "2026-10-02T00:00:00Z" },
+]) }));
+await postNotes([
+  { id: "m1", ch: 89, para: 12, off: 9, anchor: "stater", text: "a note that was moved",
+    at: "2026-10-01T00:00:00Z", ed: "2026-10-07T17:00:00Z" },
+  { id: "m2", ch: 88, para: 7, anchor: "the bar", text: "a note with no stamp", at: "2026-10-02T00:00:00Z" },
+]);
+is(noteNow("m1").ch, 94, "when the stamps tie, the store keeps the chapter it holds");
+is(noteNow("m1").para + ":" + noteNow("m1").off, "14:3", "and the paragraph and the offset with it");
+is(noteNow("m2").ch, 92, "with no stamp on either copy, the store keeps its own as well");
+await postNotes([{ id: "m1", ch: 95, para: 2, anchor: "stater", text: "moved again",
+                   at: "2026-10-01T00:00:00Z", ed: "2026-10-08T09:00:00Z" }]);
+is(noteNow("m1").text + "|" + noteNow("m1").ch + "|" + noteNow("m1").para, "moved again|95|2",
+   "a later stamp still wins, and brings its chapter and paragraph with its words");
+is("off" in noteNow("m1"), false, "an offset the later copy does not carry is not left over from the old place");
+await postNotes([{ id: "m1", ch: 89, para: 12, off: 9, anchor: "stater", text: "the old words",
+                   at: "2026-10-01T00:00:00Z", ed: "2026-10-06T08:00:00Z" }]);
+is(noteNow("m1").text + "|" + noteNow("m1").ch, "moved again|95", "an earlier stamp changes nothing");
+await postNotes([{ id: "m1", ch: 89, del: 1, at: "2026-10-01T00:00:00Z" }]);
+is(noteNow("m1").del + "|" + noteNow("m1").ch + "|" + noteNow("m1").text, "1|95|moved again",
+   "a delete from a stale tab still wins, and the note keeps its place and its words");
+
 console.log("sessions written before the split");
 const legacyLink = link.replace(/^cg_coiled_r=/, "cg_coiled=");
 is((await get("/book-a/ch-30", legacyLink)).body, "CH-30", "a link session from before the split still reads its span");
