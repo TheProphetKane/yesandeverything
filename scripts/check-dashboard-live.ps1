@@ -43,7 +43,8 @@ param(
   [int]$MinProjects = 8,
   # The rollup runs on Sundays. Eight days catches a missed run without alarming on
   # a run that finished late in the day.
-  [double]$MaxRollupAgeDays = 8
+  [double]$MaxRollupAgeDays = 8,
+  [double]$MaxUnsyncedHours = 6
 )
 
 $ErrorActionPreference = "Continue"
@@ -141,6 +142,48 @@ if ($LASTEXITCODE -ne 0) {
   $fail += "the repository is stuck mid-merge or holds conflict markers: " + (($indexOut.Trim().Split([char]10) | ForEach-Object { $_.Trim() }) -join " | ")
 } else {
   $note += "index clean: no unmerged entries, no conflict markers"
+}
+
+# 2026-10-08: local main sat 2 commits ahead and 6 behind origin/main with two status
+# commits unpushed for a day, and only the nightly audit prose said so. Neither the index
+# check above nor pull-safe.py counts commits. Either side non-zero fails once its oldest
+# commit is older than -MaxUnsyncedHours (default 6): a few hours is a session in flight,
+# a day is a push that never happened. The tracking ref is refreshed first; a failed
+# fetch is noted, and then the counts describe the last known state of origin.
+Push-Location (Split-Path $PSScriptRoot -Parent)
+try {
+  try { & git fetch --quiet origin | Out-Null } catch { $note += "git fetch origin failed: $($_.Exception.Message)" }
+  $lr = (& git rev-list --left-right --count "origin/main...main" | Out-String).Trim()
+  if ($LASTEXITCODE -ne 0 -or $lr -notmatch '^(\d+)\s+(\d+)$') {
+    $fail += "could not count local main against origin/main (git rev-list said: $lr)"
+  } else {
+    $behind = [int]$Matches[1]
+    $ahead = [int]$Matches[2]
+    $nowEpoch = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $oldestAhead = 0
+    $oldestBehind = 0
+    if ($ahead -gt 0) {
+      $oldestAhead = [long](((& git log --format=%ct "origin/main..main" | Out-String).Trim().Split([char]10) | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object { [long]$_ } | Select-Object -First 1))
+    }
+    if ($behind -gt 0) {
+      $oldestBehind = [long](((& git log --format=%ct "main..origin/main" | Out-String).Trim().Split([char]10) | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object { [long]$_ } | Select-Object -First 1))
+    }
+    $note += "local main is $ahead ahead and $behind behind origin/main"
+    if ($ahead -gt 0) {
+      $hrs = ($nowEpoch - $oldestAhead) / 3600.0
+      if ($hrs -gt $MaxUnsyncedHours) {
+        $fail += ("local main holds {0} commit(s) not pushed to origin/main, the oldest {1:N1} hours old (limit {2}); push them" -f $ahead, $hrs, $MaxUnsyncedHours)
+      }
+    }
+    if ($behind -gt 0) {
+      $hrs = ($nowEpoch - $oldestBehind) / 3600.0
+      if ($hrs -gt $MaxUnsyncedHours) {
+        $fail += ("local main is {0} commit(s) behind origin/main, the oldest {1:N1} hours old (limit {2}); pull them" -f $behind, $hrs, $MaxUnsyncedHours)
+      }
+    }
+  }
+} finally {
+  Pop-Location
 }
 
 # ----- verdict ---------------------------------------------------------------
