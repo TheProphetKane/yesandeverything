@@ -504,5 +504,31 @@ is((await raw("/api/marks", author, { method: "POST", body: "x".repeat(70000) })
 is((await raw("/api/marks", author, { method: "PUT" })).status, 405, "and any other method");
 is(JSON.parse(store.get("cg:notes")).notes.length, 4000, "the notes store is untouched by any of it");
 
+console.log("a store that cannot be read, or holds something unreadable");
+{
+  const realGet = env.GATED_DOCS.get;
+  const keep = store.get("cg:verdicts");
+  const sent = JSON.stringify({ verdicts: { "one:2:abc123": { v: "agree", at: "2026-10-07T10:00:00Z" } } });
+  env.GATED_DOCS.get = async (k) => { if (k === "cg:verdicts" || k === "cg:notes") throw new Error("kv down"); return realGet(k); };
+  const down = await raw("/api/marks", author, { method: "POST", body: sent });
+  is(down.status, 503, "a verdict post is refused with 503 when the read throws");
+  is(store.get("cg:verdicts"), keep, "and the stored verdicts are untouched");
+  is((await raw("/api/notes", author)).status, 503, "a notes read is refused with 503 when the read throws");
+  env.GATED_DOCS.get = realGet;
+  store.set("cg:verdicts", "{not json");
+  const logged = [];
+  console.error = (m) => logged.push(m);
+  const bad = await raw("/api/marks", author, { method: "POST", body: sent });
+  is(bad.status, 503, "a verdict post over an unparseable stored value is refused");
+  is(store.get("cg:verdicts"), "{not json", "and the unparseable value is not overwritten");
+  is(logged.some((m) => String(m).includes("cg:verdicts")), true, "and a log line names the key");
+  console.error = () => {};
+  store.delete("cg:verdicts");
+  const fresh = await raw("/api/marks", author, { method: "POST", body: sent });
+  is(fresh.status, 200, "an absent key is still a fresh store");
+  is(JSON.parse(store.get("cg:verdicts")).v, 1, "and is written at version 1");
+  store.set("cg:verdicts", keep);
+}
+
 console.log(failed ? `\n${failed} failure(s)` : "\nselftest passed");
 process.exit(failed ? 1 : 0);

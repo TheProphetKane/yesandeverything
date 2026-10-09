@@ -63,12 +63,31 @@ function isValidNote(n) {
     && str(n.text, NOTE_TEXT_MAX) && str(n.anchor, NOTE_TEXT_MAX);
 }
 
+// One read of a stored key, with the get and the parse told apart (bar-raise 2026-10-08,
+// reliability-01 and data-integrity-02). A get that throws is a store outage, not an empty
+// store: it fails the request with 503 and nothing is written. A key that is absent is a fresh
+// store (null). A value that is there but does not parse is never read as empty either, because
+// the next put would overwrite it; it logs the key and fails the request the same way.
+class StoreUnavailable extends Error {}
+
+async function readStored(env, key) {
+  let text;
+  try { text = await env.GATED_DOCS.get(key); } catch (err) {
+    console.error(`[gate] coiled-guardian: read of ${key} failed: ${err && err.message}`);
+    throw new StoreUnavailable(key);
+  }
+  if (text === null || text === undefined) return null;
+  try { return JSON.parse(text); } catch {
+    console.error(`[gate] coiled-guardian: stored value at ${key} does not parse; refusing to overwrite it`);
+    throw new StoreUnavailable(key);
+  }
+}
+
 // Stored as { v, notes } since the reliability-01 optimistic-concurrency fix
 // (2026-09-03/04); a bare array is the pre-fix shape and reads as v 0 so an old
 // stored value keeps working without a migration step.
 async function readNotesStore(env, key = NOTES_KEY) {
-  let raw;
-  try { raw = JSON.parse(await env.GATED_DOCS.get(key)); } catch { raw = null; }
+  const raw = await readStored(env, key);
   if (Array.isArray(raw)) return { v: 0, notes: raw };
   if (raw && typeof raw === "object" && Array.isArray(raw.notes)) {
     return { v: Number.isInteger(raw.v) ? raw.v : 0, notes: raw.notes };
@@ -106,8 +125,7 @@ const marksKey = (book, chapter) =>
   "cg:" + (book === "one" ? "" : book + ":") + "marks-ch-" + chapter;
 
 async function readVerdicts(env) {
-  let raw;
-  try { raw = JSON.parse(await env.GATED_DOCS.get(VERDICTS_KEY)); } catch { raw = null; }
+  const raw = await readStored(env, VERDICTS_KEY);
   const ok = raw && typeof raw === "object" && raw.verdicts && typeof raw.verdicts === "object"
     && !Array.isArray(raw.verdicts);
   return { v: ok && Number.isInteger(raw.v) ? raw.v : 0, verdicts: ok ? raw.verdicts : {} };
@@ -171,8 +189,7 @@ const KEYS_OK = /^cg:(?:[a-z0-9]+:)?$/;
 const RESERVED = new Set(["login", "logout", "r", "api", "print", "review", "notes"]);
 
 async function readSite(env) {
-  let raw;
-  try { raw = JSON.parse(await env.GATED_DOCS.get(SITE_KEY)); } catch { raw = null; }
+  const raw = await readStored(env, SITE_KEY);
   const books = (raw && Array.isArray(raw.books) ? raw.books : []).filter((b) =>
     b && typeof b.slug === "string" && typeof b.keys === "string" && SLUG_OK.test(b.slug)
     && !RESERVED.has(b.slug) && !/^ch-/.test(b.slug) && KEYS_OK.test(b.keys)
@@ -355,7 +372,11 @@ const handlers = {
       role = newLinkRole();
       reissue = await issueCookie(BOOK, role, env, LINK_TTL);
     }
-    const res = await handlers.serve(request, env, role, rest);
+    let res;
+    try { res = await handlers.serve(request, env, role, rest); } catch (err) {
+      if (!(err instanceof StoreUnavailable)) throw err;
+      return html("Temporarily unavailable", 503, docHeaders({ "retry-after": "5" }));
+    }
     if (reissue) res.headers.append("set-cookie", reissue);
     return res;
   },
