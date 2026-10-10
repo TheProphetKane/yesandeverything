@@ -65,73 +65,75 @@
     "release-pipeline"
   ],
   "barRaise": {
-    "latestReportPath": "docs/audits/markdown files/BAR_RAISE-2026-10-03.md",
-    "latestReportAt": "2026-10-03T11:50:00Z",
+    "latestReportPath": "docs/audits/markdown files/BAR_RAISE-2026-10-10.md",
+    "latestReportAt": "2026-10-10T11:45:00Z",
     "verdict": "working",
-    "topFinding": "Healthy and moving: twelve releases in eight days, a clean tree, verify.ps1 at exit 0, and all nine mediums from 2026-09-26 verified closed in code. Two new mediums: .project-context.json still lists the cut save-to-vault flow as open work, and the worker list-then-get loops issue one key-value read per key with no bound against the per-invocation cap. The new per-character answer gate trusts the caller-declared character, fine for a trusted table but not yet written down as a courtesy in the spec.",
-    "actionsOpen": 0,
+    "topFinding": "Healthy and busy: 42 commits since 2026-10-03, the 2026-10-10 canonical and handler audits found nothing, and both mediums from last week are closed in code. One new medium: the 700-key read budget from e578cbc3 defers keys silently in loadSticky, loadPrefix and loadNotes (web/worker.js:294, :382, :410), so a keyspace past 700 keys would drop rows from the backup export unreported. Everything else is low. The v0.3.673 release and the Worker deploy carrying the read-budget fix are still Kane's to run.",
+    "actionsOpen": 1,
     "actionsClosed": 84,
     "health": 89,
     "lensScores": {
-      "architecture": 76,
-      "reliability": 87,
-      "security": 88,
-      "performance": 86,
-      "data-integrity": 88,
+      "architecture": 77,
+      "reliability": 88,
+      "security": 90,
+      "performance": 87,
+      "data-integrity": 90,
       "maintainability": 80,
-      "solo-tool-ux": 88,
-      "cost-economics": 92,
-      "dependency": 92,
-      "observability": 88,
-      "strategic-kill-this": 88,
-      "compliance-data-steward": 90,
-      "cloud-edge-worker-cpu-budget": 90,
-      "cloud-edge-kv-data-shape": 92,
-      "cloud-edge-auth-token-hygiene": 92,
-      "release-pipeline-ps1-stack": 88,
+      "solo-tool-ux": 89,
+      "cost-economics": 91,
+      "dependency": 93,
+      "observability": 90,
+      "strategic-kill-this": 90,
+      "compliance-data-steward": 91,
+      "cloud-edge-worker-cpu-budget": 91,
+      "cloud-edge-kv-data-shape": 86,
+      "cloud-edge-auth-token-hygiene": 93,
+      "release-pipeline-ps1-stack": 90,
       "release-pipeline-discord-notify": 88,
       "release-pipeline-version-pill-drift": 95,
       "release-pipeline-gate-page-publish": 95
     },
-    "actions": [],
+    "actions": [
+      {
+        "id": "cloud-edge-kv-data-shape-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "cloud-edge-kv-data-shape",
+        "title": "Have loadSticky, loadPrefix and loadNotes in web/worker.js report their deferred count into the export's notBackedUp list, as the answers loader already does."
+      }
+    ],
     "deferred": [
       {
         "id": "release-pipeline-discord-notify-05",
         "severity": "LOW",
         "lens": "release-pipeline-discord-notify",
         "title": "A resumed release after a crash between the notification post and the in-flight marker cleanup reposts the same notification.",
-        "reason": "low severity, only reachable through a crash in a narrow window; re-verified 2026-10-03 at scripts/release.ps1:721-728"
+        "reason": "low severity, only reachable through a crash in a narrow window; re-verified 2026-10-10 at scripts/release.ps1:721-728"
       }
     ],
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "cloud-edge-kv-data-shape-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-10"
+      }
+    ],
     "tensionsOpen": [
-      {
-        "lenses": [
-          "security",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "reliability",
-          "cost-economics"
-        ],
-        "runsSeen": 1
-      },
       {
         "lenses": [
           "architecture",
           "maintainability"
         ],
-        "runsSeen": 2
+        "runsSeen": 3
       },
       {
         "lenses": [
-          "strategic-kill-this",
-          "observability"
+          "security",
+          "solo-tool-ux"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       }
     ],
     "closedLog": [
@@ -449,14 +451,11 @@
         "evidence": "Measured and fixed. Live counts: a: 1982 keys, pc: 12, shop: 1, every other prefix zero, so only the answers prefix passes the thousand-operation cap. web/kv-reads.mjs holds a grouped-get helper on a 700-get budget and a durable answers:bundle that a rebuild reuses, so no invocation walks the whole prefix (e578cbc3). The partial rebuild that scheme allows is no longer written to answers:snapshot (6cf1da8b). 159 tests pass. The Worker deploy is still owed to Kane."
       }
     ],
-    "closedThisRun": [
-      "maintainability-08",
-      "performance-06"
-    ]
+    "closedThisRun": []
   },
   "audit": {
     "latestReportPath": "docs/audits/markdown files/CANONICAL_AUDIT-2026-10-10.md",
-    "latestReportAt": "2026-10-10T06:13:04Z",
+    "latestReportAt": "2026-10-10T18:11:19Z",
     "findings": {
       "critical": 0,
       "high": 0,
