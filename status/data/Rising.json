@@ -52,21 +52,14 @@
     "latestReportAt": "2026-10-05T11:45:00Z",
     "verdict": "in-progress",
     "topFinding": "A quiet week for the code and a good one for the record: eight commits since 2026-09-28, all verification and gating, closed last run's performance-09 (the baked unit path measures cheap, dbe5e19), architecture-08 (the drift gate now guards FRAME_BUCKETS) and observability-02 (file logging is on). No HIGH finding and no hard-rule breach. The one gameplay gap is unchanged: no enemy structure spawns anything, and that now waits on Kane's tuning ruling (D-OPEN-50, default the declared constants, 2026-10-16), so it moves to deferred. Four new MEDIUM actions replace it: the per-unit target scan is the largest lever on the over-budget combined load, the GDD and BACKLOG.md still list the Harpoon Battery as v1 after its 2026-09-22 demotion, the 4221-line test file needs splitting, and the Campaign button hides a save that failed to load.",
-    "actionsOpen": 2,
-    "actionsClosed": 127,
+    "actionsOpen": 1,
+    "actionsClosed": 128,
     "actions": [
       {
         "id": "maintainability-09",
         "severity": "MED",
         "title": "Split tests/run_tests.gd by subsystem into preloaded test modules and lower its baseline entry in scripts/.bp_baseline.json as each piece moves out.",
         "lens": "maintainability",
-        "priority": 12
-      },
-      {
-        "id": "performance-11",
-        "severity": "MED",
-        "title": "Add a spatial index over enemy pool records or a per-unit scan cadence to the unit target scan, then re-bench with the drift line under 15 percent.",
-        "lens": "performance",
         "priority": 12
       }
     ],
@@ -107,12 +100,12 @@
         "reason": "Waiting on Kane's Brackish Rising design ruling (half-alpha show-through or opaque), carried in X:/OPEN-LOOPS.md since 2026-09-23; nothing at risk, the work is on origin."
       }
     ],
-    "health": 85,
+    "health": 86,
     "lensScores": {
       "architecture": 88,
       "reliability": 86,
       "security": 93,
-      "performance": 82,
+      "performance": 88,
       "data-integrity": 82,
       "maintainability": 85,
       "solo-tool-ux": 88,
@@ -137,13 +130,6 @@
     "openFindings": [
       {
         "id": "maintainability-09",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-05"
-      },
-      {
-        "id": "performance-11",
         "severity": "MED",
         "priority": 12,
         "runsOpen": 1,
@@ -187,7 +173,7 @@
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-10-05: previous openFindings held only playability-05; it stays open in the tree (hatchery.gd:35-40 unread) and is blocked-on-user on D-OPEN-50 (Brackish Rising tuning), so it moved to deferred rather than closed. performance-09, architecture-08, observability-02 and security-04 re-verified fixed by commits dbe5e19, b9a02a0, fc300a1 and c9f1ce7. Four new MEDIUM findings enqueued. 2026-10-08 Friday burndown: scope-discipline-06 and solo-tool-ux-05 shipped in v0.73.2 (1d5e3aa, pushed). maintainability-09 and performance-11 stay open and are blocked by the repository rather than by themselves: Navy’s b45f101 renamed the rifleman rig without re-baking, so check_baked_sheets.py fails and the pre-commit gauntlet refuses every commit. The bake needs a real rendering device and the sheet needs a look, so it is parked on Kane as queue row rising-rifleman-rebake-2026-10-08.",
+    "reconcileNote": "2026-10-05: previous openFindings held only playability-05; it stays open in the tree (hatchery.gd:35-40 unread) and is blocked-on-user on D-OPEN-50 (Brackish Rising tuning), so it moved to deferred rather than closed. performance-09, architecture-08, observability-02 and security-04 re-verified fixed by commits dbe5e19, b9a02a0, fc300a1 and c9f1ce7. Four new MEDIUM findings enqueued. 2026-10-08 Friday burndown: scope-discipline-06 and solo-tool-ux-05 shipped in v0.73.2 (1d5e3aa, pushed). maintainability-09 and performance-11 stay open and are blocked by the repository rather than by themselves: Navy’s b45f101 renamed the rifleman rig without re-baking, so check_baked_sheets.py fails and the pre-commit gauntlet refuses every commit. The bake needs a real rendering device and the sheet needs a look, so it is parked on Kane as queue row rising-rifleman-rebake-2026-10-08. 2026-10-11 second pass: performance-11 closed on evidence (the fix it asked for shipped at v0.59.59 and its alternative is in the log's rejected section). Root cause of the stale finding fixed in the lens itself: waves/03_tier1_lenses/04_performance.md scoped docs/OPTIMIZATION_LOG.md to Here Be Hordes only, so Brackish Rising's own log went unread; the line now covers both Godot projects and names the rejected section. maintainability-09 re-verified open: scripts/.bp_baseline.json:21 reads 4221 against 4177 real lines in tests/run_tests.gd.",
     "closedLog": [
       {
         "date": "2026-09-22",
@@ -637,11 +623,16 @@
         "id": "solo-tool-ux-05",
         "by": "Friday backlog burndown",
         "evidence": "Landed in BrackishRising 1d5e3aa (v0.73.2, pushed): campaign.gd sets last_restore_failed when a save exists but will not load, keeps the file as <name>.unreadable.bak without overwriting an earlier copy, and the mission rail prints a line saying so. Covered by _test_campaign_restore_reports_an_unreadable_save. Headless suite 2250 passed, 0 failed."
+      },
+      {
+        "date": "2026-10-11",
+        "id": "performance-11",
+        "by": "rotating bar-raise constellation second pass 2026-10-11 18:36-19:0x -05:00",
+        "evidence": "Closed on evidence, not on new work: the action asked for a spatial index over enemy pool records or a per-unit scan cadence, and docs/OPTIMIZATION_LOG.md:138 records both halves settled. The index shipped at v0.59.59 as source/enemies/enemy_spatial.gd, a uniform 512 px grid rebuilt at most once per frame and only when queried; enemy_pool.find_closest_in_range delegates straight to _spatial.closest. The unit-side cadence is in the same log's Tried but rejected section, measured 2026-08-10: a spatial bucket for that scan needs 81 dictionary lookups per enemy once the iso conversion is a safe superset, which is worse than walking a deliberately small group and hung the 1000-enemy bench case, so it was replaced by a frame stride. The one unindexed path left is the Node branch at source/units/unit_combat.gd:211, which walks the cached enemies group; all eight use_multimesh_ flags in source/autoloads/debug_flags.gd:27-47 default to true, so wave_director._instantiate_at_tile routes every enemy type to the pool and enemy_base.gd:300 is the only add_to_group(\"enemies\") call, leaving that group empty in a default run. Bench of record: 44 ms to 27.4 ms at 400 enemies and 40 units, tools/bench_scale.gd across 11 cases."
       }
     ],
     "closedThisRun": [
-      "scope-discipline-06",
-      "solo-tool-ux-05"
+      "performance-11"
     ]
   },
   "metrics": [
