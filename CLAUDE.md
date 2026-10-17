@@ -80,7 +80,7 @@ Pull the remote with `python scripts/pull-safe.py`, not a bare `git pull --rebas
 
 Raw git is the escape hatch only. It skips every integrity guard above, so reserve it for one-off recovery when the release script itself is the thing being fixed. Scope it with an explicit pathspec even then: an unscoped commit here sweeps another session's staged work, which is decision D5 and has already happened.
 
-For HBH GDD republishing, do **not** edit this repo directly. Run `X:\HereBeHordes\scripts\publish-gdd.ps1` and it'll push the injection here for you.
+Design documents are not published from this repo. The `workers/gated-docs` Worker serves them from the `GATED_DOCS` key-value store, and each game repo's `scripts/publish-gdd.ps1` writes to that store, so do **not** edit this repo for a design document.
 
 ## Discord webhooks
 
