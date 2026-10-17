@@ -186,6 +186,36 @@ try {
   Pop-Location
 }
 
+# ----- Coiled Guardian build stamp ---------------------------------------------
+# deploy.ps1 stamps a hash of the Worker source into the deployed Worker and
+# /coiledguardian/version reports it. A mismatch means the live Worker is behind the code.
+try {
+  $hashScript = Join-Path $PSScriptRoot "..\workers\coiled-guardian/build-hash.mjs"
+  $want = ((& node $hashScript) | Out-String).Trim()
+  if (-not $want) {
+    $fail += "could not compute the Coiled Guardian source hash (node build-hash.mjs printed nothing)"
+  } else {
+    $resp = Invoke-WebRequest -Uri "https://yesandeverything.com/coiledguardian/version" -UseBasicParsing -TimeoutSec 20
+    $live = $null
+    try { $live = ($resp.Content | ConvertFrom-Json).build } catch { }
+    if (-not $live -or $live -eq "unstamped") {
+      $fail += "Coiled Guardian Worker is not yet stamped (it reports '$live'): the live Worker predates the build stamp or was deployed without it; the fix is a deploy, run workers\coiled-guardian\deploy.ps1"
+    } elseif ($live -ne $want) {
+      $fail += "Coiled Guardian Worker is behind the source (live $live, source $want); the fix is a deploy, run workers\coiled-guardian\deploy.ps1"
+    } else {
+      $note += "Coiled Guardian Worker build $live matches the source"
+    }
+  }
+} catch {
+  $code = $null
+  try { $code = [int]$_.Exception.Response.StatusCode } catch { }
+  if ($code -eq 404 -or $code -eq 401 -or $code -eq 403 -or $code -eq 200) {
+    $fail += "Coiled Guardian Worker is not yet stamped (the version route answered $code): the live Worker predates the build stamp; the fix is a deploy, run workers\coiled-guardian\deploy.ps1"
+  } else {
+    $fail += "Coiled Guardian version route unreachable: $($_.Exception.Message)"
+  }
+}
+
 # ----- verdict ---------------------------------------------------------------
 $note | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 

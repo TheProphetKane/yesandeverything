@@ -29,7 +29,12 @@ if ($LASTEXITCODE -ne 0) { Write-Host "worker self-test failed; nothing deployed
 
 Write-Host "==== deploy ====" -ForegroundColor Magenta
 $ErrorActionPreference = "Continue"
-& npx --yes "wrangler@$WranglerVersion" deploy
+# Stamp the source hash into the Worker; /coiledguardian/version reports it and
+# scripts/check-dashboard-live.ps1 compares it with the hash of the current source.
+$BuildHash = (& node build-hash.mjs).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $BuildHash) { Write-Host "could not hash the source; nothing deployed." -ForegroundColor Red; exit 1 }
+Write-Host "build hash $BuildHash"
+& npx --yes "wrangler@$WranglerVersion" deploy --var "BUILD_HASH:$BuildHash"
 if ($LASTEXITCODE -ne 0) { Write-Host "wrangler deploy failed." -ForegroundColor Red; exit 1 }
 
 Write-Host "==== live gate check ====" -ForegroundColor Magenta

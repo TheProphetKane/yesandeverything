@@ -284,6 +284,16 @@ const handlers = {
 
     const rest = path.slice(BOOK.prefix.length);
 
+    // Build stamp: deploy.ps1 passes BUILD_HASH, a hash of this source. No secret, no session,
+    // so scripts/check-dashboard-live.ps1 can ask whether the deployed Worker carries the
+    // current code.
+    if (rest === "/version" && request.method === "GET") {
+      return new Response(JSON.stringify({ build: env.BUILD_HASH || "unstamped" }), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+      });
+    }
+
     // The author's way back in from anywhere, whatever session the browser already holds: by
     // this address, or from any chapter past a bounded reader's span, which answers with the same
     // form.
