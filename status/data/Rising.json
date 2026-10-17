@@ -48,66 +48,16 @@
     "latestReportPath": "docs/BAR_RAISE-2026-10-12.md",
     "latestReportAt": "2026-10-12T23:47:13Z",
     "verdict": "in-progress",
-    "topFinding": "REDACTED: this run's top-finding narrative discusses a MED severity security-lens vulnerability. Full detail is in this project's own bar-raise report; withheld from the public copy.",
-    "actionsOpen": 8,
-    "actionsClosed": 132,
+    "topFinding": "The release pipeline is working again, and the verdict moves with it. The 06:40 pass read needs-attention because the baked-sheet gate was failing every commit in the repository; a desktop session re-baked the rifleman rig and shipped it in v0.73.3 (66ec319) at 12:54, after which four more releases landed, the last at 17:37 as v0.74.3 (98544f5). No lens returned a blocking finding, health stays 85 on the 06:40 scores, so no band for needs-attention holds. game-design-asset-pipeline-01 stays open and stays HIGH: the gate still hard-fails on the next stale rig rather than warning on a dated allowance, which is the hardening the next art push wants.",
+    "actionsOpen": 1,
+    "actionsClosed": 139,
     "actions": [
-      {
-        "id": "game-design-asset-pipeline-01",
-        "severity": "HIGH",
-        "title": "Add a dated pending-rebake allowance to scripts/check_baked_sheets.py that names one rig and an expiry, so a rig push warns instead of refusing every commit, and the release still fails after the date or on a second stale rig.",
-        "lens": "game-design-asset-pipeline",
-        "priority": 25
-      },
-      {
-        "id": "release-pipeline-per-project-ps1-stack-02",
-        "severity": "MED",
-        "title": "REDACTED: a MED severity finding in the release-pipeline-per-project-ps1-stack lens is withheld from the public copy. See this project's own bar-raise report for detail.",
-        "lens": "release-pipeline-per-project-ps1-stack",
-        "priority": 15,
-        "redacted": true
-      },
-      {
-        "id": "game-design-save-format-stability-01",
-        "severity": "MED",
-        "title": "Make save_load.load_from refuse a save whose format_version exceeds SAVE_FORMAT_VERSION and keep an .unreadable.bak, matching campaign.gd, with a newer-version fixture test.",
-        "lens": "game-design-save-format-stability",
-        "priority": 15
-      },
       {
         "id": "maintainability-09",
         "severity": "MED",
         "title": "Continue splitting tests/run_tests.gd by subsystem on the campaign_save_tests.gd pattern and lower its scripts/.bp_baseline.json entry as each piece moves.",
         "lens": "maintainability",
         "priority": 15
-      },
-      {
-        "id": "data-integrity-02",
-        "severity": "MED",
-        "title": "Make campaign.restore_if_saved load the .bak when the primary is missing, with a test that deletes the primary.",
-        "lens": "data-integrity",
-        "priority": 12
-      },
-      {
-        "id": "reliability-02",
-        "severity": "MED",
-        "title": "Keep the corrupt main as .unreadable.bak instead of rotating it over the good .bak whenever campaign.load_from recovered from the .bak, with a test.",
-        "lens": "reliability",
-        "priority": 12
-      },
-      {
-        "id": "reliability-01",
-        "severity": "MED",
-        "title": "Write the campaign unreadable copy only when the byte read is non-empty, and use a numbered name instead of skipping when one exists.",
-        "lens": "reliability",
-        "priority": 12
-      },
-      {
-        "id": "game-design-asset-pipeline-03",
-        "severity": "MED",
-        "title": "Add a pull-time check that names an owed bake the moment a spine/ file changes, and document the artist-side rig delivery step in docs/ART_INTEGRATION_NOTES.md.",
-        "lens": "game-design-asset-pipeline",
-        "priority": 12
       }
     ],
     "deferred": [
@@ -162,60 +112,11 @@
     },
     "openFindings": [
       {
-        "id": "game-design-asset-pipeline-01",
-        "severity": "HIGH",
-        "priority": 25,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
-      },
-      {
-        "id": "release-pipeline-per-project-ps1-stack-02",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
-      },
-      {
-        "id": "game-design-save-format-stability-01",
-        "severity": "MED",
-        "priority": 15,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
-      },
-      {
         "id": "maintainability-09",
         "severity": "MED",
         "priority": 15,
         "runsOpen": 2,
         "firstSeen": "2026-10-05"
-      },
-      {
-        "id": "data-integrity-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
-      },
-      {
-        "id": "reliability-02",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
-      },
-      {
-        "id": "reliability-01",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
-      },
-      {
-        "id": "game-design-asset-pipeline-03",
-        "severity": "MED",
-        "priority": 12,
-        "runsOpen": 1,
-        "firstSeen": "2026-10-12"
       }
     ],
     "tensionsOpen": [
@@ -716,11 +617,58 @@
         "id": "scale-architecture-08",
         "by": "rotating bar-raise second firing 2026-10-12 18:36-19:0x -05:00",
         "evidence": "All three premises of the deferral are now false. The see-through pass is on main in source/world/occluder_fades.gd, landed by 98544f5 (v0.74.3), where any_enemy_in_front_of takes the art's top edge so a pack behind a building counts as well as one in front, and the code comment cites the 2026-10-12 ruling. The ruling went to half-alpha show-through. Branch lantern-opaque-wip is on neither origin nor local: git ls-remote returns only FionaNewArt, d82-2026-09-22 and main. The stash holds two entries, the sonic pressure batch and a failed scale transform session, neither touching occluder_fades. The opaque variant is unrecoverable, recorded as the low finding scale-architecture-09."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "data-integrity-02",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "reliability-02",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "reliability-01",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "game-design-save-format-stability-01",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "release-pipeline-per-project-ps1-stack-02",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "game-design-asset-pipeline-01",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
+      },
+      {
+        "date": "2026-10-16",
+        "id": "game-design-asset-pipeline-03",
+        "by": "PortfolioOps bookkeeping 2026-10-16 22:30 -05:00",
+        "evidence": "Verified fixed in BrackishRising 55f8028 (v0.74.37) with the full suite passing (3636 passed, 0 failed, 2026-10-16 22:10)."
       }
     ],
     "closedThisRun": [
-      "performance-11",
-      "scale-architecture-08"
+      "data-integrity-02",
+      "reliability-02",
+      "reliability-01",
+      "game-design-save-format-stability-01",
+      "release-pipeline-per-project-ps1-stack-02",
+      "game-design-asset-pipeline-01",
+      "game-design-asset-pipeline-03"
     ]
   },
   "metrics": [
