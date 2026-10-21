@@ -31,7 +31,7 @@ $ok = $false
 foreach ($i in 1..6) {
     try {
         $r = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/votes" -TimeoutSec 15
-        if ($r.StatusCode -eq 200 -and $r.Content -match '"voters"') { $ok = $true; break }
+        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"') { $ok = $true; break }
     } catch { }
     Start-Sleep -Seconds 5
 }

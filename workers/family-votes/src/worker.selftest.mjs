@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker, against a stand-in key-value store.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { cleanName, voterKey, ROUTE } from "./worker.js";
+import worker, { cleanDevice, ROUTE } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -18,34 +18,35 @@ function check(label, ok) { if (!ok) { failed++; console.error("FAIL " + label);
 
 const env = { VOTES: new FakeKV() };
 const base = "https://yesandeverything.com" + ROUTE;
+const A = "deviceAAAAAAAAAAAAAAAA", B = "deviceBBBBBBBBBBBBBBBB";
 const post = body => worker.fetch(new Request(base, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
 
-check("name accepted", cleanName("  Mary Jo ") === "Mary Jo");
-check("markup refused", cleanName("<b>x</b>") === null);
-check("long name refused", cleanName("x".repeat(31)) === null);
-check("key folds case", voterKey("Alexia") === voterKey("alexia"));
+check("device id accepted", cleanDevice(A) === A);
+check("short id refused", cleanDevice("abc") === null);
+check("odd characters refused", cleanDevice("<script>aaaaaaaaaaaaaaa") === null);
 
-let r = await post({ name: "Alexia", option: "npb-pair", value: 1 });
+let r = await post({ device: A, option: "npb-pair", value: 1 });
 let j = await r.json();
-check("vote saved", r.status === 200 && j.me.v["npb-pair"] === 1);
-r = await post({ name: "alexia", option: "jupiter-6br", value: -1 });
+check("vote saved", r.status === 200 && j.mine["npb-pair"] === 1 && j.tallies["npb-pair"].up === 1);
+r = await post({ device: A, option: "npb-pair", value: -1 });
 j = await r.json();
-check("same person, second vote", j.voters.length === 1 && j.voters[0].v["jupiter-6br"] === -1 && j.voters[0].name === "Alexia");
-r = await post({ name: "Brennan", option: "npb-pair", value: 1 });
+check("same device changes its vote", j.tallies["npb-pair"].up === 0 && j.tallies["npb-pair"].down === 1);
+r = await post({ device: B, option: "npb-pair", value: -1 });
 j = await r.json();
-check("two voters", j.voters.length === 2);
-r = await post({ name: "Brennan", option: "npb-pair", value: 0 });
+check("second device counts separately", j.tallies["npb-pair"].down === 2);
+r = await post({ device: B, option: "npb-pair", value: 0 });
 j = await r.json();
-check("clearing the only vote removes the voter", j.voters.length === 1 && !env.VOTES.m.has("tg26:brennan"));
-r = await post({ name: "Alexia", option: "not-a-listing", value: 1 });
+check("clearing the only vote removes the device", j.tallies["npb-pair"].down === 1 && !env.VOTES.m.has("tg26:d:" + B));
+r = await post({ device: A, option: "not-a-listing", value: 1 });
 check("unknown listing refused", r.status === 400);
-r = await post({ name: "Alexia", option: "npb-pair", value: 5 });
-check("bad value refused", r.status === 400);
-r = await worker.fetch(new Request(base, { method: "POST", body: "name=x" }), env);
+r = await post({ option: "npb-pair", value: 1 });
+check("missing device refused", r.status === 400);
+r = await worker.fetch(new Request(base, { method: "POST", body: "x=1" }), env);
 check("form post refused", r.status === 415);
-r = await worker.fetch(new Request(base), env);
+r = await worker.fetch(new Request(base + "?device=" + A), env);
 j = await r.json();
-check("tally reads back", r.status === 200 && j.voters.length === 1 && !("key" in j.voters[0]));
+check("tally reads back with this device's votes", j.mine["npb-pair"] === -1 && j.tallies["npb-pair"].down === 1);
+check("no device ids in the answer", !JSON.stringify(j).includes(A));
 r = await worker.fetch(new Request("https://yesandeverything.com/thanksgiving-2026/api/other"), env);
 check("other paths 404", r.status === 404);
 

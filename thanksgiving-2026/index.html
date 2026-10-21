@@ -142,7 +142,7 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
     <div class="trip">
       <span>Wed 25 Nov to Sat 28 Nov, 3 nights</span>
       <span>12 guests + 2 toddlers under 2 + 1 dog</span>
-      <span>Updated 21 Oct 2026, 5:26 PM Central</span>
+      <span>Updated 21 Oct 2026, 5:33 PM Central</span>
       <span>Thanksgiving dinner at Lost Tree Club</span>
     </div>
   </header>
@@ -153,11 +153,7 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
     <p><strong>If the pool matters more, book the Jupiter six-bedroom (pick 2).</strong> It is the only pool house found with a child fence, out of 34 pool houses checked. The catch is 2 bathrooms for 14 people and about 29 minutes to Lost Tree Club.</p>
     <p><strong>The family's pick, the 20-person historical house, is on the list as pick 4, with one big problem.</strong> No photo shows a fence around its pool or hot tub, and with two toddlers that has to be fixed before anyone books it. Casa Solara, about 2 minutes away, passes every rule and sleeps all 14 in two separate units.</p>
     <p><strong>A 4-night minimum no longer rules a house out,</strong> since most of the group can fly in Tuesday night. That brings back the Pool, Game Room, Hot Tub house from the chat as pick 5, at $3,515 from Wednesday to Sunday. Airbnb lists its pool and hot tub as having no gate or lock.</p>
-    <div class="voter">
-      <label for="voter-name">Your first name, so your votes count as yours</label>
-      <div class="voter-row"><input id="voter-name" maxlength="30" autocomplete="given-name" placeholder="First name"><button id="voter-save" type="button">Save name</button></div>
-      <p class="vote-status" id="vote-status">Type your first name once, then tap thumbs up or down on each option.</p>
-    </div>
+    <p class="vote-status" id="vote-status">Tap thumbs up or down on each option below. Tap the same thumb again to take it back. No sign-in or name needed.</p>
   </div>
 
   <section aria-labelledby="rules-h">
@@ -312,7 +308,6 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
       </div>
       <div class="alarm" role="note">
         <p><strong>No pool fence, as far as any photo shows.</strong> The pool and hot tub sit open to the yard, and two toddlers who can walk will be staying here. That is the biggest concern on this page.</p>
-        <p>Book it only after the host confirms in writing that a child fence can go around both the pool and the hot tub for the whole stay.</p>
       </div>
       <dl class="facts">
         <div><dt>Sleeps</dt><dd>7 bedrooms: 2 kings and 5 queens, cots for the extra singles, sofa beds in 2 rooms</dd></div>
@@ -353,7 +348,6 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
       </div>
       <div class="alarm" role="note">
         <p><strong>Airbnb lists this pool and hot tub as having no gate or lock.</strong> No photo shows a fence either, and two toddlers who can walk will be staying here.</p>
-        <p>Book it only after the host confirms in writing that a child fence can go around both for the whole stay.</p>
       </div>
       <dl class="facts">
         <div><dt>Sleeps</dt><dd>14; 5 bedrooms with a king, 4 queens and 2 sets of bunks; 3 baths</dd></div>
@@ -458,7 +452,6 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
       <ul>
         <li>Jupiter: that the mesh pool fence will be installed from check-in to checkout.</li>
         <li>North Palm Beach pair: both street addresses, and whether the gazebo at #936 exists.</li>
-        <li>Historical house, if the group still wants it: whether a removable child fence can go around the pool and hot tub.</li>
         <li>Any pick: whether the quoted total already includes tax.</li>
       </ul>
     </div>
@@ -468,26 +461,37 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
     <p>Prices are Airbnb's totals with 1 dog, read from each listing on 21 October 2026: 3 nights unless a card says otherwise. Thanksgiving dates move fast, so a total can change or a house can book before you do.</p>
     <p>Drive times are estimates from a routing engine with no traffic, measured between the approximate map pins Airbnb shows before booking. Every option is measured to Lost Tree Club. Holiday traffic can push the 27 to 29 minute options past the 30-minute limit; only the North Palm Beach pair has room to spare.</p>
     <p>A pool counts as fenced only when a listing photo shows a child fence around it. Every pool house that Airbnb showed as open for these dates, taking 12 guests and a dog, in searches around West Palm Beach, Palm Beach Gardens, Jupiter and Boynton Beach was checked: 34 in all. The Jupiter house is the only one with a child fence. Of the last 13 checked, 8 sit more than 30 minutes from Lost Tree Club, 4 have open pools, and 1 shows no photo of its pool at all.</p>
-    <p>Votes are shared with everyone who opens this page. Each first name gets one vote per option, and tapping the same thumb again takes it back. This device remembers the name you saved.</p>
+    <p>Votes are shared with everyone who opens this page. Each phone or computer gets one vote per option, and tapping the same thumb again takes it back.</p>
   </div>
 </div>
 
 <script>
 (() => {
   const API = "/thanksgiving-2026/api/votes";
-  const NAME_OK = /^[\p{L}\p{M}' .-]{1,30}$/u;
   const statusEl = document.getElementById("vote-status");
-  const nameInput = document.getElementById("voter-name");
-  const saveBtn = document.getElementById("voter-save");
   const bars = [...document.querySelectorAll(".vote[data-vote]")];
-  let name = "";
-  let voters = [];
+  let tallies = {};
+  let mine = {};
   let busy = false;
 
-  const fold = s => s.trim().toLowerCase().replace(/\s+/g, " ");
   function setStatus(text) { statusEl.textContent = text; }
-  try { name = localStorage.getItem("tg26-voter") || ""; } catch (e) { name = ""; }
-  nameInput.value = name;
+
+  // One random id per browser, kept in local storage with a cookie as the fallback, so each
+  // phone or computer counts once per listing without anyone typing a name.
+  function deviceId() {
+    let id = "";
+    try { id = localStorage.getItem("tg26-device") || ""; } catch (e) {}
+    if (!id) { const m = document.cookie.match(/(?:^|; )tg26-device=([A-Za-z0-9_-]+)/); if (m) id = m[1]; }
+    if (!/^[A-Za-z0-9_-]{16,64}$/.test(id)) {
+      const bytes = new Uint8Array(18);
+      crypto.getRandomValues(bytes);
+      id = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+    }
+    try { localStorage.setItem("tg26-device", id); } catch (e) {}
+    document.cookie = "tg26-device=" + id + "; path=/thanksgiving-2026; max-age=31536000; samesite=lax; secure";
+    return id;
+  }
+  const device = deviceId();
 
   for (const bar of bars) {
     const label = bar.dataset.name;
@@ -502,63 +506,38 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
     down.type = "button"; down.className = "down"; down.setAttribute("aria-pressed", "false");
     down.setAttribute("aria-label", "Thumbs down for " + label);
     down.innerHTML = '<span aria-hidden="true">👎</span><span class="n">0</span>';
-    const who = document.createElement("div");
-    who.className = "voters";
-    bar.append(tag, up, down, who);
+    bar.append(tag, up, down);
     up.addEventListener("click", () => cast(bar.dataset.vote, 1));
     down.addEventListener("click", () => cast(bar.dataset.vote, -1));
   }
 
-  function mine() {
-    const me = voters.find(v => fold(v.name) === fold(name));
-    return me ? me.v : {};
-  }
-
   function render() {
-    const my = name ? mine() : {};
     for (const bar of bars) {
       const key = bar.dataset.vote;
-      const ups = voters.filter(v => v.v[key] === 1).map(v => v.name);
-      const downs = voters.filter(v => v.v[key] === -1).map(v => v.name);
+      const t = tallies[key] || { up: 0, down: 0 };
       const [up, down] = bar.querySelectorAll("button");
-      up.querySelector(".n").textContent = ups.length;
-      down.querySelector(".n").textContent = downs.length;
-      up.setAttribute("aria-pressed", String(my[key] === 1));
-      down.setAttribute("aria-pressed", String(my[key] === -1));
+      up.querySelector(".n").textContent = t.up;
+      down.querySelector(".n").textContent = t.down;
+      up.setAttribute("aria-pressed", String(mine[key] === 1));
+      down.setAttribute("aria-pressed", String(mine[key] === -1));
       up.disabled = down.disabled = busy;
-      const parts = [];
-      if (ups.length) parts.push("Up: " + ups.join(", "));
-      if (downs.length) parts.push("Down: " + downs.join(", "));
-      bar.querySelector(".voters").textContent = parts.join("  ·  ");
     }
   }
 
-  function saveName() {
-    const typed = nameInput.value.replace(/\s+/g, " ").trim();
-    if (!NAME_OK.test(typed)) { setStatus("Use letters only for your first name, up to 30 characters."); nameInput.focus(); return false; }
-    name = typed;
-    try { localStorage.setItem("tg26-voter", name); } catch (e) {}
-    setStatus("Voting as " + name + ". Tap thumbs up or down on each option; tap again to take it back.");
-    render();
-    return true;
+  function take(j) {
+    if (j && j.tallies && typeof j.tallies === "object") tallies = j.tallies;
+    if (j && j.mine && typeof j.mine === "object") mine = j.mine;
   }
-
-  saveBtn.addEventListener("click", saveName);
-  nameInput.addEventListener("keydown", e => { if (e.key === "Enter") saveName(); });
 
   async function cast(key, value) {
     if (busy) return;
-    if (!name || fold(nameInput.value) !== fold(name)) {
-      if (!nameInput.value.trim()) { setStatus("Type your first name above first, then vote."); nameInput.focus(); return; }
-      if (!saveName()) return;
-    }
-    const next = mine()[key] === value ? 0 : value;
+    const next = mine[key] === value ? 0 : value;
     busy = true; render();
     try {
-      const r = await fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, option: key, value: next }) });
+      const r = await fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ device, option: key, value: next }) });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { setStatus(j.error || "That vote did not save. Try again in a moment."); }
-      else { voters = Array.isArray(j.voters) ? j.voters : voters; setStatus("Saved. Voting as " + name + "."); }
+      if (!r.ok) setStatus(j.error || "That vote did not save. Try again in a moment.");
+      else { take(j); setStatus(next === 0 ? "Vote taken back." : "Vote saved."); }
     } catch (e) {
       setStatus("That vote did not save. Check the connection and try again.");
     } finally {
@@ -569,14 +548,13 @@ td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; whit
   async function refresh() {
     if (busy) return;
     try {
-      const r = await fetch(API, { cache: "no-store" });
+      const r = await fetch(API + "?device=" + encodeURIComponent(device), { cache: "no-store" });
       if (!r.ok) return;
       const j = await r.json();
-      if (Array.isArray(j.voters) && !busy) { voters = j.voters; render(); }
+      if (!busy) { take(j); render(); }
     } catch (e) {}
   }
 
-  if (name) setStatus("Voting as " + name + ". Tap thumbs up or down on each option; tap again to take it back.");
   render();
   refresh();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 20000);

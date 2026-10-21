@@ -1,15 +1,16 @@
-// Family vote for /thanksgiving-2026/: a thumbs up or down per listing, one record per voter.
+// Family vote for /thanksgiving-2026/: a thumbs up or down per listing, one record per device.
 //
-// Each voter is one key in the VOTES namespace, tg26:<name slug>, with the votes held in the
-// key's metadata so a single list() returns the whole tally without a read per voter. Votes by
-// different people land on different keys and never overwrite each other.
+// There is no sign-in and no name. The page makes a random device id once, keeps it in the
+// browser, and sends it with each vote, so each phone or laptop counts once per listing. It is a
+// trust-the-family page, not a ballot; the bounds below keep a stray visitor from filling it.
 //
-// There is no sign-in. A voter types a first name, and that name is the record, so this is a
-// trust-the-family page, not a ballot. The bounds below keep a stray visitor from filling it.
+// Each device is one key in the VOTES namespace, tg26:d:<device id>, with its votes held in the
+// key's metadata so a single list() returns the whole tally without a read per voter. Devices
+// land on different keys and never overwrite each other. The tally never returns device ids.
 
-export const PREFIX = "tg26:";
+export const PREFIX = "tg26:d:";
 export const ROUTE = "/thanksgiving-2026/api/votes";
-export const MAX_VOTERS = 60;
+export const MAX_VOTERS = 200;
 export const OPTIONS = new Set([
   "npb-pair",
   "jupiter-6br",
@@ -31,37 +32,34 @@ function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: HEADERS });
 }
 
-export function cleanName(raw) {
-  if (typeof raw !== "string") return null;
-  const name = raw.replace(/\s+/g, " ").trim();
-  if (!name || name.length > 30) return null;
-  if (!/^[\p{L}\p{M}' .-]+$/u.test(name)) return null;
-  return name;
+export function cleanDevice(raw) {
+  return typeof raw === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(raw) ? raw : null;
 }
 
-export function voterKey(name) {
-  const slug = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  return slug ? PREFIX + slug : null;
-}
-
-async function listVoters(env) {
-  const voters = [];
+async function listVotes(env) {
+  const out = [];
   let cursor;
   do {
     const page = await env.VOTES.list({ prefix: PREFIX, cursor });
     for (const k of page.keys) {
       const m = k.metadata;
-      if (m && typeof m.name === "string" && m.v && typeof m.v === "object") {
-        voters.push({ key: k.name, name: m.name, v: m.v });
-      }
+      if (m && m.v && typeof m.v === "object") out.push({ key: k.name, v: m.v });
     }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
-  return voters;
+  return out;
 }
 
-function publicView(voters) {
-  return voters.map(({ name, v }) => ({ name, v }));
+function tallies(votes) {
+  const t = {};
+  for (const opt of OPTIONS) t[opt] = { up: 0, down: 0 };
+  for (const { v } of votes) {
+    for (const [opt, val] of Object.entries(v)) {
+      if (!t[opt]) continue;
+      if (val === 1) t[opt].up++; else if (val === -1) t[opt].down++;
+    }
+  }
+  return t;
 }
 
 export default {
@@ -70,7 +68,10 @@ export default {
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {
-      return json({ voters: publicView(await listVoters(env)) });
+      const votes = await listVotes(env);
+      const device = cleanDevice(url.searchParams.get("device"));
+      const mine = device ? (votes.find(x => x.key === PREFIX + device) || { v: {} }).v : {};
+      return json({ tallies: tallies(votes), mine });
     }
 
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -84,33 +85,25 @@ export default {
     let body;
     try { body = await request.json(); } catch { return json({ error: "That vote could not be read." }, 400); }
 
-    const name = cleanName(body && body.name);
-    if (!name) return json({ error: "Enter a first name: letters only, up to 30 characters." }, 400);
-    const key = voterKey(name);
-    if (!key) return json({ error: "Enter a first name using letters." }, 400);
+    const device = cleanDevice(body && body.device);
+    if (!device) return json({ error: "This browser could not be identified. Reload the page and try again." }, 400);
     if (!OPTIONS.has(body.option)) return json({ error: "That listing is not on the ballot." }, 400);
     if (![1, -1, 0].includes(body.value)) return json({ error: "A vote is up, down or cleared." }, 400);
 
+    const key = PREFIX + device;
     const existing = await env.VOTES.getWithMetadata(key);
-    const known = existing && existing.metadata && existing.metadata.v ? existing.metadata : null;
-    let voters = await listVoters(env);
-    if (!known && voters.length >= MAX_VOTERS) {
-      return json({ error: "The vote is full." }, 429);
-    }
+    const known = existing && existing.metadata && existing.metadata.v ? existing.metadata.v : null;
+    let votes = await listVotes(env);
+    if (!known && votes.length >= MAX_VOTERS) return json({ error: "The vote is full." }, 429);
 
-    const v = { ...(known ? known.v : {}) };
+    const v = { ...(known || {}) };
     if (body.value === 0) delete v[body.option]; else v[body.option] = body.value;
-    const shownName = known && typeof known.name === "string" ? known.name : name;
+    if (Object.keys(v).length === 0) await env.VOTES.delete(key);
+    else await env.VOTES.put(key, "1", { metadata: { v } });
 
-    if (Object.keys(v).length === 0) {
-      await env.VOTES.delete(key);
-    } else {
-      await env.VOTES.put(key, "1", { metadata: { name: shownName, v } });
-    }
-
-    // A list() can lag a fresh write, so answer with this voter's record merged in.
-    voters = voters.filter(x => x.key !== key);
-    if (Object.keys(v).length) voters.push({ key, name: shownName, v });
-    return json({ ok: true, me: { name: shownName, v }, voters: publicView(voters) });
+    // A list() can lag a fresh write, so answer with this device's record merged in.
+    votes = votes.filter(x => x.key !== key);
+    if (Object.keys(v).length) votes.push({ key, v });
+    return json({ ok: true, mine: v, tallies: tallies(votes) });
   },
 };
