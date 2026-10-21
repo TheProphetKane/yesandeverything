@@ -1,9 +1,9 @@
 {
   // The family vote behind yesandeverything.com/thanksgiving-2026/: a thumbs up or down per
-  // listing, kept in its own key-value namespace so it never shares storage with the gated
-  // pages. The page itself is a static file served by GitHub Pages; only the vote route runs here.
+  // listing, kept in its own Durable Object so it never shares storage with the gated pages.
+  // The page itself is a static file served by GitHub Pages; only the vote route runs here.
   //
-  // No secrets. Voters type a first name and nothing else.
+  // No secrets. Each browser sends a random device id and nothing else.
   "name": "family-votes-yesandeverything",
   "main": "src/worker.js",
   "compatibility_date": "2026-08-25",
@@ -16,6 +16,14 @@
     { "pattern": "yesandeverything.com/thanksgiving-2026/api/*", "zone_name": "yesandeverything.com" }
   ],
 
+  // Every vote goes through one Durable Object, so votes never overwrite each other and every
+  // viewer reads the same totals at once. Stored in its own SQLite-backed storage.
+  "durable_objects": {
+    "bindings": [{ "name": "BOX", "class_name": "VoteBox" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["VoteBox"] }],
+
+  // The first version's store. VoteBox reads it once to carry votes over and never writes it.
   "kv_namespaces": [
     { "binding": "VOTES", "id": "aa8ec9aad79340d1ba796ced1ecf3452" }
   ],

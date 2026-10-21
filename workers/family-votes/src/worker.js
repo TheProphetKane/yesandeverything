@@ -4,13 +4,17 @@
 // browser, and sends it with each vote, so each phone or laptop counts once per listing. It is a
 // trust-the-family page, not a ballot; the bounds below keep a stray visitor from filling it.
 //
-// Each device is one key in the VOTES namespace, tg26:d:<device id>, with its votes held in the
-// key's metadata so a single list() returns the whole tally without a read per voter. Devices
-// land on different keys and never overwrite each other. The tally never returns device ids.
+// Every vote goes through one Durable Object, VoteBox, which handles requests one at a time
+// against its own storage. That is what makes a vote save: two quick taps from one phone, or
+// ten phones at once, can never overwrite each other, and every viewer reads the same totals
+// the moment a vote lands. The first version kept votes in the key-value store, whose list
+// lags writes by up to a minute and whose read-then-write could drop a vote; VoteBox copies
+// anything still there on its first run, then the key-value store is only read, never written.
 
-export const PREFIX = "tg26:d:";
 export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
+export const KV_PREFIX = "tg26:d:";
+export const MERGE_WINDOW_MS = 10 * 60 * 1000;
 export const OPTIONS = new Set([
   "npb-pair",
   "jupiter-6br",
@@ -36,30 +40,87 @@ export function cleanDevice(raw) {
   return typeof raw === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(raw) ? raw : null;
 }
 
-async function listVotes(env) {
-  const out = [];
-  let cursor;
-  do {
-    const page = await env.VOTES.list({ prefix: PREFIX, cursor });
-    for (const k of page.keys) {
-      const m = k.metadata;
-      if (m && m.v && typeof m.v === "object") out.push({ key: k.name, v: m.v });
-    }
-    cursor = page.list_complete ? undefined : page.cursor;
-  } while (cursor);
+function cleanVotes(v) {
+  const out = {};
+  if (!v || typeof v !== "object") return out;
+  for (const [opt, val] of Object.entries(v)) if (OPTIONS.has(opt) && (val === 1 || val === -1)) out[opt] = val;
   return out;
 }
 
-function tallies(votes) {
-  const t = {};
-  for (const opt of OPTIONS) t[opt] = { up: 0, down: 0 };
-  for (const { v } of votes) {
-    for (const [opt, val] of Object.entries(v)) {
-      if (!t[opt]) continue;
-      if (val === 1) t[opt].up++; else if (val === -1) t[opt].down++;
-    }
+export class VoteBox {
+  constructor(ctx, env) {
+    this.storage = ctx.storage;
+    this.env = env;
   }
-  return t;
+
+  // Copy votes the key-value version saved. The first run copies everything; for ten minutes
+  // after it, later runs pick up any device the lagging list had not shown yet, skipping any
+  // device that has voted or cleared here since, so nothing comes back from the old store.
+  async mergeFromKv() {
+    if (!this.env.VOTES) return;
+    const first = await this.storage.get("migratedAt");
+    const now = Date.now();
+    if (first && now - first > MERGE_WINDOW_MS) return;
+    let cursor;
+    do {
+      const page = await this.env.VOTES.list({ prefix: KV_PREFIX, cursor });
+      for (const k of page.keys) {
+        const device = k.name.slice(KV_PREFIX.length);
+        if (!cleanDevice(device)) continue;
+        if (await this.storage.get("t:" + device)) continue;
+        if (await this.storage.get("d:" + device)) continue;
+        const v = cleanVotes(k.metadata && k.metadata.v);
+        if (Object.keys(v).length) await this.storage.put("d:" + device, v);
+      }
+      cursor = page.list_complete ? undefined : page.cursor;
+    } while (cursor);
+    if (!first) await this.storage.put("migratedAt", now);
+  }
+
+  async view(device) {
+    const tallies = {};
+    for (const opt of OPTIONS) tallies[opt] = { up: 0, down: 0 };
+    const all = await this.storage.list({ prefix: "d:" });
+    for (const v of all.values()) {
+      for (const [opt, val] of Object.entries(v)) {
+        if (!tallies[opt]) continue;
+        if (val === 1) tallies[opt].up++; else if (val === -1) tallies[opt].down++;
+      }
+    }
+    const mine = device ? (all.get("d:" + device) || {}) : {};
+    return { tallies, mine, voters: all.size };
+  }
+
+  async fetch(request) {
+    await this.mergeFromKv();
+    const url = new URL(request.url);
+    if (request.method === "GET") {
+      const { tallies, mine } = await this.view(cleanDevice(url.searchParams.get("device")));
+      return json({ tallies, mine });
+    }
+    const { device, option, value } = await request.json();
+    const key = "d:" + device;
+    const known = await this.storage.get(key);
+    if (!known) {
+      const { voters } = await this.view(null);
+      if (voters >= MAX_VOTERS) return json({ error: "The vote is full." }, 429);
+    }
+    const v = { ...(known || {}) };
+    if (value === 0) delete v[option]; else v[option] = value;
+    if (Object.keys(v).length) {
+      await this.storage.put(key, v);
+      await this.storage.delete("t:" + device);
+    } else {
+      await this.storage.delete(key);
+      await this.storage.put("t:" + device, 1);
+    }
+    const { tallies, mine } = await this.view(device);
+    return json({ ok: true, tallies, mine });
+  }
+}
+
+function box(env) {
+  return env.BOX.get(env.BOX.idFromName("thanksgiving-2026"));
 }
 
 export default {
@@ -68,19 +129,9 @@ export default {
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {
-      let votes = await listVotes(env);
       const device = cleanDevice(url.searchParams.get("device"));
-      let mine = {};
-      if (device) {
-        // list() can lag a write by up to a minute, so read this device's own key directly
-        // and put it in the tally, or a voter would see their own vote vanish and come back.
-        const key = PREFIX + device;
-        const rec = await env.VOTES.getWithMetadata(key);
-        mine = rec && rec.metadata && rec.metadata.v ? rec.metadata.v : {};
-        votes = votes.filter(x => x.key !== key);
-        if (Object.keys(mine).length) votes.push({ key, v: mine });
-      }
-      return json({ tallies: tallies(votes), mine });
+      const q = device ? "?device=" + device : "";
+      return box(env).fetch(new Request("https://votebox" + ROUTE + q));
     }
 
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -99,20 +150,10 @@ export default {
     if (!OPTIONS.has(body.option)) return json({ error: "That listing is not on the ballot." }, 400);
     if (![1, -1, 0].includes(body.value)) return json({ error: "A vote is up, down or cleared." }, 400);
 
-    const key = PREFIX + device;
-    const existing = await env.VOTES.getWithMetadata(key);
-    const known = existing && existing.metadata && existing.metadata.v ? existing.metadata.v : null;
-    let votes = await listVotes(env);
-    if (!known && votes.length >= MAX_VOTERS) return json({ error: "The vote is full." }, 429);
-
-    const v = { ...(known || {}) };
-    if (body.value === 0) delete v[body.option]; else v[body.option] = body.value;
-    if (Object.keys(v).length === 0) await env.VOTES.delete(key);
-    else await env.VOTES.put(key, "1", { metadata: { v } });
-
-    // A list() can lag a fresh write, so answer with this device's record merged in.
-    votes = votes.filter(x => x.key !== key);
-    if (Object.keys(v).length) votes.push({ key, v });
-    return json({ ok: true, mine: v, tallies: tallies(votes) });
+    return box(env).fetch(new Request("https://votebox" + ROUTE, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device, option: body.option, value: body.value }),
+    }));
   },
 };
