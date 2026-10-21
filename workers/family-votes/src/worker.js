@@ -68,9 +68,18 @@ export default {
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {
-      const votes = await listVotes(env);
+      let votes = await listVotes(env);
       const device = cleanDevice(url.searchParams.get("device"));
-      const mine = device ? (votes.find(x => x.key === PREFIX + device) || { v: {} }).v : {};
+      let mine = {};
+      if (device) {
+        // list() can lag a write by up to a minute, so read this device's own key directly
+        // and put it in the tally, or a voter would see their own vote vanish and come back.
+        const key = PREFIX + device;
+        const rec = await env.VOTES.getWithMetadata(key);
+        mine = rec && rec.metadata && rec.metadata.v ? rec.metadata.v : {};
+        votes = votes.filter(x => x.key !== key);
+        if (Object.keys(mine).length) votes.push({ key, v: mine });
+      }
       return json({ tallies: tallies(votes), mine });
     }
 

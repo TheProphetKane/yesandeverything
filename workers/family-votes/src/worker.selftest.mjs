@@ -47,6 +47,11 @@ r = await worker.fetch(new Request(base + "?device=" + A), env);
 j = await r.json();
 check("tally reads back with this device's votes", j.mine["npb-pair"] === -1 && j.tallies["npb-pair"].down === 1);
 check("no device ids in the answer", !JSON.stringify(j).includes(A));
+// A lagging list() must not hide a device's own vote from that device.
+env.VOTES.list = async () => ({ keys: [], list_complete: true });
+r = await worker.fetch(new Request(base + "?device=" + A), env);
+j = await r.json();
+check("own vote survives a lagging list", j.mine["npb-pair"] === -1 && j.tallies["npb-pair"].down === 1);
 r = await worker.fetch(new Request("https://yesandeverything.com/thanksgiving-2026/api/other"), env);
 check("other paths 404", r.status === 404);
 
