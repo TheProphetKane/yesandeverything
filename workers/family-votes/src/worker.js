@@ -24,6 +24,13 @@ export const OPTIONS = new Set([
   "three-homes",
   "flamingo",
   "triplex",
+  // Added 2026-10-21 after the first round of votes; the keys above stay so their votes keep.
+  "lakeview",
+  "wpb-oasis-6br",
+  "sweet-home-pbg",
+  "golf-game-room",
+  "tropical-pbg",
+  "beach-oasis",
 ]);
 
 const HEADERS = {
