@@ -146,6 +146,16 @@ try {
         Write-Host ("  ok  " + $t) -ForegroundColor Green
     }
 
+    # The deploy publishes an allowlist, not the repo root (2026-10-23). A new
+    # top-level folder on neither list fails the Pages workflow after the push;
+    # this catches it before the push instead.
+    Write-Host "==== Step 2.6/6: published set ====" -ForegroundColor Magenta
+    & node (Join-Path $here "stage-site.mjs") --check
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Aborting release: classify the entry in scripts/stage-site.mjs as public or private." -ForegroundColor Red
+        exit 1
+    }
+
     Write-Host "==== Step 3/6: project-page prose staleness guard ====" -ForegroundColor Magenta
     # Prose-staleness guard. The version pill on every project page is stamped from that
     # project status JSON, so it is right the moment a release pushes, while the prose

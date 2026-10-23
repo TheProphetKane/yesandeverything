@@ -7,8 +7,10 @@ name: Deploy to GitHub Pages
 # fail with "Deployment failed, try again later" — one failure email each. This
 # workflow serializes deploys through a single `pages` concurrency group and
 # cancels superseded in-flight runs, so a burst of pushes yields one successful
-# deploy and zero failures. Static site: no build step, the repo root IS the site
-# (matches the old .nojekyll "serve files as-is" behavior).
+# deploy and zero failures. Static site with no build step, but the artifact is
+# not the repo root: scripts/stage-site.mjs copies only the allowlisted public
+# entries into _site, so release gates, Worker sources and handlers stay in the
+# repo without becoming URLs (2026-10-23).
 
 on:
   push:
@@ -86,13 +88,15 @@ jobs:
         # triggers this deploy; this step folds those numbers (version, milestone)
         # into the homepage cards and each project's Details/Design pages.
         run: node scripts/update-project-pages.mjs
-      - name: Drop VCS metadata from the deploy artifact
-        run: rm -rf .git
+      - name: Stage the public allowlist as the deploy artifact
+        # Fails on any tracked top-level entry that is on neither list in the
+        # script, and on a script file inside a public folder.
+        run: node scripts/stage-site.mjs _site
       - uses: actions/configure-pages@v5
-      - name: Upload the site (repo root) as the Pages artifact
+      - name: Upload the staged site as the Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
