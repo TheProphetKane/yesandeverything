@@ -23,7 +23,9 @@ if ($LASTEXITCODE -ne 0) { Write-Host "self-test failed; nothing deployed." -For
 
 Write-Host "==== deploy ====" -ForegroundColor Magenta
 $ErrorActionPreference = "Continue"
-& npx --yes "wrangler@$WranglerVersion" deploy
+$build = (& git rev-parse --short HEAD).Trim()
+Write-Host "build $build"
+& npx --yes "wrangler@$WranglerVersion" deploy --var "BUILD_HASH:$build"
 if ($LASTEXITCODE -ne 0) { Write-Host "wrangler deploy failed." -ForegroundColor Red; exit 1 }
 
 Write-Host "==== live check ====" -ForegroundColor Magenta
@@ -31,7 +33,8 @@ $ok = $false
 foreach ($i in 1..6) {
     try {
         $r = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/votes" -TimeoutSec 15
-        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"') { $ok = $true; break }
+        $v = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/version" -TimeoutSec 15
+        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"' -and $v.Content -match $build) { $ok = $true; break }
     } catch { }
     Start-Sleep -Seconds 5
 }

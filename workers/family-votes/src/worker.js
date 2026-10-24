@@ -15,6 +15,11 @@ export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
 export const KV_PREFIX = "tg26:d:";
 export const MERGE_WINDOW_MS = 10 * 60 * 1000;
+export const VERSION_ROUTE = "/thanksgiving-2026/api/version";
+// New device ids one address may create per window. A household of phones fits; a script
+// inventing ids to fill the voter cap does not. Counted in VoteBox storage, no paid service.
+export const IP_NEW_DEVICES = 12;
+export const IP_WINDOW_MS = 60 * 60 * 1000;
 export const OPTIONS = new Set([
   "npb-pair",
   "jupiter-6br",
@@ -52,6 +57,14 @@ function cleanVotes(v) {
   if (!v || typeof v !== "object") return out;
   for (const [opt, val] of Object.entries(v)) if (OPTIONS.has(opt) && (val === 1 || val === -1)) out[opt] = val;
   return out;
+}
+
+// Pure rate-limit step: given the stored record for one address, say whether a new device id
+// may be created now and what to store. A record is {start, n}.
+export function rateStep(rec, now, limit = IP_NEW_DEVICES, windowMs = IP_WINDOW_MS) {
+  const cur = rec && now - rec.start < windowMs ? rec : { start: now, n: 0 };
+  if (cur.n >= limit) return { allowed: false, rec: cur, retryAfter: Math.ceil((cur.start + windowMs - now) / 1000) };
+  return { allowed: true, rec: { start: cur.start, n: cur.n + 1 } };
 }
 
 export class VoteBox {
@@ -111,6 +124,20 @@ export class VoteBox {
     if (!known) {
       const { voters } = await this.view(null);
       if (voters >= MAX_VOTERS) return json({ error: "The vote is full." }, 429);
+      const ip = request.headers.get("x-client-ip");
+      if (ip) {
+        const now = Date.now();
+        const step = rateStep(await this.storage.get("r:" + ip), now);
+        if (!step.allowed) {
+          return new Response(JSON.stringify({ error: "Too many new devices from this address. Try again later." }), {
+            status: 429, headers: { ...HEADERS, "retry-after": String(step.retryAfter) },
+          });
+        }
+        await this.storage.put("r:" + ip, step.rec);
+        // Drop expired records so the table cannot grow without bound.
+        const old = await this.storage.list({ prefix: "r:" });
+        for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
+      }
     }
     const v = { ...(known || {}) };
     if (value === 0) delete v[option]; else v[option] = value;
@@ -133,6 +160,9 @@ function box(env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === VERSION_ROUTE && request.method === "GET") {
+      return json({ worker: "family-votes", build: env.BUILD_HASH || "dev" });
+    }
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {
@@ -159,7 +189,10 @@ export default {
 
     return box(env).fetch(new Request("https://votebox" + ROUTE, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-client-ip": request.headers.get("cf-connecting-ip") || "",
+      },
       body: JSON.stringify({ device, option: body.option, value: body.value }),
     }));
   },

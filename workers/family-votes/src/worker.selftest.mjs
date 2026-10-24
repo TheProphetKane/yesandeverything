@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, cleanDevice, ROUTE, KV_PREFIX } from "./worker.js";
+import worker, { VoteBox, cleanDevice, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -86,6 +86,25 @@ j = await get("?device=" + A);
 check("no device ids in the answer", !JSON.stringify(j).includes(A));
 r = await worker.fetch(new Request("https://yesandeverything.com/thanksgiving-2026/api/other"), env);
 check("other paths 404", r.status === 404);
+
+// Rate limit: one address cannot create more than IP_NEW_DEVICES new device ids per window.
+const postFrom = (ip, body) => worker.fetch(new Request(base, { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": ip }, body: JSON.stringify(body) }), env);
+let codes = [];
+for (let i = 0; i < IP_NEW_DEVICES + 3; i++) codes.push((await postFrom("203.0.113.9", { device: "flood" + String(i).padStart(12, "0"), option: "triplex", value: 1 })).status);
+check("one address is cut off after the cap", codes.slice(0, IP_NEW_DEVICES).every(c => c === 200) && codes.slice(IP_NEW_DEVICES).every(c => c === 429));
+r = await postFrom("203.0.113.9", { device: "flood" + "0".padStart(12, "0"), option: "flamingo", value: 1 });
+check("a known device from a limited address still votes", r.status === 200);
+r = await postFrom("198.51.100.4", { device: "other" + "0".padStart(12, "0"), option: "triplex", value: 1 });
+check("another address is unaffected", r.status === 200);
+const t0 = 1000;
+let st = rateStep(null, t0, 2, 100);
+st = rateStep(st.rec, t0 + 1, 2, 100);
+check("rateStep blocks at the limit", rateStep(st.rec, t0 + 2, 2, 100).allowed === false);
+check("rateStep resets after the window", rateStep(st.rec, t0 + 200, 2, 100).allowed === true);
+
+r = await worker.fetch(new Request("https://yesandeverything.com/thanksgiving-2026/api/version"), { ...env, BUILD_HASH: "abc1234" });
+j = await r.json();
+check("version route reports the build", r.status === 200 && j.build === "abc1234");
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }
 console.log("family-votes self-test passed");
