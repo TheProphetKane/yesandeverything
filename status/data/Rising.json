@@ -1,9 +1,9 @@
 {
   "project": "Rising",
   "displayName": "Brackish Rising",
-  "version": "0.85.0",
-  "lastReleaseAt": "2026-10-23T17:19:09-05:00",
-  "lastReleaseMessage": "v0.85.0 - The per-unit target scan costs a third of what it did. A unit stands inside the crowd it shoots at, and its scan read every record in a 512 pixel cell, a hundred of them in a horde, about 120 microseconds a scan. enemy_spatial.closest_in_cells now searches rings of 128 pixel cells outward from the unit and stops once nothing nearer can remain. Its box is half as tall as it is wide, as a range in cells is on the iso grid; a record outside the range's diamond drops on two multiplies, and on the iso grid its cell comes from the offsets rather than a call into the grid. tools/bench_scale.gd gains --bench-scan: the combined case with its no-scan rows, a warm-up baseline kept out of the drift line, and a probe that times one scan per unit each sampled frame. Two paired rounds, every drift line under 15 percent: a scan fell from about 120 to 41 microseconds, the combined case from 22.6 to 18.5 ms rendered and from 18.7 to 14.6 ms headless. A test holds the ring scan to a brute force on an iso grid and a flat one.",
+  "version": "0.86.0",
+  "lastReleaseAt": "2026-10-26T11:51:41-05:00",
+  "lastReleaseMessage": "v0.86.0 - Ready for a play test. The desktop build carried v0.78.0 through seven releases: each export's rename onto the old pack failed and left a temp pack behind, while build-playtest.ps1 judged the pack by its existence. It now refuses to export over a running game, judges the pack by its timestamp and clears the temp packs. The Drowned, the shore and the interface make sound. A throttle on the game clock gives one moan every 1.5 s from a record on screen, a Lunger shriek, a Wrecker groan and a death cry for a kill on screen. The shore bed loops under every mission, and the horde sonar sounds when a horde is announced. Every button clicks, a placement thuds, a refused one says so, and walls and gates thump or clang by material. The per-Node enemy path's leftovers are gone: the node index, every walk of the enemies group, the grid's enemy bucket, the hover ring, the off-map helper. The three batteries fire on the game clock, so process_files falls from 26 to 23. count_garrison reads a per-owner tally, 0.37 microseconds a call where the pool walk took 550 at 2,000 records. An in-mission load releases the pooled horde and seeds the standing sleepers again; it used to keep the live horde and orphan each structure's garrison. The four Godot gates name their last real pass when they skip, the Spine libraries are held to their recorded hashes, a stalled flow field build warns, and the design document, the architecture notes, the optimization log and the backlog match the tree.",
   "milestone": {
     "id": "M6",
     "label": "Art Integration",
@@ -11,7 +11,7 @@
   },
   "completion": {
     "pct": 63,
-    "anchored": "2026-10-19"
+    "anchored": "2026-10-23"
   },
   "itemsLeft": {
     "open": 6,
@@ -20,7 +20,7 @@
     "gates": 6,
     "items": [
       "Declared milestone moved M1 to M6 on 2026-08-26. M6 Art Integration is the track receiving the work and has been for weeks; M1 Vertical Slice closed behind it on 2026-10-16. The old declaration paired M1 with a rule that the number only advances on a gameplay deliverable, which froze the number against a track nobody was on. The number counts Roadmap deliverables across all nine milestones, so art work moves it.",
-      "How the 63 is derived, countable off the GDD Roadmap tab: 32 of 51 deliverables shipped. M0 8/8, M1 7/7, M2 4/4, M3 4/5, M4 6/8, M5 0/4, M6 3/5, M7 0/5, M8 0/5. Recounted 2026-10-19 after v0.77.0 struck the Hatchery spawn loop (M1) and the Ledger, Record and Roll rail (M3). The same counting rule applies, one struck Roadmap deliverable is one shipped item.",
+      "How the 63 is derived, countable off the GDD Roadmap tab: 32 of 51 deliverables shipped. M0 8/8, M1 7/7, M2 4/4, M3 4/5, M4 6/8, M5 0/4, M6 3/5, M7 0/5, M8 0/5. Recounted 2026-10-19 after v0.77.0 struck the Hatchery spawn loop (M1) and the Ledger, Record and Roll rail (M3). The same counting rule applies, one struck Roadmap deliverable is one shipped item. Recounted again 2026-10-23 straight off the Roadmap tab's list items: the same 32 of 51, no change.",
       "M1 Vertical Slice, seven of seven shipped. The last, the Hatchery spawn loop, shipped in v0.77.0 on 2026-10-16: the Hatchery, the Brood Mound and the Leviathan Cyst spawn on the Numbers tab rates into a sleeping garrison (source/buildings/structure_spawns.gd), and scripts/check_structure_spawns.py plays the third mission on every release to prove it. How the garrison should feel to fight waits on D-OPEN-56, a design ruling, and on a played mission.",
       "M3 Intro Campaign, four of five shipped as of v0.77.0: the mission selection rail (v0.65.0), the inter-mission save read back on the Campaign button (v0.73.0), the ten hand-authored missions, and the Faculty Ledger, Record and Roll on the rail (2026-10-16). Open: the Leviathan Cyst boss fight. The Cyst is seated, marked through the fog and gestates one Leviathan every ten minutes (v0.77.0); the fight itself, with its own clock and its own ending, is not designed.",
       "M6 Art Integration, three of five shipped. Building sprites, terrain tile set and HUD icon set are in. Open: unit sheets, where three of six scenes carry Spine rigs (scout, rifleman, marksman) and harpoonist, tommy and trench_sweeper carry none; and enemy sheets, where the Shambler and the Lunger are rigged and baked and the other six are static single frames.",
@@ -29,7 +29,7 @@
   },
   "backlog": {
     "count": 0,
-    "totalOpen": 44,
+    "totalOpen": 41,
     "items": []
   },
   "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
@@ -45,75 +45,126 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-10-19.md",
-    "latestReportAt": "2026-10-19T11:50:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-10-26.md",
+    "latestReportAt": "2026-10-26T11:45:00Z",
     "verdict": "in-progress",
-    "topFinding": "Nothing is broken, and health rises from 85 to 88. Every finding the 2026-10-12 pass left open is closed in the tree at v0.77.0: the campaign save restores its good backup, the run save refuses a newer build, and the baked-sheet gate tolerates one owed bake on a dated allowance. The one open action is bookkeeping: the completion block still reads 55 pct anchored 2026-09-23 and lists the Hatchery spawn loop as open, though the GDD strikes it as shipped in v0.77.0, so the dashboard figure is a month stale. How the new garrisons should feel to fight waits on the D-OPEN-56 design ruling.",
-    "actionsOpen": 0,
+    "topFinding": "Nothing is broken. The 2026-10-23 consolidation onto one pooled enemy path landed cleanly in code but left its old path in the prose and in a little dead code: docs/ARCHITECTURE.md:290 still says to change both enemy_base.gd and enemy_pool.gd, about two dozen comments still describe EnemyBase as live, and node_enemy_index.gd plus a dozen walks of the enemies group run over a list nothing fills. Five releases of engine and performance work moved completion by zero while M6 stays at three of five, and four catalogued audio rows have files but no call site.",
+    "actionsOpen": 4,
     "actionsClosed": 141,
-    "actions": [],
+    "actions": [
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "priority": 15,
+        "lens": "maintainability",
+        "title": "Rewrite the dual-path hazard line and the enemies folder entry in docs/ARCHITECTURE.md to describe the single pooled path with its flow field and sleep modules."
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "strategic-kill-this",
+        "title": "Record the one-enemy-path consolidation on the Roadmap tab as pulled-forward work and hold further enemy-path tuning until an M6 deliverable moves."
+      },
+      {
+        "id": "game-design-sound-design-discipline-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "game-design-sound-design-discipline",
+        "title": "Wire a Drowned voice throttle on game_clock.ticked, a button-bind helper for interface clicks, and horde_sonar on horde_day_announced, then correct BACKLOG.md:100 to say which rows are audible."
+      },
+      {
+        "id": "architecture-01",
+        "severity": "MED",
+        "priority": 8,
+        "lens": "architecture",
+        "title": "Delete node_enemy_index.gd and the empty enemies-group walks with their test fixtures, or add a gate that fails when a production reader of a group has no production writer."
+      }
+    ],
     "deferred": [],
     "health": 88,
     "lensScores": {
-      "architecture": 86,
-      "reliability": 91,
+      "architecture": 84,
+      "reliability": 90,
       "security": 94,
-      "performance": 91,
-      "data-integrity": 87,
-      "maintainability": 90,
-      "solo-tool-ux": 90,
+      "performance": 90,
+      "data-integrity": 90,
+      "maintainability": 86,
+      "solo-tool-ux": 91,
       "cost-economics": 90,
-      "dependency": 88,
-      "observability": 90,
-      "strategic-kill-this": 85,
-      "compliance-data-steward": 88,
-      "game-design-playability": 78,
-      "game-design-scope-discipline": 88,
-      "game-design-scale-architecture": 87,
-      "game-design-asset-pipeline": 82,
+      "dependency": 90,
+      "observability": 88,
+      "strategic-kill-this": 82,
+      "compliance-data-steward": 90,
+      "game-design-playability": 80,
+      "game-design-scope-discipline": 86,
+      "game-design-scale-architecture": 89,
+      "game-design-asset-pipeline": 85,
       "game-design-voice-and-tone": 90,
-      "game-design-sound-design-discipline": 76,
-      "game-design-art-direction-consistency": 88,
-      "game-design-save-format-stability": 88,
+      "game-design-sound-design-discipline": 78,
+      "game-design-art-direction-consistency": 87,
+      "game-design-save-format-stability": 89,
       "release-pipeline-per-project-ps1-stack": 92,
-      "release-pipeline-discord-notify-wiring": 92,
+      "release-pipeline-discord-notify-wiring": 93,
       "release-pipeline-version-pill-drift": 96,
-      "release-pipeline-gate-page-publish": 94
+      "release-pipeline-gate-page-publish": 93
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "maintainability-01",
+        "severity": "medium",
+        "priority": 15,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-26"
+      },
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-26"
+      },
+      {
+        "id": "game-design-sound-design-discipline-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-26"
+      },
+      {
+        "id": "architecture-01",
+        "severity": "medium",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-10-26"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
           "performance",
           "maintainability"
         ],
-        "runsSeen": 5
+        "runsSeen": 6
       },
       {
         "lenses": [
           "strategic-kill-this",
           "game-design-scope-discipline"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "strategic-kill-this",
           "maintainability"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "game-design-save-format-stability",
           "game-design-playability"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "game-design-asset-pipeline",
-          "solo-tool-ux"
         ],
         "runsSeen": 2
       },
@@ -122,10 +173,38 @@
           "reliability",
           "solo-tool-ux"
         ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "strategic-kill-this",
+          "performance"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "game-design-sound-design-discipline",
+          "game-design-scope-discipline"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "architecture",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "compliance-data-steward",
+          "game-design-art-direction-consistency"
+        ],
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-10-19 06:35 to 06:5x -05:00 full pass, 24 lenses. Previous openFindings was empty, so the close leg had nothing to close and actionsClosed stays 140. Deferred rebuilt: performance-10 closed on docs/OPTIMIZATION_LOG.md rows 13 and 16 to 18; playability-10 dropped because no definition for it exists in this project. One new MEDIUM, maintainability-15, enqueued as rising-bar-raise-2026-10-19-maintainability-15.",
+    "reconcileNote": "2026-10-26 per-project pass: previous openFindings was empty, nothing to verify or close. The live row rising-canonical-audit-2026-10-24-pooled-ruling-01 (LOW) was re-verified still true at docs/GDD.html:3089 and stays open. Four new MEDIUM findings enqueued.",
     "closedLog": [
       {
         "date": "2026-09-22",
@@ -650,19 +729,19 @@
     },
     {
       "k": "enemies",
-      "v": "15"
+      "v": "14"
     },
     {
       "k": "tests",
-      "v": "26"
+      "v": "25"
     },
     {
       "k": "scenes",
-      "v": "91"
+      "v": "92"
     },
     {
       "k": "gdd kb",
-      "v": "1678"
+      "v": "1682"
     }
   ],
   "workQueueDepth": 0,
