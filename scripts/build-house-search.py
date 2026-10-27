@@ -121,7 +121,8 @@ tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
-.group-view .count { background: var(--pass-soft); color: var(--pass); }
+.group-view { padding: 1rem; border: 2px solid var(--pass); border-radius: 16px; background: var(--pass-soft); }
+.group-view .count { background: var(--bg); color: var(--pass); }
 .cards { display: grid; gap: 1.25rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
 .card.subject { border: 2px solid var(--sea); }
@@ -234,7 +235,7 @@ SCRIPT = """
     b.focus({ preventScroll: true });
     if (live) {
       var addr = b.getAttribute("data-addr");
-      live.textContent = mark === "view" ? addr + " added to the viewing list" + (listed ? ", at the top of the page." : ".")
+      live.textContent = mark === "view" ? addr + " added to the Want to view list" + (listed ? " at the top of the page." : ".")
         : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
         : addr + " cleared.";
     }
@@ -363,7 +364,8 @@ def report(h, updated):
     out.append('<p class="crumb"><a href="../">House search</a></p>')
     out.append(f'<p class="eyebrow">Buyer report, updated {e(updated)}</p>')
     out.append(f'<div class="title-row"><h1>{e(h["address"])}</h1>{picks(h)}</div>')
-    out.append('<p class="view-note">On your list to view. It sits at the top of the house list.</p>')
+    out.append('<p class="view-note">On your list to view. It sits in the Want to view list at the top of '
+               'the house search page.</p>')
     out.append('<p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p>')
     out.append(f'<p>{e(h["city"])}</p>')
     out.append(f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>')
@@ -451,16 +453,16 @@ def index(data):
     if data.get("searchNote"):
         out.append(f'<p>{e(data["searchNote"])}</p>')
     out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out, '
-               'in the table or on its card. Houses to view move to the top of the cards and no\'s drop to the '
-               'bottom; tapping the same mark again clears it. The marks are saved in this browser only, so a '
-               'phone and a laptop each keep their own.</p>')
+               'in the table or on its card. Houses to view move into their own list at the top of the page, '
+               'and no\'s drop to the bottom; tapping the same mark again clears it. The marks are saved in this '
+               'browser only, so a phone and a laptop each keep their own.</p>')
     out.append('</header>')
-    if data.get("compareRows"):
-        out.append(compare(houses))
     out.append('<section class="group group-view" id="g-view" hidden><div class="group-head">'
                '<h2>Want to view <span class="count">0</span></h2>'
                '<p>Saved in this browser. Tap the ✓ again to take a house off the list.</p></div>'
                '<div class="cards"></div></section>')
+    if data.get("compareRows"):
+        out.append(compare(houses))
     order = 0
     for key, title, blurb in GROUPS:
         members = [h for h in houses if overall(h) == key]
