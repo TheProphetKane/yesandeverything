@@ -3,10 +3,11 @@
     python scripts/build-house-search.py
 
 Writes house-search/index.html (the list) and house-search/<slug>/index.html (one full
-report per house). Every page is self-contained, like the rest of the site. Each house
-card and each report states the homeowners association answer and fee on its own line,
-so a house with no fee says so instead of leaving the field blank. The fenced back yard
-gets the same treatment, with "Not stated" when the listing does not say.
+report per house). Every page is self-contained, like the rest of the site. The list is
+short table rows only; the full breakdown of a house lives on its report and nowhere else.
+Each row and each report states the homeowners association answer and fee, so a house
+with no fee says so instead of leaving the field blank. The fenced back yard gets the
+same treatment, with "Not stated" when the listing does not say.
 
 Two must-haves are checked on every house: 3 bedrooms on the main floor, and a finished
 basement. The basement is the tornado shelter, so a house without one fails the same as a
@@ -14,11 +15,11 @@ house whose basement is unfinished, and the partly-sunk lower level of a split-l
 needs confirming. The build refuses a house that is missing either answer, and the list
 groups houses by the result: both met, one to confirm, one failed.
 
-Every house carries a check mark (want to view) and an X (no), on its card, its report and
-its row of the side-by-side table, where they are the far-left column. A house holds one
-mark at most. Marked cards move to a group at the top (view) or the bottom (no); table
-rows stay put and change color. The marks live in the viewer's browser storage, shared by
-the list and the reports, so they survive a reload but not a change of device.
+Every house carries a check mark (want to view) and an X (no), on its report and as the
+far-left column of its table row. A house holds one mark at most. A checked row moves up
+into the Want to view table at the top of the page, and a no drops to the Marked no table
+at the bottom. The marks live in the viewer's browser storage, shared by the list and the
+reports, so they survive a reload but not a change of device.
 """
 
 import html
@@ -108,10 +109,15 @@ td.pass { color: var(--pass); }
 td.fail { color: var(--fail); }
 td.check { color: var(--amber); }
 td.soft { color: var(--rose); }
-.pick-col { display: none; }
-.js .pick-col { display: table-cell; }
-td.pick-col { width: 1%; white-space: nowrap; }
-tr.is-view td { background: var(--pass-soft); }
+main[data-page="list"] { max-width: 1400px; }
+table.houses { table-layout: fixed; }
+table.houses th, table.houses td { padding: 0.55rem 0.6rem; }
+td.addr small { color: var(--muted); }
+details.note summary { cursor: pointer; color: var(--sea); width: fit-content; }
+details.note p { margin-top: 0.5rem; }
+th.pick-col, td.pick-col, col.pick-col { display: none; }
+.js th.pick-col, .js td.pick-col { display: table-cell; }
+.js col.pick-col { display: table-column; }
 tr.is-no td { opacity: 0.45; }
 tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
 tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
@@ -121,29 +127,17 @@ tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
-.group-view { padding: 1rem; border: 2px solid var(--pass); border-radius: 16px; background: var(--pass-soft); }
-.group-view .count { background: var(--bg); color: var(--pass); }
-.cards { display: grid; gap: 1.25rem; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
-.card.subject { border: 2px solid var(--sea); }
-.card-head, .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
-.titles { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.9rem; min-width: 0; }
-.card-head h3 { font-size: 1.45rem; font-weight: 800; }
-.card-body { display: grid; gap: 0.8rem; min-width: 0; }
-.tag { display: inline-block; font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.55rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
+.group-view h2 { color: var(--pass); }
+.group-view .count { background: var(--pass-soft); color: var(--pass); }
+.group-view .scroll { border-color: var(--pass); box-shadow: 0 0 0 2px var(--pass); }
+.title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+.tag { display: inline-block; font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.05rem 0.45rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
-.tag.no-tag { background: var(--fail-soft); color: var(--fail); }
-.tag.view-tag { background: var(--pass-soft); color: var(--pass); }
-.no-tag, .no-note, .view-tag, .view-note { display: none; }
-.is-no .no-tag, .is-view .view-tag { display: inline-block; }
+.no-note, .view-note { display: none; }
 .is-no .no-note, .is-view .view-note { display: block; }
 .no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
 .no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
 .view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
-.card.is-view { border: 2px solid var(--pass); }
-.card.is-no { border: 1px dashed var(--fail); background: var(--bg); }
-.card.is-no .card-body { display: none; }
-.card.is-no h3 { color: var(--muted); text-decoration: line-through; }
 .picks { display: none; flex: none; gap: 0.4rem; }
 .js .picks { display: inline-flex; }
 .pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
@@ -194,22 +188,22 @@ SCRIPT = """
       save(KEYS[m], marks[m]);
     });
   }
-  function place(card, mark) {
-    var home = document.getElementById(mark ? "g-" + mark : card.getAttribute("data-home"));
-    var list = home.querySelector(".cards");
-    if (card.parentNode === list) return;
-    var order = +card.getAttribute("data-order"), next = null;
+  function place(row, mark) {
+    var home = document.getElementById(mark ? "g-" + mark : row.getAttribute("data-home"));
+    var list = home.querySelector("tbody");
+    if (row.parentNode === list) return;
+    var order = +row.getAttribute("data-order"), next = null;
     for (var i = 0; i < list.children.length; i++) {
       if (+list.children[i].getAttribute("data-order") > order) { next = list.children[i]; break; }
     }
-    list.insertBefore(card, next);
+    list.insertBefore(row, next);
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
       var m = markOf(el.getAttribute("data-house"));
       el.classList.toggle("is-view", m === "view");
       el.classList.toggle("is-no", m === "no");
-      if (listed && el.matches("article.card")) place(el, m);
+      if (listed && el.matches("tr")) place(el, m);
     });
     document.querySelectorAll("button[data-pick]").forEach(function (b) {
       var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
@@ -219,7 +213,7 @@ SCRIPT = """
       b.title = text[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
-      var n = g.querySelectorAll(".cards > .card").length;
+      var n = g.querySelectorAll("tbody > tr").length;
       g.hidden = n === 0;
       var c = g.querySelector(".count");
       if (c) c.textContent = n;
@@ -235,8 +229,8 @@ SCRIPT = """
     b.focus({ preventScroll: true });
     if (live) {
       var addr = b.getAttribute("data-addr");
-      live.textContent = mark === "view" ? addr + " added to the Want to view list" + (listed ? " at the top of the page." : ".")
-        : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
+      live.textContent = mark === "view" ? addr + " added to the Want to view table" + (listed ? " at the top of the page." : ".")
+        : mark === "no" ? addr + " marked no" + (listed ? ", in the table at the bottom of the page." : ".")
         : addr + " cleared.";
     }
   });
@@ -279,10 +273,16 @@ GROUPS = [
     ("pass", "Meets both must-haves",
      "3 bedrooms on the main floor, and a finished basement for tornado shelter."),
     ("check", "One must-have to confirm",
-     "Close on paper. The amber line on each house says what to ask."),
+     "Close on paper. The amber cell shows which one; the full report says what to ask."),
     ("fail", "Fails a must-have",
-     "Kept for comparison. The red line on each house says which one it misses."),
+     "Kept for comparison. The red cell shows which must-have it misses."),
 ]
+# Every table on the list page shares these columns and widths, so the Want to view table,
+# the three must-have groups and the Marked no table line up with each other.
+COLUMNS = [("View / No", 116, "pick-col"), ("House", 196, ""), ("Price", 96, ""),
+           ("3 beds on main floor", 106, ""), ("Finished basement", 128, ""), ("Fenced yard", 92, ""),
+           ("Homeowners association", 164, ""), ("Beds / baths", 124, ""), ("Size", 124, ""),
+           ("Built", 60, ""), ("Drive to daycare", 88, "")]
 
 
 def e(s):
@@ -364,9 +364,10 @@ def report(h, updated):
     out.append('<p class="crumb"><a href="../">House search</a></p>')
     out.append(f'<p class="eyebrow">Buyer report, updated {e(updated)}</p>')
     out.append(f'<div class="title-row"><h1>{e(h["address"])}</h1>{picks(h)}</div>')
-    out.append('<p class="view-note">On your list to view. It sits in the Want to view list at the top of '
+    out.append('<p class="view-note">On your list to view. It sits in the Want to view table at the top of '
                'the house search page.</p>')
-    out.append('<p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p>')
+    out.append('<p class="no-note">You marked this house a no. It sits in the Marked no table at the bottom of '
+               'the house search page until you undo it.</p>')
     out.append(f'<p>{e(h["city"])}</p>')
     out.append(f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>')
     out.append(musts(h))
@@ -421,20 +422,43 @@ def report(h, updated):
     return "".join(out)
 
 
-def card(h, order, group):
-    cls = "card subject" if h.get("role") == "subject" else "card"
-    tag = '<span class="tag subject">The house that started this</span>' if h.get("role") == "subject" \
-        else '<span class="tag">Similar house</span>'
-    return (f'<article class="{cls}" data-house="{e(h["slug"])}" data-home="g-{group}" data-order="{order}">'
-            f'<div class="card-head"><div class="titles"><h3>{e(h["address"])}</h3>{tag}'
-            f'<span class="tag view-tag">Want to view</span><span class="tag no-tag">Marked no</span></div>'
-            f'{picks(h)}</div>'
-            f'<div class="card-body"><p>{e(h["city"])}</p>'
-            f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>'
-            f'{musts(h)}{hoa_line(h)}{fence_line(h)}{facts(h)}'
-            f'<div class="verdict"><strong>The short answer</strong><p>{e(h["verdict"])}</p></div>'
-            f'<p><a class="go" href="{e(h["slug"])}/">Read the full report</a> &middot; '
-            f'<a href="{e(h["listing"])}" target="_blank" rel="noopener">Listing</a></p></div></article>')
+def row(h, order, key):
+    """One short table row. The full breakdown lives only on the house's own report page."""
+    hoa = h["hoa"]
+    hoa_txt = f'Yes, {hoa["fee"]}' if hoa["has"] else "No, no fee"
+    main, base = checks(h)
+    count = h["mainFloorBeds"]["count"]
+    main_txt = {"pass": f"Pass ({count})", "fail": f"Fails ({count})", "check": "Check"}[main]
+    base_txt = BASEMENT_SHORT[h["basement"]["kind"]]
+    fence_txt, fence_cls = {True: ("Yes", "pass"), False: ("No", "soft"),
+                            None: ("Not stated", "check")}[h["fence"]["has"]]
+    subject = '<br><span class="tag subject">Started this</span>' if h.get("role") == "subject" else ""
+    return (f'<tr data-house="{e(h["slug"])}" data-home="g-{key}" data-order="{order}">'
+            f'<td class="pick-col">{picks(h)}</td>'
+            f'<td class="addr"><a class="go" href="{e(h["slug"])}/">{e(h["address"])}</a>'
+            f'<br><small>{e(h["city"])} &middot; '
+            f'<a href="{e(h["listing"])}" target="_blank" rel="noopener">Listing</a></small>{subject}</td>'
+            f'<td class="num">{money(h["price"])}</td>'
+            f'<td class="{main}">{MARK[main]} {e(main_txt)}</td><td class="{base}">{MARK[base]} {e(base_txt)}</td>'
+            f'<td class="{fence_cls}">{e(fence_txt)}</td><td>{e(hoa_txt)}</td>'
+            f'<td>{e(h.get("bedsShort", h["beds"]))}</td><td>{e(h.get("sizeShort", h["size"]))}</td>'
+            f'<td class="num">{e(str(h["built"])[:4])}</td><td>{e(h.get("driveShort", h["drive"]))}</td></tr>')
+
+
+def table(rows):
+    def cls(c):
+        return f' class="{c}"' if c else ""
+    cols = "".join(f'<col{cls(c)} style="width:{w}px">' for _, w, c in COLUMNS)
+    head = "".join(f"<th{cls(c)}>{e(t)}</th>" for t, _, c in COLUMNS)
+    width = sum(w for _, w, _ in COLUMNS)
+    return (f'<div class="scroll"><table class="houses" style="min-width:{width}px"><colgroup>{cols}</colgroup>'
+            f'<thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
+
+
+def group(key, title, blurb, rows):
+    return (f'<section class="group group-{key}" id="g-{key}"{"" if rows else " hidden"}>'
+            f'<div class="group-head"><h2>{e(title)} <span class="count">{len(rows)}</span></h2>'
+            f'<p>{e(blurb)}</p></div>{table(rows)}</section>')
 
 
 def ordered(houses):
@@ -445,68 +469,32 @@ def ordered(houses):
 def index(data):
     houses = ordered(data["houses"])
     out = [HEAD.format(desc="Houses under consideration, each with a full buyer report.",
-                       title="House Search", style=STYLE, attrs="")]
+                       title="House Search", style=STYLE, attrs=' data-page="list"')]
     out.append('<header>')
     out.append(f'<p class="eyebrow">Updated {e(data["updated"])}</p>')
     out.append('<h1>House search</h1>')
     out.append(f'<p>{e(data["criteria"])}</p>')
     if data.get("searchNote"):
-        out.append(f'<p>{e(data["searchNote"])}</p>')
-    out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out, '
-               'in the table or on its card. Houses to view move into their own list at the top of the page, '
-               'and no\'s drop to the bottom; tapping the same mark again clears it. The marks are saved in this '
-               'browser only, so a phone and a laptop each keep their own.</p>')
+        out.append(f'<details class="note"><summary>How these houses were found</summary>'
+                   f'<p>{e(data["searchNote"])}</p></details>')
+    out.append('<p>Tap an address for its full report.</p>')
+    out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Houses to '
+               'view move up into their own table at the top of the page, and no\'s drop to a table at the '
+               'bottom; tapping the same mark again clears it. The marks are saved in this browser only, so a '
+               'phone and a laptop each keep their own.</p>')
     out.append('</header>')
-    out.append('<section class="group group-view" id="g-view" hidden><div class="group-head">'
-               '<h2>Want to view <span class="count">0</span></h2>'
-               '<p>Saved in this browser. Tap the ✓ again to take a house off the list.</p></div>'
-               '<div class="cards"></div></section>')
-    if data.get("compareRows"):
-        out.append(compare(houses))
+    out.append(group("view", "Want to view", "Saved in this browser. Tap the ✓ again to take a house off this table.", []))
     order = 0
     for key, title, blurb in GROUPS:
-        members = [h for h in houses if overall(h) == key]
-        out.append(f'<section class="group group-{key}" id="g-{key}"{"" if members else " hidden"}>'
-                   f'<div class="group-head"><h2>{e(title)} <span class="count">{len(members)}</span></h2>'
-                   f'<p>{e(blurb)}</p></div><div class="cards">')
-        for h in members:
-            out.append(card(h, order, key))
-            order += 1
-        out.append('</div></section>')
-    out.append('<section class="group group-no" id="g-no" hidden><div class="group-head">'
-               '<h2>Marked no <span class="count">0</span></h2>'
-               '<p>Saved in this browser. Tap the ✕ again to put a house back where it was.</p></div>'
-               '<div class="cards"></div></section>')
+        rows = []
+        for h in houses:
+            if overall(h) == key:
+                rows.append(row(h, order, key))
+                order += 1
+        out.append(group(key, title, blurb, rows))
+    out.append(group("no", "Marked no", "Saved in this browser. Tap the ✕ again to put a house back where it was.", []))
     out.append(TAIL)
     return "".join(out)
-
-
-def compare(houses):
-    head = ('<tr><th class="pick-col">View / No</th><th>House</th><th>Price</th>'
-            "<th>3 beds on main floor</th><th>Finished basement</th>"
-            "<th>Fenced yard</th><th>Homeowners association</th>"
-            "<th>Beds / baths</th><th>Size</th><th>Built</th><th>Drive to daycare</th></tr>")
-    rows = []
-    for h in houses:
-        hoa = h["hoa"]
-        hoa_txt = f'Yes, {hoa["fee"]}' if hoa["has"] else "No, no fee"
-        main, base = checks(h)
-        count = h["mainFloorBeds"]["count"]
-        main_txt = {"pass": f"Pass ({count})", "fail": f"Fails ({count})", "check": "Check"}[main]
-        base_txt = BASEMENT_SHORT[h["basement"]["kind"]]
-        fence_txt, fence_cls = {True: ("Yes", "pass"), False: ("No", "soft"),
-                                None: ("Not stated", "check")}[h["fence"]["has"]]
-        rows.append(f'<tr data-house="{e(h["slug"])}"><td class="pick-col">{picks(h)}</td>'
-                    f'<td class="addr"><a href="{e(h["slug"])}/">{e(h["address"])}</a>'
-                    f' <span class="tag view-tag">View</span><span class="tag no-tag">No</span>'
-                    f'<br><small>{e(h["city"])}</small></td>'
-                    f'<td class="num">{money(h["price"])}</td>'
-                    f'<td class="{main}">{MARK[main]} {e(main_txt)}</td><td class="{base}">{MARK[base]} {e(base_txt)}</td>'
-                    f'<td class="{fence_cls}">{e(fence_txt)}</td><td>{e(hoa_txt)}</td>'
-                    f'<td>{e(h.get("bedsShort", h["beds"]))}</td><td>{e(h.get("sizeShort", h["size"]))}</td>'
-                    f'<td class="num">{e(str(h["built"])[:4])}</td><td>{e(h.get("driveShort", h["drive"]))}</td></tr>')
-    return (f'<section><h2>Side by side</h2><div class="scroll"><table style="min-width:1200px">'
-            f'<thead>{head}</thead><tbody>{"".join(rows)}</tbody></table></div></section>')
 
 
 def write(path, text):
