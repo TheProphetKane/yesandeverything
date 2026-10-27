@@ -27,7 +27,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC = new Set([
   "404.html", "CNAME", "index.html", "og.png", "robots.txt", "sitemap.xml",
   ".well-known", "apothecary", "budget", "dashboard", "projects", "sitemap",
-  "status", "terms", "thanksgiving-2026", "work",
+  "status", "terms", "thanksgiving-2026", "work", "house-search",
 ]);
 
 // Kept in the repository, never served: build steps, release gates, Worker sources
