@@ -114,8 +114,9 @@ named. The pieces:
 - The routine `house-search-sync` runs the scan at 05:44 and 17:44 every day (a cloud trigger
   that fires into the Kane-PC bridge environment; its prompt is
   `C:\Users\Kane\.claude\scheduled-tasks\house-search-sync\SKILL.md`), writes the report for
-  each new house, and ships with `.\scripts\release.ps1 -Path data/house-search.json -Path
-  data/house-search-seen.json -Path data/house-search-drafts.json -Path house-search`. A quiet
+  each new house, and ships with `.\scripts\release.ps1 -Path
+  data/house-search.json,data/house-search-seen.json,data/house-search-drafts.json,house-search`
+  (one `-Path`, the values comma-separated). A quiet
   run ships nothing.
 - Drive times for the first nine houses are Google Maps at midday on a Tuesday; a house the
   scan adds carries the OSRM estimate, marked "(est.)", until Google Maps is run. The nine
