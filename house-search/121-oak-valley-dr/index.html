@@ -87,15 +87,20 @@ td.pass { color: var(--pass); }
 td.fail { color: var(--fail); }
 td.check { color: var(--amber); }
 td.soft { color: var(--rose); }
+.pick-col { display: none; }
+.js .pick-col { display: table-cell; }
+td.pick-col { width: 1%; white-space: nowrap; }
+tr.is-view td { background: var(--pass-soft); }
 tr.is-no td { opacity: 0.45; }
-tr.is-no td:first-child { opacity: 1; }
-tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); }
+tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
+tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .ask { background: var(--rose-soft); border-radius: 12px; padding: 1rem 1.25rem; display: grid; gap: 0.6rem; }
 .group-head { display: grid; gap: 0.3rem; }
 .count { display: inline-block; font-family: var(--font-data); font-size: 0.9rem; vertical-align: middle; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--raise); color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
+.group-view .count { background: var(--pass-soft); color: var(--pass); }
 .cards { display: grid; gap: 1.25rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
 .card.subject { border: 2px solid var(--sea); }
@@ -106,17 +111,26 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 .tag { display: inline-block; font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.55rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
 .tag.no-tag { background: var(--fail-soft); color: var(--fail); }
-.no-tag, .no-note { display: none; }
-.is-no .no-tag { display: inline-block; }
-.is-no .no-note { display: block; }
-.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.tag.view-tag { background: var(--pass-soft); color: var(--pass); }
+.no-tag, .no-note, .view-tag, .view-note { display: none; }
+.is-no .no-tag, .is-view .view-tag { display: inline-block; }
+.is-no .no-note, .is-view .view-note { display: block; }
+.no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
+.view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
+.card.is-view { border: 2px solid var(--pass); }
 .card.is-no { border: 1px dashed var(--fail); background: var(--bg); }
 .card.is-no .card-body { display: none; }
 .card.is-no h3 { color: var(--muted); text-decoration: line-through; }
-.nope { display: none; flex: none; min-width: 44px; height: 44px; padding: 0 0.6rem; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); color: var(--fail); font: 700 1.3rem/1 var(--font-data); cursor: pointer; }
-.nope:hover { background: var(--fail-soft); border-color: var(--fail); }
-.is-no .nope { color: var(--ink); font-size: 0.85rem; letter-spacing: 0.04em; padding: 0 0.9rem; }
-.js .nope { display: inline-grid; }
+.picks { display: none; flex: none; gap: 0.4rem; }
+.js .picks { display: inline-flex; }
+.pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
+.pick.view { color: var(--pass); }
+.pick.no { color: var(--fail); }
+.pick.view:hover { background: var(--pass-soft); border-color: var(--pass); }
+.pick.no:hover { background: var(--fail-soft); border-color: var(--fail); }
+.pick.view[aria-pressed="true"] { background: var(--pass); border-color: var(--pass); color: var(--bg); }
+.pick.no[aria-pressed="true"] { background: var(--fail); border-color: var(--fail); color: var(--bg); }
 .js-only { display: none; }
 .js .js-only { display: block; }
 .go { font-weight: 700; }
@@ -127,25 +141,39 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 <body>
 <main class="wrap" data-house="121-oak-valley-dr">
 <p class="sr-only" id="announce" aria-live="polite"></p>
-<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>121 Oak Valley Dr</h1><button type="button" class="nope" data-nope="121-oak-valley-dr" data-addr="121 Oak Valley Dr" aria-label="Mark 121 Oak Valley Dr as a no" title="Mark this house as a no">✕</button></div><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Saint Peters, MO 63376 (unincorporated St. Charles County)</p><p class="price">$312,900 <small>Cut from $325,000 in two steps</small></p><ul class="musts"><li class="pass"><span class="mark" aria-hidden="true">✓</span><div><b>3 bedrooms on the main floor: <span class="st">Pass</span></b><span>3 bedrooms on the main floor; the 4th is in the walkout lower level.</span></div></li><li class="pass"><span class="mark" aria-hidden="true">✓</span><div><b>A finished basement: <span class="st">Pass</span></b><span>The walkout lower level is finished with a family room, a bedroom and laundry. The county still records it as unfinished, so ask for permits.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$489 a year ($40.75 a month), Eagles Landing</span></div><p>Covers the subdivision pool and clubhouse.</p><div class="fence unknown"><b>Fenced back yard: Not stated</b><span>The listing does not mention a fence. The back yard is level.</span></div></header><div class="verdict"><strong>The short answer</strong><p>A long-time owner&#x27;s house with real updates, not cosmetic ones: a newer kitchen, a newer furnace and air conditioner, new siding and vinyl plank floors. Three bedrooms share the main floor. The drive is the longest in the set at 19 minutes, the lower-level finish does not appear on the county record, and the price has been cut twice in two months.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale since August 28, 2026; cut twice.</dd></div><div><dt>Bedrooms</dt><dd>4: 3 on the main floor, 1 in the walkout lower level</dd></div><div><dt>Bathrooms</dt><dd>2 full, both on the main floor</dd></div><div><dt>Size</dt><dd>2,082 square feet: 1,148 on the main floor, the rest in the finished lower level</dd></div><div><dt>Built</dt><dd>1987, ranch with a walkout lower level</dd></div><div><dt>Lot</dt><dd>0.18 acre, level back yard</dd></div><div><dt>Property taxes</dt><dd>$2,169 for 2025, after the county cut its value 18.6 percent</dd></div><div><dt>Schools</dt><dd>Fort Zumwalt School District; Mid Rivers Elementary is 1.5 miles away</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>19 minutes, 8.6 miles; right at the edge of the 20-minute limit</dd></div></dl><p><a href="https://www.zillow.com/homedetails/121-Oak-Valley-Dr-Saint-Peters-MO-63376/2516688_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26055432). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>Same owner since 2001, not a flip</li><li>Newer furnace, air conditioner, siding and kitchen</li><li>Vinyl plank floors through the whole house</li><li>Walkout lower level with a large open family room</li><li>Subdivision pool</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>19-minute drive, the longest in the search</li><li>Lower-level finish and its bedroom are not on the county record</li><li>Only 2 bathrooms, both upstairs</li><li>Taxes will likely jump after a sale: the county value is $184,355</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">1990 to 2001</span><span>Sold four times, from $74,500 in 1990 to $117,500 in January 2001.</span></li><li><span class="when">January 2001</span><span>The current owners buy it for $117,500 and keep it 25 years.</span></li><li><span class="when">August 28, 2026</span><span>Listed at $325,000.</span></li><li><span class="when">September 25, 2026</span><span>Cut to $319,000.</span></li><li><span class="when">October 24, 2026</span><span>Cut to $312,900.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Newer kitchen with gray cabinets and granite (photos 2 to 4, 12 and 13).</li><li>Newer furnace and air conditioner, new vinyl siding, vinyl plank floors, per the listing.</li><li>Lower level finished with a drop ceiling, vinyl plank floor and laundry (photos 25 to 28).</li><li>Fresh white paint throughout.</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>Two months on the market and two cuts.</li><li>The county counts 3 bedrooms and no finished basement, so an appraiser may not count the lower level the way the listing does.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>Lower-level finish not on the county record</h3><p>The county lists the basement as unfinished and the house as 3 bedrooms. Ask whether permits were pulled and whether the lower bedroom has a code-size escape window.</p><p class="cost"><b>Cost:</b> If unpermitted, the fix ranges from a few hundred for an inspection sign-off to a few thousand for an egress window (estimate).</p></div><div class="problem"><h3>Taxes will rise after the sale</h3><p>The county dropped its value to $184,355 for 2025. A sale near $313,000 gives the assessor a new number to work from at the 2027 reassessment.</p><p class="cost"><b>Cost:</b> Today $2,169 a year. At the county&#x27;s current rate on a $313,000 value it would be roughly $3,700 (estimate).</p></div><div class="problem"><h3>Two bathrooms for four bedrooms</h3><p>Both bathrooms are on the main floor; the lower-level bedroom has none on its floor.</p><p class="cost"><b>Cost:</b> Adding a lower-level bath runs $12,000 to $25,000 (estimate).</p></div><div class="problem"><h3>Drive time</h3><p>19 minutes at midday. Rush hour on Highway K or Interstate 70 will push it past 20 some days.</p><p class="cost"><b>Cost:</b> Time, not money.</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Years of the furnace, air conditioner, roof and water heater.</li><li>Permits for the lower-level finish.</li><li>Size of the lower-level bedroom window.</li><li>Why did the county value drop 18.6 percent in 2025?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/121-Oak-Valley-Dr-Saint-Peters-MO-63376/2516688_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/A882000252" target="_blank" rel="noopener">St. Charles County Assessor, account A882000252</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
+<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>121 Oak Valley Dr</h1><span class="picks"><button type="button" class="pick view" data-pick="view" data-slug="121-oak-valley-dr" data-addr="121 Oak Valley Dr" aria-pressed="false" aria-label="Mark 121 Oak Valley Dr as one to view" title="Want to view">✓</button><button type="button" class="pick no" data-pick="no" data-slug="121-oak-valley-dr" data-addr="121 Oak Valley Dr" aria-pressed="false" aria-label="Mark 121 Oak Valley Dr as a no" title="Mark as a no">✕</button></span></div><p class="view-note">On your list to view. It sits at the top of the house list.</p><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Saint Peters, MO 63376 (unincorporated St. Charles County)</p><p class="price">$312,900 <small>Cut from $325,000 in two steps</small></p><ul class="musts"><li class="pass"><span class="mark" aria-hidden="true">✓</span><div><b>3 bedrooms on the main floor: <span class="st">Pass</span></b><span>3 bedrooms on the main floor; the 4th is in the walkout lower level.</span></div></li><li class="pass"><span class="mark" aria-hidden="true">✓</span><div><b>A finished basement: <span class="st">Pass</span></b><span>The walkout lower level is finished with a family room, a bedroom and laundry. The county still records it as unfinished, so ask for permits.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$489 a year ($40.75 a month), Eagles Landing</span></div><p>Covers the subdivision pool and clubhouse.</p><div class="fence unknown"><b>Fenced back yard: Not stated</b><span>The listing does not mention a fence. The back yard is level.</span></div></header><div class="verdict"><strong>The short answer</strong><p>A long-time owner&#x27;s house with real updates, not cosmetic ones: a newer kitchen, a newer furnace and air conditioner, new siding and vinyl plank floors. Three bedrooms share the main floor. The drive is the longest in the set at 19 minutes, the lower-level finish does not appear on the county record, and the price has been cut twice in two months.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale since August 28, 2026; cut twice.</dd></div><div><dt>Bedrooms</dt><dd>4: 3 on the main floor, 1 in the walkout lower level</dd></div><div><dt>Bathrooms</dt><dd>2 full, both on the main floor</dd></div><div><dt>Size</dt><dd>2,082 square feet: 1,148 on the main floor, the rest in the finished lower level</dd></div><div><dt>Built</dt><dd>1987, ranch with a walkout lower level</dd></div><div><dt>Lot</dt><dd>0.18 acre, level back yard</dd></div><div><dt>Property taxes</dt><dd>$2,169 for 2025, after the county cut its value 18.6 percent</dd></div><div><dt>Schools</dt><dd>Fort Zumwalt School District; Mid Rivers Elementary is 1.5 miles away</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>19 minutes, 8.6 miles; right at the edge of the 20-minute limit</dd></div></dl><p><a href="https://www.zillow.com/homedetails/121-Oak-Valley-Dr-Saint-Peters-MO-63376/2516688_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26055432). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>Same owner since 2001, not a flip</li><li>Newer furnace, air conditioner, siding and kitchen</li><li>Vinyl plank floors through the whole house</li><li>Walkout lower level with a large open family room</li><li>Subdivision pool</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>19-minute drive, the longest in the search</li><li>Lower-level finish and its bedroom are not on the county record</li><li>Only 2 bathrooms, both upstairs</li><li>Taxes will likely jump after a sale: the county value is $184,355</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">1990 to 2001</span><span>Sold four times, from $74,500 in 1990 to $117,500 in January 2001.</span></li><li><span class="when">January 2001</span><span>The current owners buy it for $117,500 and keep it 25 years.</span></li><li><span class="when">August 28, 2026</span><span>Listed at $325,000.</span></li><li><span class="when">September 25, 2026</span><span>Cut to $319,000.</span></li><li><span class="when">October 24, 2026</span><span>Cut to $312,900.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Newer kitchen with gray cabinets and granite (photos 2 to 4, 12 and 13).</li><li>Newer furnace and air conditioner, new vinyl siding, vinyl plank floors, per the listing.</li><li>Lower level finished with a drop ceiling, vinyl plank floor and laundry (photos 25 to 28).</li><li>Fresh white paint throughout.</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>Two months on the market and two cuts.</li><li>The county counts 3 bedrooms and no finished basement, so an appraiser may not count the lower level the way the listing does.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>Lower-level finish not on the county record</h3><p>The county lists the basement as unfinished and the house as 3 bedrooms. Ask whether permits were pulled and whether the lower bedroom has a code-size escape window.</p><p class="cost"><b>Cost:</b> If unpermitted, the fix ranges from a few hundred for an inspection sign-off to a few thousand for an egress window (estimate).</p></div><div class="problem"><h3>Taxes will rise after the sale</h3><p>The county dropped its value to $184,355 for 2025. A sale near $313,000 gives the assessor a new number to work from at the 2027 reassessment.</p><p class="cost"><b>Cost:</b> Today $2,169 a year. At the county&#x27;s current rate on a $313,000 value it would be roughly $3,700 (estimate).</p></div><div class="problem"><h3>Two bathrooms for four bedrooms</h3><p>Both bathrooms are on the main floor; the lower-level bedroom has none on its floor.</p><p class="cost"><b>Cost:</b> Adding a lower-level bath runs $12,000 to $25,000 (estimate).</p></div><div class="problem"><h3>Drive time</h3><p>19 minutes at midday. Rush hour on Highway K or Interstate 70 will push it past 20 some days.</p><p class="cost"><b>Cost:</b> Time, not money.</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Years of the furnace, air conditioner, roof and water heater.</li><li>Permits for the lower-level finish.</li><li>Size of the lower-level bedroom window.</li><li>Why did the county value drop 18.6 percent in 2025?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/121-Oak-Valley-Dr-Saint-Peters-MO-63376/2516688_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/A882000252" target="_blank" rel="noopener">St. Charles County Assessor, account A882000252</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
 <script>
 (function () {
-  var KEY = "house-search-no";
-  var noGroup = document.getElementById("g-no");
+  var KEYS = { view: "house-search-view", no: "house-search-no" };
+  var LABELS = {
+    view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
+    no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
+  };
+  var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
-  function load() {
+  var marks;
+  function load(key) {
     try {
-      var v = JSON.parse(localStorage.getItem(KEY) || "[]");
+      var v = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(v) ? v : [];
     } catch (err) { return []; }
   }
-  function save(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
+  function save(key, list) {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
   }
-  var no = load();
-  function isNo(slug) { return no.indexOf(slug) !== -1; }
-  function place(card, on) {
-    var home = on ? noGroup : document.getElementById(card.getAttribute("data-home"));
+  function read() { marks = { view: load(KEYS.view), no: load(KEYS.no) }; }
+  function markOf(slug) {
+    return marks.no.indexOf(slug) !== -1 ? "no" : marks.view.indexOf(slug) !== -1 ? "view" : "";
+  }
+  function set(slug, mark) {
+    ["view", "no"].forEach(function (m) {
+      marks[m] = marks[m].filter(function (s) { return s !== slug; });
+      if (m === mark) marks[m].push(slug);
+      save(KEYS[m], marks[m]);
+    });
+  }
+  function place(card, mark) {
+    var home = document.getElementById(mark ? "g-" + mark : card.getAttribute("data-home"));
     var list = home.querySelector(".cards");
     if (card.parentNode === list) return;
     var order = +card.getAttribute("data-order"), next = null;
@@ -156,15 +184,17 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
-      var on = isNo(el.getAttribute("data-house"));
-      el.classList.toggle("is-no", on);
-      if (noGroup && el.matches("article.card")) place(el, on);
+      var m = markOf(el.getAttribute("data-house"));
+      el.classList.toggle("is-view", m === "view");
+      el.classList.toggle("is-no", m === "no");
+      if (listed && el.matches("article.card")) place(el, m);
     });
-    document.querySelectorAll("button[data-nope]").forEach(function (b) {
-      var on = isNo(b.getAttribute("data-nope")), addr = b.getAttribute("data-addr");
-      b.textContent = on ? "Undo" : "\u2715";
-      b.setAttribute("aria-label", on ? "Undo the no on " + addr : "Mark " + addr + " as a no");
-      b.title = on ? "Put this house back" : "Mark this house as a no";
+    document.querySelectorAll("button[data-pick]").forEach(function (b) {
+      var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
+      var text = LABELS[want], addr = b.getAttribute("data-addr");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", text[on ? 1 : 0].replace("{a}", addr));
+      b.title = text[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
       var n = g.querySelectorAll(".cards > .card").length;
@@ -174,20 +204,25 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
     });
   }
   document.addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-nope]");
+    var b = ev.target.closest("button[data-pick]");
     if (!b) return;
-    var slug = b.getAttribute("data-nope"), on = !isNo(slug);
-    no = no.filter(function (s) { return s !== slug; });
-    if (on) no.push(slug);
-    save(no);
+    var slug = b.getAttribute("data-slug"), want = b.getAttribute("data-pick");
+    var mark = markOf(slug) === want ? "" : want;
+    set(slug, mark);
     render();
     b.focus({ preventScroll: true });
     if (live) {
-      live.textContent = b.getAttribute("data-addr") + (on ? (noGroup ? " marked no and moved to the bottom." : " marked no.") : " put back.");
+      var addr = b.getAttribute("data-addr");
+      live.textContent = mark === "view" ? addr + " added to the viewing list" + (listed ? ", at the top of the page." : ".")
+        : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
+        : addr + " cleared.";
     }
   });
-  window.addEventListener("storage", function (ev) { if (ev.key === KEY) { no = load(); render(); } });
-  window.addEventListener("pageshow", function () { no = load(); render(); });
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === KEYS.view || ev.key === KEYS.no) { read(); render(); }
+  });
+  window.addEventListener("pageshow", function () { read(); render(); });
+  read();
   render();
 })();
 </script>

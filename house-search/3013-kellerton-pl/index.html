@@ -87,15 +87,20 @@ td.pass { color: var(--pass); }
 td.fail { color: var(--fail); }
 td.check { color: var(--amber); }
 td.soft { color: var(--rose); }
+.pick-col { display: none; }
+.js .pick-col { display: table-cell; }
+td.pick-col { width: 1%; white-space: nowrap; }
+tr.is-view td { background: var(--pass-soft); }
 tr.is-no td { opacity: 0.45; }
-tr.is-no td:first-child { opacity: 1; }
-tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); }
+tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
+tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .ask { background: var(--rose-soft); border-radius: 12px; padding: 1rem 1.25rem; display: grid; gap: 0.6rem; }
 .group-head { display: grid; gap: 0.3rem; }
 .count { display: inline-block; font-family: var(--font-data); font-size: 0.9rem; vertical-align: middle; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--raise); color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
+.group-view .count { background: var(--pass-soft); color: var(--pass); }
 .cards { display: grid; gap: 1.25rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
 .card.subject { border: 2px solid var(--sea); }
@@ -106,17 +111,26 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 .tag { display: inline-block; font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.55rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
 .tag.no-tag { background: var(--fail-soft); color: var(--fail); }
-.no-tag, .no-note { display: none; }
-.is-no .no-tag { display: inline-block; }
-.is-no .no-note { display: block; }
-.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.tag.view-tag { background: var(--pass-soft); color: var(--pass); }
+.no-tag, .no-note, .view-tag, .view-note { display: none; }
+.is-no .no-tag, .is-view .view-tag { display: inline-block; }
+.is-no .no-note, .is-view .view-note { display: block; }
+.no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
+.view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
+.card.is-view { border: 2px solid var(--pass); }
 .card.is-no { border: 1px dashed var(--fail); background: var(--bg); }
 .card.is-no .card-body { display: none; }
 .card.is-no h3 { color: var(--muted); text-decoration: line-through; }
-.nope { display: none; flex: none; min-width: 44px; height: 44px; padding: 0 0.6rem; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); color: var(--fail); font: 700 1.3rem/1 var(--font-data); cursor: pointer; }
-.nope:hover { background: var(--fail-soft); border-color: var(--fail); }
-.is-no .nope { color: var(--ink); font-size: 0.85rem; letter-spacing: 0.04em; padding: 0 0.9rem; }
-.js .nope { display: inline-grid; }
+.picks { display: none; flex: none; gap: 0.4rem; }
+.js .picks { display: inline-flex; }
+.pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
+.pick.view { color: var(--pass); }
+.pick.no { color: var(--fail); }
+.pick.view:hover { background: var(--pass-soft); border-color: var(--pass); }
+.pick.no:hover { background: var(--fail-soft); border-color: var(--fail); }
+.pick.view[aria-pressed="true"] { background: var(--pass); border-color: var(--pass); color: var(--bg); }
+.pick.no[aria-pressed="true"] { background: var(--fail); border-color: var(--fail); color: var(--bg); }
 .js-only { display: none; }
 .js .js-only { display: block; }
 .go { font-weight: 700; }
@@ -127,25 +141,39 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 <body>
 <main class="wrap" data-house="3013-kellerton-pl">
 <p class="sr-only" id="announce" aria-live="polite"></p>
-<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>3013 Kellerton Pl</h1><button type="button" class="nope" data-nope="3013-kellerton-pl" data-addr="3013 Kellerton Pl" aria-label="Mark 3013 Kellerton Pl as a no" title="Mark this house as a no">✕</button></div><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Wentzville, MO 63385</p><p class="price">$320,000 <small>Unchanged since August 12, 2026</small></p><ul class="musts"><li class="fail"><span class="mark" aria-hidden="true">✕</span><div><b>3 bedrooms on the main floor: <span class="st">Fails</span></b><span>Only the primary suite is on the main floor; the other 4 bedrooms are upstairs.</span></div></li><li class="fail"><span class="mark" aria-hidden="true">✕</span><div><b>A finished basement: <span class="st">Fails</span></b><span>No basement, so no shelter below ground in a tornado. The house is built on a slab.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$450 a year ($37.50 a month), Carlton Glen</span></div><p>Covers the neighborhood pool and playground.</p><div class="fence unknown"><b>Fenced back yard: Not stated</b><span>The listing does not mention a fence. The lot is 0.11 acre with houses close on both sides.</span></div></header><div class="verdict"><strong>The short answer</strong><p>The most bedrooms in the search and all of the space above ground, in a neighborhood with its own pool. The trade-offs are a tiny lot with close neighbors, no basement for storage or storms, and a bold dark-blue paint job that most buyers will repaint. A contract fell through after 19 days, and the owner bought it for $290,000 in 2023.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale. Back on the market October 15 after a contract fell through.</dd></div><div><dt>Bedrooms</dt><dd>5: the primary suite on the main floor, 4 upstairs including a large bonus room</dd></div><div><dt>Bathrooms</dt><dd>2 full, 1 half</dd></div><div><dt>Size</dt><dd>2,352 square feet, all above ground; no basement</dd></div><div><dt>Built</dt><dd>2006, two-story on a slab</dd></div><div><dt>Lot</dt><dd>4,791 square feet (0.11 acre), the smallest in the search</dd></div><div><dt>Property taxes</dt><dd>$3,628 for 2025</dd></div><div><dt>Schools</dt><dd>Wentzville School District</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>13 minutes, 7.4 miles</dd></div></dl><p><a href="https://www.zillow.com/homedetails/3013-Kellerton-Pl-Wentzville-MO-63385/81429393_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26021757). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>5 bedrooms, with the primary suite on the main floor</li><li>2006 build, the second newest in the search</li><li>All 2,352 square feet above ground</li><li>Neighborhood pool and playground</li><li>Tile shower in the primary bath, white kitchen</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>No basement, built on a slab</li><li>Smallest lot, houses close on both sides</li><li>Dark blue and navy paint plus a stone accent wall throughout the main floor</li><li>One contract already fell through</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">January 2007</span><span>Sold new by Jones Company Homes for $163,570.</span></li><li><span class="when">September 2017</span><span>Sold for $199,900.</span></li><li><span class="when">September 2018</span><span>Sold for $219,000.</span></li><li><span class="when">July 2023</span><span>Sold for $290,000 to the current owner.</span></li><li><span class="when">August 12, 2026</span><span>Listed at $320,000.</span></li><li><span class="when">September 26, 2026</span><span>Under contract.</span></li><li><span class="when">October 15, 2026</span><span>Back on the market at the same price.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Laminate wood-look floors on the main level, carpet upstairs (photos 4 to 28).</li><li>White kitchen with dark counters and a tile backsplash.</li><li>Built-in shelving in the family room, a stone-look accent wall in the dining area.</li><li>Tile walk-in shower in the primary bath.</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>$136 a square foot is low for a 2006 house, mostly because there is no basement and almost no yard.</li><li>The paint colors put buyers off in photos.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>No basement</h3><p>No storm shelter and no storage below grade.</p><p class="cost"><b>Cost:</b> Plan on storage in the garage.</p></div><div class="problem"><h3>Repaint</h3><p>Dark blue, navy and gray walls through the main floor (photos 3 to 14).</p><p class="cost"><b>Cost:</b> $3,000 to $6,000 hired out for the main floor, less doing it yourself (estimate).</p></div><div class="problem"><h3>Original 2006 mechanicals</h3><p>A 20-year-old furnace and air conditioner are near the end of their life unless replaced. Ask.</p><p class="cost"><b>Cost:</b> $8,000 to $14,000 for both (estimate).</p></div><div class="problem"><h3>The contract that fell through</h3><p>Under contract September 26, back October 15. Ask why.</p><p class="cost"><b>Cost:</b> Unknown until asked.</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Why did the September contract fall through?</li><li>Ages of the furnace, air conditioner, water heater and roof.</li><li>Is the fifth bedroom a legal bedroom with a closet and window?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/3013-Kellerton-Pl-Wentzville-MO-63385/81429393_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/T052300219" target="_blank" rel="noopener">St. Charles County Assessor, account T052300219</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
+<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>3013 Kellerton Pl</h1><span class="picks"><button type="button" class="pick view" data-pick="view" data-slug="3013-kellerton-pl" data-addr="3013 Kellerton Pl" aria-pressed="false" aria-label="Mark 3013 Kellerton Pl as one to view" title="Want to view">✓</button><button type="button" class="pick no" data-pick="no" data-slug="3013-kellerton-pl" data-addr="3013 Kellerton Pl" aria-pressed="false" aria-label="Mark 3013 Kellerton Pl as a no" title="Mark as a no">✕</button></span></div><p class="view-note">On your list to view. It sits at the top of the house list.</p><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Wentzville, MO 63385</p><p class="price">$320,000 <small>Unchanged since August 12, 2026</small></p><ul class="musts"><li class="fail"><span class="mark" aria-hidden="true">✕</span><div><b>3 bedrooms on the main floor: <span class="st">Fails</span></b><span>Only the primary suite is on the main floor; the other 4 bedrooms are upstairs.</span></div></li><li class="fail"><span class="mark" aria-hidden="true">✕</span><div><b>A finished basement: <span class="st">Fails</span></b><span>No basement, so no shelter below ground in a tornado. The house is built on a slab.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$450 a year ($37.50 a month), Carlton Glen</span></div><p>Covers the neighborhood pool and playground.</p><div class="fence unknown"><b>Fenced back yard: Not stated</b><span>The listing does not mention a fence. The lot is 0.11 acre with houses close on both sides.</span></div></header><div class="verdict"><strong>The short answer</strong><p>The most bedrooms in the search and all of the space above ground, in a neighborhood with its own pool. The trade-offs are a tiny lot with close neighbors, no basement for storage or storms, and a bold dark-blue paint job that most buyers will repaint. A contract fell through after 19 days, and the owner bought it for $290,000 in 2023.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale. Back on the market October 15 after a contract fell through.</dd></div><div><dt>Bedrooms</dt><dd>5: the primary suite on the main floor, 4 upstairs including a large bonus room</dd></div><div><dt>Bathrooms</dt><dd>2 full, 1 half</dd></div><div><dt>Size</dt><dd>2,352 square feet, all above ground; no basement</dd></div><div><dt>Built</dt><dd>2006, two-story on a slab</dd></div><div><dt>Lot</dt><dd>4,791 square feet (0.11 acre), the smallest in the search</dd></div><div><dt>Property taxes</dt><dd>$3,628 for 2025</dd></div><div><dt>Schools</dt><dd>Wentzville School District</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>13 minutes, 7.4 miles</dd></div></dl><p><a href="https://www.zillow.com/homedetails/3013-Kellerton-Pl-Wentzville-MO-63385/81429393_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26021757). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>5 bedrooms, with the primary suite on the main floor</li><li>2006 build, the second newest in the search</li><li>All 2,352 square feet above ground</li><li>Neighborhood pool and playground</li><li>Tile shower in the primary bath, white kitchen</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>No basement, built on a slab</li><li>Smallest lot, houses close on both sides</li><li>Dark blue and navy paint plus a stone accent wall throughout the main floor</li><li>One contract already fell through</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">January 2007</span><span>Sold new by Jones Company Homes for $163,570.</span></li><li><span class="when">September 2017</span><span>Sold for $199,900.</span></li><li><span class="when">September 2018</span><span>Sold for $219,000.</span></li><li><span class="when">July 2023</span><span>Sold for $290,000 to the current owner.</span></li><li><span class="when">August 12, 2026</span><span>Listed at $320,000.</span></li><li><span class="when">September 26, 2026</span><span>Under contract.</span></li><li><span class="when">October 15, 2026</span><span>Back on the market at the same price.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Laminate wood-look floors on the main level, carpet upstairs (photos 4 to 28).</li><li>White kitchen with dark counters and a tile backsplash.</li><li>Built-in shelving in the family room, a stone-look accent wall in the dining area.</li><li>Tile walk-in shower in the primary bath.</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>$136 a square foot is low for a 2006 house, mostly because there is no basement and almost no yard.</li><li>The paint colors put buyers off in photos.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>No basement</h3><p>No storm shelter and no storage below grade.</p><p class="cost"><b>Cost:</b> Plan on storage in the garage.</p></div><div class="problem"><h3>Repaint</h3><p>Dark blue, navy and gray walls through the main floor (photos 3 to 14).</p><p class="cost"><b>Cost:</b> $3,000 to $6,000 hired out for the main floor, less doing it yourself (estimate).</p></div><div class="problem"><h3>Original 2006 mechanicals</h3><p>A 20-year-old furnace and air conditioner are near the end of their life unless replaced. Ask.</p><p class="cost"><b>Cost:</b> $8,000 to $14,000 for both (estimate).</p></div><div class="problem"><h3>The contract that fell through</h3><p>Under contract September 26, back October 15. Ask why.</p><p class="cost"><b>Cost:</b> Unknown until asked.</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Why did the September contract fall through?</li><li>Ages of the furnace, air conditioner, water heater and roof.</li><li>Is the fifth bedroom a legal bedroom with a closet and window?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/3013-Kellerton-Pl-Wentzville-MO-63385/81429393_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/T052300219" target="_blank" rel="noopener">St. Charles County Assessor, account T052300219</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
 <script>
 (function () {
-  var KEY = "house-search-no";
-  var noGroup = document.getElementById("g-no");
+  var KEYS = { view: "house-search-view", no: "house-search-no" };
+  var LABELS = {
+    view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
+    no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
+  };
+  var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
-  function load() {
+  var marks;
+  function load(key) {
     try {
-      var v = JSON.parse(localStorage.getItem(KEY) || "[]");
+      var v = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(v) ? v : [];
     } catch (err) { return []; }
   }
-  function save(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
+  function save(key, list) {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
   }
-  var no = load();
-  function isNo(slug) { return no.indexOf(slug) !== -1; }
-  function place(card, on) {
-    var home = on ? noGroup : document.getElementById(card.getAttribute("data-home"));
+  function read() { marks = { view: load(KEYS.view), no: load(KEYS.no) }; }
+  function markOf(slug) {
+    return marks.no.indexOf(slug) !== -1 ? "no" : marks.view.indexOf(slug) !== -1 ? "view" : "";
+  }
+  function set(slug, mark) {
+    ["view", "no"].forEach(function (m) {
+      marks[m] = marks[m].filter(function (s) { return s !== slug; });
+      if (m === mark) marks[m].push(slug);
+      save(KEYS[m], marks[m]);
+    });
+  }
+  function place(card, mark) {
+    var home = document.getElementById(mark ? "g-" + mark : card.getAttribute("data-home"));
     var list = home.querySelector(".cards");
     if (card.parentNode === list) return;
     var order = +card.getAttribute("data-order"), next = null;
@@ -156,15 +184,17 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
-      var on = isNo(el.getAttribute("data-house"));
-      el.classList.toggle("is-no", on);
-      if (noGroup && el.matches("article.card")) place(el, on);
+      var m = markOf(el.getAttribute("data-house"));
+      el.classList.toggle("is-view", m === "view");
+      el.classList.toggle("is-no", m === "no");
+      if (listed && el.matches("article.card")) place(el, m);
     });
-    document.querySelectorAll("button[data-nope]").forEach(function (b) {
-      var on = isNo(b.getAttribute("data-nope")), addr = b.getAttribute("data-addr");
-      b.textContent = on ? "Undo" : "\u2715";
-      b.setAttribute("aria-label", on ? "Undo the no on " + addr : "Mark " + addr + " as a no");
-      b.title = on ? "Put this house back" : "Mark this house as a no";
+    document.querySelectorAll("button[data-pick]").forEach(function (b) {
+      var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
+      var text = LABELS[want], addr = b.getAttribute("data-addr");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", text[on ? 1 : 0].replace("{a}", addr));
+      b.title = text[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
       var n = g.querySelectorAll(".cards > .card").length;
@@ -174,20 +204,25 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
     });
   }
   document.addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-nope]");
+    var b = ev.target.closest("button[data-pick]");
     if (!b) return;
-    var slug = b.getAttribute("data-nope"), on = !isNo(slug);
-    no = no.filter(function (s) { return s !== slug; });
-    if (on) no.push(slug);
-    save(no);
+    var slug = b.getAttribute("data-slug"), want = b.getAttribute("data-pick");
+    var mark = markOf(slug) === want ? "" : want;
+    set(slug, mark);
     render();
     b.focus({ preventScroll: true });
     if (live) {
-      live.textContent = b.getAttribute("data-addr") + (on ? (noGroup ? " marked no and moved to the bottom." : " marked no.") : " put back.");
+      var addr = b.getAttribute("data-addr");
+      live.textContent = mark === "view" ? addr + " added to the viewing list" + (listed ? ", at the top of the page." : ".")
+        : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
+        : addr + " cleared.";
     }
   });
-  window.addEventListener("storage", function (ev) { if (ev.key === KEY) { no = load(); render(); } });
-  window.addEventListener("pageshow", function () { no = load(); render(); });
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === KEYS.view || ev.key === KEYS.no) { read(); render(); }
+  });
+  window.addEventListener("pageshow", function () { read(); render(); });
+  read();
   render();
 })();
 </script>
