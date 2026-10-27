@@ -51,8 +51,21 @@ BUILD = ROOT / "scripts" / "build-house-search.py"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
       "Chrome/130.0.0.0 Safari/537.36")
 
-# The daycare. The page never names it; the coordinates stay here, in a private file.
-DAYCARE = (38.7462935, -90.7813611)
+# The daycare. The page never names it, and this repository is public, so its location lives
+# in the private ops repository and is read at run time; the scan refuses to run without it.
+DAYCARE_FILE = Path(r"X:\PortfolioOps\config\house-search.json")
+
+
+def daycare():
+    try:
+        d = json.loads(DAYCARE_FILE.read_text(encoding="utf-8"))
+        return float(d["daycare"]["lat"]), float(d["daycare"]["lon"])
+    except (OSError, KeyError, ValueError) as ex:
+        sys.exit(f"house-search-scan: the daycare location is read from {DAYCARE_FILE} "
+                 f"({{\"daycare\": {{\"lat\": ..., \"lon\": ...}}}}), which could not be read: {ex}")
+
+
+DAYCARE = None
 
 CRITERIA = {
     "max_price": 335000,
@@ -375,6 +388,8 @@ def must_haves(det):
 # ---------------------------------------------------------------- the pass
 
 def run(write, build, details):
+    global DAYCARE
+    DAYCARE = daycare()
     data = load(DATA, None)
     if not data:
         sys.exit(f"missing {DATA}")

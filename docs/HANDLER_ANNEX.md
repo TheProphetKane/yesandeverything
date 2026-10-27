@@ -55,7 +55,9 @@ named. The pieces:
 - `python scripts/house-search-scan.py --write --build` is the check: it reads the MLS feed
   through Realtor.com (served by homefinder.com, which carries the same search and detail
   routes without the bot wall) and Redfin's regional feed, routes every new candidate to the
-  daycare through the public OSRM router, reads the MLS detail record for the must-haves,
+  daycare through the public OSRM router (the daycare's location is read at run time from
+  `X:\PortfolioOps\config\house-search.json`, in the private repository, because this one is
+  public and the page never names it), reads the MLS detail record for the must-haves,
   brings each tracked house's price and status current with a dated line on its timeline and
   in the page's change list, and writes `data/house-search-seen.json` (the ledger: every
   listing that ever matched, with the decision taken on it, so nothing is raised twice) and
@@ -64,9 +66,12 @@ named. The pieces:
   read (bot wall on curl, headless Chrome and the fetch tool); Zillow facts refresh only when a
   session has the Claude in Chrome tools. The county assessor site sits behind a browser
   challenge too, so ownership history is pulled in a browser session, never by the scan.
-- The routine `house-search-sync` runs the scan at 05:44 and 17:44 every day (a cloud trigger
-  that fires into the Kane-PC bridge environment; its prompt is
-  `C:\Users\Kane\.claude\scheduled-tasks\house-search-sync\SKILL.md`), writes the report for
+- The routine `house-search-sync` runs the scan at 05:44 and 17:44 every day as a scheduled
+  task in the desktop app, where the Claude in Chrome tools can read Zillow (its prompt is
+  `C:\Users\Kane\.claude\scheduled-tasks\house-search-sync\SKILL.md`; a cloud trigger was
+  tried on 2026-10-27 and cut the same day on Kane's word, because a cloud-fired session has
+  no Chrome; the registration prompt is `X:\PortfolioOps\docs\PROMPT-house-search-sync-chrome.md`,
+  in the private repository because it names the daycare), writes the report for
   each new house, and ships with `.\scripts\release.ps1 -Path
   data/house-search.json,data/house-search-seen.json,data/house-search-drafts.json,house-search`
   (one `-Path`, the values comma-separated), after its own commit with a message that
