@@ -89,41 +89,11 @@ Design documents are not published from this repo. The `workers/gated-docs` Work
 
 ## House search (Kane, 2026-10-27)
 
-`/house-search/` is Kane's house hunt: houses under $335,000 within a 20-minute drive of the
-children's daycare, each with a full buyer report. The page is unlisted (noindex, robots
-disallowed) and never names the daycare; private prior owners stay unnamed, companies may be
-named. The pieces:
-
-- `data/house-search.json` is the one source: criteria, the search note, the change list, the
-  watch list, and one entry per house. Every house carries three answers or the build refuses
-  it: `mainFloorBeds`, `basement` (finished, none, unfinished, split, unsure) and `fence`.
-- `python scripts/build-house-search.py` writes `house-search/index.html` and one report page per
-  house. Edit the data, build, ship; never edit the pages by hand.
-- `python scripts/house-search-scan.py --write --build` is the check: it reads the MLS feed
-  through Realtor.com (served by homefinder.com, which carries the same search and detail
-  routes without the bot wall) and Redfin's regional feed, routes every new candidate to the
-  daycare through the public OSRM router, reads the MLS detail record for the must-haves,
-  brings each tracked house's price and status current with a dated line on its timeline and
-  in the page's change list, and writes `data/house-search-seen.json` (the ledger: every
-  listing that ever matched, with the decision taken on it, so nothing is raised twice) and
-  `data/house-search-drafts.json` (a filled-in draft entry per new house, for a session to
-  turn into the report). Without `--write` it is a dry run. Zillow refuses every unattended
-  read (bot wall on curl, headless Chrome and the fetch tool); Zillow facts refresh only when a
-  session has the Claude in Chrome tools. The county assessor site sits behind a browser
-  challenge too, so ownership history is pulled in a browser session, never by the scan.
-- The routine `house-search-sync` runs the scan at 05:44 and 17:44 every day (a cloud trigger
-  that fires into the Kane-PC bridge environment; its prompt is
-  `C:\Users\Kane\.claude\scheduled-tasks\house-search-sync\SKILL.md`), writes the report for
-  each new house, and ships with `.\scripts\release.ps1 -Path
-  data/house-search.json,data/house-search-seen.json,data/house-search-drafts.json,house-search`
-  (one `-Path`, the values comma-separated), after its own commit with a message that
-  says what moved. A run where only the checked-at stamps moved ships them too, so the
-  last-checked line on the live page stays true; a run where neither feed answered ships
-  nothing.
-- Drive times for the first nine houses are Google Maps at midday on a Tuesday; a house the
-  scan adds carries the OSRM estimate, marked "(est.)", until Google Maps is run. The nine
-  measured drives landed within two minutes of the OSRM figure, which is why the 20-minute
-  limit is applied to it with a 20-to-23-minute band that waits for a person.
+`/house-search/` is Kane's house hunt, generated from `data/house-search.json` by
+`scripts/build-house-search.py` and checked twice a day by `scripts/house-search-scan.py`
+through the `house-search-sync` routine. The page never names the daycare. The files, the
+feeds that answer unattended, the must-have answers every house must carry, and the release
+line are in `docs/HANDLER_ANNEX.md` under "House search", which binds as if written here.
 
 ## Discord webhooks
 
