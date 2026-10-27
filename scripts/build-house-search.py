@@ -351,6 +351,7 @@ def facts(h):
         ("Schools", h["schools"]),
         ("Flood risk", h["flood"]),
         ("Drive to daycare", h["drive"]),
+        ("Last checked", (h.get("checked") or {}).get("text")),
     ]
     inner = "".join(f"<div><dt>{e(k)}</dt><dd>{e(v)}</dd></div>" for k, v in rows if v)
     return f'<dl class="facts">{inner}</dl>'
@@ -477,7 +478,9 @@ def index(data):
     if data.get("searchNote"):
         out.append(f'<details class="note"><summary>How these houses were found</summary>'
                    f'<p>{e(data["searchNote"])}</p></details>')
-    out.append('<p>Tap an address for its full report.</p>')
+    out.append('<p>Tap an address for its full report. Prices and statuses are checked against the listing feeds '
+               'twice a day, about 6 in the morning and 6 in the evening; what moved is listed at the bottom of '
+               'the page and on the timeline of each house.</p>')
     out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Houses to '
                'view move up into their own table at the top of the page, and no\'s drop to a table at the '
                'bottom; tapping the same mark again clears it. The marks are saved in this browser only, so a '
@@ -492,9 +495,51 @@ def index(data):
                 rows.append(row(h, order, key))
                 order += 1
         out.append(group(key, title, blurb, rows))
+    out.append(watching(data.get("watchlist") or [], data.get("pendingCount") or 0))
     out.append(group("no", "Marked no", "Saved in this browser. Tap the ✕ again to put a house back where it was.", []))
+    out.append(changes(data.get("changes") or []))
     out.append(TAIL)
     return "".join(out)
+
+
+def changes(items):
+    """What the twice-daily check found, newest first. Empty when nothing has moved yet."""
+    if not items:
+        return ""
+    rows = "".join(
+        f'<li><span class="when">{e(c["date"])}</span><span><a href="{e(c["slug"])}/">{e(c["address"])}</a>: '
+        f'{e(c["text"])}</span></li>' for c in items[:25])
+    return (f'<section class="group" id="changes"><div class="group-head"><h2>What changed</h2>'
+            f'<p>Found by the twice-daily check of the listing feeds, newest first. Each line is also on '
+            f'the timeline of that house.</p></div><ol class="timeline">{rows}</ol></section>')
+
+
+def watching(items, pending):
+    """Houses the check is keeping an eye on but has not written up: a borderline drive, or under contract."""
+    if not items and not pending:
+        return ""
+    note = (f'<p>{pending} more house{"s" if pending != 1 else ""} inside the limit {"are" if pending != 1 else "is"} '
+            f'pending, which rarely falls through; the check raises any that comes back on the market.</p>'
+            if pending else "")
+    if not items:
+        return (f'<section class="group group-check" id="watching"><div class="group-head">'
+                f'<h2>Watching, not written up</h2>{note}</div></section>')
+    rows = []
+    for w in items:
+        link = (f'<a href="{e(w["link"])}" target="_blank" rel="noopener">{e(w["address"])}</a>' if w.get("link")
+                else e(w["address"]))
+        price = money(w["price"]) if w.get("price") else ""
+        facts = ", ".join(filter(None, [f'{w["beds"]} beds' if w.get("beds") else "",
+                                        f'{w["sqft"]:,} sq ft' if w.get("sqft") else "",
+                                        f'about {w["drive"]:g} min' if w.get("drive") else ""]))
+        rows.append(f'<tr><td class="addr">{link}<br><small>{e(w.get("city") or "")}</small></td>'
+                    f'<td class="num">{price}</td><td>{e(facts)}</td><td>{e(w.get("why") or "")}</td></tr>')
+    return (f'<section class="group group-check" id="watching"><div class="group-head">'
+            f'<h2>Watching, not written up <span class="count">{len(rows)}</span></h2>'
+            f'<p>These match on paper but are under contract, or sit right at the drive-time limit. The check '
+            f'raises one as a new house the day it comes back on the market or the drive is confirmed.</p>{note}</div>'
+            f'<div class="scroll"><table style="min-width:720px"><thead><tr><th>House</th><th>Price</th>'
+            f'<th>On paper</th><th>Why it waits</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>')
 
 
 def write(path, text):
