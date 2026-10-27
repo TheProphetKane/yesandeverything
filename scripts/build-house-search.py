@@ -8,9 +8,11 @@ card and each report states the homeowners association answer and fee on its own
 so a house with no fee says so instead of leaving the field blank. The fenced back yard
 gets the same treatment, with "Not stated" when the listing does not say.
 
-Two must-haves are checked on every house: 3 bedrooms on the main floor, and no
-unfinished basement. The build refuses a house that is missing either answer, and the
-list groups houses by the result: both met, one to confirm, one failed.
+Two must-haves are checked on every house: 3 bedrooms on the main floor, and a finished
+basement. The basement is the tornado shelter, so a house without one fails the same as a
+house whose basement is unfinished, and the partly-sunk lower level of a split-level
+needs confirming. The build refuses a house that is missing either answer, and the list
+groups houses by the result: both met, one to confirm, one failed.
 
 The X on each house marks it a no. The marks live in the viewer's browser storage,
 shared by the list and the reports, so they survive a reload but not a change of device.
@@ -228,12 +230,14 @@ HEAD = """<!doctype html>
 
 TAIL = "</main>\n<script>" + SCRIPT + "</script>\n</body>\n</html>\n"
 
-BASEMENT = {"finished": "pass", "none": "pass", "unfinished": "fail", "unsure": "check"}
+BASEMENT = {"finished": "pass", "none": "fail", "unfinished": "fail", "split": "check", "unsure": "check"}
+BASEMENT_SHORT = {"finished": "Pass", "none": "Fails, no basement", "unfinished": "Fails, unfinished",
+                  "split": "Check, split level", "unsure": "Check"}
 MARK = {"pass": "✓", "fail": "✕", "check": "?"}
 WORD = {"pass": "Pass", "fail": "Fails", "check": "Check"}
 GROUPS = [
     ("pass", "Meets both must-haves",
-     "3 bedrooms on the main floor, and no unfinished basement."),
+     "3 bedrooms on the main floor, and a finished basement for tornado shelter."),
     ("check", "One must-have to confirm",
      "Close on paper. The amber line on each house says what to ask."),
     ("fail", "Fails a must-have",
@@ -279,7 +283,7 @@ def overall(h):
 def musts(h):
     main, base = checks(h)
     rows = [(main, "3 bedrooms on the main floor", h["mainFloorBeds"]["note"]),
-            (base, "No unfinished basement", h["basement"]["note"])]
+            (base, "A finished basement", h["basement"]["note"])]
     return '<ul class="musts">' + "".join(
         f'<li class="{s}"><span class="mark" aria-hidden="true">{MARK[s]}</span>'
         f'<div><b>{e(label)}: <span class="st">{WORD[s]}</span></b><span>{e(note)}</span></div></li>'
@@ -426,7 +430,7 @@ def index(data):
 
 
 def compare(houses):
-    head = ("<tr><th>House</th><th>Price</th><th>3 beds on main floor</th><th>No unfinished basement</th>"
+    head = ("<tr><th>House</th><th>Price</th><th>3 beds on main floor</th><th>Finished basement</th>"
             "<th>Fenced yard</th><th>Homeowners association</th>"
             "<th>Beds / baths</th><th>Size</th><th>Built</th><th>Drive to daycare</th></tr>")
     rows = []
@@ -436,8 +440,7 @@ def compare(houses):
         main, base = checks(h)
         count = h["mainFloorBeds"]["count"]
         main_txt = {"pass": f"Pass ({count})", "fail": f"Fails ({count})", "check": "Check"}[main]
-        base_txt = {"pass": "Pass, no basement" if h["basement"]["kind"] == "none" else "Pass, finished",
-                    "fail": "Fails, unfinished", "check": "Check"}[base]
+        base_txt = BASEMENT_SHORT[h["basement"]["kind"]]
         fence_txt, fence_cls = {True: ("Yes", "pass"), False: ("No", "soft"),
                                 None: ("Not stated", "check")}[h["fence"]["has"]]
         rows.append(f'<tr data-house="{e(h["slug"])}"><td><a href="{e(h["slug"])}/">{e(h["address"])}</a>'
