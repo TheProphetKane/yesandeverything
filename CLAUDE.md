@@ -116,8 +116,10 @@ named. The pieces:
   `C:\Users\Kane\.claude\scheduled-tasks\house-search-sync\SKILL.md`), writes the report for
   each new house, and ships with `.\scripts\release.ps1 -Path
   data/house-search.json,data/house-search-seen.json,data/house-search-drafts.json,house-search`
-  (one `-Path`, the values comma-separated). A quiet
-  run ships nothing.
+  (one `-Path`, the values comma-separated), after its own commit with a message that
+  says what moved. A run where only the checked-at stamps moved ships them too, so the
+  last-checked line on the live page stays true; a run where neither feed answered ships
+  nothing.
 - Drive times for the first nine houses are Google Maps at midday on a Tuesday; a house the
   scan adds carries the OSRM estimate, marked "(est.)", until Google Maps is run. The nine
   measured drives landed within two minutes of the OSRM figure, which is why the 20-minute
