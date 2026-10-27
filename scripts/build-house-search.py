@@ -239,7 +239,7 @@ def compare(houses):
     rows = []
     for h in houses:
         hoa = h["hoa"]
-        hoa_txt = f'Yes, {hoa["fee"]}' if hoa["has"] else f'No, {hoa.get("fee") or "no fee"}'
+        hoa_txt = f'Yes, {hoa["fee"]}' if hoa["has"] else "No, no fee"
         rows.append(f'<tr><td><a href="{e(h["slug"])}/">{e(h["address"])}</a><br><small>{e(h["city"])}</small></td>'
                     f'<td class="num">{money(h["price"])}</td><td>{e(hoa_txt)}</td>'
                     f'<td>{e(h.get("bedsShort", h["beds"]))}</td><td>{e(h.get("sizeShort", h["size"]))}</td>'
