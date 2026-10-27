@@ -87,15 +87,21 @@ td.pass { color: var(--pass); }
 td.fail { color: var(--fail); }
 td.check { color: var(--amber); }
 td.soft { color: var(--rose); }
+.pick-col { display: none; }
+.js .pick-col { display: table-cell; }
+td.pick-col { width: 1%; white-space: nowrap; }
+tr.is-view td { background: var(--pass-soft); }
 tr.is-no td { opacity: 0.45; }
-tr.is-no td:first-child { opacity: 1; }
-tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); }
+tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
+tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .ask { background: var(--rose-soft); border-radius: 12px; padding: 1rem 1.25rem; display: grid; gap: 0.6rem; }
 .group-head { display: grid; gap: 0.3rem; }
 .count { display: inline-block; font-family: var(--font-data); font-size: 0.9rem; vertical-align: middle; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--raise); color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
+.group-view { padding: 1rem; border: 2px solid var(--pass); border-radius: 16px; background: var(--pass-soft); }
+.group-view .count { background: var(--bg); color: var(--pass); }
 .cards { display: grid; gap: 1.25rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
 .card.subject { border: 2px solid var(--sea); }
@@ -106,17 +112,26 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 .tag { display: inline-block; font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.55rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
 .tag.no-tag { background: var(--fail-soft); color: var(--fail); }
-.no-tag, .no-note { display: none; }
-.is-no .no-tag { display: inline-block; }
-.is-no .no-note { display: block; }
-.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.tag.view-tag { background: var(--pass-soft); color: var(--pass); }
+.no-tag, .no-note, .view-tag, .view-note { display: none; }
+.is-no .no-tag, .is-view .view-tag { display: inline-block; }
+.is-no .no-note, .is-view .view-note { display: block; }
+.no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
+.view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
+.card.is-view { border: 2px solid var(--pass); }
 .card.is-no { border: 1px dashed var(--fail); background: var(--bg); }
 .card.is-no .card-body { display: none; }
 .card.is-no h3 { color: var(--muted); text-decoration: line-through; }
-.nope { display: none; flex: none; min-width: 44px; height: 44px; padding: 0 0.6rem; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); color: var(--fail); font: 700 1.3rem/1 var(--font-data); cursor: pointer; }
-.nope:hover { background: var(--fail-soft); border-color: var(--fail); }
-.is-no .nope { color: var(--ink); font-size: 0.85rem; letter-spacing: 0.04em; padding: 0 0.9rem; }
-.js .nope { display: inline-grid; }
+.picks { display: none; flex: none; gap: 0.4rem; }
+.js .picks { display: inline-flex; }
+.pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
+.pick.view { color: var(--pass); }
+.pick.no { color: var(--fail); }
+.pick.view:hover { background: var(--pass-soft); border-color: var(--pass); }
+.pick.no:hover { background: var(--fail-soft); border-color: var(--fail); }
+.pick.view[aria-pressed="true"] { background: var(--pass); border-color: var(--pass); color: var(--bg); }
+.pick.no[aria-pressed="true"] { background: var(--fail); border-color: var(--fail); color: var(--bg); }
 .js-only { display: none; }
 .js .js-only { display: block; }
 .go { font-weight: 700; }
@@ -127,25 +142,39 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 <body>
 <main class="wrap" data-house="223-destiny-ct">
 <p class="sr-only" id="announce" aria-live="polite"></p>
-<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>223 Destiny Ct</h1><button type="button" class="nope" data-nope="223-destiny-ct" data-addr="223 Destiny Ct" aria-label="Mark 223 Destiny Ct as a no" title="Mark this house as a no">✕</button></div><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Wentzville, MO 63385 (unincorporated St. Charles County)</p><p class="price">$312,400 <small>Cut from $325,900 in two steps</small></p><ul class="musts"><li class="check"><span class="mark" aria-hidden="true">?</span><div><b>3 bedrooms on the main floor: <span class="st">Check</span></b><span>Split-level: all 3 upstairs bedrooms share one level, half a flight above the kitchen and living room. Close, but not on the main floor itself.</span></div></li><li class="check"><span class="mark" aria-hidden="true">?</span><div><b>A finished basement: <span class="st">Check</span></b><span>Split-level: the finished lower level (534 square feet) usually sits only partly below ground, and the furnace is in an unfinished utility area. Ask whether there is a full basement level under the house, and which room would be the tornado shelter.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$150 a year ($12.50 a month), Providence Pointe</span></div><p>Covers common ground upkeep only.</p><div class="fence yes"><b>Fenced back yard: Yes</b><span>Fully fenced, on nearly half an acre.</span></div></header><div class="verdict"><strong>The short answer</strong><p>The best-kept house for the money, on the biggest lot in the search, with a highly rated elementary school a mile away. It is also the smallest at 1,662 square feet, and the bedrooms are spread over two levels. A contract fell through at the start of October and the price has been cut twice, so there is room to negotiate.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale. Back on the market October 7 after a contract fell through; cut again October 27.</dd></div><div><dt>Bedrooms</dt><dd>4: 3 on the upper level, 1 on the lower level</dd></div><div><dt>Bathrooms</dt><dd>3 full</dd></div><div><dt>Size</dt><dd>1,662 square feet finished: 1,128 on the main levels, 534 on the lower level</dd></div><div><dt>Built</dt><dd>2001, multi-level split</dd></div><div><dt>Lot</dt><dd>0.46 acre on a cul-de-sac, fully fenced</dd></div><div><dt>Property taxes</dt><dd>$2,982 for 2025</dd></div><div><dt>Schools</dt><dd>Wentzville School District; Stone Creek Elementary is 1 mile away, rated 9 out of 10 by GreatSchools</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>12 minutes, 6.2 miles</dd></div></dl><p><a href="https://www.zillow.com/homedetails/223-Destiny-Ct-Wentzville-MO-63385/59921540_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26058941). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>Freshly updated: paint, flooring, doors, baths and a navy kitchen (photos 11 to 15)</li><li>Nearly half an acre, fenced, with a big concrete patio</li><li>Radon fan system already installed</li><li>Lowest association fee of the houses that have one, $150 a year</li><li>12 minutes to the daycare</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>Smallest house in the search</li><li>Furnace and water heater in the unfinished utility area look original to 2001 (photos 34 to 36)</li><li>One contract already fell through</li><li>Split-level means stairs between every part of the house</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">December 2001</span><span>Sold new by Travis Shane Homes for $140,250.</span></li><li><span class="when">December 2017</span><span>Sold for $178,000 to the current owners.</span></li><li><span class="when">September 12, 2026</span><span>Listed at $325,900.</span></li><li><span class="when">September 25, 2026</span><span>Cut to $314,900.</span></li><li><span class="when">September 28, 2026</span><span>Under contract.</span></li><li><span class="when">October 7, 2026</span><span>Back on the market.</span></li><li><span class="when">October 27, 2026</span><span>Cut to $312,400.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Fresh paint throughout, new flooring, new baseboards and doors.</li><li>All three bathrooms updated with new vanities, toilets and fixtures.</li><li>Kitchen with painted navy cabinets, stainless appliances and a tile backsplash.</li><li>New carpet in the lower-level recreation room.</li><li>Radon fan system and central vacuum.</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>At $188 a square foot it is not cheap per foot; it is cheap because it is small.</li><li>61 days on the market with one failed contract has pushed the price down twice.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>Original furnace, air conditioner and water heater</h3><p>The utility room photos show older equipment (photos 34 to 36). A 2001 furnace and air conditioner are 25 years old.</p><p class="cost"><b>Cost:</b> $8,000 to $14,000 for both, $1,500 to $2,500 for the water heater (estimates).</p></div><div class="problem"><h3>The contract that fell through</h3><p>Under contract September 28, back October 7. Ask the listing agent what the buyer&#x27;s inspection found.</p><p class="cost"><b>Cost:</b> Unknown until asked.</p></div><div class="problem"><h3>Fresh-flip finishes can hide problems</h3><p>New paint and flooring everywhere make old stains and patches invisible. Look closely at ceilings under bathrooms and at the lower-level walls.</p><p class="cost"><b>Cost:</b> Inspection, about $400 to $600.</p></div><div class="problem"><h3>Smaller living space</h3><p>1,662 square feet with the fourth bedroom on the lower level. The recreation room is the only second living space.</p><p class="cost"><b>Cost:</b> No fix short of an addition.</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Why did the September contract fall through?</li><li>Ages of the furnace, air conditioner, water heater and roof.</li><li>Who did the updates, and were permits pulled for the bathroom work?</li><li>What radon level was measured, and when was the fan installed?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/223-Destiny-Ct-Wentzville-MO-63385/59921540_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/T022200132" target="_blank" rel="noopener">St. Charles County Assessor, account T022200132</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
+<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>223 Destiny Ct</h1><span class="picks"><button type="button" class="pick view" data-pick="view" data-slug="223-destiny-ct" data-addr="223 Destiny Ct" aria-pressed="false" aria-label="Mark 223 Destiny Ct as one to view" title="Want to view">✓</button><button type="button" class="pick no" data-pick="no" data-slug="223-destiny-ct" data-addr="223 Destiny Ct" aria-pressed="false" aria-label="Mark 223 Destiny Ct as a no" title="Mark as a no">✕</button></span></div><p class="view-note">On your list to view. It sits in the Want to view list at the top of the house search page.</p><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Wentzville, MO 63385 (unincorporated St. Charles County)</p><p class="price">$312,400 <small>Cut from $325,900 in two steps</small></p><ul class="musts"><li class="check"><span class="mark" aria-hidden="true">?</span><div><b>3 bedrooms on the main floor: <span class="st">Check</span></b><span>Split-level: all 3 upstairs bedrooms share one level, half a flight above the kitchen and living room. Close, but not on the main floor itself.</span></div></li><li class="check"><span class="mark" aria-hidden="true">?</span><div><b>A finished basement: <span class="st">Check</span></b><span>Split-level: the finished lower level (534 square feet) usually sits only partly below ground, and the furnace is in an unfinished utility area. Ask whether there is a full basement level under the house, and which room would be the tornado shelter.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$150 a year ($12.50 a month), Providence Pointe</span></div><p>Covers common ground upkeep only.</p><div class="fence yes"><b>Fenced back yard: Yes</b><span>Fully fenced, on nearly half an acre.</span></div></header><div class="verdict"><strong>The short answer</strong><p>The best-kept house for the money, on the biggest lot in the search, with a highly rated elementary school a mile away. It is also the smallest at 1,662 square feet, and the bedrooms are spread over two levels. A contract fell through at the start of October and the price has been cut twice, so there is room to negotiate.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale. Back on the market October 7 after a contract fell through; cut again October 27.</dd></div><div><dt>Bedrooms</dt><dd>4: 3 on the upper level, 1 on the lower level</dd></div><div><dt>Bathrooms</dt><dd>3 full</dd></div><div><dt>Size</dt><dd>1,662 square feet finished: 1,128 on the main levels, 534 on the lower level</dd></div><div><dt>Built</dt><dd>2001, multi-level split</dd></div><div><dt>Lot</dt><dd>0.46 acre on a cul-de-sac, fully fenced</dd></div><div><dt>Property taxes</dt><dd>$2,982 for 2025</dd></div><div><dt>Schools</dt><dd>Wentzville School District; Stone Creek Elementary is 1 mile away, rated 9 out of 10 by GreatSchools</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>12 minutes, 6.2 miles</dd></div></dl><p><a href="https://www.zillow.com/homedetails/223-Destiny-Ct-Wentzville-MO-63385/59921540_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26058941). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>Freshly updated: paint, flooring, doors, baths and a navy kitchen (photos 11 to 15)</li><li>Nearly half an acre, fenced, with a big concrete patio</li><li>Radon fan system already installed</li><li>Lowest association fee of the houses that have one, $150 a year</li><li>12 minutes to the daycare</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>Smallest house in the search</li><li>Furnace and water heater in the unfinished utility area look original to 2001 (photos 34 to 36)</li><li>One contract already fell through</li><li>Split-level means stairs between every part of the house</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">December 2001</span><span>Sold new by Travis Shane Homes for $140,250.</span></li><li><span class="when">December 2017</span><span>Sold for $178,000 to the current owners.</span></li><li><span class="when">September 12, 2026</span><span>Listed at $325,900.</span></li><li><span class="when">September 25, 2026</span><span>Cut to $314,900.</span></li><li><span class="when">September 28, 2026</span><span>Under contract.</span></li><li><span class="when">October 7, 2026</span><span>Back on the market.</span></li><li><span class="when">October 27, 2026</span><span>Cut to $312,400.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Fresh paint throughout, new flooring, new baseboards and doors.</li><li>All three bathrooms updated with new vanities, toilets and fixtures.</li><li>Kitchen with painted navy cabinets, stainless appliances and a tile backsplash.</li><li>New carpet in the lower-level recreation room.</li><li>Radon fan system and central vacuum.</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>At $188 a square foot it is not cheap per foot; it is cheap because it is small.</li><li>61 days on the market with one failed contract has pushed the price down twice.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>Original furnace, air conditioner and water heater</h3><p>The utility room photos show older equipment (photos 34 to 36). A 2001 furnace and air conditioner are 25 years old.</p><p class="cost"><b>Cost:</b> $8,000 to $14,000 for both, $1,500 to $2,500 for the water heater (estimates).</p></div><div class="problem"><h3>The contract that fell through</h3><p>Under contract September 28, back October 7. Ask the listing agent what the buyer&#x27;s inspection found.</p><p class="cost"><b>Cost:</b> Unknown until asked.</p></div><div class="problem"><h3>Fresh-flip finishes can hide problems</h3><p>New paint and flooring everywhere make old stains and patches invisible. Look closely at ceilings under bathrooms and at the lower-level walls.</p><p class="cost"><b>Cost:</b> Inspection, about $400 to $600.</p></div><div class="problem"><h3>Smaller living space</h3><p>1,662 square feet with the fourth bedroom on the lower level. The recreation room is the only second living space.</p><p class="cost"><b>Cost:</b> No fix short of an addition.</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Why did the September contract fall through?</li><li>Ages of the furnace, air conditioner, water heater and roof.</li><li>Who did the updates, and were permits pulled for the bathroom work?</li><li>What radon level was measured, and when was the fan installed?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/223-Destiny-Ct-Wentzville-MO-63385/59921540_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/T022200132" target="_blank" rel="noopener">St. Charles County Assessor, account T022200132</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
 <script>
 (function () {
-  var KEY = "house-search-no";
-  var noGroup = document.getElementById("g-no");
+  var KEYS = { view: "house-search-view", no: "house-search-no" };
+  var LABELS = {
+    view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
+    no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
+  };
+  var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
-  function load() {
+  var marks;
+  function load(key) {
     try {
-      var v = JSON.parse(localStorage.getItem(KEY) || "[]");
+      var v = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(v) ? v : [];
     } catch (err) { return []; }
   }
-  function save(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
+  function save(key, list) {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
   }
-  var no = load();
-  function isNo(slug) { return no.indexOf(slug) !== -1; }
-  function place(card, on) {
-    var home = on ? noGroup : document.getElementById(card.getAttribute("data-home"));
+  function read() { marks = { view: load(KEYS.view), no: load(KEYS.no) }; }
+  function markOf(slug) {
+    return marks.no.indexOf(slug) !== -1 ? "no" : marks.view.indexOf(slug) !== -1 ? "view" : "";
+  }
+  function set(slug, mark) {
+    ["view", "no"].forEach(function (m) {
+      marks[m] = marks[m].filter(function (s) { return s !== slug; });
+      if (m === mark) marks[m].push(slug);
+      save(KEYS[m], marks[m]);
+    });
+  }
+  function place(card, mark) {
+    var home = document.getElementById(mark ? "g-" + mark : card.getAttribute("data-home"));
     var list = home.querySelector(".cards");
     if (card.parentNode === list) return;
     var order = +card.getAttribute("data-order"), next = null;
@@ -156,15 +185,17 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
-      var on = isNo(el.getAttribute("data-house"));
-      el.classList.toggle("is-no", on);
-      if (noGroup && el.matches("article.card")) place(el, on);
+      var m = markOf(el.getAttribute("data-house"));
+      el.classList.toggle("is-view", m === "view");
+      el.classList.toggle("is-no", m === "no");
+      if (listed && el.matches("article.card")) place(el, m);
     });
-    document.querySelectorAll("button[data-nope]").forEach(function (b) {
-      var on = isNo(b.getAttribute("data-nope")), addr = b.getAttribute("data-addr");
-      b.textContent = on ? "Undo" : "\u2715";
-      b.setAttribute("aria-label", on ? "Undo the no on " + addr : "Mark " + addr + " as a no");
-      b.title = on ? "Put this house back" : "Mark this house as a no";
+    document.querySelectorAll("button[data-pick]").forEach(function (b) {
+      var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
+      var text = LABELS[want], addr = b.getAttribute("data-addr");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", text[on ? 1 : 0].replace("{a}", addr));
+      b.title = text[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
       var n = g.querySelectorAll(".cards > .card").length;
@@ -174,20 +205,25 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
     });
   }
   document.addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-nope]");
+    var b = ev.target.closest("button[data-pick]");
     if (!b) return;
-    var slug = b.getAttribute("data-nope"), on = !isNo(slug);
-    no = no.filter(function (s) { return s !== slug; });
-    if (on) no.push(slug);
-    save(no);
+    var slug = b.getAttribute("data-slug"), want = b.getAttribute("data-pick");
+    var mark = markOf(slug) === want ? "" : want;
+    set(slug, mark);
     render();
     b.focus({ preventScroll: true });
     if (live) {
-      live.textContent = b.getAttribute("data-addr") + (on ? (noGroup ? " marked no and moved to the bottom." : " marked no.") : " put back.");
+      var addr = b.getAttribute("data-addr");
+      live.textContent = mark === "view" ? addr + " added to the Want to view list" + (listed ? " at the top of the page." : ".")
+        : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
+        : addr + " cleared.";
     }
   });
-  window.addEventListener("storage", function (ev) { if (ev.key === KEY) { no = load(); render(); } });
-  window.addEventListener("pageshow", function () { no = load(); render(); });
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === KEYS.view || ev.key === KEYS.no) { read(); render(); }
+  });
+  window.addEventListener("pageshow", function () { read(); render(); });
+  read();
   render();
 })();
 </script>

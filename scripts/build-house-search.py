@@ -14,8 +14,11 @@ house whose basement is unfinished, and the partly-sunk lower level of a split-l
 needs confirming. The build refuses a house that is missing either answer, and the list
 groups houses by the result: both met, one to confirm, one failed.
 
-The X on each house marks it a no. The marks live in the viewer's browser storage,
-shared by the list and the reports, so they survive a reload but not a change of device.
+Every house carries a check mark (want to view) and an X (no), on its card, its report and
+its row of the side-by-side table, where they are the far-left column. A house holds one
+mark at most. Marked cards move to a group at the top (view) or the bottom (no); table
+rows stay put and change color. The marks live in the viewer's browser storage, shared by
+the list and the reports, so they survive a reload but not a change of device.
 """
 
 import html
@@ -105,15 +108,21 @@ td.pass { color: var(--pass); }
 td.fail { color: var(--fail); }
 td.check { color: var(--amber); }
 td.soft { color: var(--rose); }
+.pick-col { display: none; }
+.js .pick-col { display: table-cell; }
+td.pick-col { width: 1%; white-space: nowrap; }
+tr.is-view td { background: var(--pass-soft); }
 tr.is-no td { opacity: 0.45; }
-tr.is-no td:first-child { opacity: 1; }
-tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); }
+tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
+tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .ask { background: var(--rose-soft); border-radius: 12px; padding: 1rem 1.25rem; display: grid; gap: 0.6rem; }
 .group-head { display: grid; gap: 0.3rem; }
 .count { display: inline-block; font-family: var(--font-data); font-size: 0.9rem; vertical-align: middle; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--raise); color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
+.group-view { padding: 1rem; border: 2px solid var(--pass); border-radius: 16px; background: var(--pass-soft); }
+.group-view .count { background: var(--bg); color: var(--pass); }
 .cards { display: grid; gap: 1.25rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
 .card.subject { border: 2px solid var(--sea); }
@@ -124,17 +133,26 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 .tag { display: inline-block; font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.55rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
 .tag.no-tag { background: var(--fail-soft); color: var(--fail); }
-.no-tag, .no-note { display: none; }
-.is-no .no-tag { display: inline-block; }
-.is-no .no-note { display: block; }
-.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.tag.view-tag { background: var(--pass-soft); color: var(--pass); }
+.no-tag, .no-note, .view-tag, .view-note { display: none; }
+.is-no .no-tag, .is-view .view-tag { display: inline-block; }
+.is-no .no-note, .is-view .view-note { display: block; }
+.no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
+.view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
+.card.is-view { border: 2px solid var(--pass); }
 .card.is-no { border: 1px dashed var(--fail); background: var(--bg); }
 .card.is-no .card-body { display: none; }
 .card.is-no h3 { color: var(--muted); text-decoration: line-through; }
-.nope { display: none; flex: none; min-width: 44px; height: 44px; padding: 0 0.6rem; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); color: var(--fail); font: 700 1.3rem/1 var(--font-data); cursor: pointer; }
-.nope:hover { background: var(--fail-soft); border-color: var(--fail); }
-.is-no .nope { color: var(--ink); font-size: 0.85rem; letter-spacing: 0.04em; padding: 0 0.9rem; }
-.js .nope { display: inline-grid; }
+.picks { display: none; flex: none; gap: 0.4rem; }
+.js .picks { display: inline-flex; }
+.pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
+.pick.view { color: var(--pass); }
+.pick.no { color: var(--fail); }
+.pick.view:hover { background: var(--pass-soft); border-color: var(--pass); }
+.pick.no:hover { background: var(--fail-soft); border-color: var(--fail); }
+.pick.view[aria-pressed="true"] { background: var(--pass); border-color: var(--pass); color: var(--bg); }
+.pick.no[aria-pressed="true"] { background: var(--fail); border-color: var(--fail); color: var(--bg); }
 .js-only { display: none; }
 .js .js-only { display: block; }
 .go { font-weight: 700; }
@@ -142,27 +160,42 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 """
 
-# The X button. The list of no's is one array of slugs in localStorage, read by the list
-# and by every report, so a no set on a report shows on the list and the other way round.
+# The check and X buttons. Each mark is one array of slugs in localStorage, read by the
+# list and by every report, so a mark set on a report shows on the list and the other way
+# round. The no key predates the view key and keeps its name so existing no's survive.
 # Storage can throw (private windows, blocked site data); the page still works without it.
 SCRIPT = """
 (function () {
-  var KEY = "house-search-no";
-  var noGroup = document.getElementById("g-no");
+  var KEYS = { view: "house-search-view", no: "house-search-no" };
+  var LABELS = {
+    view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
+    no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
+  };
+  var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
-  function load() {
+  var marks;
+  function load(key) {
     try {
-      var v = JSON.parse(localStorage.getItem(KEY) || "[]");
+      var v = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(v) ? v : [];
     } catch (err) { return []; }
   }
-  function save(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
+  function save(key, list) {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
   }
-  var no = load();
-  function isNo(slug) { return no.indexOf(slug) !== -1; }
-  function place(card, on) {
-    var home = on ? noGroup : document.getElementById(card.getAttribute("data-home"));
+  function read() { marks = { view: load(KEYS.view), no: load(KEYS.no) }; }
+  function markOf(slug) {
+    return marks.no.indexOf(slug) !== -1 ? "no" : marks.view.indexOf(slug) !== -1 ? "view" : "";
+  }
+  function set(slug, mark) {
+    ["view", "no"].forEach(function (m) {
+      marks[m] = marks[m].filter(function (s) { return s !== slug; });
+      if (m === mark) marks[m].push(slug);
+      save(KEYS[m], marks[m]);
+    });
+  }
+  function place(card, mark) {
+    var home = document.getElementById(mark ? "g-" + mark : card.getAttribute("data-home"));
     var list = home.querySelector(".cards");
     if (card.parentNode === list) return;
     var order = +card.getAttribute("data-order"), next = null;
@@ -173,15 +206,17 @@ SCRIPT = """
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
-      var on = isNo(el.getAttribute("data-house"));
-      el.classList.toggle("is-no", on);
-      if (noGroup && el.matches("article.card")) place(el, on);
+      var m = markOf(el.getAttribute("data-house"));
+      el.classList.toggle("is-view", m === "view");
+      el.classList.toggle("is-no", m === "no");
+      if (listed && el.matches("article.card")) place(el, m);
     });
-    document.querySelectorAll("button[data-nope]").forEach(function (b) {
-      var on = isNo(b.getAttribute("data-nope")), addr = b.getAttribute("data-addr");
-      b.textContent = on ? "Undo" : "\\u2715";
-      b.setAttribute("aria-label", on ? "Undo the no on " + addr : "Mark " + addr + " as a no");
-      b.title = on ? "Put this house back" : "Mark this house as a no";
+    document.querySelectorAll("button[data-pick]").forEach(function (b) {
+      var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
+      var text = LABELS[want], addr = b.getAttribute("data-addr");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", text[on ? 1 : 0].replace("{a}", addr));
+      b.title = text[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
       var n = g.querySelectorAll(".cards > .card").length;
@@ -191,20 +226,25 @@ SCRIPT = """
     });
   }
   document.addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-nope]");
+    var b = ev.target.closest("button[data-pick]");
     if (!b) return;
-    var slug = b.getAttribute("data-nope"), on = !isNo(slug);
-    no = no.filter(function (s) { return s !== slug; });
-    if (on) no.push(slug);
-    save(no);
+    var slug = b.getAttribute("data-slug"), want = b.getAttribute("data-pick");
+    var mark = markOf(slug) === want ? "" : want;
+    set(slug, mark);
     render();
     b.focus({ preventScroll: true });
     if (live) {
-      live.textContent = b.getAttribute("data-addr") + (on ? (noGroup ? " marked no and moved to the bottom." : " marked no.") : " put back.");
+      var addr = b.getAttribute("data-addr");
+      live.textContent = mark === "view" ? addr + " added to the Want to view list" + (listed ? " at the top of the page." : ".")
+        : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
+        : addr + " cleared.";
     }
   });
-  window.addEventListener("storage", function (ev) { if (ev.key === KEY) { no = load(); render(); } });
-  window.addEventListener("pageshow", function () { no = load(); render(); });
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === KEYS.view || ev.key === KEYS.no) { read(); render(); }
+  });
+  window.addEventListener("pageshow", function () { read(); render(); });
+  read();
   render();
 })();
 """
@@ -290,9 +330,13 @@ def musts(h):
         for s, label, note in rows) + '</ul>'
 
 
-def nope(h):
-    return (f'<button type="button" class="nope" data-nope="{e(h["slug"])}" data-addr="{e(h["address"])}" '
-            f'aria-label="Mark {e(h["address"])} as a no" title="Mark this house as a no">✕</button>')
+def picks(h):
+    slug, addr = e(h["slug"]), e(h["address"])
+    return (f'<span class="picks">'
+            f'<button type="button" class="pick view" data-pick="view" data-slug="{slug}" data-addr="{addr}" '
+            f'aria-pressed="false" aria-label="Mark {addr} as one to view" title="Want to view">✓</button>'
+            f'<button type="button" class="pick no" data-pick="no" data-slug="{slug}" data-addr="{addr}" '
+            f'aria-pressed="false" aria-label="Mark {addr} as a no" title="Mark as a no">✕</button></span>')
 
 
 def facts(h):
@@ -319,7 +363,9 @@ def report(h, updated):
     out.append('<header>')
     out.append('<p class="crumb"><a href="../">House search</a></p>')
     out.append(f'<p class="eyebrow">Buyer report, updated {e(updated)}</p>')
-    out.append(f'<div class="title-row"><h1>{e(h["address"])}</h1>{nope(h)}</div>')
+    out.append(f'<div class="title-row"><h1>{e(h["address"])}</h1>{picks(h)}</div>')
+    out.append('<p class="view-note">On your list to view. It sits in the Want to view list at the top of '
+               'the house search page.</p>')
     out.append('<p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p>')
     out.append(f'<p>{e(h["city"])}</p>')
     out.append(f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>')
@@ -381,7 +427,8 @@ def card(h, order, group):
         else '<span class="tag">Similar house</span>'
     return (f'<article class="{cls}" data-house="{e(h["slug"])}" data-home="g-{group}" data-order="{order}">'
             f'<div class="card-head"><div class="titles"><h3>{e(h["address"])}</h3>{tag}'
-            f'<span class="tag no-tag">Marked no</span></div>{nope(h)}</div>'
+            f'<span class="tag view-tag">Want to view</span><span class="tag no-tag">Marked no</span></div>'
+            f'{picks(h)}</div>'
             f'<div class="card-body"><p>{e(h["city"])}</p>'
             f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>'
             f'{musts(h)}{hoa_line(h)}{fence_line(h)}{facts(h)}'
@@ -405,10 +452,15 @@ def index(data):
     out.append(f'<p>{e(data["criteria"])}</p>')
     if data.get("searchNote"):
         out.append(f'<p>{e(data["searchNote"])}</p>')
-    out.append('<p class="js-only">Tap the ✕ on a house to mark it a no. It drops to the bottom of the page, '
-               'where Undo puts it back. The marks are saved in this browser only, so a phone and a laptop '
-               'each keep their own.</p>')
+    out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out, '
+               'in the table or on its card. Houses to view move into their own list at the top of the page, '
+               'and no\'s drop to the bottom; tapping the same mark again clears it. The marks are saved in this '
+               'browser only, so a phone and a laptop each keep their own.</p>')
     out.append('</header>')
+    out.append('<section class="group group-view" id="g-view" hidden><div class="group-head">'
+               '<h2>Want to view <span class="count">0</span></h2>'
+               '<p>Saved in this browser. Tap the ✓ again to take a house off the list.</p></div>'
+               '<div class="cards"></div></section>')
     if data.get("compareRows"):
         out.append(compare(houses))
     order = 0
@@ -423,14 +475,15 @@ def index(data):
         out.append('</div></section>')
     out.append('<section class="group group-no" id="g-no" hidden><div class="group-head">'
                '<h2>Marked no <span class="count">0</span></h2>'
-               '<p>Saved in this browser. Undo puts a house back where it was.</p></div>'
+               '<p>Saved in this browser. Tap the ✕ again to put a house back where it was.</p></div>'
                '<div class="cards"></div></section>')
     out.append(TAIL)
     return "".join(out)
 
 
 def compare(houses):
-    head = ("<tr><th>House</th><th>Price</th><th>3 beds on main floor</th><th>Finished basement</th>"
+    head = ('<tr><th class="pick-col">View / No</th><th>House</th><th>Price</th>'
+            "<th>3 beds on main floor</th><th>Finished basement</th>"
             "<th>Fenced yard</th><th>Homeowners association</th>"
             "<th>Beds / baths</th><th>Size</th><th>Built</th><th>Drive to daycare</th></tr>")
     rows = []
@@ -443,14 +496,16 @@ def compare(houses):
         base_txt = BASEMENT_SHORT[h["basement"]["kind"]]
         fence_txt, fence_cls = {True: ("Yes", "pass"), False: ("No", "soft"),
                                 None: ("Not stated", "check")}[h["fence"]["has"]]
-        rows.append(f'<tr data-house="{e(h["slug"])}"><td><a href="{e(h["slug"])}/">{e(h["address"])}</a>'
-                    f' <span class="tag no-tag">No</span><br><small>{e(h["city"])}</small></td>'
+        rows.append(f'<tr data-house="{e(h["slug"])}"><td class="pick-col">{picks(h)}</td>'
+                    f'<td class="addr"><a href="{e(h["slug"])}/">{e(h["address"])}</a>'
+                    f' <span class="tag view-tag">View</span><span class="tag no-tag">No</span>'
+                    f'<br><small>{e(h["city"])}</small></td>'
                     f'<td class="num">{money(h["price"])}</td>'
                     f'<td class="{main}">{MARK[main]} {e(main_txt)}</td><td class="{base}">{MARK[base]} {e(base_txt)}</td>'
                     f'<td class="{fence_cls}">{e(fence_txt)}</td><td>{e(hoa_txt)}</td>'
                     f'<td>{e(h.get("bedsShort", h["beds"]))}</td><td>{e(h.get("sizeShort", h["size"]))}</td>'
                     f'<td class="num">{e(str(h["built"])[:4])}</td><td>{e(h.get("driveShort", h["drive"]))}</td></tr>')
-    return (f'<section><h2>Side by side</h2><div class="scroll"><table style="min-width:1100px">'
+    return (f'<section><h2>Side by side</h2><div class="scroll"><table style="min-width:1200px">'
             f'<thead>{head}</thead><tbody>{"".join(rows)}</tbody></table></div></section>')
 
 

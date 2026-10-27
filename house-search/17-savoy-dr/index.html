@@ -87,15 +87,21 @@ td.pass { color: var(--pass); }
 td.fail { color: var(--fail); }
 td.check { color: var(--amber); }
 td.soft { color: var(--rose); }
+.pick-col { display: none; }
+.js .pick-col { display: table-cell; }
+td.pick-col { width: 1%; white-space: nowrap; }
+tr.is-view td { background: var(--pass-soft); }
 tr.is-no td { opacity: 0.45; }
-tr.is-no td:first-child { opacity: 1; }
-tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); }
+tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
+tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .ask { background: var(--rose-soft); border-radius: 12px; padding: 1rem 1.25rem; display: grid; gap: 0.6rem; }
 .group-head { display: grid; gap: 0.3rem; }
 .count { display: inline-block; font-family: var(--font-data); font-size: 0.9rem; vertical-align: middle; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--raise); color: var(--muted); }
 .group-pass .count { background: var(--pass-soft); color: var(--pass); }
 .group-check .count { background: var(--amber-soft); color: var(--amber); }
 .group-fail .count, .group-no .count { background: var(--fail-soft); color: var(--fail); }
+.group-view { padding: 1rem; border: 2px solid var(--pass); border-radius: 16px; background: var(--pass-soft); }
+.group-view .count { background: var(--bg); color: var(--pass); }
 .cards { display: grid; gap: 1.25rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; display: grid; gap: 0.8rem; min-width: 0; }
 .card.subject { border: 2px solid var(--sea); }
@@ -106,17 +112,26 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 .tag { display: inline-block; font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.55rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
 .tag.no-tag { background: var(--fail-soft); color: var(--fail); }
-.no-tag, .no-note { display: none; }
-.is-no .no-tag { display: inline-block; }
-.is-no .no-note { display: block; }
-.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.tag.view-tag { background: var(--pass-soft); color: var(--pass); }
+.no-tag, .no-note, .view-tag, .view-note { display: none; }
+.is-no .no-tag, .is-view .view-tag { display: inline-block; }
+.is-no .no-note, .is-view .view-note { display: block; }
+.no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
+.view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
+.card.is-view { border: 2px solid var(--pass); }
 .card.is-no { border: 1px dashed var(--fail); background: var(--bg); }
 .card.is-no .card-body { display: none; }
 .card.is-no h3 { color: var(--muted); text-decoration: line-through; }
-.nope { display: none; flex: none; min-width: 44px; height: 44px; padding: 0 0.6rem; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); color: var(--fail); font: 700 1.3rem/1 var(--font-data); cursor: pointer; }
-.nope:hover { background: var(--fail-soft); border-color: var(--fail); }
-.is-no .nope { color: var(--ink); font-size: 0.85rem; letter-spacing: 0.04em; padding: 0 0.9rem; }
-.js .nope { display: inline-grid; }
+.picks { display: none; flex: none; gap: 0.4rem; }
+.js .picks { display: inline-flex; }
+.pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
+.pick.view { color: var(--pass); }
+.pick.no { color: var(--fail); }
+.pick.view:hover { background: var(--pass-soft); border-color: var(--pass); }
+.pick.no:hover { background: var(--fail-soft); border-color: var(--fail); }
+.pick.view[aria-pressed="true"] { background: var(--pass); border-color: var(--pass); color: var(--bg); }
+.pick.no[aria-pressed="true"] { background: var(--fail); border-color: var(--fail); color: var(--bg); }
 .js-only { display: none; }
 .js .js-only { display: block; }
 .go { font-weight: 700; }
@@ -127,25 +142,39 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
 <body>
 <main class="wrap" data-house="17-savoy-dr">
 <p class="sr-only" id="announce" aria-live="polite"></p>
-<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>17 Savoy Dr</h1><button type="button" class="nope" data-nope="17-savoy-dr" data-addr="17 Savoy Dr" aria-label="Mark 17 Savoy Dr as a no" title="Mark this house as a no">✕</button></div><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Lake Saint Louis, MO 63367</p><p class="price">$335,000 <small>Listed October 9, 2026, unchanged</small></p><ul class="musts"><li class="pass"><span class="mark" aria-hidden="true">✓</span><div><b>3 bedrooms on the main floor: <span class="st">Pass</span></b><span>All 3 bedrooms are on the main floor.</span></div></li><li class="check"><span class="mark" aria-hidden="true">?</span><div><b>A finished basement: <span class="st">Check</span></b><span>Only 440 square feet of the lower level is finished, under a 1,605-square-foot main floor. The listing does not say whether the rest is unfinished basement or crawl space; ask.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$650 a year ($54.17 a month), Lake Saint Louis Community Association</span></div><p>Same association as Cadillac Ct: lakes, marinas, beaches, pools, clubhouse, golf, tennis and pickleball.</p><div class="fence unknown"><b>Fenced back yard: Not stated</b><span>The listing does not mention a fence. The yard is level with trees along the back.</span></div></header><div class="verdict"><strong>The short answer</strong><p>The move-in-ready way to live in the same Lake Saint Louis association as Cadillac Ct, near the lake, for $45,000 more. It has 3 bedrooms, not 4. The big warning: two buyers backed out within two weeks, one after 2 days and one after 8, and the reason is not public.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale. Back on the market October 24 after two contracts fell through in October.</dd></div><div><dt>Bedrooms</dt><dd>3, all on the main floor</dd></div><div><dt>Bathrooms</dt><dd>3 full: 2 on the main floor, 1 in the lower level</dd></div><div><dt>Size</dt><dd>2,045 square feet: 1,605 on the main floor, 440 in the lower level</dd></div><div><dt>Built</dt><dd>1969, brick ranch</dd></div><div><dt>Lot</dt><dd>0.26 acre, level, trees along the back</dd></div><div><dt>Property taxes</dt><dd>$3,776 for 2025</dd></div><div><dt>Schools</dt><dd>Wentzville School District; Lakeview Elementary is 0.6 mile away, rated 9 out of 10 by GreatSchools</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>13 minutes, 6.3 to 8.6 miles</dd></div></dl><p><a href="https://www.zillow.com/homedetails/17-Savoy-Dr-Lake-Saint-Louis-MO-63367/2572729_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26064107). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>Same lake association as Cadillac Ct, two streets from the lake (photo 41)</li><li>Updated: granite kitchen with an island, wood floors, fresh paint, new carpet</li><li>Oversized three-car garage, about 26 by 32 feet</li><li>Lower level with a family room and a new tile shower bath</li><li>Seller offers a home warranty</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>Two contracts fell through in October</li><li>3 bedrooms, not 4</li><li>1969 build; the county lists the walls as 80 percent plywood siding</li><li>Listing photos use virtual staging (photos 3 and 4 show the same room staged and empty)</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">1988 to 1996</span><span>Sold for $100,000 in 1988 and $115,000 in 1996.</span></li><li><span class="when">May 2012</span><span>The long-time owner sells for $74,001, far under value, to ALRO Business &amp; Developers LLC.</span></li><li><span class="when">April 2013</span><span>ALRO sells it renovated for $154,000 to the current owners.</span></li><li><span class="when">October 9, 2026</span><span>Listed at $335,000.</span></li><li><span class="when">October 11 to 13, 2026</span><span>Under contract, then back on the market.</span></li><li><span class="when">October 16 to 24, 2026</span><span>Under contract again, then back on the market.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Renovated by a developer in 2012 and 2013.</li><li>Fresh paint and new main-floor carpet for this sale.</li><li>Granite kitchen with an island and a bay window seat (photos 13 to 17).</li><li>Lower level finished with a family room and a new tile walk-in shower (photos 31 to 38).</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>$164 a square foot, right around the Lake Saint Louis norm. It is not underpriced.</li><li>The two failed contracts are the soft spot to press on.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>Two failed contracts in two weeks</h3><p>October 11 to 13, then October 16 to 24. Back-to-back collapses usually mean an inspection finding or an appraisal that came in low. Get the reason in writing before paying for an inspection.</p><p class="cost"><b>Cost:</b> Unknown until asked.</p></div><div class="problem"><h3>Plywood siding on the county record</h3><p>The front is brick, but the county lists 80 percent of the walls as plywood. Plywood panel siding rots at the bottom edges and around windows. Check the sides and back.</p><p class="cost"><b>Cost:</b> Spot repairs a few hundred to a few thousand; full re-siding $15,000 to $30,000 (estimate).</p></div><div class="problem"><h3>1969 plumbing and electrical</h3><p>Ask about the drain line material and the panel. A sewer scope is worth it on a 57-year-old house.</p><p class="cost"><b>Cost:</b> Sewer scope $150 to $300.</p></div><div class="problem"><h3>Only 3 bedrooms</h3><p>All three are on the main floor. The lower level has a family room and a bath but no bedroom.</p><p class="cost"><b>Cost:</b> A lower-level bedroom with an egress window runs about $8,000 to $15,000 (estimate).</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Why did both October contracts fall through?</li><li>Ages of the roof, furnace, air conditioner and water heater.</li><li>What siding is on the sides and back, and any rot repairs?</li><li>Has the sump pump ever run often, and any water in the lower level?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/17-Savoy-Dr-Lake-Saint-Louis-MO-63367/2572729_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/686160A000" target="_blank" rel="noopener">St. Charles County Assessor, account 686160A000</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
+<header><p class="crumb"><a href="../">House search</a></p><p class="eyebrow">Buyer report, updated 2026-10-27</p><div class="title-row"><h1>17 Savoy Dr</h1><span class="picks"><button type="button" class="pick view" data-pick="view" data-slug="17-savoy-dr" data-addr="17 Savoy Dr" aria-pressed="false" aria-label="Mark 17 Savoy Dr as one to view" title="Want to view">✓</button><button type="button" class="pick no" data-pick="no" data-slug="17-savoy-dr" data-addr="17 Savoy Dr" aria-pressed="false" aria-label="Mark 17 Savoy Dr as a no" title="Mark as a no">✕</button></span></div><p class="view-note">On your list to view. It sits in the Want to view list at the top of the house search page.</p><p class="no-note">You marked this house a no. It sits at the bottom of the house list until you undo it.</p><p>Lake Saint Louis, MO 63367</p><p class="price">$335,000 <small>Listed October 9, 2026, unchanged</small></p><ul class="musts"><li class="pass"><span class="mark" aria-hidden="true">✓</span><div><b>3 bedrooms on the main floor: <span class="st">Pass</span></b><span>All 3 bedrooms are on the main floor.</span></div></li><li class="check"><span class="mark" aria-hidden="true">?</span><div><b>A finished basement: <span class="st">Check</span></b><span>Only 440 square feet of the lower level is finished, under a 1,605-square-foot main floor. The listing does not say whether the rest is unfinished basement or crawl space; ask.</span></div></li></ul><div class="hoa"><b>Homeowners association: Yes</b><span>$650 a year ($54.17 a month), Lake Saint Louis Community Association</span></div><p>Same association as Cadillac Ct: lakes, marinas, beaches, pools, clubhouse, golf, tennis and pickleball.</p><div class="fence unknown"><b>Fenced back yard: Not stated</b><span>The listing does not mention a fence. The yard is level with trees along the back.</span></div></header><div class="verdict"><strong>The short answer</strong><p>The move-in-ready way to live in the same Lake Saint Louis association as Cadillac Ct, near the lake, for $45,000 more. It has 3 bedrooms, not 4. The big warning: two buyers backed out within two weeks, one after 2 days and one after 8, and the reason is not public.</p></div><section><h2>Key facts</h2><dl class="facts"><div><dt>Status</dt><dd>For sale. Back on the market October 24 after two contracts fell through in October.</dd></div><div><dt>Bedrooms</dt><dd>3, all on the main floor</dd></div><div><dt>Bathrooms</dt><dd>3 full: 2 on the main floor, 1 in the lower level</dd></div><div><dt>Size</dt><dd>2,045 square feet: 1,605 on the main floor, 440 in the lower level</dd></div><div><dt>Built</dt><dd>1969, brick ranch</dd></div><div><dt>Lot</dt><dd>0.26 acre, level, trees along the back</dd></div><div><dt>Property taxes</dt><dd>$3,776 for 2025</dd></div><div><dt>Schools</dt><dd>Wentzville School District; Lakeview Elementary is 0.6 mile away, rated 9 out of 10 by GreatSchools</dd></div><div><dt>Flood risk</dt><dd>Minimal-risk area (Zone X) on the federal flood map</dd></div><div><dt>Drive to daycare</dt><dd>13 minutes, 6.3 to 8.6 miles</dd></div></dl><p><a href="https://www.zillow.com/homedetails/17-Savoy-Dr-Lake-Saint-Louis-MO-63367/2572729_zpid/" target="_blank" rel="noopener">Open the listing and its photos</a> (listing number 26064107). Photo numbers below follow the listing's photo order.</p></section><section class="two"><div class="good"><h3>In its favor</h3><ul><li>Same lake association as Cadillac Ct, two streets from the lake (photo 41)</li><li>Updated: granite kitchen with an island, wood floors, fresh paint, new carpet</li><li>Oversized three-car garage, about 26 by 32 feet</li><li>Lower level with a family room and a new tile shower bath</li><li>Seller offers a home warranty</li></ul></div><div class="watch"><h3>Against it</h3><ul><li>Two contracts fell through in October</li><li>3 bedrooms, not 4</li><li>1969 build; the county lists the walls as 80 percent plywood siding</li><li>Listing photos use virtual staging (photos 3 and 4 show the same room staged and empty)</li></ul></div></section><section><h2>What has happened to it</h2><ol class="timeline"><li><span class="when">1988 to 1996</span><span>Sold for $100,000 in 1988 and $115,000 in 1996.</span></li><li><span class="when">May 2012</span><span>The long-time owner sells for $74,001, far under value, to ALRO Business &amp; Developers LLC.</span></li><li><span class="when">April 2013</span><span>ALRO sells it renovated for $154,000 to the current owners.</span></li><li><span class="when">October 9, 2026</span><span>Listed at $335,000.</span></li><li><span class="when">October 11 to 13, 2026</span><span>Under contract, then back on the market.</span></li><li><span class="when">October 16 to 24, 2026</span><span>Under contract again, then back on the market.</span></li></ol></section><section><h2>What has been done to it</h2><ul><li>Renovated by a developer in 2012 and 2013.</li><li>Fresh paint and new main-floor carpet for this sale.</li><li>Granite kitchen with an island and a bay window seat (photos 13 to 17).</li><li>Lower level finished with a family room and a new tile walk-in shower (photos 31 to 38).</li></ul></section><section><h2>Why it is priced where it is</h2><ul><li>$164 a square foot, right around the Lake Saint Louis norm. It is not underpriced.</li><li>The two failed contracts are the soft spot to press on.</li></ul></section><section><h2>Problems and risks</h2><div class="problem"><h3>Two failed contracts in two weeks</h3><p>October 11 to 13, then October 16 to 24. Back-to-back collapses usually mean an inspection finding or an appraisal that came in low. Get the reason in writing before paying for an inspection.</p><p class="cost"><b>Cost:</b> Unknown until asked.</p></div><div class="problem"><h3>Plywood siding on the county record</h3><p>The front is brick, but the county lists 80 percent of the walls as plywood. Plywood panel siding rots at the bottom edges and around windows. Check the sides and back.</p><p class="cost"><b>Cost:</b> Spot repairs a few hundred to a few thousand; full re-siding $15,000 to $30,000 (estimate).</p></div><div class="problem"><h3>1969 plumbing and electrical</h3><p>Ask about the drain line material and the panel. A sewer scope is worth it on a 57-year-old house.</p><p class="cost"><b>Cost:</b> Sewer scope $150 to $300.</p></div><div class="problem"><h3>Only 3 bedrooms</h3><p>All three are on the main floor. The lower level has a family room and a bath but no bedroom.</p><p class="cost"><b>Cost:</b> A lower-level bedroom with an egress window runs about $8,000 to $15,000 (estimate).</p></div></section><section class="ask"><h2>Ask before making an offer</h2><ol><li>Why did both October contracts fall through?</li><li>Ages of the roof, furnace, air conditioner and water heater.</li><li>What siding is on the sides and back, and any rot repairs?</li><li>Has the sump pump ever run often, and any water in the lower level?</li></ol></section><section class="foot"><h3>Sources</h3><ul><li><a href="https://www.zillow.com/homedetails/17-Savoy-Dr-Lake-Saint-Louis-MO-63367/2572729_zpid/" target="_blank" rel="noopener">Zillow listing and photos</a></li><li><a href="https://lookups.sccmo.org/assessor/details/686160A000" target="_blank" rel="noopener">St. Charles County Assessor, account 686160A000</a></li></ul><p>Costs marked as estimates are typical St. Louis-area ranges, not quotes. Public records and listings can be wrong; an inspection is the real test.</p></section></main>
 <script>
 (function () {
-  var KEY = "house-search-no";
-  var noGroup = document.getElementById("g-no");
+  var KEYS = { view: "house-search-view", no: "house-search-no" };
+  var LABELS = {
+    view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
+    no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
+  };
+  var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
-  function load() {
+  var marks;
+  function load(key) {
     try {
-      var v = JSON.parse(localStorage.getItem(KEY) || "[]");
+      var v = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(v) ? v : [];
     } catch (err) { return []; }
   }
-  function save(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
+  function save(key, list) {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
   }
-  var no = load();
-  function isNo(slug) { return no.indexOf(slug) !== -1; }
-  function place(card, on) {
-    var home = on ? noGroup : document.getElementById(card.getAttribute("data-home"));
+  function read() { marks = { view: load(KEYS.view), no: load(KEYS.no) }; }
+  function markOf(slug) {
+    return marks.no.indexOf(slug) !== -1 ? "no" : marks.view.indexOf(slug) !== -1 ? "view" : "";
+  }
+  function set(slug, mark) {
+    ["view", "no"].forEach(function (m) {
+      marks[m] = marks[m].filter(function (s) { return s !== slug; });
+      if (m === mark) marks[m].push(slug);
+      save(KEYS[m], marks[m]);
+    });
+  }
+  function place(card, mark) {
+    var home = document.getElementById(mark ? "g-" + mark : card.getAttribute("data-home"));
     var list = home.querySelector(".cards");
     if (card.parentNode === list) return;
     var order = +card.getAttribute("data-order"), next = null;
@@ -156,15 +185,17 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
-      var on = isNo(el.getAttribute("data-house"));
-      el.classList.toggle("is-no", on);
-      if (noGroup && el.matches("article.card")) place(el, on);
+      var m = markOf(el.getAttribute("data-house"));
+      el.classList.toggle("is-view", m === "view");
+      el.classList.toggle("is-no", m === "no");
+      if (listed && el.matches("article.card")) place(el, m);
     });
-    document.querySelectorAll("button[data-nope]").forEach(function (b) {
-      var on = isNo(b.getAttribute("data-nope")), addr = b.getAttribute("data-addr");
-      b.textContent = on ? "Undo" : "\u2715";
-      b.setAttribute("aria-label", on ? "Undo the no on " + addr : "Mark " + addr + " as a no");
-      b.title = on ? "Put this house back" : "Mark this house as a no";
+    document.querySelectorAll("button[data-pick]").forEach(function (b) {
+      var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
+      var text = LABELS[want], addr = b.getAttribute("data-addr");
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", text[on ? 1 : 0].replace("{a}", addr));
+      b.title = text[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
       var n = g.querySelectorAll(".cards > .card").length;
@@ -174,20 +205,25 @@ tr.is-no td:first-child a { text-decoration: line-through; color: var(--muted); 
     });
   }
   document.addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-nope]");
+    var b = ev.target.closest("button[data-pick]");
     if (!b) return;
-    var slug = b.getAttribute("data-nope"), on = !isNo(slug);
-    no = no.filter(function (s) { return s !== slug; });
-    if (on) no.push(slug);
-    save(no);
+    var slug = b.getAttribute("data-slug"), want = b.getAttribute("data-pick");
+    var mark = markOf(slug) === want ? "" : want;
+    set(slug, mark);
     render();
     b.focus({ preventScroll: true });
     if (live) {
-      live.textContent = b.getAttribute("data-addr") + (on ? (noGroup ? " marked no and moved to the bottom." : " marked no.") : " put back.");
+      var addr = b.getAttribute("data-addr");
+      live.textContent = mark === "view" ? addr + " added to the Want to view list" + (listed ? " at the top of the page." : ".")
+        : mark === "no" ? addr + " marked no" + (listed ? ", at the bottom of the page." : ".")
+        : addr + " cleared.";
     }
   });
-  window.addEventListener("storage", function (ev) { if (ev.key === KEY) { no = load(); render(); } });
-  window.addEventListener("pageshow", function () { no = load(); render(); });
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === KEYS.view || ev.key === KEYS.no) { read(); render(); }
+  });
+  window.addEventListener("pageshow", function () { read(); render(); });
+  read();
   render();
 })();
 </script>
