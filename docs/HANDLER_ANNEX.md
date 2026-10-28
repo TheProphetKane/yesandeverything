@@ -52,6 +52,17 @@ named. The pieces:
   it: `mainFloorBeds`, `basement` (finished, none, unfinished, split, unsure) and `fence`.
 - `python scripts/build-house-search.py` writes `house-search/index.html` and one report page per
   house. Edit the data, build, ship; never edit the pages by hand.
+- The Want to view and No marks are one shared list for everyone who opens the page, kept by
+  the family-votes Worker (`workers/family-votes`, its `HouseMarks` Durable Object, on the
+  route `yesandeverything.com/house-search/api/*`) at `/house-search/api/marks`: a GET returns
+  `{marks: {slug: "view" | "no"}}`, a POST of `{slug, mark}` with `view`, `no` or an empty
+  mark sets or clears one, last writer wins. Each browser keeps a copy in its local storage so
+  the page draws at once and sends any unsent change on the next load; the first load after
+  2026-10-28 carries that browser's old local-only marks up for any house the shared list has
+  no mark on. Before that day the marks lived in each browser alone, which is why a second
+  viewer saw none of them. The Worker ships with `workers\family-votes\deploy.ps1` (self-test,
+  `wrangler deploy`, a live read of both routes), apart from the Pages release; the self-test
+  also runs as step 2.5 of the release.
 - `python scripts/house-search-scan.py --write --build` is the check: it reads the MLS feed
   through Realtor.com (served by homefinder.com, which carries the same search and detail
   routes without the bot wall) and Redfin's regional feed, routes every new candidate to the

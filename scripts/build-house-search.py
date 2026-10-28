@@ -18,8 +18,10 @@ groups houses by the result: both met, one to confirm, one failed.
 Every house carries a check mark (want to view) and an X (no), on its report and as the
 far-left column of its table row. A house holds one mark at most. A checked row moves up
 into the Want to view table at the top of the page, and a no drops to the Marked no table
-at the bottom. The marks live in the viewer's browser storage, shared by the list and the
-reports, so they survive a reload but not a change of device.
+at the bottom. The marks are one shared list for everyone who opens the page, kept by the
+family-votes Worker at /house-search/api/marks (workers/family-votes); each browser keeps
+a copy so the page draws at once and keeps working offline, and sends what it changed as
+soon as the route answers.
 """
 
 import html
@@ -138,6 +140,7 @@ tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
 .no-note { background: var(--fail-soft); border-left: 6px solid var(--fail); }
 .view-note { background: var(--pass-soft); border-left: 6px solid var(--pass); }
+.save-note { background: var(--amber-soft); border-left: 6px solid var(--amber); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; max-width: none; }
 .picks { display: none; flex: none; gap: 0.4rem; }
 .js .picks { display: inline-flex; }
 .pick { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--raise); font: 700 1.25rem/1 var(--font-data); cursor: pointer; }
@@ -154,39 +157,112 @@ tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 """
 
-# The check and X buttons. Each mark is one array of slugs in localStorage, read by the
-# list and by every report, so a mark set on a report shows on the list and the other way
-# round. The no key predates the view key and keeps its name so existing no's survive.
-# Storage can throw (private windows, blocked site data); the page still works without it.
+# The check and X buttons. The marks are one shared list, read from and written to the
+# family-votes Worker at /house-search/api/marks, so a mark set on any phone or laptop shows
+# on every other one, on the list and on every report. Each browser keeps a copy in
+# localStorage (house-search-marks) so the page draws before the route answers and still
+# works offline; a change that could not be sent waits in house-search-pending and goes up
+# on the next load. The first visit after the marks became shared (2026-10-28) carries the
+# browser's old local-only marks (house-search-view, house-search-no) up for any house the
+# shared list has no mark on, so nothing set before that day is lost. Storage can throw
+# (private windows, blocked site data); the page still works without it.
 SCRIPT = """
 (function () {
-  var KEYS = { view: "house-search-view", no: "house-search-no" };
+  var API = "/house-search/api/marks";
+  var KEY = "house-search-marks", PENDING = "house-search-pending", SYNCED = "house-search-synced";
+  var OLD = { view: "house-search-view", no: "house-search-no" };
   var LABELS = {
     view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
     no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
   };
   var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
-  var marks;
-  function load(key) {
+  var note = document.getElementById("save-note");
+  var canSend = typeof fetch === "function";
+  var marks = {}, pending = {};
+  function get(key, fallback) {
     try {
-      var v = JSON.parse(localStorage.getItem(key) || "[]");
-      return Array.isArray(v) ? v : [];
-    } catch (err) { return []; }
+      var v = JSON.parse(localStorage.getItem(key) || "null");
+      return v && typeof v === "object" ? v : fallback;
+    } catch (err) { return fallback; }
   }
-  function save(key, list) {
-    try { localStorage.setItem(key, JSON.stringify(list)); } catch (err) { /* lasts until the page closes */ }
+  function put(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (err) { /* lasts until the page closes */ }
   }
-  function read() { marks = { view: load(KEYS.view), no: load(KEYS.no) }; }
-  function markOf(slug) {
-    return marks.no.indexOf(slug) !== -1 ? "no" : marks.view.indexOf(slug) !== -1 ? "view" : "";
+  function clean(obj) {
+    var out = {};
+    for (var s in obj) if (obj[s] === "view" || obj[s] === "no") out[s] = obj[s];
+    return out;
   }
-  function set(slug, mark) {
+  function oldMarks() {
+    var out = {};
     ["view", "no"].forEach(function (m) {
-      marks[m] = marks[m].filter(function (s) { return s !== slug; });
-      if (m === mark) marks[m].push(slug);
-      save(KEYS[m], marks[m]);
+      var list = get(OLD[m], []);
+      if (Array.isArray(list)) list.forEach(function (s) { out[s] = m; });
     });
+    return out;
+  }
+  function read() {
+    marks = clean(get(KEY, null) || oldMarks());
+    pending = get(PENDING, {});
+  }
+  function markOf(slug) { return marks[slug] || ""; }
+  function set(slug, mark) {
+    if (mark) marks[slug] = mark; else delete marks[slug];
+    put(KEY, marks);
+  }
+  function warn(text) {
+    if (!note) return;
+    note.textContent = text;
+    note.hidden = !text;
+  }
+  function settle(slug, mark) {
+    if (pending[slug] === mark) { delete pending[slug]; put(PENDING, pending); }
+  }
+  function take(j) {
+    if (!j || !j.marks || typeof j.marks !== "object") return;
+    marks = clean(j.marks);
+    for (var s in pending) { if (pending[s]) marks[s] = pending[s]; else delete marks[s]; }
+    put(KEY, marks);
+    render();
+  }
+  function send(slug, mark) {
+    pending[slug] = mark;
+    put(PENDING, pending);
+    if (!canSend) return Promise.reject(new Error("This browser cannot reach the shared list."));
+    return fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: slug, mark: mark }) })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (r.ok) { settle(slug, mark); take(j); warn(""); return; }
+          if (r.status !== 429 && r.status < 500) settle(slug, mark);
+          throw new Error(j.error || "The shared list refused it (" + r.status + ").");
+        });
+      }, function () { throw new Error("The shared list did not answer."); });
+  }
+  function sync() {
+    if (!canSend) return;
+    fetch(API, { cache: "no-store", headers: { accept: "application/json" } })
+      .then(function (r) {
+        return r.ok ? r.json() : Promise.reject(new Error("The shared list did not answer (" + r.status + ")."));
+      }, function () { throw new Error("The shared list did not answer."); })
+      .then(function (j) {
+        var synced = false;
+        try { synced = localStorage.getItem(SYNCED) === "1"; } catch (err) { /* treated as the first visit */ }
+        if (!synced) {
+          var shared = clean(j.marks);
+          for (var s in marks) if (!shared[s] && !(s in pending)) pending[s] = marks[s];
+          put(PENDING, pending);
+          try { localStorage.setItem(SYNCED, "1"); } catch (err) { /* runs again next load; the shared list wins where it has a mark */ }
+        }
+        take(j);
+        warn("");
+        return Object.keys(pending).reduce(function (chain, s) {
+          return chain.then(function () { return send(s, pending[s]); });
+        }, Promise.resolve());
+      })
+      .catch(function (err) {
+        if (Object.keys(pending).length) warn("Not saved for everyone yet. " + err.message + " It shows here and goes up again when the page next loads.");
+      });
   }
   function place(row, mark) {
     var home = document.getElementById(mark ? "g-" + mark : row.getAttribute("data-home"));
@@ -227,19 +303,24 @@ SCRIPT = """
     set(slug, mark);
     render();
     b.focus({ preventScroll: true });
-    if (live) {
-      var addr = b.getAttribute("data-addr");
-      live.textContent = mark === "view" ? addr + " added to the Want to view table" + (listed ? " at the top of the page." : ".")
-        : mark === "no" ? addr + " marked no" + (listed ? ", in the table at the bottom of the page." : ".")
-        : addr + " cleared.";
-    }
+    var addr = b.getAttribute("data-addr");
+    var said = mark === "view" ? addr + " added to the Want to view table" + (listed ? " at the top of the page." : ".")
+      : mark === "no" ? addr + " marked no" + (listed ? ", in the table at the bottom of the page." : ".")
+      : addr + " cleared.";
+    if (live) live.textContent = said;
+    send(slug, mark).catch(function (err) {
+      warn("Not saved for everyone yet. " + err.message + " It shows here and goes up again when the page next loads.");
+      if (live) live.textContent = said + " Not saved for everyone yet. " + err.message;
+    });
   });
   window.addEventListener("storage", function (ev) {
-    if (ev.key === KEYS.view || ev.key === KEYS.no) { read(); render(); }
+    if (ev.key === KEY || ev.key === PENDING) { read(); render(); }
   });
-  window.addEventListener("pageshow", function () { read(); render(); });
+  window.addEventListener("pageshow", function (ev) { if (ev.persisted) { read(); render(); sync(); } });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") sync(); });
   read();
   render();
+  sync();
 })();
 """
 
@@ -260,6 +341,7 @@ HEAD = """<!doctype html>
 <body>
 <main class="wrap"{attrs}>
 <p class="sr-only" id="announce" aria-live="polite"></p>
+<p class="save-note" id="save-note" hidden></p>
 """
 
 TAIL = "</main>\n<script>" + SCRIPT + "</script>\n</body>\n</html>\n"
@@ -365,10 +447,10 @@ def report(h, updated):
     out.append('<p class="crumb"><a href="../">House search</a></p>')
     out.append(f'<p class="eyebrow">Buyer report, updated {e(updated)}</p>')
     out.append(f'<div class="title-row"><h1>{e(h["address"])}</h1>{picks(h)}</div>')
-    out.append('<p class="view-note">On your list to view. It sits in the Want to view table at the top of '
-               'the house search page.</p>')
-    out.append('<p class="no-note">You marked this house a no. It sits in the Marked no table at the bottom of '
-               'the house search page until you undo it.</p>')
+    out.append('<p class="view-note">On the list to view. It sits in the Want to view table at the top of '
+               'the house search page, for everyone who opens it.</p>')
+    out.append('<p class="no-note">Marked a no. It sits in the Marked no table at the bottom of the house '
+               'search page, for everyone who opens it, until someone puts it back.</p>')
     out.append(f'<p>{e(h["city"])}</p>')
     out.append(f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>')
     out.append(musts(h))
@@ -483,10 +565,10 @@ def index(data):
                'the page and on the timeline of each house.</p>')
     out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Houses to '
                'view move up into their own table at the top of the page, and no\'s drop to a table at the '
-               'bottom; tapping the same mark again clears it. The marks are saved in this browser only, so a '
-               'phone and a laptop each keep their own.</p>')
+               'bottom; tapping the same mark again clears it. The marks are shared: whoever sets one, every '
+               'phone and laptop that opens this page sees the same tables.</p>')
     out.append('</header>')
-    out.append(group("view", "Want to view", "Saved in this browser. Tap the ✓ again to take a house off this table.", []))
+    out.append(group("view", "Want to view", "Shared with everyone who opens this page. Tap the ✓ again to take a house off this table.", []))
     order = 0
     for key, title, blurb in GROUPS:
         rows = []
@@ -496,7 +578,7 @@ def index(data):
                 order += 1
         out.append(group(key, title, blurb, rows))
     out.append(watching(data.get("watchlist") or [], data.get("pendingCount") or 0))
-    out.append(group("no", "Marked no", "Saved in this browser. Tap the ✕ again to put a house back where it was.", []))
+    out.append(group("no", "Marked no", "Shared with everyone who opens this page. Tap the ✕ again to put a house back where it was.", []))
     out.append(changes(data.get("changes") or []))
     out.append(TAIL)
     return "".join(out)

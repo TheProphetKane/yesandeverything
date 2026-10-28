@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, cleanDevice, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS } from "./worker.js";
+import worker, { VoteBox, HouseMarks, cleanDevice, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -30,6 +30,12 @@ function makeEnv(kv) {
     get: () => ({ fetch: req => (queue = queue.then(() => box.fetch(req))) }),
   };
   env._box = box;
+  const houseBox = new HouseMarks({ storage: new FakeStorage() });
+  let hqueue = Promise.resolve();
+  env.HOUSE = {
+    idFromName: () => "house",
+    get: () => ({ fetch: req => (hqueue = hqueue.then(() => houseBox.fetch(req))) }),
+  };
   return env;
 }
 
@@ -105,6 +111,50 @@ check("rateStep resets after the window", rateStep(st.rec, t0 + 200, 2, 100).all
 r = await worker.fetch(new Request("https://yesandeverything.com/thanksgiving-2026/api/version"), { ...env, BUILD_HASH: "abc1234" });
 j = await r.json();
 check("version route reports the build", r.status === 200 && j.build === "abc1234");
+
+// The house search marks: one shared list, where a house holds one mark at most.
+const hbase = "https://yesandeverything.com" + HOUSE_ROUTE;
+const hpost = (body, ip) => worker.fetch(new Request(hbase, { method: "POST", headers: { "content-type": "application/json", ...(ip ? { "cf-connecting-ip": ip } : {}) }, body: JSON.stringify(body) }), env);
+const hget = () => worker.fetch(new Request(hbase), env).then(r => r.json());
+
+j = await hget();
+check("house list starts empty", JSON.stringify(j.marks) === "{}");
+r = await hpost({ slug: "11-cadillac-ct", mark: "view" });
+j = await r.json();
+check("a view mark saves", r.status === 200 && j.marks["11-cadillac-ct"] === "view");
+j = await hget();
+check("a second viewer reads the same mark", j.marks["11-cadillac-ct"] === "view" && j.at > 0);
+r = await hpost({ slug: "11-cadillac-ct", mark: "no" });
+j = await r.json();
+check("a no replaces the view, one mark per house", j.marks["11-cadillac-ct"] === "no" && Object.keys(j.marks).length === 1);
+r = await hpost({ slug: "11-cadillac-ct", mark: "" });
+j = await r.json();
+check("clearing removes the mark", r.status === 200 && !("11-cadillac-ct" in j.marks));
+const slugs = ["17-savoy-dr", "223-destiny-ct", "513-kent-dr", "86-sun-haven-ct", "623-hunt-run-dr"];
+await Promise.all(slugs.map(s => hpost({ slug: s, mark: "view" })));
+j = await hget();
+check("five marks from two phones at once all land", slugs.every(s => j.marks[s] === "view"));
+r = await hpost({ slug: "../etc", mark: "view" });
+check("a slug that is not a house folder is refused", r.status === 400);
+r = await hpost({ slug: "17-savoy-dr", mark: "maybe" });
+check("an unknown mark is refused", r.status === 400);
+r = await worker.fetch(new Request(hbase, { method: "POST", body: "slug=x" }), env);
+check("a form post to the house route is refused", r.status === 415);
+r = await worker.fetch(new Request("https://yesandeverything.com/house-search/api/other"), env);
+check("other house paths 404", r.status === 404);
+codes = [];
+for (let i = 0; i < HOUSE_WRITES + 2; i++) codes.push((await hpost({ slug: "17-savoy-dr", mark: i % 2 ? "no" : "view" }, "203.0.113.7")).status);
+check("one address is cut off after the write cap", codes.slice(0, HOUSE_WRITES).every(c => c === 200) && codes.slice(HOUSE_WRITES).every(c => c === 429));
+r = await hpost({ slug: "17-savoy-dr", mark: "view" }, "198.51.100.8");
+check("another address still writes", r.status === 200);
+for (let i = 0; i < HOUSE_MAX_SLUGS; i++) await hpost({ slug: "fill-" + i, mark: "no" });
+r = await hpost({ slug: "one-more-house", mark: "no" });
+check("a new house past the cap is refused", r.status === 429);
+r = await hpost({ slug: "17-savoy-dr", mark: "no" });
+j = await r.json();
+check("a house already on the list still changes past the cap", r.status === 200 && j.marks["17-savoy-dr"] === "no");
+j = await get();
+check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.tallies));
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }
 console.log("family-votes self-test passed");

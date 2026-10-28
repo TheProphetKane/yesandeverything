@@ -4,6 +4,10 @@
   // The page itself is a static file served by GitHub Pages; only the vote route runs here.
   //
   // No secrets. Each browser sends a random device id and nothing else.
+  //
+  // Since 2026-10-28 the same Worker keeps the house search marks (yesandeverything.com/house-search/,
+  // the Want to view and No buttons) as one shared list in a second Durable Object, HouseMarks,
+  // so every phone and laptop that opens that page reads the same tables.
   "name": "family-votes-yesandeverything",
   "main": "src/worker.js",
   "compatibility_date": "2026-08-25",
@@ -13,15 +17,23 @@
   // A path route on the zone, which takes precedence over the GitHub Pages origin, the same way
   // the gated-docs and coiled-guardian routes do. Only the vote route, so the page stays static.
   "routes": [
-    { "pattern": "yesandeverything.com/thanksgiving-2026/api/*", "zone_name": "yesandeverything.com" }
+    { "pattern": "yesandeverything.com/thanksgiving-2026/api/*", "zone_name": "yesandeverything.com" },
+    { "pattern": "yesandeverything.com/house-search/api/*", "zone_name": "yesandeverything.com" }
   ],
 
   // Every vote goes through one Durable Object, so votes never overwrite each other and every
-  // viewer reads the same totals at once. Stored in its own SQLite-backed storage.
+  // viewer reads the same totals at once. Stored in its own SQLite-backed storage. The house
+  // search marks get their own object, HouseMarks, so the two never share a record.
   "durable_objects": {
-    "bindings": [{ "name": "BOX", "class_name": "VoteBox" }]
+    "bindings": [
+      { "name": "BOX", "class_name": "VoteBox" },
+      { "name": "HOUSE", "class_name": "HouseMarks" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["VoteBox"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["VoteBox"] },
+    { "tag": "v2", "new_sqlite_classes": ["HouseMarks"] }
+  ],
 
   // The first version's store. VoteBox reads it once to carry votes over and never writes it.
   "kv_namespaces": [

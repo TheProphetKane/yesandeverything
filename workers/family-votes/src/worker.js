@@ -10,6 +10,12 @@
 // the moment a vote lands. The first version kept votes in the key-value store, whose list
 // lags writes by up to a minute and whose read-then-write could drop a vote; VoteBox copies
 // anything still there on its first run, then the key-value store is only read, never written.
+//
+// The same Worker also keeps the Want to view and No marks for /house-search/. Those are one
+// shared list, not a tally: a house holds one mark at most, whoever set it, and every phone or
+// laptop that opens the page reads the same list and the same table order. HouseMarks is its
+// own Durable Object with its own storage. The house search page used to keep the marks in
+// each browser's local storage, which is why a second viewer saw none of them (2026-10-28).
 
 export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
@@ -37,6 +43,16 @@ export const OPTIONS = new Set([
   "tropical-pbg",
   "beach-oasis",
 ]);
+
+// The house search marks: one record per house slug, in the HouseMarks Durable Object.
+export const HOUSE_ROUTE = "/house-search/api/marks";
+export const HOUSE_MARKS = new Set(["view", "no"]);
+// A slug is the page's own folder name for a house (11-cadillac-ct); anything else is refused.
+export const HOUSE_SLUG = /^[a-z0-9][a-z0-9-]{1,62}$/;
+// More houses than the search will ever hold, so a stray visitor cannot fill the store.
+export const HOUSE_MAX_SLUGS = 400;
+// Writes one address may make per hour. A family tapping through the list fits many times over.
+export const HOUSE_WRITES = 120;
 
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -153,8 +169,92 @@ export class VoteBox {
   }
 }
 
+// The house search marks. One object serves every request in turn, so two people tapping at
+// the same moment cannot overwrite each other, and a GET right after a POST reads the mark.
+export class HouseMarks {
+  constructor(ctx) {
+    this.storage = ctx.storage;
+  }
+
+  // Every mark as {slug: "view" | "no"}, with the time of the newest change.
+  async view() {
+    const marks = {};
+    let at = 0;
+    const all = await this.storage.list({ prefix: "m:" });
+    for (const [k, rec] of all) {
+      marks[k.slice(2)] = rec.mark;
+      if (rec.at > at) at = rec.at;
+    }
+    return { marks, at, count: all.size };
+  }
+
+  async fetch(request) {
+    if (request.method === "GET") {
+      const { marks, at } = await this.view();
+      return json({ marks, at });
+    }
+    const { slug, mark } = await request.json();
+    const now = Date.now();
+    const ip = request.headers.get("x-client-ip");
+    if (ip) {
+      const step = rateStep(await this.storage.get("r:" + ip), now, HOUSE_WRITES, IP_WINDOW_MS);
+      if (!step.allowed) {
+        return new Response(JSON.stringify({ error: "Too many changes from this address. Try again later." }), {
+          status: 429, headers: { ...HEADERS, "retry-after": String(step.retryAfter) },
+        });
+      }
+      await this.storage.put("r:" + ip, step.rec);
+      const old = await this.storage.list({ prefix: "r:" });
+      for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
+    }
+    const key = "m:" + slug;
+    if (mark) {
+      if (!(await this.storage.get(key))) {
+        const { count } = await this.view();
+        if (count >= HOUSE_MAX_SLUGS) return json({ error: "The list is full." }, 429);
+      }
+      await this.storage.put(key, { mark, at: now });
+    } else {
+      await this.storage.delete(key);
+    }
+    const { marks, at } = await this.view();
+    return json({ ok: true, marks, at });
+  }
+}
+
 function box(env) {
   return env.BOX.get(env.BOX.idFromName("thanksgiving-2026"));
+}
+
+function house(env) {
+  return env.HOUSE.get(env.HOUSE.idFromName("house-search"));
+}
+
+// The house search route: GET reads the shared list, POST {slug, mark} sets one mark or, with
+// an empty mark, clears it. The checks here are shape only; the object applies the bounds.
+async function houseRoute(request, env) {
+  if (request.method === "GET") return house(env).fetch(new Request("https://housemarks" + HOUSE_ROUTE));
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+  if (!(request.headers.get("content-type") || "").includes("application/json")) {
+    return json({ error: "Send the mark as JSON." }, 415);
+  }
+  if (Number(request.headers.get("content-length") || 0) > 1024) {
+    return json({ error: "That request is too large." }, 413);
+  }
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "That mark could not be read." }, 400); }
+  const slug = body && typeof body.slug === "string" && HOUSE_SLUG.test(body.slug) ? body.slug : null;
+  if (!slug) return json({ error: "That house is not on the page." }, 400);
+  const mark = body.mark === "" ? "" : HOUSE_MARKS.has(body.mark) ? body.mark : null;
+  if (mark === null) return json({ error: "A mark is view, no or cleared." }, 400);
+  return house(env).fetch(new Request("https://housemarks" + HOUSE_ROUTE, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-client-ip": request.headers.get("cf-connecting-ip") || "",
+    },
+    body: JSON.stringify({ slug, mark }),
+  }));
 }
 
 export default {
@@ -163,6 +263,7 @@ export default {
     if (url.pathname === VERSION_ROUTE && request.method === "GET") {
       return json({ worker: "family-votes", build: env.BUILD_HASH || "dev" });
     }
+    if (url.pathname === HOUSE_ROUTE) return houseRoute(request, env);
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {

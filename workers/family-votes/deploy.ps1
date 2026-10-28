@@ -1,6 +1,8 @@
-# deploy.ps1: the one door for shipping the family-votes Worker (yesandeverything.com/thanksgiving-2026/api/*).
+# deploy.ps1: the one door for shipping the family-votes Worker, which serves
+# yesandeverything.com/thanksgiving-2026/api/* (the Thanksgiving vote) and
+# yesandeverything.com/house-search/api/* (the shared house search marks).
 #
-# Order: the self-test, then wrangler deploy, then a live read of the vote route. A failing
+# Order: the self-test, then wrangler deploy, then a live read of both routes. A failing
 # self-test stops the deploy before anything reaches the site, and a route that does not answer
 # afterwards fails the script.
 #
@@ -33,10 +35,11 @@ $ok = $false
 foreach ($i in 1..6) {
     try {
         $r = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/votes" -TimeoutSec 15
+        $h = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/house-search/api/marks" -TimeoutSec 15
         $v = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/version" -TimeoutSec 15
-        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"' -and $v.Content -match $build) { $ok = $true; break }
+        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"' -and $h.StatusCode -eq 200 -and $h.Content -match '"marks"' -and $v.Content -match $build) { $ok = $true; break }
     } catch { }
     Start-Sleep -Seconds 5
 }
-if (-not $ok) { Write-Host "the vote route is not answering on the live domain." -ForegroundColor Red; exit 1 }
+if (-not $ok) { Write-Host "a vote route is not answering on the live domain." -ForegroundColor Red; exit 1 }
 Write-Host "family-votes deployed and answering." -ForegroundColor Green

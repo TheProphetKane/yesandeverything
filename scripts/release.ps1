@@ -23,6 +23,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 $here = $PSScriptRoot
+# -Path arrives as one comma-joined string when this script is run through powershell -File
+# (the house-search-sync routine's release line, measured 2026-10-27), and git add then fails
+# on a path that does not exist. Split it here so both call shapes bind as a list.
+if ($Path.Count -eq 1 -and $Path[0] -like "*,*") {
+    [string[]]$Path = @($Path[0].Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
 
 # Save + restore caller's cwd. push-to-github.ps1 Set-Locations into the
 # repo; if it exits leaving the cwd elsewhere, callers get stranded.
