@@ -46,6 +46,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "house-search.json"
 LEDGER = ROOT / "data" / "house-search-seen.json"
 DRAFTS = ROOT / "data" / "house-search-drafts.json"
+LASTRUN = ROOT / "data" / "house-search-last-run.json"
+REPORT = None  # the run report once it exists, so a failure exit can still record what was read
 BUILD = ROOT / "scripts" / "build-house-search.py"
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -400,6 +402,8 @@ def run(write, build, details):
     data.setdefault("watchlist", [])
     report = {"ran": NOW.strftime("%Y-%m-%d %H:%M"), "new": [], "updated": [], "gone": [],
               "watching": [], "excluded": [], "errors": [], "sources": {}}
+    global REPORT
+    REPORT = report
 
     log(f"house-search-scan {report['ran']}: reading the feeds")
     try:
@@ -685,13 +689,33 @@ def draft(r, entry, det, rf_row):
     }
 
 
+def write_last_run(ok, error=None):
+    """Every writing run leaves a record of when it ran, what each feed returned and what failed,
+    including a run that exits early. The ledger stamp moves only when something changed, so
+    without this a dead feed looks the same as a quiet day. check-dashboard-live.ps1 reads it."""
+    rep = REPORT or {}
+    errors = list(rep.get("errors") or [])
+    if error and error not in errors:
+        errors.append(error)
+    save(LASTRUN, {"ran": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+                   "ok": bool(ok), "sources": rep.get("sources") or {}, "errors": errors})
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--write", action="store_true", help="apply the changes to the data file and the ledger")
     ap.add_argument("--build", action="store_true", help="after writing, rebuild the pages")
     ap.add_argument("--no-details", action="store_true", help="skip the per-listing detail reads")
     a = ap.parse_args()
-    run(write=a.write, build=a.build, details=not a.no_details)
+    try:
+        run(write=a.write, build=a.build, details=not a.no_details)
+    except BaseException as ex:  # noqa: BLE001  record the failure, then let it propagate
+        if a.write:
+            code = ex.code if isinstance(ex, SystemExit) else f"{type(ex).__name__}: {ex}"
+            write_last_run(False, str(code) if code is not None else "exited with no message")
+        raise
+    if a.write:
+        write_last_run(True)
 
 
 if __name__ == "__main__":

@@ -216,6 +216,70 @@ try {
   }
 }
 
+# ----- family-votes Worker build stamp -----------------------------------------
+# workersamily-votes\deploy.ps1 stamps the git short hash of HEAD at deploy time and
+# /thanksgiving-2026/api/version reports it. The Worker is behind the code when the files under
+# workersamily-votes changed after that commit. The shared house marks route has to answer too.
+try {
+  $resp = Invoke-WebRequest -Uri "https://yesandeverything.com/thanksgiving-2026/api/version" -UseBasicParsing -TimeoutSec 20
+  $live = $null
+  try { $live = ($resp.Content | ConvertFrom-Json).build } catch { }
+  if (-not $live -or $live -eq "dev") {
+    $fail += "family-votes Worker reports no build stamp ('$live'): it was deployed without one or predates the version route; the fix is a deploy, run workersamily-votes\deploy.ps1"
+  } else {
+    Push-Location (Split-Path $PSScriptRoot -Parent)
+    try {
+      & git cat-file -e "$live^{commit}" 2>$null
+      if ($LASTEXITCODE -ne 0) {
+        $fail += "family-votes Worker build $live is not a commit in this repository; the fix is a deploy, run workersamily-votes\deploy.ps1"
+      } else {
+        $changed = (& git diff --name-only $live HEAD -- workers/family-votes | Out-String).Trim()
+        if ($changed) {
+          $fail += "family-votes Worker is behind the source (live $live, changed since: $($changed -replace '\s+', ', ')); the fix is a deploy, run workersamily-votes\deploy.ps1"
+        } else {
+          $note += "family-votes Worker build $live matches the source"
+        }
+      }
+    } finally {
+      Pop-Location
+    }
+  }
+} catch {
+  $fail += "family-votes version route unreachable: $($_.Exception.Message)"
+}
+try {
+  $marks = Invoke-WebRequest -Uri "https://yesandeverything.com/house-search/api/marks" -UseBasicParsing -TimeoutSec 20
+  if ($marks.Content -match '"marks"') {
+    $note += "house search marks route answers"
+  } else {
+    $fail += "house search marks route answered without a marks object; the family-votes Worker predates the shared marks, run workersamily-votes\deploy.ps1"
+  }
+} catch {
+  $fail += "house search marks route does not answer: $($_.Exception.Message)"
+}
+
+# ----- house search scan last run ----------------------------------------------
+# house-search-scan.py --write leaves data\house-search-last-run.json on every run, failures
+# included. The ledger stamp moves only when a listing changed, so a dead feed and a quiet day
+# look alike there. Red when the last run is older than two days.
+try {
+  $lrPath = Join-Path $PSScriptRoot "..\data\house-search-last-run.json"
+  if (-not (Test-Path $lrPath)) {
+    $fail += "house search scan has left no last-run record (data\house-search-last-run.json is missing)"
+  } else {
+    $lr = Get-Content -Raw -Encoding UTF8 $lrPath | ConvertFrom-Json
+    $age = ((Get-Date) - [DateTimeOffset]::Parse($lr.ran).LocalDateTime).TotalHours
+    if ($age -gt 48) {
+      $fail += ("house search scan last ran {0:N0} hours ago (limit 48); the house-search-sync routine has stopped or is failing" -f $age)
+    } else {
+      $note += ("house search scan last ran {0:N1} hours ago" -f $age)
+    }
+    if (-not $lr.ok) { $note += "house search scan's last run failed: $($lr.errors -join '; ')" }
+  }
+} catch {
+  $fail += "house search last-run record unreadable: $($_.Exception.Message)"
+}
+
 # ----- verdict ---------------------------------------------------------------
 $note | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 

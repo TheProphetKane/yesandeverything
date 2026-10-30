@@ -133,7 +133,8 @@ try {
         "workers\gated-docs\src\attempts.selftest.mjs",
         "workers\coiled-guardian\src\attempts.selftest.mjs",
         "workers\coiled-guardian\src\worker.selftest.mjs",
-        "workers\coiled-guardian\src\auth.selftest.mjs"
+        "workers\coiled-guardian\src\auth.selftest.mjs",
+        "workers\family-votes\src\worker.selftest.mjs"
     )) {
         $full = Join-Path (Split-Path $here -Parent) $t
         # A missing file is a fault, not a skip. Two of these paths shipped with a

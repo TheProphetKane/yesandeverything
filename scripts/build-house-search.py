@@ -120,9 +120,10 @@ details.note p { margin-top: 0.5rem; }
 th.pick-col, td.pick-col, col.pick-col { display: none; }
 .js th.pick-col, .js td.pick-col { display: table-cell; }
 .js col.pick-col { display: table-column; }
-tr.is-no td { opacity: 0.45; }
-tr.is-no td.pick-col, tr.is-no td.addr { opacity: 1; }
+tr.is-no td, tr.is-no td.pass, tr.is-no td.fail, tr.is-no td.check, tr.is-no td.soft { color: var(--muted); }
 tr.is-no td.addr a { text-decoration: line-through; color: var(--muted); }
+.tag.marked-no { display: none; background: var(--fail-soft); color: var(--fail); border: 1px solid var(--fail); }
+tr.is-no .tag.marked-no { display: inline-block; }
 .ask { background: var(--rose-soft); border-radius: 12px; padding: 1rem 1.25rem; display: grid; gap: 0.6rem; }
 .group-head { display: grid; gap: 0.3rem; }
 .count { display: inline-block; font-family: var(--font-data); font-size: 0.9rem; vertical-align: middle; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--raise); color: var(--muted); }
@@ -520,7 +521,7 @@ def row(h, order, key):
             f'<td class="pick-col">{picks(h)}</td>'
             f'<td class="addr"><a class="go" href="{e(h["slug"])}/">{e(h["address"])}</a>'
             f'<br><small>{e(h["city"])} &middot; '
-            f'<a href="{e(h["listing"])}" target="_blank" rel="noopener">Listing</a></small>{subject}</td>'
+            f'<a href="{e(h["listing"])}" target="_blank" rel="noopener">Listing</a></small>{subject}<br><span class="tag marked-no">Marked no</span></td>'
             f'<td class="num">{money(h["price"])}</td>'
             f'<td class="{main}">{MARK[main]} {e(main_txt)}</td><td class="{base}">{MARK[base]} {e(base_txt)}</td>'
             f'<td class="{fence_cls}">{e(fence_txt)}</td><td>{e(hoa_txt)}</td>'

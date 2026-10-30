@@ -44,8 +44,8 @@ Moved here from `CLAUDE.md` on 2026-10-27 to keep the handler under its size cap
 
 `/house-search/` is Kane's house hunt: houses under $335,000 within a 20-minute drive of the
 children's daycare, each with a full buyer report. The page is unlisted (noindex, robots
-disallowed) and never names the daycare; private prior owners stay unnamed, companies may be
-named. The pieces:
+disallowed) and withholds the daycare's exact location (the page names its town, nothing finer);
+private prior owners stay unnamed, companies may be named. The pieces:
 
 - `data/house-search.json` is the one source: criteria, the search note, the change list, the
   watch list, and one entry per house. Every house carries three answers or the build refuses
@@ -93,3 +93,27 @@ named. The pieces:
   scan adds carries the OSRM estimate, marked "(est.)", until Google Maps is run. The nine
   measured drives landed within two minutes of the OSRM figure, which is why the 20-minute
   limit is applied to it with a 20-to-23-minute band that waits for a person.
+
+### House search: last-run record, accepted external risks, end condition (2026-10-29)
+
+- Every `--write` run of `scripts/house-search-scan.py` leaves `data/house-search-last-run.json`
+  (time, whether it finished, the listing count each feed returned, the errors), including a run
+  that exits early because no feed answered. The ledger stamp moves only when a listing changed,
+  so it cannot tell a dead feed from a quiet day. `scripts/check-dashboard-live.ps1` goes red when
+  the record is older than 48 hours or missing, and notes a last run that failed. The routine
+  ships the record only if it is named in its `-Path` list; the local copy is what the check reads.
+- Accepted external risks, no mitigation owed: the Redfin regional endpoint is unofficial and can
+  change or block without notice, and the OSRM routing server is a public demo service with no
+  guarantee. Either failing shows in the last-run record and the page's last-checked line goes stale.
+- End condition: when a house is under contract, stop the `house-search-sync` routine, wipe the
+  shared marks (the `HouseMarks` storage in `workers/family-votes`), remove `house-search` from
+  `scripts/stage-site.mjs`, and delete `house-search/`, `data/house-search*.json` and the two
+  `house-search` scripts. The Worker route can then drop with its next deploy.
+
+### Retirement: Thanksgiving 2026 page, due 2026-12-15 (2026-10-29)
+
+The stay runs 22 to 29 November 2026. On 2026-12-15: remove `thanksgiving-2026` from the
+allowlist in `scripts/stage-site.mjs`, delete the `thanksgiving-2026/` page, wipe the `VoteBox`
+storage in `workers/family-votes` (votes and device ids), and keep the Worker for the house
+marks while the house search lives. The removal happens on that date; this entry is the
+instruction. If the house search has also ended by then, retire the Worker too.
