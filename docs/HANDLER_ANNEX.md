@@ -79,6 +79,11 @@ private prior owners stay unnamed, companies may be named. The pieces:
   drops off the watch list gets a line in What changed saying where it went.
 - `leftOut` in `data/house-search.json` lists houses someone sent or asked about (the realtor's
   picks) that were checked and left off, each with the reason, shown as "Checked and left out".
+- The realtor keeps a saved-search list for the family on Home Platform (the collection "Nick and
+  Lexi home search"), behind Kane's Google sign-in, so the unattended check cannot read it; a
+  session reads it through Kane's own Chrome. A house on that list carries `realtor: true` and
+  shows the tag On the realtor's list; one that fails goes in `leftOut` with the reason. First
+  read 2026-10-31: 16 houses, 8 on the page and 8 left out.
 - The scan applies no size floor (2026-10-31). The 1,600 square foot minimum carried over from
   the first Zillow search hid every ranch whose listed size leaves out the basement, cut the MLS
   read from 310 listings to 135, and missed 524 Prairie Creek Ct, which the realtor sent; dropping

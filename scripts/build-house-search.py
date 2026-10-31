@@ -692,6 +692,8 @@ def row(h, order, key):
     fence_txt, fence_cls = {True: ("Yes", "pass"), False: ("No", "soft"),
                             None: ("Not stated", "check")}[h["fence"]["has"]]
     subject = '<br><span class="tag subject">Started this</span>' if h.get("role") == "subject" else ""
+    if h.get("realtor"):
+        subject += '<br><span class="tag subject">On the realtor\'s list</span>'
     return (f'<tr data-house="{e(h["slug"])}" data-home="g-{key}" data-order="{order}">'
             f'<td class="pick-col">{picks(h)}</td>'
             f'<td class="addr"><a class="go" href="{e(h["slug"])}/">{e(h["address"])}</a>'
