@@ -69,16 +69,20 @@ def daycare():
 
 DAYCARE = None
 
+# No size floor (2026-10-31): the family's criteria are the price, the drive and the two
+# must-haves. A 1,600 square foot floor carried over from the first Zillow search hid every
+# ranch whose listed size leaves out the basement; 524 Prairie Creek Ct (1,386 square feet,
+# sent by the realtor) was one, and the floor cut the MLS feed from 310 listings to 135.
 CRITERIA = {
     "max_price": 335000,
     "min_beds": 3,
-    "min_sqft": 1600,
+    "min_sqft": 0,
     "max_drive_min": 20.0,     # in, on the routing estimate
     "borderline_min": 23.0,    # 20 to 23: listed for a person to confirm in Google Maps
 }
 
 REALTOR_SEARCH = ("https://www.homefinder.com/realestateandhomes-search/St.-Charles-County_MO/"
-                  "beds-{beds}/price-na-{price}/sqft-{sqft}/pg-{page}")
+                  "beds-{beds}/price-na-{price}/pg-{page}")
 REALTOR_DETAIL = "https://www.homefinder.com/realestateandhomes-detail/{permalink}"
 REDFIN_GIS = ("https://www.redfin.com/stingray/api/gis?al=1&num_homes=350&page_number=1"
               "&sf=1,2,3,5,6,7&status=9&uipt=1,2,3,4,5,6,7,8&v=8&region_id={rid}&region_type={rtype}")
@@ -133,8 +137,7 @@ def realtor_feed():
     """Every listing in the county under the base price, bedroom and size filters."""
     rows, page, total, page_size = {}, 1, None, None
     while True:
-        url = REALTOR_SEARCH.format(beds=CRITERIA["min_beds"], price=CRITERIA["max_price"],
-                                    sqft=CRITERIA["min_sqft"], page=page)
+        url = REALTOR_SEARCH.format(beds=CRITERIA["min_beds"], price=CRITERIA["max_price"], page=page)
         try:
             pp = next_data(fetch(url))["props"]["pageProps"]["pageProps"]
         except RuntimeError as ex:
@@ -343,6 +346,12 @@ STATE_TEXT = {
 }
 
 
+# Listing phrases that mean the basement is not finished yet (524 Prairie Creek Ct: "ready for
+# your finishing touches", with a feature list that never says finished or unfinished).
+UNFINISHED_WORDS = ("unfinished", "ready for your finishing touches", "ready to finish", "ready to be finished",
+                    "waiting to be finished", "finish the basement", "finish it your way", "awaiting your finishing")
+
+
 def basement_kind(det):
     text = " ".join(filter(None, [det.get("basement"), det.get("basement_desc"),
                                   " ".join(det.get("basement_lines") or []), det.get("text")])).lower()
@@ -350,9 +359,11 @@ def basement_kind(det):
     style = (det.get("style") or "").lower() + " " + (det.get("levels") or "").lower()
     if "split" in style and "foyer" not in style:
         return "split"
-    if (det.get("foundation") or "").lower().startswith("slab") and "basement" not in text:
+    if ((det.get("foundation") or "").lower().startswith("slab") or "slab foundation" in text) and "basement" not in text:
         return "none"
     if "unfinished" in feat and "partial" not in feat:
+        return "unfinished"
+    if "finished" not in feat and any(w in text for w in UNFINISHED_WORDS):
         return "unfinished"
     if "partially finished" in feat or "partial" in feat:
         return "unsure"
@@ -366,8 +377,20 @@ def basement_kind(det):
     return "unsure"
 
 
+def main_floor_beds(det):
+    """Bedrooms on the main floor, lowered when the room lines put some of them in the basement
+    (2325 Amarillo Dr: the record said 3 on the main floor and "Bedroom 3 Level: Basement")."""
+    main, total = det.get("beds_main"), det.get("beds_total")
+    below = sum(1 for x in det.get("basement_lines") or []
+                if x.lower().startswith("bedroom") and "level:" in x.lower()
+                and ("basement" in x.lower().split("level:", 1)[1] or "lower" in x.lower().split("level:", 1)[1]))
+    if main is not None and total and below and main + below > total:
+        return max(total - below, 0)
+    return main
+
+
 def must_haves(det):
-    main = det.get("beds_main")
+    main = main_floor_beds(det)
     kind = basement_kind(det)
     verdict = "pass"
     why = []
@@ -454,6 +477,11 @@ def run(write, build, details):
                 h["status"] = STATE_TEXT["active"].format(d=longdate())
                 lines.append(h["status"])
         entry["state"] = state if state != "gone" or entry.get("missing_runs", 0) >= 2 else (prev_state or "active")
+        word = {"active": "active", "pending": "pending", "contingent": "contingent"}.get(entry["state"], "gone")
+        if h.get("state") != word:
+            if h.get("state"):
+                h["stateSince"] = TODAY   # the first run leaves the date to the status line it already wrote
+            h["state"] = word
         entry["price"] = price or entry.get("price")
         for text in lines:
             changes.insert(0, {"date": TODAY, "slug": h["slug"], "address": h["address"], "text": text})
@@ -500,7 +528,10 @@ def run(write, build, details):
         if entry:
             entry["last_seen"] = TODAY
             if entry.get("decision") == "watching" and entry.get("state") in ("pending", "contingent") and state == "active":
-                entry["decision"] = "candidate"
+                drive = entry.get("drive_min")
+                entry["decision"] = "candidate" if drive is not None and drive <= CRITERIA["max_drive_min"] else "watching"
+                entry["reason"] = (f"{drive:g} minutes to the daycare by the routing estimate" if entry["decision"] == "candidate"
+                                   else entry.get("reason") or "")
                 entry["history"].append({"date": TODAY, "text": "Back on the market."})
                 report["new"].append(f'{r["address"]}, {r["city"]}: back on the market at {money(r["price"])}')
             elif entry.get("decision") == "candidate" and state != "active":
@@ -512,6 +543,14 @@ def run(write, build, details):
                     report["updated"].append(f'{r["address"]}: price {money(entry["price"])} to {money(r["price"])} (not on the page)')
             entry["price"] = r["price"]
             entry["state"] = state
+            # A candidate with no draft and no report (back on the market, or a read that failed
+            # last run) gets its must-haves read and its draft written now.
+            unread = entry.get("decision") == "watching" and entry.get("drive_min") is not None and "musts" not in entry
+            if details and state == "active" and r.get("permalink") and (unread or (entry.get("decision") == "candidate"
+                    and not any(d.get("listingNumber") == mls for d in drafts["drafts"]))):
+                if not r.get("lat"):
+                    r["lat"], r["lon"] = entry.get("lat"), entry.get("lon")
+                assess(mls, r, entry, rf, drafts, report)
             continue
         # First sight of this listing.
         entry = {"address": r["address"], "city": r["city"], "zip": r["zip"], "price": r["price"],
@@ -541,30 +580,9 @@ def run(write, build, details):
         if entry["decision"] == "candidate" and r.get("redfin_only"):
             entry["decision"] = "watching"
             entry["reason"] += "; only Redfin lists it, so the must-haves are unread until the MLS record appears"
-        if entry["decision"] == "candidate" and details and r.get("permalink"):
-            try:
-                det = realtor_detail(r["permalink"])
-                time.sleep(0.4)
-                verdict, kind, why = must_haves(det)
-                entry["musts"] = {"verdict": verdict, "basement": kind, "beds_main": det.get("beds_main"), "why": why}
-                entry["detail"] = {k: det.get(k) for k in ("hoa_monthly", "fee", "fee_frequency", "association_name",
-                                                           "tax_amount", "tax_year", "fencing", "district",
-                                                           "elementary", "last_sold", "style", "levels", "href",
-                                                           "basement", "foundation", "listed", "last_change",
-                                                           "lot_acres", "subdivision", "photos")}
-                if (det.get("style") or "").lower().find("villa") >= 0 or "villa" in det.get("text", "").lower()[:400] \
-                        or (det.get("fee_monthly") or 0) >= 200:
-                    entry["decision"] = "excluded"
-                    entry["reason"] = (f"attached villa or a high association fee ({money(det.get('fee_monthly') or 0)} a month)")
-                elif verdict == "fail":
-                    entry["decision"] = "excluded"
-                    entry["reason"] = f"fails a must-have: {why}"
-                if entry["decision"] == "candidate":
-                    entry["flood"] = flood(r["lat"], r["lon"]) if r.get("lat") else None
-                    drafts["drafts"] = [d for d in drafts["drafts"] if d.get("listingNumber") != mls]
-                    drafts["drafts"].append(draft(r, entry, det, rf.get(mls)))
-            except Exception as ex:  # noqa: BLE001
-                report["errors"].append(f'{r["address"]}: detail read failed: {ex}')
+        if details and r.get("permalink") and state == "active" and (
+                entry["decision"] == "candidate" or (entry["decision"] == "watching" and drive is not None)):
+            assess(mls, r, entry, rf, drafts, report)
         listings[mls] = entry
         line = f'{r["address"]}, {r["city"]}: {money(r["price"])}, {r["beds"]} beds, {r["sqft"]} sq ft, {entry["reason"]}'
         if entry["decision"] == "candidate":
@@ -583,6 +601,7 @@ def run(write, build, details):
         drive = v.get("drive_min") or 0
         return v.get("state") == "active" or (v.get("state") == "contingent" and drive <= CRITERIA["max_drive_min"])
 
+    before = {(w.get("address"), w.get("city")): w for w in data.get("watchlist") or []}
     data["watchlist"] = [
         {"address": v["address"], "city": v["city"], "price": v.get("price"), "beds": v.get("beds"),
          "sqft": v.get("sqft"), "drive": v.get("drive_min"), "why": v.get("reason"), "state": v.get("state"),
@@ -590,6 +609,25 @@ def run(write, build, details):
                   if v.get("permalink") else v.get("redfin"))}
         for mls, v in sorted(listings.items(), key=lambda kv: kv[1].get("price") or 0) if on_page(v)
     ]
+    after = {(w.get("address"), w.get("city")) for w in data["watchlist"]}
+    by_addr = {(v.get("address"), v.get("city")): v for v in listings.values()}
+    for key, w in before.items():
+        if key in after:
+            continue
+        v = by_addr.get(key) or {}
+        if v.get("decision") == "tracked":
+            continue
+        if v.get("last_seen") != TODAY:
+            why = "no longer in either feed: sold, withdrawn, expired, or over the price limit"
+        elif v.get("decision") == "excluded":
+            why = v.get("reason") or "excluded"
+        elif v.get("state") == "pending":
+            why = "went under contract (pending)"
+        else:
+            why = v.get("reason") or "no longer matches"
+        text = f"Left the watch list: {why}."
+        changes.insert(0, {"date": TODAY, "slug": None, "address": w["address"], "link": w.get("link"), "text": text})
+        report["updated"].append(f'{w["address"]}: {text}')
     data["pendingCount"] = sum(1 for v in listings.values()
                                if v.get("decision") == "watching" and v.get("state") == "pending"
                                and v.get("last_seen") == TODAY and (v.get("drive_min") or 99) <= CRITERIA["max_drive_min"])
@@ -622,6 +660,37 @@ def run(write, build, details):
     return report
 
 
+def assess(mls, r, entry, rf, drafts, report):
+    """Read the MLS detail record, apply the must-haves, and write a draft for a house that passes."""
+    try:
+        det = realtor_detail(r["permalink"])
+        time.sleep(0.4)
+    except Exception as ex:  # noqa: BLE001
+        report["errors"].append(f'{r["address"]}: detail read failed: {ex}')
+        return
+    verdict, kind, why = must_haves(det)
+    entry["musts"] = {"verdict": verdict, "basement": kind, "beds_main": det.get("beds_main"), "why": why}
+    entry["detail"] = {k: det.get(k) for k in ("hoa_monthly", "fee", "fee_frequency", "association_name",
+                                               "tax_amount", "tax_year", "fencing", "district",
+                                               "elementary", "last_sold", "style", "levels", "href",
+                                               "basement", "foundation", "listed", "last_change",
+                                               "lot_acres", "subdivision", "photos", "sqft_living")}
+    if (det.get("style") or "").lower().find("villa") >= 0 or "villa" in det.get("text", "").lower()[:400] \
+            or (det.get("fee_monthly") or 0) >= 200:
+        entry["decision"] = "excluded"
+        entry["reason"] = f"attached villa or a high association fee ({money(det.get('fee_monthly') or 0)} a month)"
+    elif verdict == "fail":
+        entry["decision"] = "excluded"
+        drive = entry.get("drive_min")
+        entry["reason"] = f"fails a must-have: {why}" + (f"; {drive:g} minutes by the routing estimate" if drive else "")
+    elif entry["decision"] == "watching":
+        entry["reason"] = (entry.get("reason") or "") + (f"; must-haves on paper: {why}" if why else "; must-haves pass on paper")
+    if entry["decision"] == "candidate":
+        entry["flood"] = flood(r["lat"], r["lon"]) if r.get("lat") else None
+        drafts["drafts"] = [d for d in drafts["drafts"] if d.get("listingNumber") != mls]
+        drafts["drafts"].append(draft(r, entry, det, rf.get(mls)))
+
+
 def draft(r, entry, det, rf_row):
     """A house entry with every mechanical field filled; the judgment fields say so."""
     fee_m = det.get("fee_monthly")
@@ -639,7 +708,7 @@ def draft(r, entry, det, rf_row):
                 fee_txt = f"{money(fee_n)} {freq}".strip()
         except ValueError:
             fee_txt = det["fee"]
-    main = det.get("beds_main")
+    main = main_floor_beds(det)
     kind = entry["musts"]["basement"]
     fencing = det.get("fencing")
     fence_has = True if fencing and "yard" in fencing.lower() or (fencing and "full" in fencing.lower()) else (False if fencing and "none" in fencing.lower() else None)

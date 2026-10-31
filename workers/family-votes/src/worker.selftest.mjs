@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, HouseMarks, cleanDevice, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS } from "./worker.js";
+import worker, { VoteBox, HouseMarks, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -112,7 +112,7 @@ r = await worker.fetch(new Request("https://yesandeverything.com/thanksgiving-20
 j = await r.json();
 check("version route reports the build", r.status === 200 && j.build === "abc1234");
 
-// The house search marks: one shared list, where a house holds one mark at most.
+// The house search votes, posted without a name, as a page from before names behaves.
 const hbase = "https://yesandeverything.com" + HOUSE_ROUTE;
 const hpost = (body, ip) => worker.fetch(new Request(hbase, { method: "POST", headers: { "content-type": "application/json", ...(ip ? { "cf-connecting-ip": ip } : {}) }, body: JSON.stringify(body) }), env);
 const hget = () => worker.fetch(new Request(hbase), env).then(r => r.json());
@@ -155,6 +155,55 @@ j = await r.json();
 check("a house already on the list still changes past the cap", r.status === 200 && j.marks["17-savoy-dr"] === "no");
 j = await get();
 check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.tallies));
+
+// The house search votes by name: each person's vote is kept on its own.
+{
+  const env2 = makeEnv(new FakeKV());
+  const vpost = body => worker.fetch(new Request(hbase, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env2).then(async r => ({ status: r.status, j: await r.json() }));
+  const vget = () => worker.fetch(new Request(hbase), env2).then(r => r.json());
+  const t = Date.now();
+  let x = await vpost({ slug: "121-oak-valley-dr", mark: "view", name: "Kane", set: t });
+  check("a named vote saves under that name", x.status === 200 && x.j.votes["121-oak-valley-dr"]["n:kane"].mark === "view" && x.j.votes["121-oak-valley-dr"]["n:kane"].name === "Kane");
+  x = await vpost({ slug: "121-oak-valley-dr", mark: "no", name: "Jane", set: t + 1 });
+  check("a no from one person leaves the other's view in place", x.j.votes["121-oak-valley-dr"]["n:kane"].mark === "view" && x.j.votes["121-oak-valley-dr"]["n:jane"].mark === "no" && x.j.marks["121-oak-valley-dr"] === "view");
+  x = await vpost({ slug: "121-oak-valley-dr", mark: "", name: "Jane", set: t + 2 });
+  check("one person clearing clears only their own vote", x.j.votes["121-oak-valley-dr"]["n:kane"].mark === "view" && !("n:jane" in x.j.votes["121-oak-valley-dr"]));
+  x = await vpost({ slug: "121-oak-valley-dr", mark: "", name: "kane ", set: t + 3 });
+  check("the same name typed on another phone is the same person", !("121-oak-valley-dr" in x.j.votes));
+  await vpost({ slug: "223-destiny-ct", mark: "view", name: "Kane", set: t + 10 });
+  x = await vpost({ slug: "223-destiny-ct", mark: "", name: "Kane", set: t + 5 });
+  check("an old tap that waited offline cannot undo a newer one", x.j.stale === true && x.j.votes["223-destiny-ct"]["n:kane"].mark === "view");
+  await vpost({ slug: "623-hunt-run-dr", mark: "", name: "Kane", set: t + 21 });
+  x = await vpost({ slug: "623-hunt-run-dr", mark: "view", name: "Kane", set: t + 20 });
+  check("a tick that arrives after its own later clear stays cleared", x.j.stale === true && !("623-hunt-run-dr" in x.j.votes));
+  const j2 = await vget();
+  check("every change is in the log, newest first", j2.log.length === 5 && j2.log[0].slug === "223-destiny-ct" && j2.log[0].to === "view" && j2.log.some(e => e.name === "Jane" && e.to === "no"));
+  check("the log carries no address or device id", !JSON.stringify(j2.log).includes("device") && !JSON.stringify(j2).includes("203.0.113"));
+  await vpost({ slug: "513-kent-dr", mark: "no", device: "deviceDDDDDDDDDDDDDDDD", set: t });
+  check("a device id sent with a vote is never stored or sent back", !JSON.stringify(await vget()).includes("deviceDDDD"));
+  x = await vpost({ slug: "223-destiny-ct", mark: "view", name: "<script>" });
+  check("a name that is not a name is refused", x.status === 400);
+  check("names keep letters, spaces and apostrophes", cleanName("  Mary  Jo O'Neil ") === "Mary Jo O'Neil" && cleanName("x".repeat(41)) === "" && cleanName("Kane1") === "");
+}
+
+// The single-mark version's records carry over as unnamed votes, and the first named vote replaces each.
+{
+  const storage = new FakeStorage();
+  await storage.put("m:314-evening-star-ct", { mark: "view", at: 1793230838549 });
+  await storage.put("m:513-kent-dr", { mark: "no", at: 1793230000000 });
+  const hm = new HouseMarks({ storage });
+  const call = (body) => hm.fetch(new Request("https://housemarks" + HOUSE_ROUTE, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined)).then(r => r.json());
+  let u = await call();
+  check("old marks carry over as unnamed votes", u.votes["314-evening-star-ct"].earlier.mark === "view" && u.marks["513-kent-dr"] === "no");
+  check("the old records are kept as a backup", (await storage.get("bak:m:314-evening-star-ct")).mark === "view" && !(await storage.get("m:314-evening-star-ct")));
+  u = await call({ slug: "314-evening-star-ct", mark: "view", name: "Kane", set: Date.now() });
+  check("the first person to set the same mark claims the carried-over one", !("earlier" in u.votes["314-evening-star-ct"]) && u.votes["314-evening-star-ct"]["n:kane"].mark === "view" && u.log.some(e => e.from === "view" && e.to === "" && e.why === "claimed by Kane"));
+  u = await call({ slug: "513-kent-dr", mark: "view", name: "Jane", set: Date.now() });
+  check("a different mark sits beside a carried-over one and never removes it", u.votes["513-kent-dr"].earlier.mark === "no" && u.votes["513-kent-dr"]["n:jane"].mark === "view");
+  await storage.put("m:17-savoy-dr", { mark: "view", at: 1 });
+  u = await call();
+  check("the carry-over runs once", !("17-savoy-dr" in u.votes));
+}
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }
 console.log("family-votes self-test passed");

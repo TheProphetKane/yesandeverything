@@ -11,11 +11,15 @@
 // lags writes by up to a minute and whose read-then-write could drop a vote; VoteBox copies
 // anything still there on its first run, then the key-value store is only read, never written.
 //
-// The same Worker also keeps the Want to view and No marks for /house-search/. Those are one
-// shared list, not a tally: a house holds one mark at most, whoever set it, and every phone or
-// laptop that opens the page reads the same list and the same table order. HouseMarks is its
-// own Durable Object with its own storage. The house search page used to keep the marks in
-// each browser's local storage, which is why a second viewer saw none of them (2026-10-28).
+// The same Worker also keeps the Want to view and No votes for /house-search/ in its own
+// Durable Object, HouseMarks. Each person's vote on a house is kept on its own, under the name
+// that person types once on each phone or laptop, so one person's tap can never undo another's:
+// a house sits in the Want to view table while anyone has it marked, and every viewer reads the
+// same votes. Every change is written to a change log the page shows, so a vote that moves is
+// always visible, with who moved it and when. Until 2026-10-31 a house held one shared mark,
+// whoever set it, and the last tap won, which is how marks went missing between two people
+// with nothing on record to say who cleared them. The marks from that version are carried over
+// as unnamed votes, each claimed by the first person who sets the same mark under a name.
 
 export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
@@ -44,15 +48,47 @@ export const OPTIONS = new Set([
   "beach-oasis",
 ]);
 
-// The house search marks: one record per house slug, in the HouseMarks Durable Object.
+// The house search votes: one record per house slug, in the HouseMarks Durable Object.
 export const HOUSE_ROUTE = "/house-search/api/marks";
 export const HOUSE_MARKS = new Set(["view", "no"]);
 // A slug is the page's own folder name for a house (11-cadillac-ct); anything else is refused.
 export const HOUSE_SLUG = /^[a-z0-9][a-z0-9-]{1,62}$/;
 // More houses than the search will ever hold, so a stray visitor cannot fill the store.
 export const HOUSE_MAX_SLUGS = 400;
+// People voting on one house. A family fits many times over.
+export const HOUSE_MAX_VOTERS = 16;
 // Writes one address may make per hour. A family tapping through the list fits many times over.
 export const HOUSE_WRITES = 120;
+// Change log entries kept, and how many the page is sent.
+export const HOUSE_LOG_KEEP = 1000;
+export const HOUSE_LOG_SEND = 40;
+// The voter the single-mark version's marks are carried over under.
+export const EARLIER = "earlier";
+
+// A name as typed ("Kane", "kane ") becomes one voter key, so the same person on a phone and a
+// laptop holds one vote. Letters, spaces, apostrophes, hyphens and periods, up to 40 characters.
+export function cleanName(raw) {
+  if (typeof raw !== "string") return "";
+  const name = raw.normalize("NFC").replace(/\s+/g, " ").trim();
+  return name.length <= 40 && /^[\p{L}][\p{L} '.-]*$/u.test(name) ? name : "";
+}
+
+// No name (a page from before names) is one shared unnamed voter.
+export function voterKey(name) {
+  return name ? "n:" + name.toLowerCase() : "unnamed";
+}
+
+// The one-line answer older pages and the live checks read: a house is "view" while anyone has
+// it marked to view, otherwise "no" while anyone has it marked no.
+export function summary(votes) {
+  const marks = {};
+  for (const [slug, v] of Object.entries(votes)) {
+    const all = Object.values(v).map(x => x.mark);
+    if (all.includes("view")) marks[slug] = "view";
+    else if (all.includes("no")) marks[slug] = "no";
+  }
+  return marks;
+}
 
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -169,31 +205,55 @@ export class VoteBox {
   }
 }
 
-// The house search marks. One object serves every request in turn, so two people tapping at
-// the same moment cannot overwrite each other, and a GET right after a POST reads the mark.
+// The house search votes. One object serves every request in turn, so two people tapping at
+// the same moment cannot overwrite each other, and a GET right after a POST reads the vote.
 export class HouseMarks {
   constructor(ctx) {
     this.storage = ctx.storage;
   }
 
-  // Every mark as {slug: "view" | "no"}, with the time of the newest change.
-  async view() {
-    const marks = {};
-    let at = 0;
-    const all = await this.storage.list({ prefix: "m:" });
-    for (const [k, rec] of all) {
-      marks[k.slice(2)] = rec.mark;
-      if (rec.at > at) at = rec.at;
+  // Carry the single-mark version's records (m:<slug>) over once, as unnamed votes, and keep a
+  // copy of each under bak: so nothing from before is lost.
+  async upgrade() {
+    if (await this.storage.get("upgraded")) return;
+    const old = await this.storage.list({ prefix: "m:" });
+    for (const [k, rec] of old) {
+      const slug = k.slice(2);
+      const v = (await this.storage.get("v:" + slug)) || {};
+      if (!v[EARLIER] && rec && HOUSE_MARKS.has(rec.mark)) v[EARLIER] = { mark: rec.mark, name: "", at: rec.at, set: rec.at };
+      await this.storage.put("v:" + slug, v);
+      await this.storage.put("bak:" + k, rec);
+      await this.storage.delete(k);
     }
-    return { marks, at, count: all.size };
+    await this.storage.put("upgraded", Date.now());
+  }
+
+  async view() {
+    const votes = {};
+    let at = 0;
+    const all = await this.storage.list({ prefix: "v:" });
+    for (const [k, v] of all) {
+      const out = {};
+      for (const [voter, rec] of Object.entries(v)) {
+        if (rec.at > at) at = rec.at;
+        if (rec.mark) out[voter] = { mark: rec.mark, name: rec.name || "", at: rec.at };
+      }
+      if (Object.keys(out).length) votes[k.slice(2)] = out;
+    }
+    const logged = await this.storage.list({ prefix: "log:" });
+    // The page is sent who, what and when.
+    const log = [...logged.values()].slice(-HOUSE_LOG_SEND).reverse()
+      .map(e => ({ slug: e.slug, name: e.name || "", from: e.from, to: e.to, at: e.at, ...(e.why ? { why: e.why } : {}) }));
+    return { votes, marks: summary(votes), at, log, count: all.size };
   }
 
   async fetch(request) {
+    await this.upgrade();
     if (request.method === "GET") {
-      const { marks, at } = await this.view();
-      return json({ marks, at });
+      const { votes, marks, at, log } = await this.view();
+      return json({ votes, marks, at, log });
     }
-    const { slug, mark } = await request.json();
+    const { slug, mark, name, set } = await request.json();
     const now = Date.now();
     const ip = request.headers.get("x-client-ip");
     if (ip) {
@@ -207,18 +267,48 @@ export class HouseMarks {
       const old = await this.storage.list({ prefix: "r:" });
       for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
     }
-    const key = "m:" + slug;
-    if (mark) {
-      if (!(await this.storage.get(key))) {
-        const { count } = await this.view();
-        if (count >= HOUSE_MAX_SLUGS) return json({ error: "The list is full." }, 429);
-      }
-      await this.storage.put(key, { mark, at: now });
-    } else {
-      await this.storage.delete(key);
+    const key = "v:" + slug;
+    const voter = voterKey(name);
+    const stored = await this.storage.get(key);
+    const v = { ...(stored || {}) };
+    const mine = v[voter];
+    // A change made on this person's other phone after this tap wins over it, so an old tap
+    // that waited offline cannot undo a newer one when it finally goes up.
+    if (mine && mine.set > set) {
+      const state = await this.view();
+      return json({ ok: true, stale: true, votes: state.votes, marks: state.marks, at: state.at, log: state.log });
     }
-    const { marks, at } = await this.view();
-    return json({ ok: true, marks, at });
+    if (!stored && mark) {
+      const { count } = await this.view();
+      if (count >= HOUSE_MAX_SLUGS) return json({ error: "The list is full." }, 429);
+    }
+    if (mark && !mine && Object.keys(v).length >= HOUSE_MAX_VOTERS) {
+      return json({ error: "Too many people on this house." }, 429);
+    }
+    const from = mine ? mine.mark : "";
+    const entries = [];
+    if (from !== mark) entries.push({ slug, voter, name, from, to: mark, at: now });
+    // A cleared vote stays as an empty record holding when it was cleared, so a tap made before
+    // the clear that arrives after it is still recognised as older.
+    v[voter] = { mark, name, at: now, set };
+    // An unnamed mark carried over from the single-mark version is claimed by the first person who
+    // sets the same mark under a name. A different mark sits beside it, so a no never removes it.
+    if (name && voter !== EARLIER && v[EARLIER] && v[EARLIER].mark === mark) {
+      entries.push({ slug, voter: EARLIER, name: "", from: v[EARLIER].mark, to: "", at: now, why: "claimed by " + name });
+      delete v[EARLIER];
+    }
+    await this.storage.put(key, v);
+    // Log keys count up, so the log reads in the order the changes were made.
+    let seq = (await this.storage.get("logseq")) || 0;
+    for (const e of entries) await this.storage.put("log:" + String(++seq).padStart(10, "0"), e);
+    if (entries.length) await this.storage.put("logseq", seq);
+    if (entries.length) {
+      const logged = await this.storage.list({ prefix: "log:" });
+      const extra = logged.size - HOUSE_LOG_KEEP;
+      if (extra > 0) for (const k of [...logged.keys()].slice(0, extra)) await this.storage.delete(k);
+    }
+    const state = await this.view();
+    return json({ ok: true, votes: state.votes, marks: state.marks, at: state.at, log: state.log });
   }
 }
 
@@ -230,8 +320,10 @@ function house(env) {
   return env.HOUSE.get(env.HOUSE.idFromName("house-search"));
 }
 
-// The house search route: GET reads the shared list, POST {slug, mark} sets one mark or, with
-// an empty mark, clears it. The checks here are shape only; the object applies the bounds.
+// The house search route: GET reads every vote, POST {slug, mark, name, set} sets that
+// person's vote or, with an empty mark, clears it. The checks here are shape only; the object
+// applies the bounds. `set` is when the person tapped, by their own clock; a missing or wild
+// value is read as now.
 async function houseRoute(request, env) {
   if (request.method === "GET") return house(env).fetch(new Request("https://housemarks" + HOUSE_ROUTE));
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -247,13 +339,18 @@ async function houseRoute(request, env) {
   if (!slug) return json({ error: "That house is not on the page." }, 400);
   const mark = body.mark === "" ? "" : HOUSE_MARKS.has(body.mark) ? body.mark : null;
   if (mark === null) return json({ error: "A mark is view, no or cleared." }, 400);
+  if (body.name !== undefined && body.name !== "" && !cleanName(body.name)) {
+    return json({ error: "A name is letters and spaces, up to 40 characters." }, 400);
+  }
+  const now = Date.now();
+  const set = Number.isFinite(body.set) && body.set > now - 30 * 86400000 && body.set < now + 300000 ? body.set : now;
   return house(env).fetch(new Request("https://housemarks" + HOUSE_ROUTE, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-client-ip": request.headers.get("cf-connecting-ip") || "",
     },
-    body: JSON.stringify({ slug, mark }),
+    body: JSON.stringify({ slug, mark, name: cleanName(body.name), set }),
   }));
 }
 

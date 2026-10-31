@@ -25,6 +25,7 @@ soon as the route answers.
 """
 
 import html
+import re
 import json
 import os
 import sys
@@ -155,32 +156,51 @@ tr.is-no .tag.marked-no { display: inline-block; }
 .js .js-only { display: block; }
 .go { font-weight: 700; }
 .foot { font-size: 0.85rem; color: var(--muted); display: grid; gap: 0.4rem; }
+.votes { display: block; margin-top: 0.25rem; font-size: 0.82rem; color: var(--muted); }
+.votes:empty { display: none; }
+.votes .v-view { color: var(--pass); font-weight: 700; }
+.votes .v-no { color: var(--fail); font-weight: 700; }
+.tag.state { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+.tag.state.gone { background: var(--fail-soft); color: var(--fail); border-color: var(--fail); }
+.state-banner { background: var(--amber-soft); border-left: 6px solid var(--amber); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
+.state-banner.gone { background: var(--fail-soft); border-left-color: var(--fail); }
+.group-off .count { background: var(--amber-soft); color: var(--amber); }
+.voter { color: var(--muted); }
+.linkish { background: none; border: 0; padding: 0; color: var(--sea); font: inherit; text-decoration: underline; cursor: pointer; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 """
 
-# The check and X buttons. The marks are one shared list, read from and written to the
-# family-votes Worker at /house-search/api/marks, so a mark set on any phone or laptop shows
-# on every other one, on the list and on every report. Each browser keeps a copy in
-# localStorage (house-search-marks) so the page draws before the route answers and still
-# works offline; a change that could not be sent waits in house-search-pending and goes up
-# on the next load. The first visit after the marks became shared (2026-10-28) carries the
-# browser's old local-only marks (house-search-view, house-search-no) up for any house the
-# shared list has no mark on, so nothing set before that day is lost. Storage can throw
-# (private windows, blocked site data); the page still works without it.
+# The check and X buttons. Each person's vote is kept on its own, under the first name they type
+# once on each phone or laptop, by the family-votes Worker at /house-search/api/marks
+# (workers/family-votes), so one person's tap never undoes another's. A house sits in the Want
+# to view table while anyone has it ticked, with whose tick it is, and the Recent votes list on
+# the list page shows every change with who made it. Each browser keeps the last answer in
+# localStorage (house-search-votes) so the page draws before the route answers, and keeps its
+# own unsent taps in house-search-mine until they land; a tap carries the time it was made, so
+# one that waited offline cannot undo a newer one made on the same person's other phone. The
+# single-mark version's unsent queue (house-search-pending) is dropped unread: those were the
+# taps that could clear someone else's mark. A browser that never opened the shared version
+# still carries its old local-only marks (house-search-view, house-search-no) up once, as its
+# own votes, where it has none. Storage can throw (private windows, blocked site data); the
+# page still works without it.
 SCRIPT = """
 (function () {
   var API = "/house-search/api/marks";
-  var KEY = "house-search-marks", PENDING = "house-search-pending", SYNCED = "house-search-synced";
+  var NAME = "house-search-name", CACHE = "house-search-votes", MINE = "house-search-mine", SYNCED = "house-search-synced";
   var OLD = { view: "house-search-view", no: "house-search-no" };
   var LABELS = {
-    view: ["Mark {a} as one to view", "Take {a} off the viewing list", "Want to view", "Take off the viewing list"],
-    no: ["Mark {a} as a no", "Undo the no on {a}", "Mark as a no", "Put this house back"]
+    view: ["Tick {a} as one to view", "Take your tick off {a}", "Want to view", "Take your tick off"],
+    no: ["Mark {a} as a no", "Take your no off {a}", "Mark as a no", "Take your no off"]
   };
   var listed = !!document.getElementById("g-no");
   var live = document.getElementById("announce");
   var note = document.getElementById("save-note");
+  var voterEl = document.getElementById("voter");
+  var logEl = document.getElementById("vote-log");
   var canSend = typeof fetch === "function";
-  var marks = {}, pending = {};
+  var votes = {}, log = [], pending = {}, name = "", queue = Promise.resolve();
+  var addrs = {};
+  document.querySelectorAll("button[data-slug]").forEach(function (b) { addrs[b.getAttribute("data-slug")] = b.getAttribute("data-addr"); });
   function get(key, fallback) {
     try {
       var v = JSON.parse(localStorage.getItem(key) || "null");
@@ -190,55 +210,102 @@ SCRIPT = """
   function put(key, v) {
     try { localStorage.setItem(key, JSON.stringify(v)); } catch (err) { /* lasts until the page closes */ }
   }
-  function clean(obj) {
-    var out = {};
-    for (var s in obj) if (obj[s] === "view" || obj[s] === "no") out[s] = obj[s];
-    return out;
+  function text(key) {
+    try { return localStorage.getItem(key) || ""; } catch (err) { return ""; }
   }
-  function oldMarks() {
-    var out = {};
-    ["view", "no"].forEach(function (m) {
-      var list = get(OLD[m], []);
-      if (Array.isArray(list)) list.forEach(function (s) { out[s] = m; });
-    });
-    return out;
+  function cleanName(raw) {
+    var n = String(raw || "").replace(/\\s+/g, " ").trim();
+    try { return n.length <= 40 && new RegExp("^\\\\p{L}[\\\\p{L} '.-]*$", "u").test(n) ? n : ""; }
+    catch (err) { return n.length <= 40 && /^[A-Za-z][A-Za-z '.-]*$/.test(n) ? n : ""; }
+  }
+  function keyOf(n) { return "n:" + n.toLowerCase(); }
+  function overlay() {
+    for (var s in pending) {
+      var p = pending[s], v = {}, k;
+      for (k in votes[s] || {}) v[k] = votes[s][k];
+      if (p.mark) v[keyOf(p.name)] = { mark: p.mark, name: p.name, at: p.set };
+      else delete v[keyOf(p.name)];
+      if (p.mark && p.name && v.earlier && v.earlier.mark === p.mark) delete v.earlier;
+      votes[s] = v;
+    }
   }
   function read() {
-    marks = clean(get(KEY, null) || oldMarks());
-    pending = get(PENDING, {});
+    var c = get(CACHE, {});
+    votes = c.votes && typeof c.votes === "object" ? c.votes : {};
+    log = Array.isArray(c.log) ? c.log : [];
+    pending = get(MINE, {});
+    name = cleanName(text(NAME));
+    overlay();
   }
-  function markOf(slug) { return marks[slug] || ""; }
-  function set(slug, mark) {
-    if (mark) marks[slug] = mark; else delete marks[slug];
-    put(KEY, marks);
+  function mine(slug) {
+    var v = votes[slug], r = name && v && v[keyOf(name)];
+    return r ? r.mark : "";
   }
-  function warn(text) {
+  function overall(slug) {
+    var v = votes[slug] || {}, seen = "";
+    for (var k in v) {
+      if (v[k].mark === "view") return "view";
+      if (v[k].mark === "no") seen = "no";
+    }
+    return seen;
+  }
+  function who(slug, mark) {
+    var v = votes[slug] || {}, out = [];
+    for (var k in v) {
+      if (v[k].mark !== mark) continue;
+      out.push(k === "earlier" ? "a mark from before names" : v[k].name || "someone");
+    }
+    return out;
+  }
+  function warn(t) {
     if (!note) return;
-    note.textContent = text;
-    note.hidden = !text;
-  }
-  function settle(slug, mark) {
-    if (pending[slug] === mark) { delete pending[slug]; put(PENDING, pending); }
+    note.textContent = t;
+    note.hidden = !t;
   }
   function take(j) {
-    if (!j || !j.marks || typeof j.marks !== "object") return;
-    marks = clean(j.marks);
-    for (var s in pending) { if (pending[s]) marks[s] = pending[s]; else delete marks[s]; }
-    put(KEY, marks);
+    if (j && !j.votes && j.marks && typeof j.marks === "object") {
+      // A Worker from before names answers with one mark per house; show each as a mark from before names.
+      j.votes = {};
+      for (var m in j.marks) j.votes[m] = { earlier: { mark: j.marks[m], name: "", at: j.at || 0 } };
+    }
+    if (!j || !j.votes || typeof j.votes !== "object") return;
+    votes = j.votes;
+    if (Array.isArray(j.log)) log = j.log;
+    put(CACHE, { votes: votes, log: log });
+    overlay();
     render();
   }
-  function send(slug, mark) {
-    pending[slug] = mark;
-    put(PENDING, pending);
+  function settle(slug, set) {
+    if (pending[slug] && pending[slug].set === set) { delete pending[slug]; put(MINE, pending); }
+  }
+  function send(slug) {
+    var p = pending[slug];
+    if (!p) return Promise.resolve();
     if (!canSend) return Promise.reject(new Error("This browser cannot reach the shared list."));
-    return fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slug: slug, mark: mark }) })
+    return fetch(API, { method: "POST", headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ slug: slug, mark: p.mark, name: p.name, set: p.set }) })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) {
-          if (r.ok) { settle(slug, mark); take(j); warn(""); return; }
-          if (r.status !== 429 && r.status < 500) settle(slug, mark);
+          if (r.ok) { settle(slug, p.set); take(j); warn(""); return; }
+          if (r.status !== 429 && r.status < 500) { settle(slug, p.set); read(); render(); }
           throw new Error(j.error || "The shared list refused it (" + r.status + ").");
         });
       }, function () { throw new Error("The shared list did not answer."); });
+  }
+  function later(slug) {
+    queue = queue.then(function () { return send(slug); }, function () { return send(slug); });
+    return queue;
+  }
+  function legacy() {
+    if (!name || text(SYNCED) === "1") return;
+    ["view", "no"].forEach(function (m) {
+      var list = get(OLD[m], []);
+      if (Array.isArray(list)) list.forEach(function (s) {
+        if (!mine(s) && !(s in pending)) pending[s] = { mark: m, name: name, set: 1 };
+      });
+    });
+    put(MINE, pending);
+    try { localStorage.setItem(SYNCED, "1"); } catch (err) { /* runs again next load */ }
   }
   function sync() {
     if (!canSend) return;
@@ -247,23 +314,62 @@ SCRIPT = """
         return r.ok ? r.json() : Promise.reject(new Error("The shared list did not answer (" + r.status + ")."));
       }, function () { throw new Error("The shared list did not answer."); })
       .then(function (j) {
-        var synced = false;
-        try { synced = localStorage.getItem(SYNCED) === "1"; } catch (err) { /* treated as the first visit */ }
-        if (!synced) {
-          var shared = clean(j.marks);
-          for (var s in marks) if (!shared[s] && !(s in pending)) pending[s] = marks[s];
-          put(PENDING, pending);
-          try { localStorage.setItem(SYNCED, "1"); } catch (err) { /* runs again next load; the shared list wins where it has a mark */ }
-        }
         take(j);
+        legacy();
         warn("");
         return Object.keys(pending).reduce(function (chain, s) {
-          return chain.then(function () { return send(s, pending[s]); });
+          return chain.then(function () { return later(s); });
         }, Promise.resolve());
       })
       .catch(function (err) {
         if (Object.keys(pending).length) warn("Not saved for everyone yet. " + err.message + " It shows here and goes up again when the page next loads.");
       });
+  }
+  function showVoter() {
+    if (!voterEl) return;
+    voterEl.textContent = name ? "Voting as " + name + ". " : "The first tap asks for your first name, so everyone can see whose vote is whose. ";
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "linkish";
+    b.id = "change-name";
+    b.textContent = name ? "Not you? Change the name" : "Set your name now";
+    voterEl.appendChild(b);
+  }
+  function askName() {
+    var n = window.prompt("Your first name, so everyone can see whose vote is whose. Type the same name on every phone or laptop you use.", name || "");
+    if (n === null) return "";
+    n = cleanName(n);
+    if (!n) { warn("A name is letters and spaces, up to 40 characters. Nothing was saved."); return ""; }
+    name = n;
+    try { localStorage.setItem(NAME, n); } catch (err) { /* asked again next load */ }
+    showVoter();
+    return n;
+  }
+  function when(at) {
+    try { return new Date(at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+    catch (err) { return ""; }
+  }
+  function sentence(e) {
+    var person = e.name || "Someone", addr = addrs[e.slug] || e.slug;
+    if (e.why) return "The " + (e.from === "view" ? "tick" : "no") + " from before names on " + addr + " is now " + e.why.replace(/^claimed by /, "") + "'s.";
+    if (e.to === "view") return person + " ticked " + addr + " to view" + (e.from === "no" ? ", in place of their no." : ".");
+    if (e.to === "no") return person + " marked " + addr + " a no" + (e.from === "view" ? ", in place of their tick." : ".");
+    return person + " took their " + (e.from === "view" ? "tick" : "no") + " off " + addr + ".";
+  }
+  function renderLog() {
+    if (!logEl) return;
+    logEl.textContent = "";
+    log.slice(0, 25).forEach(function (e) {
+      var li = document.createElement("li"), w = document.createElement("span"), t = document.createElement("span");
+      w.className = "when";
+      w.textContent = when(e.at);
+      t.textContent = sentence(e);
+      li.appendChild(w);
+      li.appendChild(t);
+      logEl.appendChild(li);
+    });
+    var sec = document.getElementById("recent-votes");
+    if (sec) sec.hidden = !log.length;
   }
   function place(row, mark) {
     var home = document.getElementById(mark ? "g-" + mark : row.getAttribute("data-home"));
@@ -277,49 +383,74 @@ SCRIPT = """
   }
   function render() {
     document.querySelectorAll("[data-house]").forEach(function (el) {
-      var m = markOf(el.getAttribute("data-house"));
+      var m = overall(el.getAttribute("data-house"));
       el.classList.toggle("is-view", m === "view");
       el.classList.toggle("is-no", m === "no");
       if (listed && el.matches("tr")) place(el, m);
     });
+    document.querySelectorAll("[data-votes]").forEach(function (el) {
+      var slug = el.getAttribute("data-votes"), yes = who(slug, "view"), no = who(slug, "no");
+      el.textContent = "";
+      if (yes.length) {
+        var a = document.createElement("span");
+        a.className = "v-view";
+        a.textContent = "\\u2713 " + yes.join(", ");
+        el.appendChild(a);
+      }
+      if (yes.length && no.length) el.appendChild(document.createTextNode(" \\u00b7 "));
+      if (no.length) {
+        var c = document.createElement("span");
+        c.className = "v-no";
+        c.textContent = "\\u2715 " + no.join(", ");
+        el.appendChild(c);
+      }
+    });
     document.querySelectorAll("button[data-pick]").forEach(function (b) {
-      var want = b.getAttribute("data-pick"), on = markOf(b.getAttribute("data-slug")) === want;
-      var text = LABELS[want], addr = b.getAttribute("data-addr");
+      var want = b.getAttribute("data-pick"), on = mine(b.getAttribute("data-slug")) === want;
+      var t = LABELS[want], addr = b.getAttribute("data-addr");
       b.setAttribute("aria-pressed", on ? "true" : "false");
-      b.setAttribute("aria-label", text[on ? 1 : 0].replace("{a}", addr));
-      b.title = text[on ? 3 : 2];
+      b.setAttribute("aria-label", t[on ? 1 : 0].replace("{a}", addr));
+      b.title = t[on ? 3 : 2];
     });
     document.querySelectorAll(".group").forEach(function (g) {
+      if (!g.querySelector("tbody")) return;
       var n = g.querySelectorAll("tbody > tr").length;
       g.hidden = n === 0;
       var c = g.querySelector(".count");
       if (c) c.textContent = n;
     });
+    renderLog();
   }
   document.addEventListener("click", function (ev) {
+    if (ev.target.closest("#change-name")) { askName(); render(); return; }
     var b = ev.target.closest("button[data-pick]");
     if (!b) return;
+    if (!name && !askName()) return;
     var slug = b.getAttribute("data-slug"), want = b.getAttribute("data-pick");
-    var mark = markOf(slug) === want ? "" : want;
-    set(slug, mark);
+    var mark = mine(slug) === want ? "" : want;
+    pending[slug] = { mark: mark, name: name, set: Date.now() };
+    put(MINE, pending);
+    overlay();
     render();
     b.focus({ preventScroll: true });
     var addr = b.getAttribute("data-addr");
-    var said = mark === "view" ? addr + " added to the Want to view table" + (listed ? " at the top of the page." : ".")
-      : mark === "no" ? addr + " marked no" + (listed ? ", in the table at the bottom of the page." : ".")
-      : addr + " cleared.";
+    var said = mark === "view" ? addr + " ticked to view under " + name + (listed ? ", in the Want to view table at the top of the page." : ".")
+      : mark === "no" ? addr + " marked no under " + name + "."
+      : name + "'s mark taken off " + addr + ".";
     if (live) live.textContent = said;
-    send(slug, mark).catch(function (err) {
+    later(slug).catch(function (err) {
       warn("Not saved for everyone yet. " + err.message + " It shows here and goes up again when the page next loads.");
       if (live) live.textContent = said + " Not saved for everyone yet. " + err.message;
     });
   });
   window.addEventListener("storage", function (ev) {
-    if (ev.key === KEY || ev.key === PENDING) { read(); render(); }
+    if (ev.key === CACHE || ev.key === MINE || ev.key === NAME) { read(); showVoter(); render(); }
   });
   window.addEventListener("pageshow", function (ev) { if (ev.persisted) { read(); render(); sync(); } });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") sync(); });
+  try { localStorage.removeItem("house-search-pending"); localStorage.removeItem("house-search-marks"); } catch (err) { /* nothing to drop */ }
   read();
+  showVoter();
   render();
   sync();
 })();
@@ -391,6 +522,43 @@ def fence_line(h):
     return f'<div class="fence {cls}"><b>Fenced back yard: {word}</b><span>{e(fence["note"])}</span></div>'
 
 
+STATE_WORD = {"pending": "Under contract", "contingent": "Under contract, contingent", "gone": "Off the market"}
+MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September",
+          "October", "November", "December"]
+
+
+def state_of(h):
+    """active, contingent, pending or gone: set by the scan, read from the status line for older entries."""
+    if h.get("state") in ("active", "pending", "contingent", "gone"):
+        return h["state"]
+    text = (h.get("status") or "").lower()
+    if text.startswith("under contract with contingencies"):
+        return "contingent"
+    if text.startswith("under contract"):
+        return "pending"
+    if text.startswith("no longer") or text.startswith("off market") or "withdrawn" in text[:40]:
+        return "gone"
+    return "active"
+
+
+def state_since(h):
+    """The day the house left the market, as "October 29", when the data says."""
+    if h.get("stateSince"):
+        y, m, d = (int(x) for x in h["stateSince"].split("-"))
+        return f"{MONTHS[m - 1]} {d}"
+    found = re.search(r"as of (\w+ \d+), \d{4}", h.get("status") or "")
+    return found.group(1) if found else ""
+
+
+def state_tag(h):
+    st = state_of(h)
+    if st == "active":
+        return ""
+    since = state_since(h)
+    cls = " gone" if st == "gone" else ""
+    return f'<br><span class="tag state{cls}">{e(STATE_WORD[st])}{" since " + e(since) if since else ""}</span>'
+
+
 def checks(h):
     """The two must-haves, each as pass, fail or check."""
     beds = h["mainFloorBeds"]
@@ -448,10 +616,17 @@ def report(h, updated):
     out.append('<p class="crumb"><a href="../">House search</a></p>')
     out.append(f'<p class="eyebrow">Buyer report, updated {e(updated)}</p>')
     out.append(f'<div class="title-row"><h1>{e(h["address"])}</h1>{picks(h)}</div>')
+    out.append(f'<p class="votes" data-votes="{e(h["slug"])}"></p>')
+    out.append('<p class="voter js-only" id="voter"></p>')
+    st = state_of(h)
+    if st != "active":
+        since = state_since(h)
+        out.append(f'<p class="state-banner{" gone" if st == "gone" else ""}"><b>{e(STATE_WORD[st])}'
+                   f'{" since " + e(since) if since else ""}.</b> {e(h["status"])}</p>')
     out.append('<p class="view-note">On the list to view. It sits in the Want to view table at the top of '
-               'the house search page, for everyone who opens it.</p>')
+               'the house search page, for everyone who opens it, while anyone has it ticked.</p>')
     out.append('<p class="no-note">Marked a no. It sits in the Marked no table at the bottom of the house '
-               'search page, for everyone who opens it, until someone puts it back.</p>')
+               'search page, for everyone who opens it, until whoever marked it takes the no off or someone ticks it.</p>')
     out.append(f'<p>{e(h["city"])}</p>')
     out.append(f'<p class="price">{money(h["price"])} <small>{e(h.get("priceNote", ""))}</small></p>')
     out.append(musts(h))
@@ -521,7 +696,8 @@ def row(h, order, key):
             f'<td class="pick-col">{picks(h)}</td>'
             f'<td class="addr"><a class="go" href="{e(h["slug"])}/">{e(h["address"])}</a>'
             f'<br><small>{e(h["city"])} &middot; '
-            f'<a href="{e(h["listing"])}" target="_blank" rel="noopener">Listing</a></small>{subject}<br><span class="tag marked-no">Marked no</span></td>'
+            f'<a href="{e(h["listing"])}" target="_blank" rel="noopener">Listing</a></small>{subject}{state_tag(h)}'
+            f'<br><span class="tag marked-no">Marked no</span><span class="votes" data-votes="{e(h["slug"])}"></span></td>'
             f'<td class="num">{money(h["price"])}</td>'
             f'<td class="{main}">{MARK[main]} {e(main_txt)}</td><td class="{base}">{MARK[base]} {e(base_txt)}</td>'
             f'<td class="{fence_cls}">{e(fence_txt)}</td><td>{e(hoa_txt)}</td>'
@@ -564,22 +740,42 @@ def index(data):
     out.append('<p>Tap an address for its full report. Prices and statuses are checked against the listing feeds '
                'twice a day, about 6 in the morning and 6 in the evening; what moved is listed at the bottom of '
                'the page and on the timeline of each house.</p>')
-    out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Houses to '
-               'view move up into their own table at the top of the page, and no\'s drop to a table at the '
-               'bottom; tapping the same mark again clears it. The marks are shared: whoever sets one, every '
-               'phone and laptop that opens this page sees the same tables.</p>')
+    out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Each '
+               'person\'s vote is kept under their own first name, which the page asks for the first time you '
+               'vote on a phone or laptop. A house moves up to the Want to view table while anyone has it '
+               'ticked, with whose tick it is, and drops to the Marked no table when someone has ruled it out '
+               'and nobody has ticked it. Tapping your own mark again takes off only your vote. Every phone and '
+               'laptop that opens this page sees the same tables, and Recent votes near the bottom lists every '
+               'change with who made it.</p>')
+    out.append('<p class="voter js-only" id="voter"></p>')
     out.append('</header>')
-    out.append(group("view", "Want to view", "Shared with everyone who opens this page. Tap the ✓ again to take a house off this table.", []))
+    out.append(group("view", "Want to view", "Every house anyone has ticked, with whose tick it is. Your ✓ "
+                     "again takes your tick off; it never touches anyone else's.", []))
     order = 0
     for key, title, blurb in GROUPS:
         rows = []
         for h in houses:
-            if overall(h) == key:
+            if overall(h) == key and state_of(h) == "active":
                 rows.append(row(h, order, key))
                 order += 1
         out.append(group(key, title, blurb, rows))
+    gone = []
+    for h in houses:
+        if state_of(h) != "active":
+            gone.append(row(h, order, "off"))
+            order += 1
+    out.append(group("off", "Under contract or off the market",
+                     "These were on the list and have gone under contract or left the market; each row says "
+                     "which, and since when. A tick on one keeps it in the Want to view table, with the same tag.",
+                     gone))
     out.append(watching(data.get("watchlist") or [], data.get("pendingCount") or 0))
-    out.append(group("no", "Marked no", "Shared with everyone who opens this page. Tap the ✕ again to put a house back where it was.", []))
+    out.append(group("no", "Marked no", "Houses someone has ruled out and nobody has ticked, with whose no it is. "
+                     "Your ✕ again takes your no off.", []))
+    if data.get("leftOut"):
+        out.append(left_out(data["leftOut"]))
+    out.append('<section class="group" id="recent-votes" hidden><div class="group-head"><h2>Recent votes</h2>'
+               '<p>Every change to a vote, newest first, with who made it.</p></div>'
+               '<ol class="timeline" id="vote-log"></ol></section>')
     out.append(changes(data.get("changes") or []))
     out.append(TAIL)
     return "".join(out)
@@ -589,12 +785,36 @@ def changes(items):
     """What the twice-daily check found, newest first. Empty when nothing has moved yet."""
     if not items:
         return ""
+    def where(c):
+        if c.get("slug"):
+            return f'<a href="{e(c["slug"])}/">{e(c["address"])}</a>'
+        if c.get("link"):
+            return f'<a href="{e(c["link"])}" target="_blank" rel="noopener">{e(c["address"])}</a>'
+        return e(c["address"])
     rows = "".join(
-        f'<li><span class="when">{e(c["date"])}</span><span><a href="{e(c["slug"])}/">{e(c["address"])}</a>: '
-        f'{e(c["text"])}</span></li>' for c in items[:25])
+        f'<li><span class="when">{e(c["date"])}</span><span>{where(c)}: {e(c["text"])}</span></li>'
+        for c in items[:25])
     return (f'<section class="group" id="changes"><div class="group-head"><h2>What changed</h2>'
             f'<p>Found by the twice-daily check of the listing feeds, newest first. Each line is also on '
             f'the timeline of that house.</p></div><ol class="timeline">{rows}</ol></section>')
+
+
+def left_out(items):
+    """Houses someone sent or asked about that were checked and left off the list, with the reason."""
+    rows = []
+    for w in items:
+        link = (f'<a href="{e(w["link"])}" target="_blank" rel="noopener">{e(w["address"])}</a>' if w.get("link")
+                else e(w["address"]))
+        price = money(w["price"]) if w.get("price") else ""
+        rows.append(f'<tr><td class="addr">{link}<br><small>{e(w.get("city") or "")}'
+                    f'{" &middot; " + e(w["from"]) if w.get("from") else ""}</small></td>'
+                    f'<td class="num">{price}</td><td>{e(w.get("checked") or "")}</td><td>{e(w["why"])}</td></tr>')
+    return (f'<section class="group group-fail" id="left-out"><div class="group-head">'
+            f'<h2>Checked and left out <span class="count">{len(rows)}</span></h2>'
+            f'<p>Houses sent to the family or asked about, checked against the price, the drive and the two '
+            f'must-haves, and left off the list. Each row says why.</p></div>'
+            f'<div class="scroll"><table style="min-width:720px"><thead><tr><th>House</th><th>Price</th>'
+            f'<th>Checked</th><th>Why it is out</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>')
 
 
 def watching(items, pending):

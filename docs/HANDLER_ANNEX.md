@@ -52,17 +52,41 @@ private prior owners stay unnamed, companies may be named. The pieces:
   it: `mainFloorBeds`, `basement` (finished, none, unfinished, split, unsure) and `fence`.
 - `python scripts/build-house-search.py` writes `house-search/index.html` and one report page per
   house. Edit the data, build, ship; never edit the pages by hand.
-- The Want to view and No marks are one shared list for everyone who opens the page, kept by
-  the family-votes Worker (`workers/family-votes`, its `HouseMarks` Durable Object, on the
-  route `yesandeverything.com/house-search/api/*`) at `/house-search/api/marks`: a GET returns
-  `{marks: {slug: "view" | "no"}}`, a POST of `{slug, mark}` with `view`, `no` or an empty
-  mark sets or clears one, last writer wins. Each browser keeps a copy in its local storage so
-  the page draws at once and sends any unsent change on the next load; the first load after
-  2026-10-28 carries that browser's old local-only marks up for any house the shared list has
-  no mark on. Before that day the marks lived in each browser alone, which is why a second
-  viewer saw none of them. The Worker ships with `workers\family-votes\deploy.ps1` (self-test,
-  `wrangler deploy`, a live read of both routes), apart from the Pages release; the self-test
-  also runs as step 2.5 of the release.
+- The Want to view and No marks are votes, one per person per house, kept by the family-votes
+  Worker (`workers/family-votes`, its `HouseMarks` Durable Object, on the route
+  `yesandeverything.com/house-search/api/*`) at `/house-search/api/marks`. The page asks for a
+  first name the first time someone votes on a phone or laptop, and the vote is kept under that
+  name, so the same name on two devices is one person and one person's tap never undoes
+  another's. A GET returns `{votes: {slug: {voter: {mark, name, at}}}, marks, at, log}`: `marks`
+  is the one-word summary older pages and the live checks read (view while anyone has ticked
+  it), and `log` is the newest 40 changes with who made each, which the list page shows as
+  Recent votes. A POST of `{slug, mark, name, set}` sets or clears that person's vote; `set` is
+  the tap time, and a tap older than that person's stored one is answered `stale` and ignored,
+  so a tap that waited offline cannot undo a newer one. Each browser keeps the last answer and
+  its own unsent taps in local storage. The Worker ships with `workers\family-votes\deploy.ps1`
+  (self-test, `wrangler deploy`, a live read of both routes), apart from the Pages release; the
+  self-test also runs as step 2.5 of the release.
+- Why votes are per person (2026-10-31): from 2026-10-28 to 2026-10-31 a house held one shared
+  mark and the last tap won, with no record of who changed what. Kane found ticks he had set
+  missing from Want to view, and nothing on the server could say who cleared them. The three
+  marks left on 2026-10-31 carried over as unnamed votes, shown as "a mark from before names",
+  each claimed by the first person who sets the same mark under a name; a different mark sits
+  beside one and never removes it. The single-mark records are kept under `bak:m:<slug>`.
+- A house that goes under contract or leaves the market is never dropped from the page. The scan
+  writes `state` (active, contingent, pending, gone) and `stateSince` on each house; the list
+  page moves it to "Under contract or off the market" with a dated tag, a tick keeps it in Want
+  to view with the same tag, and its report opens on a banner saying so. A watch-list house that
+  drops off the watch list gets a line in What changed saying where it went.
+- `leftOut` in `data/house-search.json` lists houses someone sent or asked about (the realtor's
+  picks) that were checked and left off, each with the reason, shown as "Checked and left out".
+- The scan applies no size floor (2026-10-31). The 1,600 square foot minimum carried over from
+  the first Zillow search hid every ranch whose listed size leaves out the basement, cut the MLS
+  read from 310 listings to 135, and missed 524 Prairie Creek Ct, which the realtor sent; dropping
+  it raised 15 houses the same day. It also reads the must-haves for a borderline drive, for a
+  house back on the market (9 Pedrotti Ln came back on 2026-10-30 and got no draft), and for a
+  candidate left without a draft; it reads "slab foundation" in the listing as no basement,
+  "ready for your finishing touches" as unfinished, and a bedroom whose level line says basement
+  as off the main floor.
 - `python scripts/house-search-scan.py --write --build` is the check: it reads the MLS feed
   through Realtor.com (served by homefinder.com, which carries the same search and detail
   routes without the bot wall) and Redfin's regional feed, routes every new candidate to the
