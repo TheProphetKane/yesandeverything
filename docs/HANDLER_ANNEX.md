@@ -153,6 +153,21 @@ the last-run age instead of failing on it. The marks route check stays until the
 closing. The rest of the end condition above (wipe the `HouseMarks` storage, drop `house-search`
 from `scripts/stage-site.mjs`, delete the page, the data and the two scripts) waits for closing.
 
+### House plan for 45 Autumn Crest Ct (2026-11-02)
+
+`/house-plan/` is the family's plan for the house under contract: the facts known about it, every
+step from the inspection through the basement rooms with planned dates, and two estimate columns,
+the family's materials and the same job hired out. Kane asked for it live beside the house search
+and linked from it. The source is `docs/HOUSE-PLAN-45-AUTUMN-CREST.md`, which the prose gate
+measures; `python scripts/build-house-plan.py` writes `house-plan/index.html` from it, and
+`--check` exits 1 when the page is stale. Never edit the page by hand. The floor plan pictures
+beside it are committed copies of the gridded sheet and the Inkarnate basement map (map 21881456
+in Kane's account), whose originals and build scripts sit in `X:\PortfolioOps\docs`. The house
+report links it through `ours.plan` in `data/house-search.json`. The page is unlisted like the
+search (noindex, robots-disallowed). It is not part of the house search end condition: when the
+search retires at closing, `house-plan` stays on the allowlist, and the link from the report goes
+with the report.
+
 ### Retirement: Thanksgiving 2026 page, due 2026-12-15 (2026-10-29)
 
 The stay runs 22 to 29 November 2026. On 2026-12-15: remove `thanksgiving-2026` from the

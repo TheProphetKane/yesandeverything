@@ -569,7 +569,9 @@ def long_day(iso):
 
 def state_tag(h):
     if h.get("ours"):
-        return f'<br><span class="tag ours">Our contract since {e(ours_since(h))}</span>'
+        plan = h["ours"].get("plan")
+        link = f' <a class="plan-link" href="{e(plan)}">House plan</a>' if plan else ""
+        return f'<br><span class="tag ours">Our contract since {e(ours_since(h))}</span>{link}'
     st = state_of(h)
     if st == "active":
         return ""
@@ -639,8 +641,11 @@ def report(h, updated):
     out.append('<p class="voter js-only" id="voter"></p>')
     st = state_of(h)
     if h.get("ours"):
+        plan = h["ours"].get("plan")
+        link = (f' <a href="{e(plan)}">The house plan: inspection, empty-house work, move-in and the '
+                f'basement, with floor plans.</a>') if plan else ""
         out.append(f'<p class="state-banner ours"><b>Our contract since {e(ours_since(h))}.</b> '
-                   f'{e(h["ours"]["note"])}</p>')
+                   f'{e(h["ours"]["note"])}{link}</p>')
     elif st != "active":
         since = state_since(h)
         out.append(f'<p class="state-banner{" gone" if st == "gone" else ""}"><b>{e(STATE_WORD[st])}'
