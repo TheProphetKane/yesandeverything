@@ -261,8 +261,24 @@ try {
 # ----- house search scan last run ----------------------------------------------
 # house-search-scan.py --write leaves data\house-search-last-run.json on every run, failures
 # included. The ledger stamp moves only when a listing changed, so a dead feed and a quiet day
-# look alike there. Red when the last run is older than two days.
+# look alike there. Red when the last run is older than two days. Once the search has its house,
+# data\house-search.json carries scanStopped (the date the routine was stopped, 2026-11-02) and
+# the house carries ours; the page stays up until closing, so the age is noted, never a failure.
+$hsStopped = $null
+$hsOurs = @()
 try {
+  $hsPath = Join-Path $PSScriptRoot "..\data\house-search.json"
+  if (Test-Path $hsPath) {
+    $hs = Get-Content -Raw -Encoding UTF8 $hsPath | ConvertFrom-Json
+    $hsStopped = $hs.scanStopped
+    $hsOurs = @($hs.houses | Where-Object { $_.ours } | ForEach-Object { $_.address })
+  }
+} catch {
+  $fail += "house search data unreadable: $($_.Exception.Message)"
+}
+if ($hsStopped) {
+  $note += ("house search scan stopped {0}, under contract on {1}; the last-run age is not checked" -f $hsStopped, ($hsOurs -join ', '))
+} else { try {
   $lrPath = Join-Path $PSScriptRoot "..\data\house-search-last-run.json"
   if (-not (Test-Path $lrPath)) {
     $fail += "house search scan has left no last-run record (data\house-search-last-run.json is missing)"
@@ -278,7 +294,7 @@ try {
   }
 } catch {
   $fail += "house search last-run record unreadable: $($_.Exception.Message)"
-}
+} }
 
 # ----- verdict ---------------------------------------------------------------
 $note | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }

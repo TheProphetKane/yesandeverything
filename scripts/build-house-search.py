@@ -561,6 +561,12 @@ def ours_since(h):
     return f"{MONTHS[m - 1]} {d}"
 
 
+def long_day(iso):
+    """An ISO date as "November 2, 2026"."""
+    y, m, d = (int(x) for x in iso.split("-"))
+    return f"{MONTHS[m - 1]} {d}, {y}"
+
+
 def state_tag(h):
     if h.get("ours"):
         return f'<br><span class="tag ours">Our contract since {e(ours_since(h))}</span>'
@@ -755,9 +761,15 @@ def index(data):
     if data.get("searchNote"):
         out.append(f'<details class="note"><summary>How these houses were found</summary>'
                    f'<p>{e(data["searchNote"])}</p></details>')
-    out.append('<p>Tap an address for its full report. Prices and statuses are checked against the listing feeds '
-               'twice a day, about 6 in the morning and 6 in the evening; what moved is listed at the bottom of '
-               'the page and on the timeline of each house.</p>')
+    if data.get("scanStopped"):
+        ours = ", ".join(h["address"] for h in houses if h.get("ours")) or "a house"
+        out.append(f'<p>Tap an address for its full report. The twice-daily check of the listing feeds stopped on '
+                   f'{e(long_day(data["scanStopped"]))}, when the family went under contract on {e(ours)}. Every '
+                   f'price and status here is as of the last check, named on each house.</p>')
+    else:
+        out.append('<p>Tap an address for its full report. Prices and statuses are checked against the listing feeds '
+                   'twice a day, about 6 in the morning and 6 in the evening; what moved is listed at the bottom of '
+                   'the page and on the timeline of each house.</p>')
     out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Each '
                'person\'s vote is kept under their own first name, which the page asks for the first time you '
                'vote on a phone or laptop. A house moves up to the Want to view table while anyone has it '
@@ -775,9 +787,8 @@ def index(data):
         if h.get("ours"):
             mine.append(row(h, order, "ours"))
             order += 1
-    out.append(group("ours", "Our contract", "The house the family is buying. The feeds will show it under "
-                     "contract; that contract is ours. The tag says since when, and the report says what "
-                     "happens next.", mine))
+    out.append(group("ours", "Our contract", "The house the family is buying. The tag says since when, and the "
+                     "report says what happens next.", mine))
     for key, title, blurb in GROUPS:
         rows = []
         for h in houses:
