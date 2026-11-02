@@ -141,7 +141,7 @@ private prior owners stay unnamed, companies may be named. The pieces:
 
 ### House search: under contract, routine stopped (2026-11-02)
 
-The family went under contract on 45 Autumn Crest Ct on 2026-11-02 at the asking price, $330,000;
+The family went under contract on 45 Autumn Crest Ct on 2026-11-01 at the asking price, $330,000;
 the sellers close on their next house on 2026-11-30, so this one closes by then. Kane stops the
 `house-search-sync` routine the same day from the desktop app, where the scheduled task lives; a
 cloud session cannot reach it. The page stays up until closing. The house carries an `ours` block
@@ -157,16 +157,19 @@ from `scripts/stage-site.mjs`, delete the page, the data and the two scripts) wa
 
 `/house-plan/` is the family's plan for the house under contract: the facts known about it, every
 step from the inspection through the basement rooms with planned dates, and two estimate columns,
-the family's materials and the same job hired out. Kane asked for it live beside the house search
-and linked from it. The source is `docs/HOUSE-PLAN-45-AUTUMN-CREST.md`, which the prose gate
-measures; `python scripts/build-house-plan.py` writes `house-plan/index.html` from it, and
-`--check` exits 1 when the page is stale. Never edit the page by hand. The floor plan pictures
-beside it are committed copies of the gridded sheet and the Inkarnate basement map (map 21881456
-in Kane's account), whose originals and build scripts sit in `X:\PortfolioOps\docs`. The house
-report links it through `ours.plan` in `data/house-search.json`. The page is unlisted like the
-search (noindex, robots-disallowed). It is not part of the house search end condition: when the
-search retires at closing, `house-plan` stays on the allowlist, and the link from the report goes
-with the report.
+the family's materials and the same job hired out. `/house-plan/basement/` holds the basement
+layouts, drawn to a 1-foot grid. Nick asked for both live beside the house search and linked from
+it, and the site names him Nick, never by his gamer tag, because the family reads it. The sources are
+`docs/HOUSE-PLAN-45-AUTUMN-CREST.md` and `docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md`, which the prose gate
+measures; `python scripts/build-house-plan.py` writes both pages, and `--check` exits 1 when either
+is stale. `python scripts/draw-basement-layouts.py` draws the layout pictures from the fixed stair,
+rough-in, slider, window and the likely furnace spot. Never edit a page by hand. The floor plan
+sheet beside the plan is a committed copy of the one built in `X:\PortfolioOps\docs`. The Inkarnate
+basement map stays off the site by Nick's ruling of 2026-11-02: it is for working out ideas only.
+The house report links the plan through `ours.plan` in `data/house-search.json`. Both pages are
+unlisted like the search (noindex, robots-disallowed). They are not part of the house search end
+condition: when the search retires at closing, `house-plan` stays on the allowlist, and the link
+from the report goes with the report.
 
 ### Retirement: Thanksgiving 2026 page, due 2026-12-15 (2026-10-29)
 

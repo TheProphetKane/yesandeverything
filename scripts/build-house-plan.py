@@ -1,13 +1,14 @@
-"""Build the house plan page for 45 Autumn Crest Ct.
+"""Build the house plan pages for 45 Autumn Crest Ct.
 
-    python scripts/build-house-plan.py          writes house-plan/index.html
-    python scripts/build-house-plan.py --check  exits 1 when the page on disk differs from a fresh build
+    python scripts/build-house-plan.py          writes house-plan/index.html and house-plan/basement/index.html
+    python scripts/build-house-plan.py --check  exits 1 when either page on disk differs from a fresh build
 
-The source is docs/HOUSE-PLAN-45-AUTUMN-CREST.md, which the prose gate measures. Edit it, build,
-ship; never edit the page by hand. Its tables become cards on a phone, each cell labeled with its
-column, and a line holding {{floor-plans}} becomes the floor plan gallery, whose pictures open in a
-pop-out over the page (or full size in a new tab without scripts). The pictures sit beside the page
-in house-plan/ and are committed as they are.
+Each page's source is a markdown file in docs/ that the prose gate measures: docs/HOUSE-PLAN-45-AUTUMN-CREST.md
+for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layouts. Edit the source, build, ship;
+never edit a page by hand. Tables become cards on a phone, each cell labeled with its column. A line holding
+{{floor-plans}} becomes the plan's picture gallery; a line holding {{layout-a}} (or b, c) becomes that
+layout's drawing, which scripts/draw-basement-layouts.py writes. Pictures open in a pop-out over the page,
+or full size in a new tab without scripts.
 """
 
 import html
@@ -18,26 +19,41 @@ from pathlib import Path
 import markdown
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "docs" / "HOUSE-PLAN-45-AUTUMN-CREST.md"
-OUT = ROOT / "house-plan" / "index.html"
 REPORT = "/house-search/45-autumn-crest-ct/"
-INKARNATE = "https://inkarnate.com/maps/edit/21881456"
 
-FIGURES = [
+PLAN_GALLERY = [
     {
         "thumb": "floors-grid-small.jpg",
         "full": "floors-grid.png",
         "title": "All three floors on a 1-foot grid",
         "text": "The main and upper floors are the builder's Rockport drawing, fitted to the county's measured "
-                "outline. The basement shows the stair, the landing and the rough-in from the walk-through.",
+                "outline. The basement panel shows the stair, the landing and the rough-in.",
     },
     {
-        "thumb": "basement-inkarnate-small.jpg",
-        "full": "basement-inkarnate.jpg",
-        "title": "The basement, one square to the foot",
-        "text": "Walls, doors, 8-by-2 shelving bays and 27-gallon bins sit on the pad at the right, at true size, "
-                "ready to copy into the room.",
-        "link": (INKARNATE, "Open it in Inkarnate (Kane's account)"),
+        "thumb": "basement/layout-a.svg",
+        "page": "basement/",
+        "title": "Basement layouts",
+        "text": "Three ways to fit the D&D studio, the office, the bins and a putting lane around the stair and "
+                "the furnace. Nick picked Layout A.",
+    },
+]
+
+PAGES = [
+    {
+        "src": ROOT / "docs" / "HOUSE-PLAN-45-AUTUMN-CREST.md",
+        "out": ROOT / "house-plan" / "index.html",
+        "eyebrow": "House plan, if the purchase goes through",
+        "crumbs": [(REPORT, "The house report"), ("/house-search/", "The house search")],
+        "description": "The family's plan for 45 Autumn Crest Ct, Wentzville, from the inspection to the basement.",
+        "status_first": True,
+    },
+    {
+        "src": ROOT / "docs" / "HOUSE-PLAN-BASEMENT-LAYOUTS.md",
+        "out": ROOT / "house-plan" / "basement" / "index.html",
+        "eyebrow": "Basement layouts, 1 square to the foot",
+        "crumbs": [("/house-plan/", "The house plan"), (REPORT, "The house report")],
+        "description": "Three basement layouts for 45 Autumn Crest Ct: a D&D studio, an office, bins and a putting lane.",
+        "status_first": False,
     },
 ]
 
@@ -73,6 +89,11 @@ header { display: grid; gap: 0.55rem; }
 .plan-card b { font-family: var(--font-display); font-size: 1.05rem; }
 .plan-card small { color: var(--muted); font-size: 0.9rem; }
 .plan-card .links { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-family: var(--font-data); font-size: 0.82rem; }
+figure.layout { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+figure.layout a.shot { display: block; cursor: zoom-in; line-height: 0; }
+figure.layout img { width: 100%; max-width: 980px; height: auto; display: block; margin: 0 auto; }
+figure.layout figcaption { background: var(--surface); padding: 0.5rem 0.9rem; font-family: var(--font-data); font-size: 0.82rem; }
+.plan-card a.page-link { display: block; background: #fff; line-height: 0; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 th { text-align: left; font-family: var(--font-data); font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); background: var(--raise); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: bottom; }
@@ -166,44 +187,60 @@ def label_table(match):
     return f'<div class="table-wrap">{table}</div>'
 
 
-def gallery():
-    out = ['<section class="plans" aria-labelledby="plans-h"><h2 id="plans-h">Floor plans</h2><div class="gallery">']
-    for f in FIGURES:
-        title = html.escape(f["title"])
-        links = [f'<a href="{f["full"]}" target="_blank" rel="noopener">Full size in a new tab</a>']
-        if f.get("link"):
-            links.append(f'<a href="{f["link"][0]}" target="_blank" rel="noopener">{html.escape(f["link"][1])}</a>')
-        out.append(
-            f'<figure class="plan-card" style="margin:0">'
+def card(f):
+    title = html.escape(f["title"])
+    if f.get("page"):
+        return (f'<figure class="plan-card" style="margin:0"><a class="page-link" href="{f["page"]}">'
+                f'<img src="{f["thumb"]}" alt="{title}" loading="lazy"></a>'
+                f'<figcaption class="words"><b>{title}</b><small>{html.escape(f["text"])}</small>'
+                f'<span class="links"><a href="{f["page"]}">Open the layouts</a></span></figcaption></figure>')
+    return (f'<figure class="plan-card" style="margin:0">'
             f'<a class="shot" href="{f["full"]}" data-title="{title}" target="_blank" rel="noopener">'
             f'<img src="{f["thumb"]}" alt="{title}" loading="lazy"></a>'
             f'<figcaption class="words"><b>{title}</b><small>{html.escape(f["text"])}</small>'
-            f'<span class="links">{" ".join(links)}</span></figcaption></figure>')
-    out.append("</div></section>")
-    return "".join(out)
+            f'<span class="links"><a href="{f["full"]}" target="_blank" rel="noopener">Full size in a new tab</a>'
+            f'</span></figcaption></figure>')
 
 
-def build():
-    text = SRC.read_text(encoding="utf-8")
+def gallery():
+    return ('<section class="plans" aria-labelledby="plans-h"><h2 id="plans-h">Floor plans</h2><div class="gallery">'
+            + "".join(card(f) for f in PLAN_GALLERY) + "</div></section>")
+
+
+def layout_figure(key):
+    name = f"layout-{key}.svg"
+    title = f"Layout {key.upper()}"
+    return (f'<figure class="layout" style="margin:0">'
+            f'<a class="shot" href="{name}" data-title="{title}" target="_blank" rel="noopener">'
+            f'<img src="{name}" alt="{title}, drawn to a 1-foot grid"></a>'
+            f'<figcaption><a href="{name}" target="_blank" rel="noopener">Full size in a new tab</a></figcaption></figure>')
+
+
+def build(page):
+    text = page["src"].read_text(encoding="utf-8")
     first = text.splitlines()[0]
     if not first.startswith("# "):
-        sys.exit("the plan source must open on its title heading")
+        sys.exit(f"{page['src'].name} must open on its title heading")
     title = first[2:].strip()
     body_md = text.split("\n", 1)[1]
     body = markdown.markdown(body_md, extensions=["tables"], output_format="html")
     body = re.sub(r"<table>.*?</table>", label_table, body, flags=re.S)
-    if "<p>{{floor-plans}}</p>" not in body:
-        sys.exit("the plan source lost its {{floor-plans}} line")
-    body = body.replace("<p>{{floor-plans}}</p>", gallery())
-    # the opening paragraph is the status line
-    body = body.replace("<p>", '<p class="status">', 1)
-    page = f"""<!doctype html>
+    if "{{floor-plans}}" in text:
+        body = body.replace("<p>{{floor-plans}}</p>", gallery())
+    for key in "abc":
+        body = body.replace(f"<p>{{{{layout-{key}}}}}</p>", layout_figure(key))
+    if "{{" in body:
+        sys.exit(f"{page['src'].name} holds a marker the builder does not know")
+    if page["status_first"]:
+        body = body.replace("<p>", '<p class="status">', 1)
+    crumbs = " · ".join(f'<a href="{href}">{html.escape(label)}</a>' for href, label in page["crumbs"])
+    return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="The family's plan for 45 Autumn Crest Ct, Wentzville, from the inspection to the basement.">
+<meta name="description" content="{html.escape(page['description'])}">
 <title>{html.escape(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -213,8 +250,8 @@ def build():
 <body>
 <main class="wrap">
 <header>
-<p class="crumb"><a href="{REPORT}">The house report</a> · <a href="/house-search/">The house search</a></p>
-<p class="eyebrow">House plan, if the purchase goes through</p>
+<p class="crumb">{crumbs}</p>
+<p class="eyebrow">{html.escape(page['eyebrow'])}</p>
 <h1>{html.escape(title)}</h1>
 </header>
 {body}
@@ -227,22 +264,26 @@ def build():
 </body>
 </html>
 """
-    return page
 
 
 def main():
-    page = build()
-    if "--check" in sys.argv:
-        current = OUT.read_text(encoding="utf-8") if OUT.exists() else ""
-        if current != page:
-            print("house-plan/index.html is stale; run python scripts/build-house-plan.py")
-            return 1
-        print("house-plan/index.html matches its source")
-        return 0
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(page, encoding="utf-8", newline="\n")
-    print(f"wrote {OUT.relative_to(ROOT)} ({len(page):,} bytes)")
-    return 0
+    stale = 0
+    for page in PAGES:
+        html_text = build(page)
+        out = page["out"]
+        rel = out.relative_to(ROOT).as_posix()
+        if "--check" in sys.argv:
+            current = out.read_text(encoding="utf-8") if out.exists() else ""
+            if current != html_text:
+                print(f"{rel} is stale; run python scripts/build-house-plan.py")
+                stale += 1
+            else:
+                print(f"{rel} matches its source")
+            continue
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(html_text, encoding="utf-8", newline="\n")
+        print(f"wrote {rel} ({len(html_text):,} bytes)")
+    return 1 if stale else 0
 
 
 if __name__ == "__main__":
