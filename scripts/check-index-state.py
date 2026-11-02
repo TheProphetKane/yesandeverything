@@ -14,7 +14,14 @@ Checks, over the whole index plus the two generated data folders:
 check-dashboard-live.ps1 calls this, and the daily routine health watch calls that,
 so a stuck merge fails the same day. Exit 0 clean, exit 1 listing what is wrong.
 
-Usage: python scripts/check-index-state.py [--repo <folder>]
+--concluding is for the pre-commit hook. A merge commit is made while MERGE_HEAD still
+exists, so without the flag the hook refused every merge in this repository: on
+2026-11-02 the house-search branch merged with its thirty conflicts resolved and the
+commit was refused as a stuck merge, and the branch had to be squashed instead. With the
+flag a MERGE_HEAD is tolerated only while no index entry is unmerged and no marker is left,
+which is a merge being finished, not one that was abandoned.
+
+Usage: python scripts/check-index-state.py [--repo <folder>] [--concluding]
 """
 import argparse
 import os
@@ -40,15 +47,22 @@ def main(argv=None):
         "--repo",
         default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
     )
-    repo = ap.parse_args(argv).repo
+    ap.add_argument(
+        "--concluding", action="store_true",
+        help="tolerate MERGE_HEAD while no entry is unmerged: the commit being made is the "
+             "merge's own (the pre-commit hook passes this)",
+    )
+    args = ap.parse_args(argv)
+    repo = args.repo
     problems = []
+    unmerged = []
 
     code, out = git(repo, "ls-files", "-u")
     if code != 0:
         problems.append("git ls-files -u failed; the index cannot be read")
     else:
-        paths = sorted({line.split("\t", 1)[1] for line in out.splitlines() if "\t" in line})
-        for p in paths:
+        unmerged = sorted({line.split("\t", 1)[1] for line in out.splitlines() if "\t" in line})
+        for p in unmerged:
             problems.append("unmerged index entry: %s" % p)
 
     code, gitdir = git(repo, "rev-parse", "--git-dir")
@@ -62,8 +76,11 @@ def main(argv=None):
             ("rebase-apply", "a rebase or patch apply is in progress"),
             ("CHERRY_PICK_HEAD", "a cherry-pick was started and never finished"),
         ):
-            if os.path.exists(os.path.join(gitdir, name)):
-                problems.append("%s: %s" % (name, what))
+            if not os.path.exists(os.path.join(gitdir, name)):
+                continue
+            if name == "MERGE_HEAD" and args.concluding and not unmerged:
+                continue
+            problems.append("%s: %s" % (name, what))
 
     for d in DATA_DIRS:
         root = os.path.join(repo, d)
