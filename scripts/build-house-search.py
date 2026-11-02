@@ -134,9 +134,13 @@ tr.is-no .tag.marked-no { display: inline-block; }
 .group-view h2 { color: var(--pass); }
 .group-view .count { background: var(--pass-soft); color: var(--pass); }
 .group-view .scroll { border-color: var(--pass); box-shadow: 0 0 0 2px var(--pass); }
+.group-ours h2 { color: var(--pass); }
+.group-ours .count { background: var(--pass-soft); color: var(--pass); }
+.group-ours .scroll { border-color: var(--pass); box-shadow: 0 0 0 2px var(--pass); }
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
 .tag { display: inline-block; font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.05rem 0.45rem; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .tag.subject { background: var(--sea-soft); color: var(--sea); }
+.tag.ours { background: var(--pass-soft); color: var(--pass); border: 1px solid var(--pass); }
 .no-note, .view-note { display: none; }
 .is-no .no-note, .is-view .view-note { display: block; }
 .no-note, .view-note { border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
@@ -164,6 +168,7 @@ tr.is-no .tag.marked-no { display: inline-block; }
 .tag.state.gone { background: var(--fail-soft); color: var(--fail); border-color: var(--fail); }
 .state-banner { background: var(--amber-soft); border-left: 6px solid var(--amber); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; }
 .state-banner.gone { background: var(--fail-soft); border-left-color: var(--fail); }
+.state-banner.ours { background: var(--pass-soft); border-left-color: var(--pass); }
 .group-off .count { background: var(--amber-soft); color: var(--amber); }
 .voter { color: var(--muted); }
 .linkish { background: none; border: 0; padding: 0; color: var(--sea); font: inherit; text-decoration: underline; cursor: pointer; }
@@ -550,7 +555,21 @@ def state_since(h):
     return found.group(1) if found else ""
 
 
+def ours_since(h):
+    """The day the family's offer was accepted, as "November 2", from the ours block the data carries."""
+    y, m, d = (int(x) for x in h["ours"]["since"].split("-"))
+    return f"{MONTHS[m - 1]} {d}"
+
+
+def long_day(iso):
+    """An ISO date as "November 2, 2026"."""
+    y, m, d = (int(x) for x in iso.split("-"))
+    return f"{MONTHS[m - 1]} {d}, {y}"
+
+
 def state_tag(h):
+    if h.get("ours"):
+        return f'<br><span class="tag ours">Our contract since {e(ours_since(h))}</span>'
     st = state_of(h)
     if st == "active":
         return ""
@@ -619,7 +638,10 @@ def report(h, updated):
     out.append(f'<p class="votes" data-votes="{e(h["slug"])}"></p>')
     out.append('<p class="voter js-only" id="voter"></p>')
     st = state_of(h)
-    if st != "active":
+    if h.get("ours"):
+        out.append(f'<p class="state-banner ours"><b>Our contract since {e(ours_since(h))}.</b> '
+                   f'{e(h["ours"]["note"])}</p>')
+    elif st != "active":
         since = state_since(h)
         out.append(f'<p class="state-banner{" gone" if st == "gone" else ""}"><b>{e(STATE_WORD[st])}'
                    f'{" since " + e(since) if since else ""}.</b> {e(h["status"])}</p>')
@@ -739,9 +761,15 @@ def index(data):
     if data.get("searchNote"):
         out.append(f'<details class="note"><summary>How these houses were found</summary>'
                    f'<p>{e(data["searchNote"])}</p></details>')
-    out.append('<p>Tap an address for its full report. Prices and statuses are checked against the listing feeds '
-               'twice a day, about 6 in the morning and 6 in the evening; what moved is listed at the bottom of '
-               'the page and on the timeline of each house.</p>')
+    if data.get("scanStopped"):
+        ours = ", ".join(h["address"] for h in houses if h.get("ours")) or "a house"
+        out.append(f'<p>Tap an address for its full report. The twice-daily check of the listing feeds stopped on '
+                   f'{e(long_day(data["scanStopped"]))}, when the family went under contract on {e(ours)}. Every '
+                   f'price and status here is as of the last check, named on each house.</p>')
+    else:
+        out.append('<p>Tap an address for its full report. Prices and statuses are checked against the listing feeds '
+                   'twice a day, about 6 in the morning and 6 in the evening; what moved is listed at the bottom of '
+                   'the page and on the timeline of each house.</p>')
     out.append('<p class="js-only">Tap the ✓ on a house you want to view, or the ✕ to rule it out. Each '
                'person\'s vote is kept under their own first name, which the page asks for the first time you '
                'vote on a phone or laptop. A house moves up to the Want to view table while anyone has it '
@@ -754,16 +782,23 @@ def index(data):
     out.append(group("view", "Want to view", "Every house anyone has ticked, with whose tick it is. Your ✓ "
                      "again takes your tick off; it never touches anyone else's.", []))
     order = 0
+    mine = []
+    for h in houses:
+        if h.get("ours"):
+            mine.append(row(h, order, "ours"))
+            order += 1
+    out.append(group("ours", "Our contract", "The house the family is buying. The tag says since when, and the "
+                     "report says what happens next.", mine))
     for key, title, blurb in GROUPS:
         rows = []
         for h in houses:
-            if overall(h) == key and state_of(h) == "active":
+            if overall(h) == key and state_of(h) == "active" and not h.get("ours"):
                 rows.append(row(h, order, key))
                 order += 1
         out.append(group(key, title, blurb, rows))
     gone = []
     for h in houses:
-        if state_of(h) != "active":
+        if state_of(h) != "active" and not h.get("ours"):
             gone.append(row(h, order, "off"))
             order += 1
     out.append(group("off", "Under contract or off the market",

@@ -139,6 +139,20 @@ private prior owners stay unnamed, companies may be named. The pieces:
   `scripts/stage-site.mjs`, and delete `house-search/`, `data/house-search*.json` and the two
   `house-search` scripts. The Worker route can then drop with its next deploy.
 
+### House search: under contract, routine stopped (2026-11-02)
+
+The family went under contract on 45 Autumn Crest Ct on 2026-11-02 at the asking price, $330,000;
+the sellers close on their next house on 2026-11-30, so this one closes by then. Kane stops the
+`house-search-sync` routine the same day from the desktop app, where the scheduled task lives; a
+cloud session cannot reach it. The page stays up until closing. The house carries an `ours` block
+(`since`, `note`), and `scripts/build-house-search.py` renders it as the "Our contract" group at the
+top of the list, a tag in place of the state tag, and a green banner on the report, whatever state
+a feed reports. `data/house-search.json` carries `scanStopped: "2026-11-02"`. The list page states
+that date in place of the twice-a-day line, and `scripts/check-dashboard-live.ps1` reads it to note
+the last-run age instead of failing on it. The marks route check stays until the votes go at
+closing. The rest of the end condition above (wipe the `HouseMarks` storage, drop `house-search`
+from `scripts/stage-site.mjs`, delete the page, the data and the two scripts) waits for closing.
+
 ### Retirement: Thanksgiving 2026 page, due 2026-12-15 (2026-10-29)
 
 The stay runs 22 to 29 November 2026. On 2026-12-15: remove `thanksgiving-2026` from the
