@@ -14,6 +14,7 @@ or full size in a new tab without scripts.
 """
 
 import datetime
+import hashlib
 import html
 import math
 import re
@@ -195,7 +196,16 @@ def label_table(match):
     return f'<div class="table-wrap">{table}</div>'
 
 
+def stamped(rel, base=ROOT / "house-plan"):
+    """A picture's path with a hash of its bytes on the end. The site serves pictures with a four-hour
+    cache lifetime, so a redrawn layout under the same name stays stale in a browser that saw the old
+    one; the hash changes the address whenever the picture changes."""
+    data = (base / rel).read_bytes()
+    return f"{rel}?v={hashlib.sha256(data).hexdigest()[:10]}"
+
+
 def card(f):
+    f = {k: (stamped(v) if k in ("thumb", "full") else v) for k, v in f.items()}
     title = html.escape(f["title"])
     if f.get("page"):
         return (f'<figure class="plan-card" style="margin:0"><a class="page-link" href="{f["page"]}">'
@@ -216,7 +226,7 @@ def gallery():
 
 
 def layout_figure():
-    name = "layout.svg"
+    name = stamped("layout.svg", ROOT / "house-plan" / "basement")
     title = "The basement layout"
     return (f'<figure class="layout" style="margin:0">'
             f'<a class="shot" href="{name}" data-title="{title}" target="_blank" rel="noopener">'
