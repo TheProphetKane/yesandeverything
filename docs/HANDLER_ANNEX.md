@@ -158,11 +158,14 @@ from `scripts/stage-site.mjs`, delete the page, the data and the two scripts) wa
 `/house-plan/` is the family's plan for the house under contract: the facts known about it, every
 step from the inspection through the basement rooms with planned dates, and two estimate columns,
 the family's materials and the same job hired out. `/house-plan/basement/` holds the basement
-layout Nick chose, drawn to a 1-foot grid (the other two options came off on 2026-11-02 at his word). Nick asked for both live beside the house search and linked from
+layout Nick chose, drawn to a 1-foot grid (the other two options came off on 2026-11-02 at his word), and `/house-plan/floors/` holds the
+main and upper floors in the same colors. The site shows only these color-coded plans: Nick does not want
+traditional floor plans, so the builder's drawing and the gridded sheet made from it came off on
+2026-11-03 and stay off. Nick asked for the plan live beside the house search and linked from
 it, and the site names him Nick, never by his gamer tag, because the family reads it. The sources are
-`docs/HOUSE-PLAN-45-AUTUMN-CREST.md` and `docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md`, which the prose gate
-measures; `python scripts/build-house-plan.py` writes both pages, and `--check` exits 1 when either
-is stale. `python scripts/draw-basement-layouts.py` draws the layout picture from the fixed stair,
+`docs/HOUSE-PLAN-45-AUTUMN-CREST.md`, `docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md` and `docs/HOUSE-PLAN-FLOORS.md`,
+which the prose gate measures; `python scripts/build-house-plan.py` writes all three pages, and `--check`
+exits 1 when any is stale. `python scripts/draw-house-floors.py` draws the main and upper floor plans. `python scripts/draw-basement-layouts.py` draws the layout picture from the fixed stair,
 rough-in, slider, window and the likely furnace spot. Never edit a page by hand. The builder totals every table with a family column and a hired column and
 fills the plan's {{totals}} conclusion, so a cost cell must open on that row's total: the first dollar
 figure counts and the rest is detail, while a figure marked a year, if needed, credit or closing costs is

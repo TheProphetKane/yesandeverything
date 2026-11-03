@@ -31,14 +31,6 @@ REPORT = "/house-search/45-autumn-crest-ct/"
 
 PLAN_GALLERY = [
     {
-        "thumb": "floors-grid-small.jpg",
-        "full": "floors-grid.png",
-        "title": "All three floors on a 1-foot grid",
-        "text": "The main and upper floors are the builder's Rockport drawing, fitted to the county's measured "
-                "outline. The basement panel shows the stair, the landing and the rough-in. The upper floor's "
-                "lookdown over the foyer was never built here: the loft is floored to the front wall.",
-    },
-    {
         "thumb": "floors/main.svg",
         "page": "floors/",
         "title": "The main floor",
