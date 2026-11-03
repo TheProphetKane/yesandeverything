@@ -66,16 +66,16 @@ PAGES = [
         "src": ROOT / "docs" / "HOUSE-PLAN-BASEMENT-LAYOUTS.md",
         "out": ROOT / "house-plan" / "basement" / "index.html",
         "eyebrow": "Basement layout, 1 square to the foot",
-        "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/floors/", "The main and upper floors")],
+        "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/floors/", "The floor plans")],
         "description": "The basement layout for 45 Autumn Crest Ct: a D&D studio, an office, a play area, bins and a putting lane.",
         "status_first": False,
     },
     {
         "src": ROOT / "docs" / "HOUSE-PLAN-FLOORS.md",
         "out": ROOT / "house-plan" / "floors" / "index.html",
-        "eyebrow": "Main and upper floors, 1 square to the foot",
+        "eyebrow": "Every floor, 1 square to the foot",
         "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/basement/", "The basement layout")],
-        "description": "The main and upper floors of 45 Autumn Crest Ct, every room colored by its use.",
+        "description": "The main floor, the upper floor and the basement of 45 Autumn Crest Ct, every room colored by its use.",
         "status_first": False,
     },
 ]
@@ -256,10 +256,13 @@ FIGURES = {
 }
 
 
-def layout_figure(marker):
-    """A drawing for the page that sits in the drawing's own folder, so its address is relative to the page."""
+def layout_figure(marker, page_dir):
+    """A drawing placed on a page, its address written relative to the page's own folder, so the floors page
+    can show the basement drawing from the basement's folder."""
     folder, file, title = FIGURES[marker]
     name = stamped(file, ROOT / "house-plan" / folder)
+    if (ROOT / "house-plan" / folder) != page_dir:
+        name = f"../{folder}/{name}"
     return (f'<figure class="layout" style="margin:0">'
             f'<a class="shot" href="{name}" data-title="{title}" target="_blank" rel="noopener">'
             f'<img src="{name}" alt="{title}, drawn to a 1-foot grid"></a>'
@@ -490,7 +493,7 @@ def build(page):
         body = body.replace("<p>{{floor-plans}}</p>", gallery())
     for marker in FIGURES:
         if "{{" + marker + "}}" in text:
-            body = body.replace("<p>{{" + marker + "}}</p>", layout_figure(marker))
+            body = body.replace("<p>{{" + marker + "}}</p>", layout_figure(marker, page["out"].parent))
     if "{{" in body:
         sys.exit(f"{page['src'].name} holds a marker the builder does not know")
     if page["status_first"]:

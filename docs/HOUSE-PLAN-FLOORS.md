@@ -1,6 +1,6 @@
-# The main and upper floors at 45 Autumn Crest Ct
+# The floor plans for 45 Autumn Crest Ct
 
-These two plans are Burkemper Homes' own Rockport drawing, taken from its 2007 brochure and laid over the county's measured outline one square to the foot, sharing the basement layout's grid, so a spot on one floor sits right over the same spot on the floor below. Each room is colored by its use. Where the brochure prints a room's size, the plan carries it; every other size is read off the drawing and runs close, not exact. It is a sales drawing. An owner may have moved a wall since 2003, so the tape at the inspection settles anything that matters.
+The main and upper floors are Burkemper Homes' own Rockport drawing, taken from its 2007 brochure and laid over the county's measured outline one square to the foot. The basement below them is Nick's layout on the same grid, so a spot on one floor sits right over the same spot on the floor below. Each room is colored by its use. Where the brochure prints a room's size, the plan carries it; every other size is read off the drawing and runs close, not exact. It is a sales drawing. An owner may have moved a wall since 2003, so the tape at the inspection settles anything that matters.
 
 The furniture is a first placement, there to be moved. Pieces the family owns are drawn at the size Nick gave, and the rest at a common size; the table under each plan says which is which.
 
@@ -39,6 +39,12 @@ The stair splits. One flight climbs from the foyer and a second from the family 
 | Hall | About 55 square feet | A linen closet beside the stair. Three bedrooms and the hall bath open off it. |
 
 Carpet goes down on this whole floor ten to fourteen days after closing: builder grade, on a moisture-barrier pad, the main stair included. Nothing moves in until it is down. If the black light finds no urine in the pad, a rented cleaner stands in and the old carpet stays. Each bedroom gets a new smoke alarm the day after move-in. The hall's alarm also senses carbon monoxide.
+
+## The basement
+
+{{layout}}
+
+Nick's layout for the unfinished basement: the D&D studio, the office, the kids' play area, the bins, the bath and the putting lane. Each room's size, what it holds, the stair and the furnace are on [the basement layout page](../basement/).
 
 ## Who sleeps where
 

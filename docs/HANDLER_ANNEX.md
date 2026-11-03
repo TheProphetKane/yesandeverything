@@ -159,7 +159,7 @@ from `scripts/stage-site.mjs`, delete the page, the data and the two scripts) wa
 step from the inspection through the basement rooms with planned dates, and two estimate columns,
 the family's materials and the same job hired out. `/house-plan/basement/` holds the basement
 layout Nick chose, drawn to a 1-foot grid (the other two options came off on 2026-11-02 at his word), and `/house-plan/floors/` holds the
-main and upper floors in the same colors. The site shows only these color-coded plans: Nick does not want
+main and upper floors in the same colors, with the basement drawing repeated below them. The site shows only these color-coded plans: Nick does not want
 traditional floor plans, so the builder's drawing and the gridded sheet made from it came off on
 2026-11-03 and stay off. Nick asked for the plan live beside the house search and linked from
 it, and the site names him Nick, never by his gamer tag, because the family reads it. The sources are
