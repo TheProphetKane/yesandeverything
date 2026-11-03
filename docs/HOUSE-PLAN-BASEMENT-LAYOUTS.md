@@ -8,10 +8,10 @@ The stair keeps its place, with the bath rough-in at its foot. The slider and th
 
 | Room | Size | Square feet | What it holds |
 |---|---|---|---|
-| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right. The two outer ones stand one cube wide and three tall; the middle one is three wide by two tall, a cube lower. The wet bar and its mini fridge stand left of the door. Nick's table sits toward the closet, 5 by 6 feet with its corners cut and a TV flat in its middle. It seats six. Speakers hang in all four corners. |
+| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right. The two outer ones stand one cube wide and three tall; the middle one is three wide by two tall, a cube lower. The wet bar and its mini fridge stand left of the door. Nick's table sits toward the closet, about 5 feet 10 by 7 feet 7 with its corners cut, built around a 42-inch TV set flat in its middle. It seats six. Speakers hang in all four corners. |
 | Studio closet | 10.7 by 2 feet | Inside the studio | The minis, across the whole wall the bin room shares, behind two pairs of sliding doors. |
 | Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
-| Lounge | L-shaped | 132 | The couch, with the coats on the left inside the slider. The putting basket stands against the rear wall, a net behind it. |
+| Lounge | L-shaped | 132 | The couch, with an end table at its slider end and a round table cut like a gear, 3 feet across, in front of it. The putting basket stands against the rear wall, a net behind it. |
 | Office | 10.6 by 14.8 feet | 157 | The computer tower in the corner where the rear and far walls meet, the desk along the far wall, the window behind and to the left. Disc golf bags and racks hang on the wall the play area shares. The door sits partway down, across from the utility room. |
 | Play area | 11.1 by 16.4 feet | 181 | The kids' second lounge, open to the hall, with a play rug in the middle and toy shelves along the far wall. |
 | Bath | 5.3 by 9 feet | 48 | A 60-inch tub and shower across the back, the toilet on the rough-in, the sink across from it. |
@@ -22,9 +22,9 @@ Bins: 44 on four tiers, 55 on five. Putting lane: 29 feet. The tee sits near the
 
 ## How the rooms work
 
-Players come in through the slider and hang their coats on the left. The couch waits in the lounge. The studio door is a few steps to the left, and the office door sits down the lane across from the utility room.
+Players come in through the slider to the couch, its end table and the gear table in front of it. The studio door is a few steps to the left, and the office door sits down the lane across from the utility room.
 
-Inside the studio, the game PC desk faces the door from the far wall. The wet bar is the first thing on the left. Nick's table sits toward the closet, with about 2 feet 10 inches clear on each long side and 3 feet at the closet end, which leaves an open stretch between the desk and the table. The utility room backs onto the studio, so that side gets the full sound treatment.
+Inside the studio, the game PC desk faces the door from the far wall. The wet bar is the first thing on the left. Nick's table sits toward the closet. The table's size comes from its TV: about 2 feet of wood frames the screen, a little more at the ends. That leaves about 2 feet 5 inches clear on each long side, 2 and a half feet at the closet end. That keeps an open stretch between the desk and the table, though the long sides are snug: chairs there tuck in to let someone pass. The utility room backs onto the studio, so that side gets the full sound treatment.
 
 The lane doubles as the hall, so it costs no floor. Players putt toward the lounge, which is why the office door moved down the wall: a missed putt now hits the net on the rear wall instead of flying through an open office door. The play area sits behind the putter, out of the line.
 

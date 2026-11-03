@@ -116,16 +116,21 @@ class Plan:
     def seat(self, x, y, w, h):
         self.over.append(f'<rect x="{X(x):.1f}" y="{Y(y):.1f}" width="{w * S:.1f}" height="{h * S:.1f}" rx="3" fill="#ddd6fe" stroke="#7c3aed"/>')
 
-    def game_table(self, cx, y0, w=5.0, length=6.0, cut=1.5):
-        """Nick's table, w across and length long, each corner cut at 45 degrees with a face `cut` feet
-        long, a TV set flat in its center, one seat at each end and two along each long side."""
+    def game_table(self, cx, y0, tv=42, side=2.0, end=2.25, cut=1.5):
+        """Nick's table, sized from the TV set flat in its middle: a 16:9 screen of `tv` inches with about
+        a third of an inch of bezel, `side` feet of table along its long edges and `end` feet past its short
+        ones, each corner cut at 45 degrees with a face `cut` feet long. One seat at each end and two along
+        each long side. A 42-inch TV makes the table about 5.8 by 7.6 feet."""
+        tv_long = (tv * 16 / math.hypot(16, 9) + 0.7) / 12
+        tv_short = (tv * 9 / math.hypot(16, 9) + 0.7) / 12
+        w, length = tv_short + 2 * side, tv_long + 2 * end
         c = cut / math.sqrt(2)
         x0, x1, y1 = cx - w / 2, cx + w / 2, y0 + length
         pts = [(x0 + c, y0), (x1 - c, y0), (x1, y0 + c), (x1, y1 - c), (x1 - c, y1), (x0 + c, y1), (x0, y1 - c), (x0, y0 + c)]
         d = " ".join(f"{X(x):.1f},{Y(y):.1f}" for x, y in pts)
         self.over.append(f'<polygon points="{d}" fill="#c4b5fd" stroke="#5b21b6" stroke-width="1.5"/>')
         ym = y0 + length / 2
-        self.thing(cx - 1.15, ym - 2.0, cx + 1.15, ym + 2.0, "", "#1e1b4b", "#1e1b4b", 8, 2)
+        self.thing(cx - tv_short / 2, ym - tv_long / 2, cx + tv_short / 2, ym + tv_long / 2, "", "#1e1b4b", "#1e1b4b", 8, 2)
         self.over.append(f'<text x="{X(cx):.1f}" y="{Y(ym) + 4:.1f}" font-size="10" font-weight="700" fill="#e0e7ff" text-anchor="middle">TV</text>')
         for yy in (y0 - 1.0, y1 + 0.2):
             self.seat(cx - 0.65, yy, 1.3, 0.8)
@@ -149,6 +154,17 @@ class Plan:
             xx = x0 + k * cube
             self.over.append(f'<line x1="{X(xx):.1f}" y1="{Y(y0):.1f}" x2="{X(xx):.1f}" y2="{Y(y0 + depth):.1f}" stroke="#5b21b6" stroke-width="0.8"/>')
         return x1
+
+    def gear(self, cx, cy, radius, text, teeth=12):
+        """A round table cut like a gear, radius feet to the tips of its teeth."""
+        pts = []
+        for k in range(teeth * 4):
+            a = 2 * math.pi * k / (teeth * 4)
+            r = radius if k % 4 in (1, 2) else radius * 0.86
+            pts.append(f"{X(cx + r * math.cos(a)):.1f},{Y(cy + r * math.sin(a)):.1f}")
+        self.over.append(f'<polygon points="{" ".join(pts)}" fill="#fbcfe8" stroke="#be185d" stroke-width="1.4"/>')
+        self.over.append(f'<circle cx="{X(cx):.1f}" cy="{Y(cy):.1f}" r="{radius * 0.3 * S:.1f}" fill="none" stroke="#be185d" stroke-width="1"/>')
+        self.note(cx, cy + radius + 0.55, text, 8, "#9d174d")
 
     def vnote(self, x, y, text, size=9, color="#475569"):
         self.over.append(f'<text x="{X(x):.1f}" y="{Y(y):.1f}" font-size="{size}" fill="{color}" text-anchor="middle" transform="rotate(-90 {X(x):.1f} {Y(y):.1f})" dy="3">{html.escape(text)}</text>')
@@ -220,7 +236,7 @@ def studio(p):
     """The D&D studio. Across from the door, against the garage-side wall: the game PC desk (3.5 feet)
     and the rack. Cube shelves of books on the rear wall to the right, the wet bar and fridge on the
     door's wall to the left. The table sits toward the closet of minis that fills the bin room wall,
-    with about 3 feet clear at its far end. Speakers on the ceiling in the corners."""
+    with about 2.5 feet clear at its far end. Speakers on the ceiling in the corners."""
     cx = (X0 + 11.4) / 2
     p.thing(X0 + 0.02, 1.7, 2.75, 5.2, "", "#c4b5fd", "#5b21b6", 8)
     p.vnote(1.75, 3.45, "game PC desk", 8, "#1e1b4b")
@@ -230,11 +246,11 @@ def studio(p):
     for cols in (1, 3, 1):
         x = p.cubes(x, Y0 + 0.05, cols) + 0.15
     p.note(6.5, 2.55, "cube shelves: books", 8, "#4c1d95")
-    p.thing(9.4, 4.6, 11.38, 7.85, "", "#ede9fe", "#5b21b6", 8)
-    p.over.append(f'<circle cx="{X(10.4):.1f}" cy="{Y(5.25):.1f}" r="{0.45 * S:.1f}" fill="#ffffff" stroke="#5b21b6" stroke-width="1.2"/>')
-    p.note(10.4, 6.25, "wet bar", 8, "#4c1d95")
-    p.thing(9.5, 6.45, 11.3, 7.75, "fridge", "#ffffff", "#5b21b6", 7)
-    p.game_table(cx, 8.2)
+    p.thing(9.4, 4.6, 11.38, 7.6, "", "#ede9fe", "#5b21b6", 8)
+    p.over.append(f'<circle cx="{X(10.4):.1f}" cy="{Y(5.1):.1f}" r="{0.42 * S:.1f}" fill="#ffffff" stroke="#5b21b6" stroke-width="1.2"/>')
+    p.note(10.4, 5.95, "wet bar", 8, "#4c1d95")
+    p.thing(9.5, 6.2, 11.3, 7.5, "fridge", "#ffffff", "#5b21b6", 7)
+    p.game_table(cx, 7.05)
     # the closet across the whole bin room wall, 2 feet deep, two openings with sliding doors
     p.under.append(f'<rect x="{X(X0):.1f}" y="{Y(17.5):.1f}" width="{(11.4 - X0) * S:.1f}" height="{(19.5 - 17.5) * S:.1f}" fill="#ddd6fe"/>')
     p.wall(X0, 17.15, 1.3, 17.5)
@@ -284,7 +300,7 @@ def bath(p, bottom=28.5):
 
 def layout():
     p = Plan("a", "The basement layout: studio, office, play area and the center lane")
-    p.room("D&D studio", "studio", [(X0, Y0, 11.4, 19.5)], (6.1, 5.6), compact=True)
+    p.room("D&D studio", "studio", [(X0, Y0, 11.4, 19.5)], (6.7, 4.7), compact=True)
     p.wall(11.4, Y0, 12.0, 1.4, True)
     p.wall(11.4, 4.4, 12.0, 20.1, True)
     p.wall(X0, 19.5, 12.0, 20.1, True)
@@ -297,10 +313,11 @@ def layout():
     p.wall(12.0, 15.5, 20.4, 15.9)
     p.door(18.8, 13.2, 2.6, 0, -90)
     furnace(p)
-    p.room("Lounge", "lounge", [(12.0, Y0, 24.2, 8.6), (19.0, 8.6, 24.2, 15.5)], (17.4, 3.6))
-    p.thing(12.05, 4.8, 13.3, 8.5, "", "#ffffff", "#be185d", 8)
-    p.vnote(12.68, 6.65, "coats", 8, "#9d174d")
+    p.room("Lounge", "lounge", [(12.0, Y0, 24.2, 8.6), (19.0, 8.6, 24.2, 15.5)], (20.0, 4.6))
     p.thing(13.6, 6.0, 18.95, 8.55, "couch", "#fbcfe8", "#be185d", 9, 6)
+    p.thing(12.1, 6.0, 13.45, 8.05, "", "#ffffff", "#be185d", 8, 2)
+    p.vnote(12.78, 7.0, "end table", 7, "#9d174d")
+    p.gear(16.28, 3.75, 1.5, "gear table")
     p.room("Hall", "hall", [(20.4, 15.5, 24.2, 19.1), (21.4, 19.1, 24.2, 28.9), (12.0, 26.0, 15.3, 28.9), (12.0, 28.9, 24.2, Y1)], (17.0, 30.9))
     p.lane(22.3, 30.9, 22.3, 2.0, -1)
     p.over.append(f'<line x1="{X(20.0):.1f}" y1="{Y(0.95):.1f}" x2="{X(24.2):.1f}" y2="{Y(0.95):.1f}" stroke="#be123c" stroke-width="3" stroke-dasharray="2,3"/>')
