@@ -13,7 +13,7 @@ The stair keeps its place, with the bath rough-in at its foot. The slider and th
 | Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
 | Lounge | L-shaped | 132 | The couch, with an end table at its slider end and a round table cut like a gear, 3 feet across, in front of it. The putting basket stands against the rear wall, a net behind it. |
 | Office | 10.6 by 14.8 feet | 157 | The computer tower in the corner where the rear and far walls meet, the desk along the far wall, the window behind and to the left. Disc golf bags and racks hang on the wall the play area shares. The door sits partway down, across from the utility room. |
-| Play area | 11.1 by 16.4 feet | 181 | The kids' second lounge, with a play rug in the middle and toy shelves along the far wall. A half wall about 42 inches tall closes its hall side, with a 3-foot gate partway down. |
+| Play area | 11.1 by 16.4 feet | 181 | The kids' second lounge, with a play rug in the middle and toy shelves along the far wall. A half wall about 42 inches tall closes its hall side. The 3-foot gate sits at the street end, against the front wall, and folds back flat along it. |
 | Bath | 5.3 by 9 feet | 48 | A 60-inch tub and shower across the back, the toilet on the rough-in, the sink across from it. |
 | Bin room | 10.8 by 12.1 feet | 132 | Shelves on all four walls. |
 | Hall | L-shaped | 92 | The tee and the stair's foot. |

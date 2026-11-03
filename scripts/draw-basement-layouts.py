@@ -329,15 +329,16 @@ def layout():
     corner_desk(p)
     p.thing(25.2, 12.9, 34.8, 15.35, "disc golf bags and racks", "#ffe4e6", "#e11d48", 9)
     p.room("Play area", "lounge", [(24.2, 15.9, X1, Y1)], (29.3, 18.0))
-    p.thing(25.6, 20.6, 32.6, 29.6, "play rug", "#fdf2f8", "#db2777", 10, 10)
+    p.thing(25.6, 20.0, 32.6, 29.0, "play rug", "#fdf2f8", "#db2777", 10, 10)
     p.thing(33.6, 18.6, 35.2, 29.6, "", "#ffffff", "#be185d", 8)
     p.vnote(34.4, 24.1, "toy shelves", 9, "#9d174d")
-    # a half wall about 42 inches high along the hall side, with a 3-foot gate, so the kids stay in view
-    for y0, y1 in ((15.9, 22.0), (25.0, Y1)):
+    # a half wall about 42 inches high along the hall side, so the kids stay in view, with a 3-foot gate at the
+    # street end that folds back flat against the front wall
+    for y0, y1 in ((15.9, 29.1),):
         p.over.append(f'<rect x="{X(24.2):.1f}" y="{Y(y0):.1f}" width="{0.35 * S:.1f}" height="{(y1 - y0) * S:.1f}" fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>')
-    p.door(24.375, 25.0, 3.0, 0, -90)
-    p.vnote(24.95, 18.9, "half wall, 42 in", 8, "#475569")
-    p.note(25.0, 23.7, "gate", 8, "#475569", "start")
+    p.door(24.375, 32.1, 3.0, 0, -90)
+    p.vnote(24.95, 22.5, "half wall, 42 in", 8, "#475569")
+    p.note(25.0, 30.9, "gate", 8, "#475569", "start")
     bath(p)
     p.room("Bin room", "storage", [(X0, 20.1, 11.6, Y1)], (6.2, 26.3))
     p.wall(11.6, 20.1, 12.0, 26.8)
