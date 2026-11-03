@@ -267,14 +267,6 @@ class Plan:
     def chair(self, cx, cy, ink, r=0.6):
         self.over.append(f'<rect x="{self.X(cx - r):.1f}" y="{self.Y(cy - r):.1f}" width="{2 * r * S:.1f}" height="{2 * r * S:.1f}" rx="5" fill="#ffffff" stroke="{ink}" stroke-width="1.2"/>')
 
-    def round_table(self, cx, cy, r, seats, text, ink):
-        """A round table with its chairs pulled in around it."""
-        for k in range(seats):
-            a = 2 * math.pi * k / seats + math.pi / 4
-            self.chair(cx + (r + 0.35) * math.cos(a), cy + (r + 0.35) * math.sin(a), ink)
-        self.over.append(f'<circle cx="{self.X(cx):.1f}" cy="{self.Y(cy):.1f}" r="{r * S:.1f}" fill="#ffffff" stroke="{ink}" stroke-width="1.4"/>')
-        self.note(cx, cy + 0.2, text, 8, ink)
-
     def long_table(self, x0, y0, x1, y1, text, ink):
         """A rectangular table running along y, two chairs down each long side and one at each end."""
         cx = (x0 + x1) / 2
@@ -479,7 +471,12 @@ def main_floor():
                 [(21.8, 3.0), (21.8, 12.2), (29.5, 12.2)], "sectional", (26.6, 11.55), pink)
     p.piece(25.5, 4.5, 29.5, 8.5, "coffee table", pink, 8)
     p.note(27.5, 7.25, "4 by 4 ft", 7, pink)
-    p.round_table(14.8, 6.4, 1.75, 4, "table", red)
+    # the breakfast table: a small rectangle, a bench down each long side, a chair at each end
+    p.piece(12.35, 3.55, 16.85, 4.65, "bench", red, 7)
+    p.piece(12.35, 8.15, 16.85, 9.25, "bench", red, 7)
+    p.chair(11.4, 6.4, red)
+    p.chair(17.8, 6.4, red)
+    p.piece(12.1, 4.9, 17.1, 7.9, "table", red, 8)
     p.long_table(4.35, 22.0, 7.65, 28.0, "dining table, to buy", pink)
     p.piece(8.2, 16.55, 12.05, 18.5, "frog shelf", green, 8, fill="#f0fdf4")
     p.note(10.1, 18.15, "2 by 4 ft", 7, green)
@@ -581,8 +578,7 @@ def upper_floor():
 
     # the stair well: the run from the loft, the family room flight and the foyer flight seen from above, the landing below
     p.stairs(12.4, 12.7, 15.4, 19.4, 1, True, fill="#e0e7ff")
-    p.note(13.9, 15.6, "open to the", 8, "#312e81")
-    p.note(13.9, 16.5, "landing below", 8, "#312e81")
+    p.labels.append(f'<text x="{p.X(13.9):.1f}" y="{p.Y(16.2):.1f}" font-size="11" font-weight="700" fill="#3730a3" text-anchor="middle">Landing</text>')
     p.stairs(15.4, 12.7, 18.0, 15.9, 3, False, fill="#e0e7ff")
     p.stairs(15.4, 15.9, 19.6, 19.4, 5, False, "left")
     p.note(17.5, 18.95, "down", 8, "#312e81")
@@ -612,12 +608,12 @@ def upper_floor():
     p.piece(0.45, 16.9, 2.05, 22.1, "dresser, television above", violet, 7, turn=True)
     p.wall_tv(0.42, 17.2, 21.8, violet)
     p.piece(0.45, 25.4, 2.05, 29.4, "dresser", violet, 8, turn=True)
-    # the infant's room: the crib on the wall shared with the toddler, not the one behind the primary toilet,
-    # and off the window wall; a glider in the corner and the changing dresser across the room
-    p.crib(21.35, 3.5, 23.75, 7.9, blue)
+    # the infant's room: the crib, its changing table attached at the door end, on the wall shared with the
+    # toddler, not the one behind the primary toilet, and off the window wall; a glider in the corner
+    p.crib(21.35, 2.6, 23.75, 7.0, blue)
+    p.piece(21.35, 7.0, 23.75, 9.3, "changer", blue, 8, turn=True)
     p.over.append(f'<circle cx="{p.X(14.75):.1f}" cy="{p.Y(2.05):.1f}" r="{1.2 * S:.1f}" fill="#ffffff" stroke="{blue}" stroke-width="1.4"/>')
     p.note(14.75, 2.3, "glider", 8, blue)
-    p.piece(13.15, 4.0, 14.75, 8.5, "changing dresser", blue, 8, turn=True)
     # the toddler's room: the bed in the corner, two walls to roll against, a dresser and a low shelf
     p.bed(32.9, 0.45, 35.55, 5.2, "up", "toddler bed", blue, 8)
     p.piece(24.25, 3.0, 25.85, 7.0, "dresser", blue, 8, turn=True)

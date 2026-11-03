@@ -11,7 +11,7 @@ The furniture is a first placement, there to be moved. Pieces the family owns ar
 | Room | Size | What the plan does there |
 |---|---|---|
 | Kitchen | 9 by 16 feet | Oak cabinets from 2003, black laminate counters, a gas range and a loose island. The torn sheet vinyl gets plank the week after closing, about 300 square feet with the breakfast room. |
-| Breakfast room | 11 by 12 feet | It fills the rear bay, with the sliding glass door to the deck. A small round table seats four in the middle. The vinyl tore by that door, and it gets plank with the kitchen. |
+| Breakfast room | 11 by 12 feet | It fills the rear bay, with the sliding glass door to the deck. A small rectangular table sits in the middle, a bench down each long side and a chair at each end. The vinyl tore by that door, and it gets plank with the kitchen. |
 | Family room | 15.5 by 19 feet | The sectional's long side backs onto the breakfast room and faces the fireplace on the end wall, its short side toward the toy room. The 4 by 4 coffee table sits 18 inches off both. Nothing is scheduled here. |
 | Toy room, the living room | 12 by 13 feet | The main floor's toy room and play room, right of the front door. The train table stands in the middle, the bookshelf on the far wall and the toy chest under the front windows. Plank over its carpet patches, about 40 square feet, is Wanted. |
 | Dining room | 12 by 15.7 feet | Left of the front door and open to the foyer. The table is still to buy, drawn as a common 40 by 72 inch table for six. The frog shelf stands against the wall shared with the pantry. Its red walls over wainscot are on the paint list. |
@@ -33,7 +33,7 @@ The stair splits. One flight climbs from the foyer and a second from the family 
 | Walk-in closet | About 35 square feet | Through a door off the primary bath. |
 | Guest room, bedroom 2 | 12 by 11 feet | Front, on the far side, its closet backed onto the hall bath. A full bed rests its head against the far wall, an end table each side, and a dresser stands by the door. |
 | Toddler's room, bedroom 3 | 11 by 11 feet | Rear, in the far corner. The toddler bed sits in the corner against two walls, clear of the window, with a dresser and a low shelf of books and toys. |
-| Infant's room, bedroom 4 | 11 by 11 feet | Rear, in the middle, beside the primary bath. The crib stands on the wall shared with the toddler, off the window wall. A glider fills the corner by the window, the changing dresser across from the crib. |
+| Infant's room, bedroom 4 | 11 by 11 feet | Rear, in the middle, beside the primary bath. The crib stands on the wall shared with the toddler, off the window wall, its changing table attached at the door end. A glider fills the corner by the window. |
 | Hall bath | About 35 square feet | A tub, the replaced white vanity and beadboard wainscot. Plank is Wanted. |
 | Loft | About 170 square feet | The hall opens into it where the stair arrives. The frog shelf's other spot is dashed in, on the guest room wall. |
 | Hall | About 55 square feet | A linen closet beside the stair. Three bedrooms and the hall bath open off it. |
@@ -58,15 +58,15 @@ The frogs go in the dining room. The shelf stands on an inside wall there, out o
 | Television, on the wall | 4.6 feet wide | Primary bedroom | The family's |
 | Two dressers | 1.6 by 5 feet and 1.6 by 4 feet | Primary bedroom | The family's |
 | Two end tables | 1.5 by 1.6 feet | Primary bedroom | To buy |
-| Crib | 2.4 by 4.4 feet | Infant's room | The family's |
-| Glider and changing dresser | A common size | Infant's room | Drawn as a usual nursery |
+| Crib with its changing table attached | 2.4 by 6.7 feet | Infant's room | The family's |
+| Glider | A common size | Infant's room | A guess |
 | Toddler bed | 2.65 by 4.75 feet | Toddler's room | The family's |
 | Dresser and low shelf | A common size | Toddler's room | Drawn as a usual setup |
 | Full bed | 4.7 by 6.6 feet with its frame | Guest room | Decided |
 | Two end tables and a dresser | A common size | Guest room | A guess |
 | Sectional | 8.5 by 10 feet, L-shaped | Family room | The family's, its size a guess |
 | Coffee table | 4 by 4 feet | Family room | The family's |
-| Breakfast table | 3.5 feet across, four chairs | Breakfast room | The family's, its size a guess |
+| Breakfast table, two benches and two chairs | 3 by 5 feet | Breakfast room | The family's, its size a guess |
 | Dining table | 40 by 72 inches, six chairs | Dining room | To buy |
 | Frog shelf | 2 by 4 feet | Dining room, or the loft | The family's |
 | Train table | 4 by 2.7 feet | Toy room | The family's, its size a guess |
