@@ -4,9 +4,9 @@
     python scripts/build-house-plan.py --check  exits 1 when either page on disk differs from a fresh build
 
 Each page's source is a markdown file in docs/ that the prose gate measures: docs/HOUSE-PLAN-45-AUTUMN-CREST.md
-for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layouts. Edit the source, build, ship;
+for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layout. Edit the source, build, ship;
 never edit a page by hand. Tables become cards on a phone, each cell labeled with its column. A line holding
-{{floor-plans}} becomes the plan's picture gallery; a line holding {{layout-a}} (or b, c) becomes that
+{{floor-plans}} becomes the plan's picture gallery; a line holding {{layout}} becomes the basement
 layout's drawing, which scripts/draw-basement-layouts.py writes. Pictures open in a pop-out over the page,
 or full size in a new tab without scripts.
 """
@@ -30,11 +30,11 @@ PLAN_GALLERY = [
                 "outline. The basement panel shows the stair, the landing and the rough-in.",
     },
     {
-        "thumb": "basement/layout-a.svg",
+        "thumb": "basement/layout.svg",
         "page": "basement/",
-        "title": "Basement layouts",
-        "text": "Three ways to fit the D&D studio, the office, the bins and a putting lane around the stair and "
-                "the furnace. Nick picked Layout A.",
+        "title": "The basement layout",
+        "text": "Nick's layout to the foot: the D&D studio, the office, the kids' play area, the bins, a bigger "
+                "bath and a 29-foot putting lane, drawn around the stair and the furnace.",
     },
 ]
 
@@ -50,9 +50,9 @@ PAGES = [
     {
         "src": ROOT / "docs" / "HOUSE-PLAN-BASEMENT-LAYOUTS.md",
         "out": ROOT / "house-plan" / "basement" / "index.html",
-        "eyebrow": "Basement layouts, 1 square to the foot",
+        "eyebrow": "Basement layout, 1 square to the foot",
         "crumbs": [("/house-plan/", "The house plan"), (REPORT, "The house report")],
-        "description": "Three basement layouts for 45 Autumn Crest Ct: a D&D studio, an office, bins and a putting lane.",
+        "description": "The basement layout for 45 Autumn Crest Ct: a D&D studio, an office, a play area, bins and a putting lane.",
         "status_first": False,
     },
 ]
@@ -193,7 +193,7 @@ def card(f):
         return (f'<figure class="plan-card" style="margin:0"><a class="page-link" href="{f["page"]}">'
                 f'<img src="{f["thumb"]}" alt="{title}" loading="lazy"></a>'
                 f'<figcaption class="words"><b>{title}</b><small>{html.escape(f["text"])}</small>'
-                f'<span class="links"><a href="{f["page"]}">Open the layouts</a></span></figcaption></figure>')
+                f'<span class="links"><a href="{f["page"]}">Open the layout</a></span></figcaption></figure>')
     return (f'<figure class="plan-card" style="margin:0">'
             f'<a class="shot" href="{f["full"]}" data-title="{title}" target="_blank" rel="noopener">'
             f'<img src="{f["thumb"]}" alt="{title}" loading="lazy"></a>'
@@ -207,9 +207,9 @@ def gallery():
             + "".join(card(f) for f in PLAN_GALLERY) + "</div></section>")
 
 
-def layout_figure(key):
-    name = f"layout-{key}.svg"
-    title = f"Layout {key.upper()}"
+def layout_figure():
+    name = "layout.svg"
+    title = "The basement layout"
     return (f'<figure class="layout" style="margin:0">'
             f'<a class="shot" href="{name}" data-title="{title}" target="_blank" rel="noopener">'
             f'<img src="{name}" alt="{title}, drawn to a 1-foot grid"></a>'
@@ -227,8 +227,7 @@ def build(page):
     body = re.sub(r"<table>.*?</table>", label_table, body, flags=re.S)
     if "{{floor-plans}}" in text:
         body = body.replace("<p>{{floor-plans}}</p>", gallery())
-    for key in "abc":
-        body = body.replace(f"<p>{{{{layout-{key}}}}}</p>", layout_figure(key))
+    body = body.replace("<p>{{layout}}</p>", layout_figure())
     if "{{" in body:
         sys.exit(f"{page['src'].name} holds a marker the builder does not know")
     if page["status_first"]:

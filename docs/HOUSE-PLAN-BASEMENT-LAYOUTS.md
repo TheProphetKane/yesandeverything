@@ -1,8 +1,32 @@
-# Basement layouts for 45 Autumn Crest Ct
+# The basement layout for 45 Autumn Crest Ct
 
-The basement is a plain rectangle, 36 by 33 feet outside its 9-inch poured walls, which leaves a floor of about 34 by 31. Nick picked Layout A. The other two stay below for comparison.
+The basement is a plain rectangle, 36 by 33 feet outside its 9-inch poured walls, which leaves a floor of about 34 by 31. This is the layout Nick chose. On November 2 he reworked it: a smaller office, a play area for the kids where the second bin room was, a closet and a wet bar in the studio, his own table, a bigger bath with a tub, and the putting lane turned around.
 
-A few things hold still in every layout. The stair keeps its place, and the bath rough-in waits at its foot. The walkout slider and the one window sit in the rear wall. The furnace and the water heater most likely stand just north of the stair landing, for the reasons below, so every layout now gives them a room there. The inspection confirms the spot; if it moves, the utility room moves with it.
+The stair keeps its place, with the bath rough-in at its foot. The slider and the one window sit in the rear wall. Three pieces of evidence below put the furnace and the water heater just north of the stair landing, so the layout gives them a room there, and the inspection confirms the spot. If it moves, so does the utility room.
+
+{{layout}}
+
+| Room | Size | Square feet | What it holds |
+|---|---|---|---|
+| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right, two of them three cubes tall and one 2 by 3. The wet bar and its mini fridge stand left of the door. Nick's table sits toward the closet, 5 by 6 feet with its corners cut and a TV flat in its middle. It seats six. Speakers hang in all four corners. |
+| Studio closet | 10.7 by 2 feet | Inside the studio | The minis, across the whole wall the bin room shares, behind two pairs of sliding doors. |
+| Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
+| Lounge | L-shaped | 132 | The couch, with the coats on the left inside the slider. The putting basket stands against the rear wall, a net behind it. |
+| Office | 10.6 by 14.8 feet | 157 | The computer tower in the corner where the rear and far walls meet, the desk along the far wall, the window behind and to the left. Disc golf bags and racks hang on the wall the play area shares. The door sits partway down, across from the utility room. |
+| Play area | 11.1 by 16.4 feet | 181 | The kids' second lounge, open to the hall, with a play rug in the middle and toy shelves along the far wall. |
+| Bath | 5.3 by 9 feet | 48 | A 60-inch tub and shower across the back, the toilet on the rough-in, the sink across from it. |
+| Bin room | 10.8 by 12.1 feet | 132 | Shelves on all four walls. |
+| Hall | L-shaped | 92 | The tee and the stair's foot. |
+
+Bins: 44 on four tiers, 55 on five. Putting lane: 29 feet. The tee sits near the front wall, the basket in the lounge.
+
+## How the rooms work
+
+Players come in through the slider and hang their coats on the left. The couch waits in the lounge. The studio door is a few steps to the left, and the office door sits down the lane across from the utility room.
+
+Inside the studio, the game PC desk faces the door from the far wall. The wet bar is the first thing on the left. Nick's table sits toward the closet, with about 2 feet 10 inches clear on each long side and 3 feet at the closet end, which leaves an open stretch between the desk and the table. The utility room backs onto the studio, so that side gets the full sound treatment.
+
+The lane doubles as the hall, so it costs no floor. Players putt toward the lounge, which is why the office door moved down the wall: a missed putt now hits the net on the rear wall instead of flying through an open office door. The play area sits behind the putter, out of the line.
 
 ## Where the furnace is
 
@@ -16,78 +40,32 @@ All three point the same way, which puts the furnace and the water heater just n
 
 ## What the stair decides
 
-The stair comes down from a door under the loft stair, turns at a landing about five feet off the floor, then lands facing the front wall. The landing and the upper run hang in the middle of the room. With the studio left of the slider, the only full-height path to the stair's foot runs down the right side. A hall aimed straight at the stairs dead-ends against that landing. Every layout here runs its hallway down that right side and puts the hallway to work.
+The stair comes down from a door under the loft stair, turns at a landing about five feet off the floor, then lands facing the front wall. The landing and the upper run hang in the middle of the room. With the studio left of the slider, the only full-height path to the stair's foot runs down the right side. A hall aimed straight at the stairs dead-ends against that landing. The layout runs its hallway down that right side and makes it the putting lane.
 
-## Layout A: the lounge and the center lane
-
-{{layout-a}}
-
-| Room | Size | Square feet | What it holds |
-|---|---|---|---|
-| D&D studio | 10.7 by 18.8 feet | 200 | The 4-by-8 table with eight seats, a 12-foot shelf of books and minis on the garage-side wall, the game PC desk at the far end, the screen on the rear wall, speakers and lights in the corners. No window. |
-| Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
-| Lounge | L-shaped | 132 | Open to the slider: coats, a snack counter, and the tee for the putting lane. |
-| Office | 10.6 by 21.2 feet | 226 | The computer tower in the corner where the rear and far walls meet, the desk along the far wall, the window behind and to the left. Disc golf bags and racks run along the back. |
-| Bath | 4.3 by 8.0 feet | 34 | Shower, a toilet on the rough-in, a sink. |
-| Bin room | 10.8 by 12.1 feet | 132 | Shelves on all four walls. |
-| Bin room two | 10.6 by 9.9 feet | 105 | Shelves on three walls. |
-| Hall | L-shaped | 100 | The center lane and the stair's foot. |
-
-Bins: 72 on four tiers, 90 on five. Putting lane: 29 feet, tee in the lounge, basket at the front wall.
-
-Players come in through the slider, hang their coats, grab a drink and walk ten feet into the studio. The two doors face each other across the lounge, 12 feet apart. Nick crosses between them in a few steps, and the lounge keeps the table's noise off the office. The lane doubles as the hall, so it costs no floor. The utility room backs onto the studio, which is why that side gets the full sound treatment.
-
-## Layout B: the office comes first
-
-{{layout-b}}
-
-| Room | Size | Square feet | What it holds |
-|---|---|---|---|
-| D&D studio | 10.7 by 21.8 feet | 232 | The table, the shelf, the game PC desk, and a couch for players sitting out a turn. |
-| Entry | 11.9 by 5.8 feet | 70 | A bench and coat hooks inside the slider. |
-| Utility | 8.0 by 8.5 feet | 68 | The furnace and the water heater, plus one shelf run. |
-| Office | 10.9 by 31.5 feet | 345 | The full depth of the far wall: the corner desk, disc golf bags and racks, two shelf runs, and the putting lane past the desk. |
-| Bath | 4.3 by 8.0 feet | 34 | Shower, toilet, sink. |
-| Bin room | 10.8 by 9.1 feet | 99 | Shelves on three walls. |
-| Hall | L-shaped | 126 | From the entry down to the stair's foot. |
-
-Bins: 72 on four tiers, 90 on five. Putting lane: 20 feet, inside the office.
-
-Here the office runs the full depth of the far wall, 31 feet from the window to the front, which makes it the biggest room in the basement and puts the disc golf inside it, where Nick first pictured it. The studio gains three feet for a couch. The lane comes up short, because the desk takes the corner where it would start.
-
-## Layout C: the 10-meter lane
-
-{{layout-c}}
-
-| Room | Size | Square feet | What it holds |
-|---|---|---|---|
-| D&D studio | 10.7 by 17.2 feet | 184 | The table, the shelf, the game PC desk. |
-| Entry | 11.9 by 5.7 feet | 67 | Inside the slider. |
-| Utility | 7.8 by 8.7 feet | 68 | The furnace and the water heater. |
-| Office | 10.9 by 25.4 feet | 279 | The corner desk, a throwing net with a 15-foot throw, bags and racks, one shelf run. |
-| Hall | 3.7 by 20.2 feet | 75 | From the entry to the lane. |
-| Lane and hall | L-shaped | 176 | The whole front wall. |
-| Bath | 4.3 by 7.1 feet | 31 | Shower, toilet, sink. |
-| Bin room | 10.8 by 8.4 feet | 91 | Shelves on three walls. |
-
-Bins: 44 on four tiers, 55 on five. Putting lane: 32 feet along the front wall, nearly the full 10 meters of the first putting circle.
-
-The long lane is the draw, along with a throwing net in the office. The stair lands on the lane, so a putt waits for anyone coming down. It holds the fewest bins.
-
-## The studio, in any layout
+## The studio
 
 - Walls: staggered studs with mineral wool batts in every studio wall, and a second layer of drywall on the studio side. Batts run $1.10 to $1.40 for each square foot of wall, about $700 to $850 in a room this size. The extra drywall adds $400 to $600.
 - Door: solid core, with seals around the frame and a sweep at the bottom, $200 to $400.
-- Ceiling: a drop grid with tiles rated to block sound, batts laid on top of the tiles, the microphone and speaker cable above the grid. About $500 to $900. A 20-amp circuit feeds the audio rack and the game PC.
-- Inside: acoustic panels at the walls' first reflection points, $35 to $50 each made at home from mineral wool and fabric. The Philips Hue lights and the speakers go in the corners.
+- Ceiling: a drop grid with tiles rated to block sound, batts laid on top of the tiles, the microphone and speaker cable above the grid. The four speakers mount in the grid at the corners. About $500 to $900. A 20-amp circuit feeds the audio rack and the game PC.
+- Closet: a framed front across the room's full 10.7 feet, 2 feet deep, with two openings of about 4 feet 4 inches. Two pairs of sliding doors close it, with shelves inside for the minis. About $350 to $750.
+- Inside: acoustic panels at the walls' first reflection points, $35 to $50 each made at home from mineral wool and fabric. The Philips Hue lights go in the corners under the speakers.
 - Hired out, the same sound work runs about $3,000 to $6,000. Every figure here is an estimate.
+
+## The wet bar
+
+Water is the easy half: the water heater stands about 11 feet away, one wall over. The drain is the hard half, because the only drain known in the slab is the bath rough-in, about 21 feet away past the stair. Most basement bars solve that with a small pump under the sink, which lifts the water into a line overhead. One runs $350 to $700. If the inspection finds a drain line under the slab near the water heater, a short trench can replace the pump. The plumbing goes on the basement permit either way.
+
+## The bath
+
+The bath grows to 5.3 by 9 feet inside, because the play area freed the space east of it. A standard tub measures 60 by 30 inches. It spans the back wall, and a shower head goes above it. The toilet backs onto the stair-side wall right at the rough-in. A tub drains from one end, while most rough-ins leave a box in the slab for a shower drain. If that box sits somewhere else, a short cut in the slab moves it: about $100 to $300 in a rented saw and concrete, or $500 to $1,500 hired.
 
 ## Bins
 
-A 27-gallon bin is 31 by 20 inches. A shelf 24 inches deep, with 17 between tiers, takes three bins across every 8 feet. Four tiers stand about six feet tall. A fifth tier reaches a little over seven feet and adds a quarter more bins, if the joists clear it.
+A 27-gallon bin is 31 by 20 inches. A shelf 24 inches deep, with 17 between tiers, takes three bins across every 8 feet. Four tiers stand about six feet tall. A fifth tier reaches a little over seven feet and adds a quarter more bins, if the joists clear it. The bin room's four walls hold 44 bins on four tiers, 55 on five.
 
 ## Still to confirm at the inspection
 
 - The furnace, the water heater, the electrical panel, and the beam's posts.
-- The rough-in's exact spot, which sets the bath's wall by the stairs: a toilet needs 15 inches from its center to a wall.
+- The rough-in's exact spot and which drains it holds: a toilet, a sink, and a shower or a tub. A toilet needs 15 inches from its center to a wall.
+- Any drain line or cleanout near the water heater, which decides the wet bar's drain.
 - The window's size. A bedroom needs an opening of 5 square feet with its sill no higher than 44 inches, so the window decides whether the office could ever count as one.

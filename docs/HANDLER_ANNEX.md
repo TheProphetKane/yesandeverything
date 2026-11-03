@@ -158,11 +158,11 @@ from `scripts/stage-site.mjs`, delete the page, the data and the two scripts) wa
 `/house-plan/` is the family's plan for the house under contract: the facts known about it, every
 step from the inspection through the basement rooms with planned dates, and two estimate columns,
 the family's materials and the same job hired out. `/house-plan/basement/` holds the basement
-layouts, drawn to a 1-foot grid. Nick asked for both live beside the house search and linked from
+layout Nick chose, drawn to a 1-foot grid (the other two options came off on 2026-11-02 at his word). Nick asked for both live beside the house search and linked from
 it, and the site names him Nick, never by his gamer tag, because the family reads it. The sources are
 `docs/HOUSE-PLAN-45-AUTUMN-CREST.md` and `docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md`, which the prose gate
 measures; `python scripts/build-house-plan.py` writes both pages, and `--check` exits 1 when either
-is stale. `python scripts/draw-basement-layouts.py` draws the layout pictures from the fixed stair,
+is stale. `python scripts/draw-basement-layouts.py` draws the layout picture from the fixed stair,
 rough-in, slider, window and the likely furnace spot. Never edit a page by hand. The floor plan
 sheet beside the plan is a committed copy of the one built in `X:\PortfolioOps\docs`. The Inkarnate
 basement map stays off the site by Nick's ruling of 2026-11-02: it is for working out ideas only.
