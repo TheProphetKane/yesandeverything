@@ -166,7 +166,10 @@ is stale. `python scripts/draw-basement-layouts.py` draws the layout picture fro
 rough-in, slider, window and the likely furnace spot. Never edit a page by hand. The builder totals every table with a family column and a hired column and
 fills the plan's {{totals}} conclusion, so a cost cell must open on that row's total: the first dollar
 figure counts and the rest is detail, while a figure marked a year, if needed, credit or closing costs is
-left out of the totals and listed under them. A cell that opens on a price per unit stops the build,
+left out of the totals and listed under them. Every cost row also opens one cell on a mark, **Needed.**, **Wanted.** or **When it fails.**, by Nick's
+budget rule of 2026-11-02 (save wherever the result holds up): the totals keep needed and wanted apart,
+and when-it-fails rows stay out of them as a reserve. A cost row with no mark stops the build. A cell
+that opens on a price per unit stops the build too,
 and so does a date whose weekday is wrong or whose "Move-in + N days" offset disagrees with the anchor
 rows (Contract day, Closing day, Move-in day): move the closing and every derived date must move with it.
 The floor plan
