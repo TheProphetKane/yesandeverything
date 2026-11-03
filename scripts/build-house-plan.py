@@ -105,6 +105,10 @@ th { text-align: left; font-family: var(--font-data); font-size: 0.76rem; letter
 td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
 tr.total td { background: var(--raise) !important; border-top: 2px solid var(--sea); font-weight: 700; }
+.tag { display: inline-block; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 0.05rem 0.55rem; margin-right: 0.4rem; vertical-align: 0.1em; }
+.tag.need { background: var(--pass-soft); color: var(--pass); }
+.tag.want { background: var(--violet-soft); color: var(--violet); }
+.tag.fail { background: var(--raise); color: var(--muted); border: 1px solid var(--line); }
 tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
 td.c-when, td.c-date, td.c-item, td.c-project { font-weight: 700; }
 td.c-when, td.c-date { white-space: nowrap; }
@@ -156,6 +160,7 @@ COLUMN_CLASS = [
     (r"^when$", "when"), (r"^date$", "date"), (r"^what$", "what"), (r"^who$", "who"),
     (r"^family", "family"), (r"^hired", "hired"), (r"^item$", "item"), (r"^fact$", "fact"),
     (r"^source$", "source"), (r"^project$", "project"), (r"^when and why$", "why"),
+    (r"family$", "family"), (r"hired$", "hired"),
 ]
 
 
@@ -185,7 +190,8 @@ def label_table(match):
                 return cell.group(0)
             return f'<td class="{column_class(heads[i])}" data-label="{html.escape(heads[i], quote=True)}"'
         row_html = re.sub(r"<td(?=[\s>])", label_cell, row.group(0))
-        if "<strong>Section total</strong>" in row_html or re.search(r"<td[^>]*><strong>", row_html[:400]):
+        first = re.search(r"<td[^>]*>(.*?)</td>", row_html, re.S)
+        if first and first.group(1).startswith("<strong>"):
             row_html = row_html.replace("<tr>", '<tr class="total">', 1)
         return row_html
 
@@ -331,13 +337,18 @@ def check_dates(md):
         sys.exit("dates that do not match the calendar or their offsets:\n  " + "\n  ".join(wrong))
 
 
+TAGS = {"Needed": "need", "Wanted": "want", "When it fails": "fail"}
+TAG = re.compile(r"^\*\*(Needed|Wanted|When it fails)\.\*\*")
+
+
 def add_totals(md):
-    """Give every table with a family column and a hired column a section total row, and fill the
-    {{totals}} marker with the conclusion: each section's totals, the subtotals, and every figure the
-    totals set aside. The family total takes the family figure for each job the family does and the
-    hired figure for the rest; the hired total hires every job."""
+    """Give every table with a family column and a hired column its section totals, needed and wanted
+    apart, and fill the {{totals}} and {{headline}} markers. Each cost row carries a mark at the head of
+    one cell: Needed, Wanted or When it fails. When-it-fails rows stay out of every total and are listed
+    as a reserve. The family figure takes the family's price for each job the family does and the hired
+    price for the rest; the hired figure hires every job."""
     lines = md.split("\n")
-    out, sections, aside = [], [], {}
+    out, sections, aside, reserve = [], [], {}, []
     heading = ""
     i = 0
     while i < len(lines):
@@ -360,61 +371,80 @@ def add_totals(md):
             i = j
             continue
         who_col = next((k for k, h in enumerate(head) if h.lower() == "who"), None)
-        totals = [0.0, 0.0, 0.0, 0.0]
+        totals = {"need": [0.0] * 4, "want": [0.0] * 4}
         for row in rows:
             fam, hired = figure(row[fam_col], True), figure(row[hired_col], True)
+            tag = next((TAGS[m.group(1)] for c in row if (m := TAG.match(c))), None)
+            if (fam or hired) and not tag:
+                sys.exit(f"a cost row carries no Needed, Wanted or When it fails mark: {row[0]}")
+            if tag == "fail":
+                pick = hired or fam
+                if pick:
+                    reserve.append(f"{row[0]}: {span(pick[0], pick[1])} hired")
+                continue
             for cell in (row[fam_col], row[hired_col]):
                 for clause in re.split(r";|\.\s", cell):
                     found = figure(clause)
                     if found and found[2]:
                         aside.setdefault(found[2], {}).setdefault(found[3].lower(), found[3])
             family_does = who_col is None or any(name in row[who_col] for name in FAMILY)
+            bucket = totals[tag or "need"]
             for slot, pick in ((0, fam if (fam and family_does) else hired), (2, hired or fam)):
                 if pick and not pick[2]:
-                    totals[slot] += pick[0]
-                    totals[slot + 1] += pick[1]
-        total_row = [""] * len(head)
-        total_row[0] = "**Section total**"
-        total_row[fam_col] = f"**{span(totals[0], totals[1])}**"
-        total_row[hired_col] = f"**{span(totals[2], totals[3])}**"
-        out.append("| " + " | ".join(total_row) + " |")
+                    bucket[slot] += pick[0]
+                    bucket[slot + 1] += pick[1]
+
+        def total_row(label, t):
+            row = [""] * len(head)
+            row[0] = f"**{label}**"
+            row[fam_col] = f"**{span(t[0], t[1])}**"
+            row[hired_col] = f"**{span(t[2], t[3])}**"
+            return "| " + " | ".join(row) + " |"
+
+        out.append(total_row("Section total, needed", totals["need"]))
+        if any(totals["want"]):
+            out.append(total_row("Section total, wanted", totals["want"]))
         sections.append((heading, totals))
         i = j
     md = "\n".join(out)
-    if "{{totals}}" not in md:
-        return md
 
-    def total_of(picked):
-        return [sum(t[k] for _, t in picked) for k in range(4)]
+    def total_of(picked, kind):
+        return [sum(t[kind][k] for _, t in picked) for k in range(4)]
 
-    table = ["| Section | Family does what it can | Hired out, all of it |", "|---|---|---|"]
-    for name, t in sections:
-        table.append(f"| {name} | {span(t[0], t[1])} | {span(t[2], t[3])} |")
+    def up(value):
+        return dollars(value * (1 + CUSHION), True)
+
     near = [s for s in sections if not s[0].lower().startswith("long term")]
     later = [s for s in sections if s[0].lower().startswith("long term")]
-    before = [s for s in near if s[0].lower().startswith(("before closing", "closing to move-in"))]
-    for name, picked in (("Cash out before move-in", before), ("Contract day to the last basement room", near),
-                         ("Everything on this page, long term included", near + later)):
-        t = total_of(picked)
-        table.append(f"| **{name}** | **{span(t[0], t[1])}** | **{span(t[2], t[3])}** |")
-    table += ["", f"Budget with a {CUSHION:.0%} cushion on each high end, the margin to plan on before work starts:", "",
-              "| Span | Family does what it can | Hired out, all of it |", "|---|---|---|"]
-    for name, picked in (("Cash out before move-in", before), ("Contract day to the last basement room", near),
-                         ("Everything on this page, long term included", near + later)):
-        t = total_of(picked)
-        table.append(f"| {name} | up to {dollars(t[1] * (1 + CUSHION), True)} | up to {dollars(t[3] * (1 + CUSHION), True)} |")
-    t = total_of(near)
-    headline = (f"**Estimated cost, contract day to the last basement room:** {span(t[0], t[1])} with the family doing "
-                f"the work it can, or {span(t[2], t[3])} hired out. Plan on up to {dollars(t[1] * (1 + CUSHION), True)} "
-                f"or {dollars(t[3] * (1 + CUSHION), True)} with a {CUSHION:.0%} cushion. The long-term list comes on top.")
-    md = md.replace("{{headline}}", headline)
+    need, want_now, want_later = total_of(sections, "need"), total_of(near, "want"), total_of(later, "want")
+
+    table = ["| Section | Needed, family | Needed, hired | Wanted, family | Wanted, hired |", "|---|---|---|---|---|"]
+    for name, t in sections:
+        table.append(f"| {name} | {span(t['need'][0], t['need'][1])} | {span(t['need'][2], t['need'][3])} | "
+                     f"{span(t['want'][0], t['want'][1])} | {span(t['want'][2], t['want'][3])} |")
+    table.append(f"| **All sections** | **{span(need[0], need[1])}** | **{span(need[2], need[3])}** | "
+                 f"**{span(want_now[0] + want_later[0], want_now[1] + want_later[1])}** | "
+                 f"**{span(want_now[2] + want_later[2], want_now[3] + want_later[3])}** |")
+    table += ["", f"With a {CUSHION:.0%} cushion on each high end, the figures to plan on:", "",
+              "| Budget | Family does what it can | Hired out, all of it |", "|---|---|---|",
+              f"| Needed work | up to {up(need[1])} | up to {up(need[3])} |",
+              f"| Needed work and this year's wants | up to {up(need[1] + want_now[1])} | up to {up(need[3] + want_now[3])} |"]
     notes = []
     for _, name in SET_ASIDE:
         if name in aside:
             items = "; ".join(v[0].upper() + v[1:] for v in aside[name].values())
             notes.append(f"- {name}: {items}.")
-    block = "\n".join(table) + "\n\nLeft out of every total above:\n\n" + "\n".join(notes)
-    return md.replace("{{totals}}", block)
+    block = "\n".join(table)
+    if reserve:
+        block += "\n\nNot budgeted, because each waits for the old one to fail: " + "; ".join(reserve) + "."
+    block += "\n\nLeft out of every total above:\n\n" + "\n".join(notes)
+    md = md.replace("{{totals}}", block)
+    headline = (f"**Needed work:** {span(need[0], need[1])} with the family doing the work it can, or "
+                f"{span(need[2], need[3])} hired out, and up to {up(need[1])} with a {CUSHION:.0%} cushion. "
+                f"**This year's wants on top**, mostly the basement: {span(want_now[0], want_now[1])} for the family, "
+                f"{span(want_now[2], want_now[3])} hired. The windows, the furnace, the water heater and the roof "
+                f"are not budgeted; each comes when the old one fails.")
+    return md.replace("{{headline}}", headline)
 
 
 def build(page):
@@ -428,6 +458,8 @@ def build(page):
     body_md = add_totals(body_md)
     body = markdown.markdown(body_md, extensions=["tables", "toc"], output_format="html")
     body = re.sub(r"<table>.*?</table>", label_table, body, flags=re.S)
+    for word, kind in TAGS.items():
+        body = body.replace(f"<strong>{word}.</strong>", f'<span class="tag {kind}">{word}</span>')
     if "{{floor-plans}}" in text:
         body = body.replace("<p>{{floor-plans}}</p>", gallery())
     body = body.replace("<p>{{layout}}</p>", layout_figure())

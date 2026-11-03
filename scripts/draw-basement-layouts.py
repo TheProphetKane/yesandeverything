@@ -234,8 +234,8 @@ class Plan:
 
 def studio(p):
     """The D&D studio. Across from the door, against the garage-side wall: the game PC desk (3.5 feet)
-    and the rack. Cube shelves of books on the rear wall to the right, the wet bar and fridge on the
-    door's wall to the left. The table sits toward the closet of minis that fills the bin room wall,
+    and the rack. Cube shelves of books on the rear wall to the right, the bar and fridge on the
+    door's wall to the left, dry for now. The table sits toward the closet of minis that fills the bin room wall,
     with about 2.5 feet clear at its far end. Speakers on the ceiling in the corners."""
     cx = (X0 + 11.4) / 2
     p.thing(X0 + 0.02, 1.7, 2.75, 5.2, "", "#c4b5fd", "#5b21b6", 8)
@@ -247,8 +247,7 @@ def studio(p):
         x = p.cubes(x, Y0 + 0.05, cols) + 0.15
     p.note(6.5, 2.55, "cube shelves: books", 8, "#4c1d95")
     p.thing(9.4, 4.6, 11.38, 7.6, "", "#ede9fe", "#5b21b6", 8)
-    p.over.append(f'<circle cx="{X(10.4):.1f}" cy="{Y(5.1):.1f}" r="{0.42 * S:.1f}" fill="#ffffff" stroke="#5b21b6" stroke-width="1.2"/>')
-    p.note(10.4, 5.95, "wet bar", 8, "#4c1d95")
+    p.note(10.4, 5.5, "bar", 9, "#4c1d95")
     p.thing(9.5, 6.2, 11.3, 7.5, "fridge", "#ffffff", "#5b21b6", 7)
     p.game_table(cx, 7.05)
     # the closet across the whole bin room wall, 2 feet deep, two openings with sliding doors

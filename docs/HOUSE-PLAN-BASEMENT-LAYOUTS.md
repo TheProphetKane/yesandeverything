@@ -1,6 +1,6 @@
 # The basement layout for 45 Autumn Crest Ct
 
-The basement is a plain rectangle, 36 by 33 feet outside its 9-inch poured walls, which leaves a floor of about 34 by 31. This is the layout Nick chose. On November 2 he reworked it: a smaller office, a play area for the kids where the second bin room was, a closet and a wet bar in the studio, his own table, a bigger bath with a tub, and the putting lane turned around.
+The basement is a plain rectangle, 36 by 33 feet outside its 9-inch poured walls, which leaves a floor of about 34 by 31. This is the layout Nick chose. On November 2 he reworked it: a smaller office, a play area for the kids where the second bin room was, a closet and a bar in the studio, his own table, a bigger bath with a tub, and the putting lane turned around.
 
 The stair keeps its place, with the bath rough-in at its foot. The slider and the one window sit in the rear wall. Three pieces of evidence below put the furnace and the water heater just north of the stair landing, so the layout gives them a room there, and the inspection confirms the spot. If it moves, so does the utility room.
 
@@ -8,7 +8,7 @@ The stair keeps its place, with the bath rough-in at its foot. The slider and th
 
 | Room | Size | Square feet | What it holds |
 |---|---|---|---|
-| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right. The two outer ones stand one cube wide and three tall; the middle one is three wide by two tall, a cube lower. The wet bar and its mini fridge stand left of the door. Nick's table sits toward the closet, about 5 feet 10 by 7 feet 7 with its corners cut, built around a 42-inch TV set flat in its middle. It seats six. Speakers hang in all four corners. |
+| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right. The two outer ones stand one cube wide and three tall; the middle one is three wide by two tall, a cube lower. The bar and its mini fridge stand left of the door, dry for now. Nick's table sits toward the closet, about 5 feet 10 by 7 feet 7 with its corners cut, built around a 42-inch TV set flat in its middle. It seats six. Speakers hang in all four corners. |
 | Studio closet | 10.7 by 2 feet | Inside the studio | The minis, across the whole wall the bin room shares, behind two pairs of sliding doors. |
 | Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
 | Lounge | L-shaped | 132 | The couch, with an end table at its slider end and a round table cut like a gear, 3 feet across, in front of it. The putting basket stands against the rear wall, a net behind it. |
@@ -24,7 +24,7 @@ Bins: 44 on four tiers, 55 on five. Putting lane: 29 feet. The tee sits near the
 
 Players come in through the slider to the couch, its end table and the gear table in front of it. The studio door is a few steps to the left, and the office door sits down the lane across from the utility room.
 
-Inside the studio, the game PC desk faces the door from the far wall. The wet bar is the first thing on the left. Nick's table sits toward the closet. The table's size comes from its TV: about 2 feet of wood frames the screen, a little more at the ends. That leaves about 2 feet 5 inches clear on each long side, 2 and a half feet at the closet end. That keeps an open stretch between the desk and the table, though the long sides are snug: chairs there tuck in to let someone pass. The utility room backs onto the studio, so that side gets the full sound treatment.
+Inside the studio, the game PC desk faces the door from the far wall. The bar is the first thing on the left. Nick's table sits toward the closet. The table's size comes from its TV: about 2 feet of wood frames the screen, a little more at the ends. That leaves about 2 feet 5 inches clear on each long side, 2 and a half feet at the closet end. That keeps an open stretch between the desk and the table, though the long sides are snug: chairs there tuck in to let someone pass. The utility room backs onto the studio, so that side gets the full sound treatment.
 
 The lane doubles as the hall. It costs no floor. Players putt toward the lounge, which is why the office door moved down the wall: a missed putt now hits the net on the rear wall instead of flying through an open office door. The play area sits behind the putter, out of the line. Its half wall keeps the kids in. Anyone walking past still sees over it, and a stray disc stops there.
 
@@ -44,16 +44,16 @@ The stair comes down from a door under the loft stair, turns at a landing about 
 
 ## The studio
 
-- Walls: staggered studs with mineral wool batts in every studio wall, and a second layer of drywall on the studio side. Batts run $1.10 to $1.40 for each square foot of wall, about $700 to $850 in a room this size. The extra drywall adds $400 to $600.
+- Walls: staggered studs with mineral wool batts in every studio wall, and one layer of drywall to start. Batts run $1.10 to $1.40 for each square foot of wall, about $700 to $850 in a room this size. A second layer adds $400 to $600 later if the noise carries.
 - Door: solid core, with seals around the frame and a sweep at the bottom, $200 to $400.
 - Ceiling: a drop grid with tiles rated to block sound, batts laid on top of the tiles, the microphone and speaker cable above the grid. The four speakers mount in the grid at the corners. About $500 to $900. A 20-amp circuit feeds the audio rack and the game PC.
 - Closet: a framed front across the room's full 10.7 feet, 2 feet deep, with two openings of about 4 feet 4 inches. Two pairs of sliding doors close it, with shelves inside for the minis. About $350 to $750.
 - Inside: acoustic panels at the walls' first reflection points, $35 to $50 each made at home from mineral wool and fabric. The Philips Hue lights go in the corners under the speakers.
-- What it adds: over the basement rate of $13 to $17 a square foot that every finished room costs, the sound work adds about $1,300 to $2,000 in materials. Hired out, the same sound work runs about $3,000 to $6,000. Every figure here is an estimate.
+- What it adds: over the basement rate of $13 to $17 a square foot that every finished room costs, the sound work adds about $900 to $1,400 in materials. Hired out, the same sound work runs about $3,000 to $6,000. Every figure here is an estimate.
 
-## The wet bar
+## The bar
 
-Water is the easy half: the water heater stands about 11 feet away, one wall over. The drain is the hard half, because the only drain known in the slab is the bath rough-in, about 21 feet away past the stair. Most basement bars solve that with a small pump under the sink, which lifts the water into a line overhead. One runs $350 to $700. If the inspection finds a drain line under the slab near the water heater, a short trench can replace the pump. The plumbing goes on the basement permit either way.
+The bar starts dry: a cabinet with a counter and the mini fridge, with a capped water line left in the wall. A sink comes later if the table wants one. Water is the easy half: the water heater stands about 11 feet away, one wall over. The drain is the hard half, because the only drain known in the slab is the bath rough-in, about 21 feet away past the stair. Most basement bars solve that with a small pump under the sink, which lifts the water into a line overhead. One runs $350 to $700. If the inspection finds a drain line under the slab near the water heater, a short trench can replace the pump. The plumbing goes on the basement permit either way.
 
 ## The bath
 
@@ -67,5 +67,5 @@ A 27-gallon bin is 31 by 20 inches. A shelf 24 inches deep, with 17 between tier
 
 - The furnace, the water heater, the electrical panel, and the beam's posts.
 - The rough-in's exact spot and which drains it holds: a toilet, a sink, and a shower or a tub. A toilet needs 15 inches from its center to a wall.
-- Any drain line or cleanout near the water heater, which decides the wet bar's drain.
+- Any drain line or cleanout near the water heater, which decides how the bar's sink would drain if it gets one.
 - The window's size. A bedroom needs an opening of 5 square feet with its sill no higher than 44 inches, so the window decides whether the office could ever count as one.
