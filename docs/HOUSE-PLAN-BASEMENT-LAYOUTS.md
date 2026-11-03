@@ -13,7 +13,7 @@ The stair keeps its place, with the bath rough-in at its foot. The slider and th
 | Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
 | Lounge | L-shaped | 132 | The couch, with an end table at its slider end and a round table cut like a gear, 3 feet across, in front of it. The putting basket stands against the rear wall, a net behind it. |
 | Office | 10.6 by 14.8 feet | 157 | The computer tower in the corner where the rear and far walls meet, the desk along the far wall, the window behind and to the left. Disc golf bags and racks hang on the wall the play area shares. The door sits partway down, across from the utility room. |
-| Play area | 11.1 by 16.4 feet | 181 | The kids' second lounge, open to the hall, with a play rug in the middle and toy shelves along the far wall. |
+| Play area | 11.1 by 16.4 feet | 181 | The kids' second lounge, with a play rug in the middle and toy shelves along the far wall. A half wall about 42 inches tall closes its hall side, with a 3-foot gate partway down. |
 | Bath | 5.3 by 9 feet | 48 | A 60-inch tub and shower across the back, the toilet on the rough-in, the sink across from it. |
 | Bin room | 10.8 by 12.1 feet | 132 | Shelves on all four walls. |
 | Hall | L-shaped | 92 | The tee and the stair's foot. |
@@ -26,11 +26,11 @@ Players come in through the slider to the couch, its end table and the gear tabl
 
 Inside the studio, the game PC desk faces the door from the far wall. The wet bar is the first thing on the left. Nick's table sits toward the closet. The table's size comes from its TV: about 2 feet of wood frames the screen, a little more at the ends. That leaves about 2 feet 5 inches clear on each long side, 2 and a half feet at the closet end. That keeps an open stretch between the desk and the table, though the long sides are snug: chairs there tuck in to let someone pass. The utility room backs onto the studio, so that side gets the full sound treatment.
 
-The lane doubles as the hall, so it costs no floor. Players putt toward the lounge, which is why the office door moved down the wall: a missed putt now hits the net on the rear wall instead of flying through an open office door. The play area sits behind the putter, out of the line.
+The lane doubles as the hall. It costs no floor. Players putt toward the lounge, which is why the office door moved down the wall: a missed putt now hits the net on the rear wall instead of flying through an open office door. The play area sits behind the putter, out of the line. Its half wall keeps the kids in. Anyone walking past still sees over it, and a stray disc stops there.
 
 ## Where the furnace is
 
-No photo of this basement exists, so three other sources place it.
+No photo of this basement exists. Three other sources place it.
 
 - The furnace flue. A metal flue cap leaves the roof at the ridge, about 15 feet in from the garage-side wall, in the rear listing photo. The twin next door, the same plan built the other way round, shows its flue in the mirror spot. A flue climbs nearly straight up from the furnace, and this one lands over the north side of the stair.
 - The twin's basement. Its 2024 listing photographed its unfinished basement. Its furnace stands beside the main beam, with a steel post a few feet along it. The duct trunks run along the beam, and the water heater shares the flue. In a house 33 feet deep, that beam runs the long way at about the middle, which here is the north edge of the stair.

@@ -333,6 +333,12 @@ def layout():
     p.thing(25.6, 20.6, 32.6, 29.6, "play rug", "#fdf2f8", "#db2777", 10, 10)
     p.thing(33.6, 18.6, 35.2, 29.6, "", "#ffffff", "#be185d", 8)
     p.vnote(34.4, 24.1, "toy shelves", 9, "#9d174d")
+    # a half wall about 42 inches high along the hall side, with a 3-foot gate, so the kids stay in view
+    for y0, y1 in ((15.9, 22.0), (25.0, Y1)):
+        p.over.append(f'<rect x="{X(24.2):.1f}" y="{Y(y0):.1f}" width="{0.35 * S:.1f}" height="{(y1 - y0) * S:.1f}" fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>')
+    p.door(24.375, 25.0, 3.0, 0, -90)
+    p.vnote(24.95, 18.9, "half wall, 42 in", 8, "#475569")
+    p.note(25.0, 23.7, "gate", 8, "#475569", "start")
     bath(p)
     p.room("Bin room", "storage", [(X0, 20.1, 11.6, Y1)], (6.2, 26.3))
     p.wall(11.6, 20.1, 12.0, 26.8)
