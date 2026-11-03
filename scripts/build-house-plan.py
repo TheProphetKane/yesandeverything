@@ -6,14 +6,18 @@
 
 Each page's source is a markdown file in docs/ that the prose gate measures: docs/HOUSE-PLAN-45-AUTUMN-CREST.md
 for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layout, docs/HOUSE-PLAN-FLOORS.md for the
-main and upper floors. Edit the source, build, ship;
-never edit a page by hand. Tables become cards on a phone, each cell labeled with its column. A line holding
-{{floor-plans}} becomes the plan's picture gallery; a line holding {{layout}} becomes the basement
-layout's drawing, which scripts/draw-basement-layouts.py writes, and {{main-floor}} and {{upper-floor}}
-become the floor drawings scripts/draw-house-floors.py writes. Every table with a family column and a
-hired column gets a section total row, and a line holding {{totals}} becomes the conclusion: the rule is
-that the first dollar figure in a cost cell is that row's total, and everything after it is detail. Pictures open in a pop-out over the page,
-or full size in a new tab without scripts.
+main and upper floors. Edit the source, build, ship; never edit a page by hand.
+
+A table with a Job column, a Family column and a Hired column is a list of jobs: each row becomes a card
+(the mark and the short name, both prices, the date, who, what it takes, then the cost detail), and the
+section closes on its totals, needed, wanted and the two together. A cost cell opens on that row's figure
+and the words that qualify it; a colon or a semicolon starts the detail. A line holding {{headline}}
+becomes the budget at a glance, and a line holding {{summary}} becomes the one list of every job with its
+two prices and the total. Any other table becomes cards on a phone, each cell labeled with its column.
+A line holding {{floor-plans}} becomes the plan's picture gallery; a line holding {{layout}} becomes the
+basement layout's drawing, which scripts/draw-basement-layouts.py writes, and {{main-floor}} and
+{{upper-floor}} become the floor drawings scripts/draw-house-floors.py writes. Pictures open in a pop-out
+over the page, or full size in a new tab without scripts.
 """
 
 import datetime
@@ -84,7 +88,7 @@ STYLE = """
 :root {
   color-scheme: dark;
   --bg: #0b1622; --surface: #122233; --raise: #182c42; --ink: #e8f0f8; --muted: #9fb3c8;
-  --line: #24405a; --sea: #4cc3e0; --sea-soft: #12384a; --rose: #ff6f9c;
+  --line: #24405a; --sea: #4cc3e0; --sea-soft: #12384a; --rose: #ff6f9c; --rose-soft: #3d1a2b;
   --pass: #6fd68f; --pass-soft: #163a24; --violet: #b49cff; --violet-soft: #2a2347;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
@@ -93,21 +97,22 @@ STYLE = """
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.55; }
-.wrap { max-width: 1560px; margin: 0 auto; padding: 1.75rem max(16px, 2.5vw) 4rem; display: grid; gap: 1.6rem; }
-h1, h2 { font-family: var(--font-display); margin: 0; line-height: 1.15; text-wrap: balance; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 1.75rem max(16px, 2.5vw) 4rem; display: grid; gap: 1.4rem; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.15; text-wrap: balance; }
 h1 { font-size: clamp(1.9rem, 5vw, 2.9rem); font-weight: 800; }
-h2 { font-size: 1.4rem; font-weight: 800; margin-top: 0.8rem; padding-bottom: 0.35rem; border-bottom: 2px solid var(--line); }
-p { margin: 0; max-width: 88ch; }
+h2 { font-size: 1.45rem; font-weight: 800; margin-top: 1.4rem; padding-bottom: 0.35rem; border-bottom: 2px solid var(--line); scroll-margin-top: 1rem; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p { margin: 0; max-width: 80ch; }
 a { color: var(--sea); text-underline-offset: 3px; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--rose); outline-offset: 2px; border-radius: 6px; }
 header { display: grid; gap: 0.55rem; }
 .crumb, .eyebrow { font-family: var(--font-data); font-size: 0.82rem; }
 .eyebrow { letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .status { background: var(--pass-soft); border-left: 6px solid var(--pass); border-radius: 0 12px 12px 0; padding: 0.8rem 1.1rem; max-width: none; }
-.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 1rem; }
 .plan-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; }
 .plan-card a.shot { display: block; background: #fff; line-height: 0; cursor: zoom-in; }
-.plan-card img { width: 100%; height: 240px; object-fit: contain; background: #fff; }
+.plan-card img { width: 100%; height: 220px; object-fit: contain; background: #fff; }
 .plan-card .words { padding: 0.8rem 1rem 1rem; display: grid; gap: 0.35rem; }
 .plan-card b { font-family: var(--font-display); font-size: 1.05rem; }
 .plan-card small { color: var(--muted); font-size: 0.9rem; }
@@ -120,24 +125,56 @@ figure.layout figcaption { background: var(--surface); padding: 0.5rem 0.9rem; f
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 th { text-align: left; font-family: var(--font-data); font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); background: var(--raise); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: bottom; }
-td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
 tr.total td { background: var(--raise) !important; border-top: 2px solid var(--sea); font-weight: 700; }
-.tag { display: inline-block; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 0.05rem 0.55rem; margin-right: 0.4rem; vertical-align: 0.1em; }
-.tag.need { background: var(--pass-soft); color: var(--pass); }
+td.c-item { font-weight: 700; }
+td.c-source { color: var(--muted); font-size: 0.88rem; min-width: 12rem; }
+table.t-facts td.c-fact { min-width: 24rem; }
+.tag { display: inline-block; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 0.05rem 0.55rem; margin-right: 0.45rem; vertical-align: 0.15em; white-space: nowrap; }
+.tag.need { background: var(--rose-soft); color: var(--rose); }
 .tag.want { background: var(--violet-soft); color: var(--violet); }
 .tag.fail { background: var(--raise); color: var(--muted); border: 1px solid var(--line); }
-tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
-td.c-when, td.c-date, td.c-item, td.c-project { font-weight: 700; }
-td.c-when, td.c-date { white-space: nowrap; }
-td.c-date { color: var(--sea); font-family: var(--font-data); font-size: 0.86rem; white-space: normal; min-width: 9rem; }
-td.c-family, td.c-hired { font-variant-numeric: tabular-nums; min-width: 11rem; }
-td.c-family { color: var(--pass); }
-td.c-hired { color: var(--violet); }
-td.c-source { color: var(--muted); font-size: 0.88rem; min-width: 12rem; }
-table.t-plan td.c-what { min-width: 26rem; }
-table.t-facts td.c-fact { min-width: 30rem; }
-ul { margin: 0; padding-left: 1.2rem; max-width: 88ch; color: var(--muted); }
+.tag.all { background: var(--sea-soft); color: var(--sea); }
+ul { margin: 0; padding-left: 1.2rem; max-width: 80ch; display: grid; gap: 0.35rem; }
+ul.notes { color: var(--muted); }
+.glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 0.8rem; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--line); border-radius: 12px; padding: 0.8rem 1rem 0.9rem; display: grid; gap: 0.3rem; }
+.tile.need { border-top-color: var(--rose); }
+.tile.want { border-top-color: var(--violet); }
+.tile.all { border-top-color: var(--sea); background: var(--raise); }
+.tile .row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.8rem; font-variant-numeric: tabular-nums; }
+.tile .row span { font-family: var(--font-data); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.tile .row b { font-size: 1.08rem; }
+.tile .row.fam b { color: var(--pass); }
+.tile .row.hire b { color: var(--sea); }
+.glance-note { color: var(--muted); font-size: 0.92rem; }
+.jobs { display: grid; gap: 0.7rem; }
+.job { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--line); border-radius: 10px; padding: 0.8rem 1.05rem 0.9rem; display: grid; gap: 0.4rem; scroll-margin-top: 1rem; }
+.job.need { border-left-color: var(--rose); }
+.job.want { border-left-color: var(--violet); }
+.job:target { outline: 3px solid var(--sea); outline-offset: 2px; }
+.job-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 0.5rem 1rem; }
+.prices { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.price { display: grid; border-radius: 8px; padding: 0.25rem 0.65rem; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.95rem; min-width: 8.5rem; }
+.price small { font-family: var(--font-data); font-size: 0.66rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; }
+.price em { font-style: normal; font-weight: 400; font-size: 0.78rem; opacity: 0.85; }
+.price.fam { background: var(--pass-soft); color: var(--pass); }
+.price.hire { background: var(--sea-soft); color: var(--sea); }
+.price.aside { background: var(--raise); color: var(--muted); border: 1px dashed var(--line); }
+.when { font-family: var(--font-data); font-size: 0.84rem; color: var(--ink); }
+.when .meta { color: var(--muted); }
+.job .what { max-width: 90ch; }
+.job .detail { color: var(--muted); font-size: 0.9rem; max-width: 90ch; }
+.job .detail b { font-family: var(--font-data); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; }
+table.t-total, table.t-summary { font-variant-numeric: tabular-nums; }
+table.t-total td:not(:first-child), table.t-summary td:not(:first-child) { white-space: nowrap; }
+table.t-total td:nth-child(2), table.t-summary td:nth-child(2) { color: var(--pass); }
+table.t-total td:nth-child(3), table.t-summary td:nth-child(3) { color: var(--sea); }
+table.t-summary tr.group th { background: var(--bg); padding-top: 0.9rem; }
+table.t-summary td small { display: block; color: var(--muted); font-size: 0.76rem; font-weight: 400; }
+.section-note { color: var(--muted); font-size: 0.9rem; }
 dialog { border: 0; padding: 0; background: var(--surface); color: var(--ink); border-radius: 12px; width: min(96vw, 1800px); max-height: 94vh; }
 dialog::backdrop { background: rgba(3, 8, 14, 0.82); }
 dialog .bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line); font-family: var(--font-data); font-size: 0.85rem; }
@@ -146,14 +183,19 @@ dialog .pic { overflow: auto; max-height: calc(94vh - 3.2rem); background: #fff;
 dialog .pic img { display: block; width: 100%; height: auto; }
 dialog .pic.zoom img { width: auto; max-width: none; }
 @media (max-width: 860px) {
-  .table-wrap { border: 0; background: none; overflow: visible; }
-  table, tbody, tr, td { display: block; width: 100%; }
-  thead { display: none; }
-  tbody tr { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 0.8rem; padding: 0.35rem 0; }
-  tbody tr:nth-child(even) td { background: none; }
-  td { display: grid; grid-template-columns: 5.8rem 1fr; gap: 0.6rem; border-bottom: 0; padding: 0.35rem 0.9rem; min-width: 0 !important; white-space: normal !important; }
-  td::before { content: attr(data-label); font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding-top: 0.2rem; }
-  td:empty { display: none; }
+  .table-wrap.cards { border: 0; background: none; overflow: visible; }
+  .cards table, .cards tbody, .cards tr, .cards td { display: block; width: 100%; }
+  .cards thead { display: none; }
+  .cards tbody tr { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 0.8rem; padding: 0.35rem 0; }
+  .cards tbody tr:nth-child(even) td { background: none; }
+  .cards td { display: grid; grid-template-columns: 5.8rem 1fr; gap: 0.6rem; border-bottom: 0; padding: 0.35rem 0.9rem; min-width: 0 !important; white-space: normal !important; }
+  .cards td::before { content: attr(data-label); font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding-top: 0.2rem; }
+  .cards td:empty { display: none; }
+  table.t-total, table.t-summary { font-size: 0.86rem; }
+  table.t-total td, table.t-total th, table.t-summary td, table.t-summary th { padding: 0.5rem 0.5rem; }
+  table.t-total td:not(:first-child), table.t-summary td:not(:first-child) { white-space: normal; }
+  .price { min-width: 0; flex: 1 1 8rem; }
+  .prices { width: 100%; }
   .plan-card img { height: 200px; }
 }
 """
@@ -197,7 +239,7 @@ def column_class(label):
 def label_table(match):
     table = match.group(0)
     heads = [text_of(h) for h in re.findall(r"<th[^>]*>(.*?)</th>", table, re.S)]
-    kind = "t-plan" if any(h.lower() == "date" for h in heads) else ("t-facts" if "Fact" in heads else "t-long")
+    kind = "t-facts" if "Fact" in heads else "t-long"
 
     def label_row(row):
         cells = iter(range(len(heads)))
@@ -207,17 +249,13 @@ def label_table(match):
             if i is None:
                 return cell.group(0)
             return f'<td class="{column_class(heads[i])}" data-label="{html.escape(heads[i], quote=True)}"'
-        row_html = re.sub(r"<td(?=[\s>])", label_cell, row.group(0))
-        first = re.search(r"<td[^>]*>(.*?)</td>", row_html, re.S)
-        if first and first.group(1).startswith("<strong>"):
-            row_html = row_html.replace("<tr>", '<tr class="total">', 1)
-        return row_html
+        return re.sub(r"<td(?=[\s>])", label_cell, row.group(0))
 
     table = re.sub(r"<tr>.*?</tr>", label_row, table, flags=re.S)
     table = table.replace("<table>", f'<table class="{kind}">', 1)
     # An empty cell renders as nothing, so a phone card skips it.
     table = re.sub(r'(<td [^>]*>)\s*(</td>)', r"\1\2", table)
-    return f'<div class="table-wrap">{table}</div>'
+    return f'<div class="table-wrap cards">{table}</div>'
 
 
 def stamped(rel, base=ROOT / "house-plan"):
@@ -287,7 +325,7 @@ def figure(cell, strict=False):
     """The row's figure, read from a cost cell: the first dollar amount, which by the page's rule is the
     row's total, with everything after it detail. Returns (low, high, set_aside, clause) or None. A
     figure whose clause says a year, if needed, credit or closing costs is set aside: the totals leave
-    it out and the conclusion lists it."""
+    it out and the list at the bottom names it."""
     for clause in re.split(r";|\.\s", cell):
         m = MONEY.search(clause)
         if m:
@@ -304,6 +342,21 @@ def cells(line):
     return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
+def tables(md):
+    """Every markdown table in the text, as (first line, line after the last row, header, rows)."""
+    lines = md.split("\n")
+    i = 0
+    while i < len(lines):
+        if lines[i].startswith("|") and i + 1 < len(lines) and re.match(r"^\|[\s:|-]+\|$", lines[i + 1].strip()):
+            j = i + 2
+            while j < len(lines) and lines[j].startswith("|"):
+                j += 1
+            yield i, j, cells(lines[i]), [cells(r) for r in lines[i + 2:j]]
+            i = j
+        else:
+            i += 1
+
+
 def dollars(value, up):
     step = 100
     rounded = (math.ceil(value / step) if up else math.floor(value / step)) * step
@@ -312,7 +365,7 @@ def dollars(value, up):
 
 def span(low, high):
     if not high:
-        return "None"
+        return "$0"
     return f"{dollars(low, False)} to {dollars(high, True)}"
 
 
@@ -326,13 +379,18 @@ ANCHOR_ROWS = {"Contract day": "Contract day", "Closing day": "Closing day", "Mo
 def check_dates(md):
     """Every date in a table carries the right weekday, and every row timed as an offset (Contract day
     + 3 days, Move-in + 14 to 45 days) carries the dates that offset gives from its anchor row. The
-    anchors are the rows named Contract day, Closing day and Move-in day, so moving the closing moves
-    the check with it. The year is the contract's, rolling over after December."""
+    anchors are the rows whose When is Contract day, Closing day or Move-in day, so moving the closing
+    moves the check with it. The year is the contract's, rolling over after December."""
     first = re.search(r"(" + "|".join(MONTHS) + r") (\d{1,2}), (20\d\d)", md)
     if not first:
         return
     year0, month0 = int(first.group(3)), MONTHS[first.group(1)]
-    rows = [[c.strip() for c in line.strip().strip("|").split("|")] for line in md.split("\n") if line.startswith("| ")]
+    rows = []
+    for _, _, head, body in tables(md):
+        low = [h.lower() for h in head]
+        if "when" in low and "date" in low:
+            w, d = low.index("when"), low.index("date")
+            rows += [(r[w], r[d]) for r in body if len(r) > max(w, d)]
 
     def dates_in(cell):
         found = []
@@ -342,138 +400,274 @@ def check_dates(md):
         return found
 
     anchors, wrong = {}, []
-    for row in rows:
-        if len(row) > 1 and row[0] in ANCHOR_ROWS and dates_in(row[1]):
-            anchors[ANCHOR_ROWS[row[0]]] = dates_in(row[1])[0][1]
-    for row in rows:
-        if len(row) < 2:
-            continue
-        found = dates_in(row[1])
+    for when, date in rows:
+        if when in ANCHOR_ROWS and dates_in(date):
+            anchors[ANCHOR_ROWS[when]] = dates_in(date)[0][1]
+    for when, date in rows:
+        found = dates_in(date)
         for weekday, day in found:
             if day.strftime("%A") != weekday:
-                wrong.append(f"{row[0]}: {day:%B} {day.day} is a {day:%A}, not a {weekday}")
-        m = OFFSET.match(row[0])
+                wrong.append(f"{when}: {day:%B} {day.day} is a {day:%A}, not a {weekday}")
+        m = OFFSET.match(when)
         if m and found and m.group(1) in anchors:
             sign = -1 if m.group(2) in "−-" else 1
             start = anchors[m.group(1)] + datetime.timedelta(days=sign * int(m.group(3)))
             if found[0][1] != start:
-                wrong.append(f"{row[0]}: starts {start:%A, %B} {start.day}, not {found[0][1]:%B} {found[0][1].day}")
+                wrong.append(f"{when}: starts {start:%A, %B} {start.day}, not {found[0][1]:%B} {found[0][1].day}")
             if m.group(4) and len(found) > 1:
                 end = anchors[m.group(1)] + datetime.timedelta(days=int(m.group(4)))
                 if found[-1][1] != end:
-                    wrong.append(f"{row[0]}: ends {end:%A, %B} {end.day}, not {found[-1][1]:%B} {found[-1][1].day}")
+                    wrong.append(f"{when}: ends {end:%A, %B} {end.day}, not {found[-1][1]:%B} {found[-1][1].day}")
     if wrong:
         sys.exit("dates that do not match the calendar or their offsets:\n  " + "\n  ".join(wrong))
 
 
 TAGS = {"Needed": "need", "Wanted": "want", "When it fails": "fail"}
-TAG = re.compile(r"^\*\*(Needed|Wanted|When it fails)\.\*\*")
+TAG = re.compile(r"^\*\*(Needed|Wanted|When it fails)\.\*\*\s*")
 
 
-def add_totals(md):
-    """Give every table with a family column and a hired column its section totals, needed and wanted
-    apart, and fill the {{totals}} and {{headline}} markers. Each cost row carries a mark at the head of
-    one cell: Needed, Wanted or When it fails. When-it-fails rows stay out of every total and are listed
-    as a reserve. The family figure takes the family's price for each job the family does and the hired
-    price for the rest; the hired figure hires every job."""
+def inline(text):
+    """A table cell's markdown as inline HTML: links and bold survive, the paragraph wrapper does not."""
+    out = markdown.markdown(text, output_format="html")
+    return out[3:-4] if out.startswith("<p>") and out.endswith("</p>") else out
+
+
+def split_cost(text):
+    """A cost cell's head, the figure with the words that qualify it, and its detail, which starts at the
+    first colon or semicolon after the figure."""
+    text = text.strip()
+    m = MONEY.match(text)
+    if not m:
+        return text, ""
+    rest = text[m.end():]
+    cut = min([i for i in (rest.find(":"), rest.find(";")) if i >= 0], default=-1)
+    if cut < 0:
+        return text, ""
+    return (m.group(0) + rest[:cut]).strip(), rest[cut + 1:].strip()
+
+
+def slug(name, taken):
+    base = "job-" + (re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "row")
+    out, n = base, 2
+    while out in taken:
+        out, n = f"{base}-{n}", n + 1
+    taken.add(out)
+    return out
+
+
+def read_jobs(head, rows, heading, taken):
+    """The rows of one job table, each with its mark, its two prices and the figures the totals count. A
+    row with a price needs a mark, and a row done by someone outside the family carries no family price,
+    so the family column always reads as what the family pays."""
+    low = [h.lower() for h in head]
+    col = {key: next((k for k, h in enumerate(low) if h.startswith(key)), None)
+           for key in ("job", "when", "date", "what", "who", "family", "hired")}
+    jobs = []
+    for row in rows:
+        row = row + [""] * (len(head) - len(row))
+        get = lambda key: row[col[key]].strip() if col[key] is not None else ""
+        m = TAG.match(get("job"))
+        tag = TAGS[m.group(1)] if m else None
+        name = get("job")[m.end():].strip() if m else get("job")
+        fam_text, hire_text = get("family"), get("hired")
+        fam, hire = figure(fam_text, True), figure(hire_text, True)
+        if (fam or hire or fam_text or hire_text) and not tag:
+            sys.exit(f"a cost row carries no Needed, Wanted or When it fails mark: {name}")
+        family_does = any(n in get("who") for n in FAMILY)
+        if fam and not fam[2] and not family_does:
+            sys.exit(f"a row nobody in the family does carries a family price; put the detail in the text: {name}")
+        aside = {}
+        for cell in (fam_text, hire_text):
+            for clause in re.split(r";|\.\s", cell):
+                found = figure(clause)
+                if found and found[2]:
+                    aside.setdefault(found[3].lower(), (found[2], found[3]))
+        counted_fam = fam if (fam and not fam[2]) else (hire if (hire and not hire[2]) else None)
+        counted_hire = hire if (hire and not hire[2]) else (fam if (fam and not fam[2]) else None)
+        jobs.append({
+            "name": name, "tag": tag, "id": slug(name, taken), "section": heading,
+            "when": get("when"), "date": get("date"), "what": get("what"), "who": get("who"),
+            "fam_text": fam_text, "hire_text": hire_text,
+            "fam": counted_fam, "hire": counted_hire, "aside": list(aside.values()),
+            "free": fam_text.lower() == "free" or hire_text.lower() == "free",
+        })
+    return jobs
+
+
+def sums(jobs, tag):
+    t = [0.0] * 4
+    for j in jobs:
+        if j["tag"] != tag:
+            continue
+        for slot, pick in ((0, j["fam"]), (2, j["hire"])):
+            if pick:
+                t[slot] += pick[0]
+                t[slot + 1] += pick[1]
+    return t
+
+
+def price_chip(cls, label, head, note=""):
+    note = f" <em>{note}</em>" if note else ""
+    return f'<span class="price {cls}"><small>{label}</small>{html.escape(head)}{note}</span>'
+
+
+def chips(j):
+    """The two prices at the head of a card. A figure the totals leave out (a yearly bill, a credit, a cost
+    paid only if needed or inside the closing costs) gets its own muted chip, never a family or hired one."""
+    out = []
+    heads = {}
+    for side in ("fam", "hire"):
+        text = j[side + "_text"]
+        found = figure(text) if text else None
+        heads[side] = (split_cost(text)[0] if text else "", bool(found and found[2]))
+    (fam_head, fam_aside), (hire_head, hire_aside) = heads["fam"], heads["hire"]
+    if fam_head:
+        out.append(price_chip("aside" if fam_aside else "fam", "Not in the totals" if fam_aside else "Family", fam_head))
+    elif hire_head and not hire_aside:
+        out.append(price_chip("fam", "Family", hire_head, "same either way"))
+    if hire_head:
+        out.append(price_chip("aside" if hire_aside else "hire", "Not in the totals" if hire_aside else "Hired", hire_head))
+    elif fam_head and not MONEY.match(fam_head):
+        out.append(price_chip("hire", "Hired", fam_head))
+    return f'<div class="prices">{"".join(out)}</div>' if out else ""
+
+
+def job_card(j):
+    tag = f'<span class="tag {j["tag"]}">{[k for k, v in TAGS.items() if v == j["tag"]][0]}</span>' if j["tag"] else ""
+    meta = [html.escape(x) for x in (j["when"], j["who"]) if x and x != j["date"]]
+    when = (f'<p class="when">{html.escape(j["date"]) if j["date"] else ""}'
+            f'{" " if j["date"] and meta else ""}<span class="meta">{" · ".join(meta)}</span></p>')
+    details = []
+    for label, text in (("Family", j["fam_text"]), ("Hired", j["hire_text"])):
+        detail = split_cost(text)[1] if text else ""
+        if detail:
+            details.append(f"<b>{label}:</b> {inline(detail)}")
+    detail = f'<p class="detail">{"<br>".join(details)}</p>' if details else ""
+    return (f'<article class="job {j["tag"] or ""}" id="{j["id"]}">'
+            f'<div class="job-head"><h3>{tag}{html.escape(j["name"])}</h3>{chips(j)}</div>'
+            f'{when}<p class="what">{inline(j["what"])}</p>{detail}</article>')
+
+
+def total_table(caption, rows):
+    total = ' class="total"'
+    body = "".join(f'<tr{total if bold else ""}><td>{label}</td><td>{fam}</td><td>{hire}</td></tr>'
+                   for label, fam, hire, bold in rows)
+    return (f'<div class="table-wrap"><table class="t-total"><thead><tr><th>{caption}</th><th>Family does it</th>'
+            f'<th>Hired out</th></tr></thead><tbody>{body}</tbody></table></div>')
+
+
+def section_block(jobs):
+    need, want = sums(jobs, "need"), sums(jobs, "want")
+    both = [a + b for a, b in zip(need, want)]
+    table = total_table("Section total", [
+        ("Needed", span(need[0], need[1]), span(need[2], need[3]), False),
+        ("Wanted", span(want[0], want[1]), span(want[2], want[3]), False),
+        ("Needed and wanted", span(both[0], both[1]), span(both[2], both[3]), True),
+    ])
+    fails = sum(1 for j in jobs if j["tag"] == "fail")
+    note = (f'<p class="section-note">The {fails} jobs marked When it fails are left out of these totals.</p>'
+            if fails else "")
+    return f'<div class="jobs">{"".join(job_card(j) for j in jobs)}</div>{table}{note}', need, want
+
+
+WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+
+
+def up(value):
+    return dollars(value * (1 + CUSHION), True)
+
+
+def glance(need, want, fails):
+    both = [a + b for a, b in zip(need, want)]
+
+    def tile(cls, label, t):
+        return (f'<div class="tile {cls}"><span><span class="tag {cls}">{label}</span></span>'
+                f'<div class="row fam"><span>Family does it</span><b>{span(t[0], t[1])}</b></div>'
+                f'<div class="row hire"><span>Hired out</span><b>{span(t[2], t[3])}</b></div></div>')
+    return (f'<section class="glance" aria-label="The budget at a glance">{tile("need", "Needed", need)}'
+            f'{tile("want", "Wanted", want)}{tile("all", "Everything", both)}</section>'
+            f'<p class="glance-note">With a {CUSHION * 100:.0f} percent cushion on the high end, plan on up to {up(both[1])} with the '
+            f'family doing the work, or up to {up(both[3])} hired out. Insurance, closing costs, anything needed only '
+            f'if a test calls for it, and the {WORDS.get(fails, fails)} replacements that wait for the old one to fail sit outside these '
+            f'totals. <a href="#everything-on-one-list">Every job on one list</a> is at the bottom.</p>')
+
+
+def summary(jobs, need, want):
+    """The one list: every needed and wanted job with a counted price or none at all, short name first,
+    each linked to its card, then one total, then what the totals leave out."""
+    both = [a + b for a, b in zip(need, want)]
+    rows = []
+    for tag, label in (("need", "Needed"), ("want", "Wanted")):
+        rows.append(f'<tr class="group"><th colspan="3" scope="colgroup"><span class="tag {tag}">{label}</span></th></tr>')
+        for j in jobs:
+            if j["tag"] != tag or not (j["fam"] or j["free"]):
+                continue
+            fam_head = split_cost(j["fam_text"])[0] if j["fam_text"] else ""
+            hire_head = split_cost(j["hire_text"])[0] if j["hire_text"] else ""
+            if j["free"]:
+                fam_cell = hire_cell = "Free"
+            else:
+                fam_cell = (html.escape(fam_head) if fam_head and not figure(fam_head)[2]
+                            else f'{html.escape(hire_head)}<small>same either way</small>')
+                hire_cell = html.escape(hire_head) if hire_head else html.escape(fam_head)
+            rows.append(f'<tr><td><a href="#{j["id"]}">{html.escape(j["name"])}</a></td>'
+                        f'<td>{fam_cell}</td><td>{hire_cell}</td></tr>')
+    rows.append(f'<tr class="total"><td>Total</td><td>{span(both[0], both[1])}</td><td>{span(both[2], both[3])}</td></tr>')
+    table = ('<div class="table-wrap"><table class="t-summary"><thead><tr><th>Job</th><th>Family does it</th>'
+             f'<th>Hired out</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
+
+    aside = {}
+    for j in jobs:
+        if j["tag"] == "fail":
+            continue
+        for kind, clause in j["aside"]:
+            head, detail = split_cost(clause)
+            words = f"{head} ({detail})" if detail else head
+            aside.setdefault(kind, []).append(f'<a href="#{j["id"]}">{html.escape(j["name"])}</a>: {html.escape(words)}')
+    notes = [f"<li><b>{name}:</b> {'; '.join(aside[name])}.</li>" for _, name in SET_ASIDE if name in aside]
+    reserve = []
+    for j in jobs:
+        if j["tag"] == "fail":
+            head = split_cost(j["hire_text"] or j["fam_text"])[0]
+            reserve.append(f'<a href="#{j["id"]}">{html.escape(j["name"])}</a> {html.escape(head)} hired')
+    if reserve:
+        notes.append(f"<li><b>When it fails, not budgeted:</b> {'; '.join(reserve)}.</li>")
+    return (f'<p>Every job with a price, in the order it happens. A name opens its full listing above. The family '
+            f'column is what the family pays doing the work it can, with the contractor\'s price where a contractor '
+            f'does the job either way.</p>{table}'
+            f'<p>With a {CUSHION * 100:.0f} percent cushion on the high end, plan on up to {up(both[1])} with the family doing '
+            f'the work, or up to {up(both[3])} hired out.</p>'
+            f'<h3>Not in the total</h3><ul class="notes">{"".join(notes)}</ul>')
+
+
+def plan_blocks(md):
+    """Swap every job table for a marker and build its cards, its section totals, the budget at a glance
+    and the one list at the bottom. Returns the markdown with markers and the HTML for each marker."""
     lines = md.split("\n")
-    out, sections, aside, reserve = [], [], {}, []
+    blocks, jobs_all, taken = {}, [], set()
+    need, want = [0.0] * 4, [0.0] * 4
+    found = list(tables(md))
+    headings = {}
     heading = ""
-    i = 0
-    while i < len(lines):
-        line = lines[i]
+    for n, line in enumerate(lines):
         if line.startswith("## "):
             heading = line[3:].strip()
-        if not (line.startswith("|") and i + 1 < len(lines) and re.match(r"^\|[\s:|-]+\|$", lines[i + 1].strip())):
-            out.append(line)
-            i += 1
+        headings[n] = heading
+    for k, (start, end, head, rows) in reversed(list(enumerate(found))):
+        low = [h.lower() for h in head]
+        if not ("job" in low and any(h.startswith("family") for h in low) and any(h.startswith("hired") for h in low)):
             continue
-        head = cells(line)
-        j = i + 2
-        while j < len(lines) and lines[j].startswith("|"):
-            j += 1
-        rows = [cells(r) for r in lines[i + 2:j]]
-        out.extend(lines[i:j])
-        fam_col = next((k for k, h in enumerate(head) if h.lower().startswith("family")), None)
-        hired_col = next((k for k, h in enumerate(head) if h.lower().startswith("hired")), None)
-        if fam_col is None or hired_col is None:
-            i = j
-            continue
-        who_col = next((k for k, h in enumerate(head) if h.lower() == "who"), None)
-        totals = {"need": [0.0] * 4, "want": [0.0] * 4}
-        for row in rows:
-            fam, hired = figure(row[fam_col], True), figure(row[hired_col], True)
-            tag = next((TAGS[m.group(1)] for c in row if (m := TAG.match(c))), None)
-            if (fam or hired) and not tag:
-                sys.exit(f"a cost row carries no Needed, Wanted or When it fails mark: {row[0]}")
-            if tag == "fail":
-                pick = hired or fam
-                if pick:
-                    reserve.append(f"{row[0]}: {span(pick[0], pick[1])} hired")
-                continue
-            for cell in (row[fam_col], row[hired_col]):
-                for clause in re.split(r";|\.\s", cell):
-                    found = figure(clause)
-                    if found and found[2]:
-                        aside.setdefault(found[2], {}).setdefault(found[3].lower(), found[3])
-            family_does = who_col is None or any(name in row[who_col] for name in FAMILY)
-            bucket = totals[tag or "need"]
-            for slot, pick in ((0, fam if (fam and family_does) else hired), (2, hired or fam)):
-                if pick and not pick[2]:
-                    bucket[slot] += pick[0]
-                    bucket[slot + 1] += pick[1]
-
-        def total_row(label, t):
-            row = [""] * len(head)
-            row[0] = f"**{label}**"
-            row[fam_col] = f"**{span(t[0], t[1])}**"
-            row[hired_col] = f"**{span(t[2], t[3])}**"
-            return "| " + " | ".join(row) + " |"
-
-        out.append(total_row("Section total, needed", totals["need"]))
-        if any(totals["want"]):
-            out.append(total_row("Section total, wanted", totals["want"]))
-        sections.append((heading, totals))
-        i = j
-    md = "\n".join(out)
-
-    def total_of(picked, kind):
-        return [sum(t[kind][k] for _, t in picked) for k in range(4)]
-
-    def up(value):
-        return dollars(value * (1 + CUSHION), True)
-
-    near = [s for s in sections if not s[0].lower().startswith("long term")]
-    later = [s for s in sections if s[0].lower().startswith("long term")]
-    need, want_now, want_later = total_of(sections, "need"), total_of(near, "want"), total_of(later, "want")
-
-    table = ["| Section | Needed, family | Needed, hired | Wanted, family | Wanted, hired |", "|---|---|---|---|---|"]
-    for name, t in sections:
-        table.append(f"| {name} | {span(t['need'][0], t['need'][1])} | {span(t['need'][2], t['need'][3])} | "
-                     f"{span(t['want'][0], t['want'][1])} | {span(t['want'][2], t['want'][3])} |")
-    table.append(f"| **All sections** | **{span(need[0], need[1])}** | **{span(need[2], need[3])}** | "
-                 f"**{span(want_now[0] + want_later[0], want_now[1] + want_later[1])}** | "
-                 f"**{span(want_now[2] + want_later[2], want_now[3] + want_later[3])}** |")
-    table += ["", f"With a {CUSHION:.0%} cushion on each high end, the figures to plan on:", "",
-              "| Budget | Family does what it can | Hired out, all of it |", "|---|---|---|",
-              f"| Needed work | up to {up(need[1])} | up to {up(need[3])} |",
-              f"| Needed work and this year's wants | up to {up(need[1] + want_now[1])} | up to {up(need[3] + want_now[3])} |"]
-    notes = []
-    for _, name in SET_ASIDE:
-        if name in aside:
-            items = "; ".join(v[0].upper() + v[1:] for v in aside[name].values())
-            notes.append(f"- {name}: {items}.")
-    block = "\n".join(table)
-    if reserve:
-        block += "\n\nNot budgeted, because each waits for the old one to fail: " + "; ".join(reserve) + "."
-    block += "\n\nLeft out of every total above:\n\n" + "\n".join(notes)
-    md = md.replace("{{totals}}", block)
-    headline = (f"**Needed work:** {span(need[0], need[1])} with the family doing the work it can, or "
-                f"{span(need[2], need[3])} hired out, and up to {up(need[1])} with a {CUSHION:.0%} cushion. "
-                f"**This year's wants on top**, mostly the basement: {span(want_now[0], want_now[1])} for the family, "
-                f"{span(want_now[2], want_now[3])} hired. The windows, the furnace, the water heater and the roof "
-                f"are not budgeted; each comes when the old one fails.")
-    return md.replace("{{headline}}", headline)
+        jobs = read_jobs(head, rows, headings[start], taken)
+        block, s_need, s_want = section_block(jobs)
+        blocks[f"jobs-{k}"] = block
+        jobs_all[:0] = jobs
+        need = [a + b for a, b in zip(need, s_need)]
+        want = [a + b for a, b in zip(want, s_want)]
+        lines[start:end] = [f"{{{{jobs-{k}}}}}"]
+    if jobs_all:
+        blocks["headline"] = glance(need, want, sum(1 for j in jobs_all if j["tag"] == "fail"))
+        blocks["summary"] = summary(jobs_all, need, want)
+    return "\n".join(lines), blocks
 
 
 def build(page):
@@ -484,7 +678,7 @@ def build(page):
     title = first[2:].strip()
     body_md = text.split("\n", 1)[1]
     check_dates(body_md)
-    body_md = add_totals(body_md)
+    body_md, blocks = plan_blocks(body_md)
     body = markdown.markdown(body_md, extensions=["tables", "toc"], output_format="html")
     body = re.sub(r"<table>.*?</table>", label_table, body, flags=re.S)
     for word, kind in TAGS.items():
@@ -494,6 +688,8 @@ def build(page):
     for marker in FIGURES:
         if "{{" + marker + "}}" in text:
             body = body.replace("<p>{{" + marker + "}}</p>", layout_figure(marker, page["out"].parent))
+    for marker, block in blocks.items():
+        body = body.replace("<p>{{" + marker + "}}</p>", block)
     if "{{" in body:
         sys.exit(f"{page['src'].name} holds a marker the builder does not know")
     if page["status_first"]:

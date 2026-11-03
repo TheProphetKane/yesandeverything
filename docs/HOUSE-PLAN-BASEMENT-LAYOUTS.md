@@ -44,12 +44,12 @@ The stair comes down from a door under the loft stair, turns at a landing about 
 
 ## The studio
 
-- Walls: staggered studs with mineral wool batts in every studio wall, and one layer of drywall to start. Batts run $1.10 to $1.40 for each square foot of wall, about $700 to $850 in a room this size. A second layer adds $400 to $600 later if the noise carries.
+- Walls: staggered studs with mineral wool batts in every studio wall, and one layer of drywall to start. Batts run $1.25 to $1.40 for each square foot of wall, about $800 to $900 in a room this size. A second layer adds $400 to $600 later if the noise carries.
 - Door: solid core, with seals around the frame and a sweep at the bottom, $200 to $400.
 - Ceiling: a drop grid with tiles rated to block sound, batts laid on top of the tiles, the microphone and speaker cable above the grid. The four speakers mount in the grid at the corners. About $500 to $900. A 20-amp circuit feeds the audio rack and the game PC.
-- Closet: a framed front across the room's full 10.7 feet, 2 feet deep, with two openings of about 4 feet 4 inches. Two pairs of sliding doors close it, with shelves inside for the minis. About $350 to $750.
+- Closet: a framed front across the room's full 10.7 feet, 2 feet deep, with two openings of about 4 feet 4 inches. Two pairs of sliding doors close it, with shelves inside for the minis. About $450 to $850.
 - Inside: acoustic panels at the walls' first reflection points, $35 to $50 each made at home from mineral wool and fabric. The Philips Hue lights go in the corners under the speakers.
-- What it adds: over the basement rate of $13 to $17 a square foot that every finished room costs, the sound work adds about $900 to $1,400 in materials. Hired out, the same sound work runs about $3,000 to $6,000. Every figure here is an estimate.
+- What it adds: over the basement rate of $13 to $17 a square foot that every finished room costs, the sound work adds about $1,000 to $1,500 in materials. Hired out, the same sound work runs about $2,200 to $4,500. Every figure here is an estimate.
 
 ## The bar
 

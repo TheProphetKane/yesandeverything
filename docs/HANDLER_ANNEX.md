@@ -166,12 +166,18 @@ it, and the site names him Nick, never by his gamer tag, because the family read
 `docs/HOUSE-PLAN-45-AUTUMN-CREST.md`, `docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md` and `docs/HOUSE-PLAN-FLOORS.md`,
 which the prose gate measures; `python scripts/build-house-plan.py` writes all three pages, and `--check`
 exits 1 when any is stale. `python scripts/draw-house-floors.py` draws the main and upper floor plans. `python scripts/draw-basement-layouts.py` draws the layout picture from the fixed stair,
-rough-in, slider, window and the likely furnace spot. Never edit a page by hand. The builder totals every table with a family column and a hired column and
-fills the plan's {{totals}} conclusion, so a cost cell must open on that row's total: the first dollar
-figure counts and the rest is detail, while a figure marked a year, if needed, credit or closing costs is
-left out of the totals and listed under them. Every cost row also opens one cell on a mark, **Needed.**, **Wanted.** or **When it fails.**, by Nick's
-budget rule of 2026-11-02 (save wherever the result holds up): the totals keep needed and wanted apart,
-and when-it-fails rows stay out of them as a reserve. A cost row with no mark stops the build. A cell
+rough-in, slider, window and the likely furnace spot. Never edit a page by hand. Since 2026-11-03, at Nick's ask for a plan he can read through, every
+plan table carries the columns Job, When, Date, What it takes, Who, Family and Hired, and the builder
+turns each row into a card: the mark and a short job name, both prices, the date, then the detail. Each
+section closes on its totals, needed, wanted and the two together (his ask of 15:22 that day). The
+{{headline}} marker becomes the budget at a glance, and {{summary}} becomes "Everything on one list" at
+the bottom: every needed and wanted job by its short name, linked to its card, with one total and no
+dates. A cost cell must open on that row's total: the first dollar figure counts, a colon or semicolon
+starts the detail, and a figure marked a year, if needed, credit or closing costs is left out of the
+totals and listed under the list. The Job cell opens on a mark, **Needed.**, **Wanted.** or **When it
+fails.**, by Nick's budget rule of 2026-11-02 (save wherever the result holds up); when-it-fails rows
+stay out of every total as a reserve. A cost row with no mark stops the build, and so does a family price
+on a row nobody in the family does, since the family column must read as what the family pays. A cell
 that opens on a price per unit stops the build too,
 and so does a date whose weekday is wrong or whose "Move-in + N days" offset disagrees with the anchor
 rows (Contract day, Closing day, Move-in day): move the closing and every derived date must move with it.
