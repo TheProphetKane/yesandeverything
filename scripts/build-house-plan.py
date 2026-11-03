@@ -1,13 +1,16 @@
 """Build the house plan pages for 45 Autumn Crest Ct.
 
-    python scripts/build-house-plan.py          writes house-plan/index.html and house-plan/basement/index.html
-    python scripts/build-house-plan.py --check  exits 1 when either page on disk differs from a fresh build
+    python scripts/build-house-plan.py          writes house-plan/index.html, house-plan/basement/index.html
+                                                and house-plan/floors/index.html
+    python scripts/build-house-plan.py --check  exits 1 when any page on disk differs from a fresh build
 
 Each page's source is a markdown file in docs/ that the prose gate measures: docs/HOUSE-PLAN-45-AUTUMN-CREST.md
-for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layout. Edit the source, build, ship;
+for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layout, docs/HOUSE-PLAN-FLOORS.md for the
+main and upper floors. Edit the source, build, ship;
 never edit a page by hand. Tables become cards on a phone, each cell labeled with its column. A line holding
 {{floor-plans}} becomes the plan's picture gallery; a line holding {{layout}} becomes the basement
-layout's drawing, which scripts/draw-basement-layouts.py writes. Every table with a family column and a
+layout's drawing, which scripts/draw-basement-layouts.py writes, and {{main-floor}} and {{upper-floor}}
+become the floor drawings scripts/draw-house-floors.py writes. Every table with a family column and a
 hired column gets a section total row, and a line holding {{totals}} becomes the conclusion: the rule is
 that the first dollar figure in a cost cell is that row's total, and everything after it is detail. Pictures open in a pop-out over the page,
 or full size in a new tab without scripts.
@@ -32,7 +35,21 @@ PLAN_GALLERY = [
         "full": "floors-grid.png",
         "title": "All three floors on a 1-foot grid",
         "text": "The main and upper floors are the builder's Rockport drawing, fitted to the county's measured "
-                "outline. The basement panel shows the stair, the landing and the rough-in.",
+                "outline. The basement panel shows the stair, the landing and the rough-in. The upper floor's "
+                "lookdown over the foyer was never built here: the loft is floored to the front wall.",
+    },
+    {
+        "thumb": "floors/main.svg",
+        "page": "floors/",
+        "title": "The main floor",
+        "text": "Every room colored by its use: the kitchen and breakfast room in the rear bay, the split stair, "
+                "the half bath, the garage and laundry.",
+    },
+    {
+        "thumb": "floors/upper.svg",
+        "page": "floors/#the-upper-floor",
+        "title": "The upper floor",
+        "text": "Four bedrooms, two baths and the loft, floored to the front wall with no lookdown over the foyer.",
     },
     {
         "thumb": "basement/layout.svg",
@@ -56,8 +73,16 @@ PAGES = [
         "src": ROOT / "docs" / "HOUSE-PLAN-BASEMENT-LAYOUTS.md",
         "out": ROOT / "house-plan" / "basement" / "index.html",
         "eyebrow": "Basement layout, 1 square to the foot",
-        "crumbs": [("/house-plan/", "The house plan"), (REPORT, "The house report")],
+        "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/floors/", "The main and upper floors")],
         "description": "The basement layout for 45 Autumn Crest Ct: a D&D studio, an office, a play area, bins and a putting lane.",
+        "status_first": False,
+    },
+    {
+        "src": ROOT / "docs" / "HOUSE-PLAN-FLOORS.md",
+        "out": ROOT / "house-plan" / "floors" / "index.html",
+        "eyebrow": "Main and upper floors, 1 square to the foot",
+        "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/basement/", "The basement layout")],
+        "description": "The main and upper floors of 45 Autumn Crest Ct, every room colored by its use.",
         "status_first": False,
     },
 ]
@@ -231,9 +256,17 @@ def gallery():
             + "".join(card(f) for f in PLAN_GALLERY) + "</div></section>")
 
 
-def layout_figure():
-    name = stamped("layout.svg", ROOT / "house-plan" / "basement")
-    title = "The basement layout"
+FIGURES = {
+    "layout": ("basement", "layout.svg", "The basement layout"),
+    "main-floor": ("floors", "main.svg", "The main floor"),
+    "upper-floor": ("floors", "upper.svg", "The upper floor"),
+}
+
+
+def layout_figure(marker):
+    """A drawing for the page that sits in the drawing's own folder, so its address is relative to the page."""
+    folder, file, title = FIGURES[marker]
+    name = stamped(file, ROOT / "house-plan" / folder)
     return (f'<figure class="layout" style="margin:0">'
             f'<a class="shot" href="{name}" data-title="{title}" target="_blank" rel="noopener">'
             f'<img src="{name}" alt="{title}, drawn to a 1-foot grid"></a>'
@@ -462,7 +495,9 @@ def build(page):
         body = body.replace(f"<strong>{word}.</strong>", f'<span class="tag {kind}">{word}</span>')
     if "{{floor-plans}}" in text:
         body = body.replace("<p>{{floor-plans}}</p>", gallery())
-    body = body.replace("<p>{{layout}}</p>", layout_figure())
+    for marker in FIGURES:
+        if "{{" + marker + "}}" in text:
+            body = body.replace("<p>{{" + marker + "}}</p>", layout_figure(marker))
     if "{{" in body:
         sys.exit(f"{page['src'].name} holds a marker the builder does not know")
     if page["status_first"]:
