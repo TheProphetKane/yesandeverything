@@ -41,8 +41,8 @@ PLAN_GALLERY = [
         "thumb": "floors/upper.svg",
         "page": "floors/#the-upper-floor",
         "title": "The upper floor",
-        "text": "The king bed facing the television, the infant's crib, the toddler's bed and the guest room, "
-                "with the loft floored to the front wall.",
+        "text": "The king bed facing the television, the infant's crib, the toddler's bed, and the guest "
+                "room's full bed.",
     },
     {
         "thumb": "basement/layout.svg",

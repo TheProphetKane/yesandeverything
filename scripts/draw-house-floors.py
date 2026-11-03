@@ -500,8 +500,6 @@ def upper_floor():
     p.room("Hall bath", "bath", [(28.1, 14.3, 35.6, 19.0)], (31.0, 16.0), compact=True)
     p.room("Hall", "hall", [(19.6, 12.7, 27.8, 19.4)], (23.9, 16.6), compact=True, line2="")
     p.room("Loft", "loft", [(15.4, 19.4, 23.8, 24.0), (12.4, 24.0, 23.8, 34.6), (10.2, 24.7, 12.4, 29.5)], (18.6, 27.6))
-    p.note(18.6, 31.0, "floored to the front wall:", 10, "#86198f")
-    p.note(18.6, 32.1, "no lookdown over the foyer", 10, "#86198f")
     for name, rect, at in (("closet", (13.1, 10.0, 17.9, 12.4), (15.5, 12.05)), ("closet", (27.8, 11.6, 35.6, 14.0), (31.7, 13.3)),
                            ("closet", (28.1, 19.4, 35.6, 21.9), (31.7, 21.4)), ("linen", (18.0, 12.9, 19.6, 15.7), (18.8, 14.6)),
                            ("linen", (0.4, 12.2, 2.3, 14.3), (1.35, 13.5))):
@@ -624,12 +622,12 @@ def upper_floor():
     p.bed(32.9, 0.45, 35.55, 5.2, "up", "toddler bed", blue, 8)
     p.piece(24.25, 3.0, 25.85, 7.0, "dresser", blue, 8, turn=True)
     p.piece(34.35, 6.2, 35.55, 10.2, "books and toys", blue, 7, turn=True)
-    # the guest room: a queen bed, its head on the far wall, end tables, a dresser
-    p.bed(28.55, 24.6, 35.55, 29.9, "right", "queen bed", blue, 9)
-    p.piece(34.05, 22.95, 35.55, 24.5, "", blue)
-    p.piece(34.05, 30.0, 35.55, 31.55, "", blue)
-    p.vnote(34.8, 23.7, "end", 7, blue)
-    p.vnote(34.8, 30.8, "end", 7, blue)
+    # the guest room: a full bed, 54 by 75 inches in a frame, its head on the far wall, end tables, a dresser
+    p.bed(28.95, 24.9, 35.55, 29.6, "right", "full bed", blue, 9)
+    p.piece(34.05, 23.25, 35.55, 24.8, "", blue)
+    p.piece(34.05, 29.7, 35.55, 31.25, "", blue)
+    p.vnote(34.8, 24.0, "end", 7, blue)
+    p.vnote(34.8, 30.5, "end", 7, blue)
     p.piece(24.25, 24.8, 25.85, 28.8, "dresser", blue, 8, turn=True)
     # the frogs' other possible spot, against the guest room wall
     p.piece(21.75, 26.0, 23.75, 30.0, "frogs, other spot", fuchsia, 7, turn=True, fill="#fdf4ff", dash="4,3")
