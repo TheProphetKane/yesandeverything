@@ -13,6 +13,7 @@ that the first dollar figure in a cost cell is that row's total, and everything 
 or full size in a new tab without scripts.
 """
 
+import datetime
 import html
 import math
 import re
@@ -233,7 +234,11 @@ def money(text):
     return float(text.replace(",", ""))
 
 
-def figure(cell):
+PER_UNIT = re.compile(r"\s*(each|a bay|a square foot|a step|a gallon|a door|per\b)")
+CUSHION = 0.15
+
+
+def figure(cell, strict=False):
     """The row's figure, read from a cost cell: the first dollar amount, which by the page's rule is the
     row's total, with everything after it detail. Returns (low, high, set_aside, clause) or None. A
     figure whose clause says a year, if needed, credit or closing costs is set aside: the totals leave
@@ -241,6 +246,8 @@ def figure(cell):
     for clause in re.split(r";|\.\s", cell):
         m = MONEY.search(clause)
         if m:
+            if strict and PER_UNIT.match(clause[m.end():]):
+                sys.exit(f"a cost cell opens on a price per unit, which the totals would read as the row's total: {clause.strip()}")
             low = money(m.group(1))
             high = money(m.group(2) or m.group(1))
             kind = next((name for word, name in SET_ASIDE if word in clause.lower()), None)
@@ -262,6 +269,56 @@ def span(low, high):
     if not high:
         return "None"
     return f"{dollars(low, False)} to {dollars(high, True)}"
+
+
+MONTHS = {name: i for i, name in enumerate(("January", "February", "March", "April", "May", "June", "July",
+                                             "August", "September", "October", "November", "December"), 1)}
+DATE = re.compile(r"(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (" + "|".join(MONTHS) + r") (\d{1,2})")
+OFFSET = re.compile(r"^(Contract day|Closing day|Move-in)\s*([+−-])\s*(\d+)(?:\s+to\s+(\d+))?\s+days?$")
+ANCHOR_ROWS = {"Contract day": "Contract day", "Closing day": "Closing day", "Move-in day": "Move-in"}
+
+
+def check_dates(md):
+    """Every date in a table carries the right weekday, and every row timed as an offset (Contract day
+    + 3 days, Move-in + 14 to 45 days) carries the dates that offset gives from its anchor row. The
+    anchors are the rows named Contract day, Closing day and Move-in day, so moving the closing moves
+    the check with it. The year is the contract's, rolling over after December."""
+    first = re.search(r"(" + "|".join(MONTHS) + r") (\d{1,2}), (20\d\d)", md)
+    if not first:
+        return
+    year0, month0 = int(first.group(3)), MONTHS[first.group(1)]
+    rows = [[c.strip() for c in line.strip().strip("|").split("|")] for line in md.split("\n") if line.startswith("| ")]
+
+    def dates_in(cell):
+        found = []
+        for weekday, month, day in DATE.findall(cell):
+            year = year0 if MONTHS[month] >= month0 else year0 + 1
+            found.append((weekday, datetime.date(year, MONTHS[month], int(day))))
+        return found
+
+    anchors, wrong = {}, []
+    for row in rows:
+        if len(row) > 1 and row[0] in ANCHOR_ROWS and dates_in(row[1]):
+            anchors[ANCHOR_ROWS[row[0]]] = dates_in(row[1])[0][1]
+    for row in rows:
+        if len(row) < 2:
+            continue
+        found = dates_in(row[1])
+        for weekday, day in found:
+            if day.strftime("%A") != weekday:
+                wrong.append(f"{row[0]}: {day:%B} {day.day} is a {day:%A}, not a {weekday}")
+        m = OFFSET.match(row[0])
+        if m and found and m.group(1) in anchors:
+            sign = -1 if m.group(2) in "−-" else 1
+            start = anchors[m.group(1)] + datetime.timedelta(days=sign * int(m.group(3)))
+            if found[0][1] != start:
+                wrong.append(f"{row[0]}: starts {start:%A, %B} {start.day}, not {found[0][1]:%B} {found[0][1].day}")
+            if m.group(4) and len(found) > 1:
+                end = anchors[m.group(1)] + datetime.timedelta(days=int(m.group(4)))
+                if found[-1][1] != end:
+                    wrong.append(f"{row[0]}: ends {end:%A, %B} {end.day}, not {found[-1][1]:%B} {found[-1][1].day}")
+    if wrong:
+        sys.exit("dates that do not match the calendar or their offsets:\n  " + "\n  ".join(wrong))
 
 
 def add_totals(md):
@@ -295,7 +352,7 @@ def add_totals(md):
         who_col = next((k for k, h in enumerate(head) if h.lower() == "who"), None)
         totals = [0.0, 0.0, 0.0, 0.0]
         for row in rows:
-            fam, hired = figure(row[fam_col]), figure(row[hired_col])
+            fam, hired = figure(row[fam_col], True), figure(row[hired_col], True)
             for cell in (row[fam_col], row[hired_col]):
                 for clause in re.split(r";|\.\s", cell):
                     found = figure(clause)
@@ -330,6 +387,17 @@ def add_totals(md):
                          ("Everything on this page, long term included", near + later)):
         t = total_of(picked)
         table.append(f"| **{name}** | **{span(t[0], t[1])}** | **{span(t[2], t[3])}** |")
+    table += ["", f"Budget with a {CUSHION:.0%} cushion on each high end, the margin to plan on before work starts:", "",
+              "| Span | Family does what it can | Hired out, all of it |", "|---|---|---|"]
+    for name, picked in (("Cash out before move-in", before), ("Contract day to the last basement room", near),
+                         ("Everything on this page, long term included", near + later)):
+        t = total_of(picked)
+        table.append(f"| {name} | up to {dollars(t[1] * (1 + CUSHION), True)} | up to {dollars(t[3] * (1 + CUSHION), True)} |")
+    t = total_of(near)
+    headline = (f"**Estimated cost, contract day to the last basement room:** {span(t[0], t[1])} with the family doing "
+                f"the work it can, or {span(t[2], t[3])} hired out. Plan on up to {dollars(t[1] * (1 + CUSHION), True)} "
+                f"or {dollars(t[3] * (1 + CUSHION), True)} with a {CUSHION:.0%} cushion. The long-term list comes on top.")
+    md = md.replace("{{headline}}", headline)
     notes = []
     for _, name in SET_ASIDE:
         if name in aside:
@@ -346,6 +414,7 @@ def build(page):
         sys.exit(f"{page['src'].name} must open on its title heading")
     title = first[2:].strip()
     body_md = text.split("\n", 1)[1]
+    check_dates(body_md)
     body_md = add_totals(body_md)
     body = markdown.markdown(body_md, extensions=["tables", "toc"], output_format="html")
     body = re.sub(r"<table>.*?</table>", label_table, body, flags=re.S)

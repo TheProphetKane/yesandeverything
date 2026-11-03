@@ -8,7 +8,7 @@ The stair keeps its place, with the bath rough-in at its foot. The slider and th
 
 | Room | Size | Square feet | What it holds |
 |---|---|---|---|
-| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right, two of them three cubes tall and one 2 by 3. The wet bar and its mini fridge stand left of the door. Nick's table sits toward the closet, 5 by 6 feet with its corners cut and a TV flat in its middle. It seats six. Speakers hang in all four corners. |
+| D&D studio | 10.7 by 18.8 feet | 200 | Across from the door, against the garage-side wall: the game PC desk, 3.5 feet wide, with the rack beside it. Books fill the cube shelves on the rear wall to the right. The two outer ones stand one cube wide and three tall; the middle one is three wide by two tall, a cube lower. The wet bar and its mini fridge stand left of the door. Nick's table sits toward the closet, 5 by 6 feet with its corners cut and a TV flat in its middle. It seats six. Speakers hang in all four corners. |
 | Studio closet | 10.7 by 2 feet | Inside the studio | The minis, across the whole wall the bin room shares, behind two pairs of sliding doors. |
 | Utility | 6.6 by 6.5 feet | 43 | The furnace and the water heater, behind a door off the lane. |
 | Lounge | L-shaped | 132 | The couch, with the coats on the left inside the slider. The putting basket stands against the rear wall, a net behind it. |
@@ -49,7 +49,7 @@ The stair comes down from a door under the loft stair, turns at a landing about 
 - Ceiling: a drop grid with tiles rated to block sound, batts laid on top of the tiles, the microphone and speaker cable above the grid. The four speakers mount in the grid at the corners. About $500 to $900. A 20-amp circuit feeds the audio rack and the game PC.
 - Closet: a framed front across the room's full 10.7 feet, 2 feet deep, with two openings of about 4 feet 4 inches. Two pairs of sliding doors close it, with shelves inside for the minis. About $350 to $750.
 - Inside: acoustic panels at the walls' first reflection points, $35 to $50 each made at home from mineral wool and fabric. The Philips Hue lights go in the corners under the speakers.
-- Hired out, the same sound work runs about $3,000 to $6,000. Every figure here is an estimate.
+- What it adds: over the basement rate of $13 to $17 a square foot that every finished room costs, the sound work adds about $1,300 to $2,000 in materials. Hired out, the same sound work runs about $3,000 to $6,000. Every figure here is an estimate.
 
 ## The wet bar
 

@@ -142,7 +142,7 @@ class Plan:
             self.over.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="2.5" fill="#4c1d95"/>')
 
     def cubes(self, x0, y0, cols, depth=1.0, cube=1.15):
-        """A cube shelf seen from above, cols cubes wide and three tall. Returns its far edge."""
+        """A cube shelf seen from above, cols cubes wide. Returns its far edge."""
         x1 = x0 + cols * cube
         self.thing(x0, y0, x1, y0 + depth, "", "#ede9fe", "#5b21b6", 8, 1)
         for k in range(1, cols):
@@ -226,10 +226,10 @@ def studio(p):
     p.vnote(1.75, 3.45, "game PC desk", 8, "#1e1b4b")
     p.thing(X0 + 0.02, 5.4, 2.75, 7.4, "rack", "#ffffff", "#5b21b6", 8)
     p.over.append(f'<circle cx="{X(3.55):.1f}" cy="{Y(3.45):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
-    x = 4.9
-    for cols in (1, 2, 1):
+    x = 3.5
+    for cols in (1, 3, 1):
         x = p.cubes(x, Y0 + 0.05, cols) + 0.15
-    p.note(7.35, 2.55, "cube shelves: books", 8, "#4c1d95")
+    p.note(6.5, 2.55, "cube shelves: books", 8, "#4c1d95")
     p.thing(9.4, 4.6, 11.38, 7.85, "", "#ede9fe", "#5b21b6", 8)
     p.over.append(f'<circle cx="{X(10.4):.1f}" cy="{Y(5.25):.1f}" r="{0.45 * S:.1f}" fill="#ffffff" stroke="#5b21b6" stroke-width="1.2"/>')
     p.note(10.4, 6.25, "wet bar", 8, "#4c1d95")

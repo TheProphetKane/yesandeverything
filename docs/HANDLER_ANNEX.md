@@ -166,7 +166,10 @@ is stale. `python scripts/draw-basement-layouts.py` draws the layout picture fro
 rough-in, slider, window and the likely furnace spot. Never edit a page by hand. The builder totals every table with a family column and a hired column and
 fills the plan's {{totals}} conclusion, so a cost cell must open on that row's total: the first dollar
 figure counts and the rest is detail, while a figure marked a year, if needed, credit or closing costs is
-left out of the totals and listed under them. The floor plan
+left out of the totals and listed under them. A cell that opens on a price per unit stops the build,
+and so does a date whose weekday is wrong or whose "Move-in + N days" offset disagrees with the anchor
+rows (Contract day, Closing day, Move-in day): move the closing and every derived date must move with it.
+The floor plan
 sheet beside the plan is a committed copy of the one built in `X:\PortfolioOps\docs`. The Inkarnate
 basement map stays off the site by Nick's ruling of 2026-11-02: it is for working out ideas only.
 The house report links the plan through `ours.plan` in `data/house-search.json`. Both pages are
