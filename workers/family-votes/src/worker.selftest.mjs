@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, HouseMarks, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS } from "./worker.js";
+import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -35,6 +35,12 @@ function makeEnv(kv) {
   env.HOUSE = {
     idFromName: () => "house",
     get: () => ({ fetch: req => (hqueue = hqueue.then(() => houseBox.fetch(req))) }),
+  };
+  const planBox = new PlanState({ storage: new FakeStorage() });
+  let pqueue = Promise.resolve();
+  env.PLAN = {
+    idFromName: () => "plan",
+    get: () => ({ fetch: req => (pqueue = pqueue.then(() => planBox.fetch(req))) }),
   };
   return env;
 }
@@ -203,6 +209,56 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   await storage.put("m:17-savoy-dr", { mark: "view", at: 1 });
   u = await call();
   check("the carry-over runs once", !("17-savoy-dr" in u.votes));
+}
+
+// The house plan's state: a Needed or Wanted switch and a Done box per job, shared by every viewer.
+{
+  const env3 = makeEnv(new FakeKV());
+  const pbase = "https://yesandeverything.com" + PLAN_ROUTE;
+  const ppost = (body, ip) => worker.fetch(new Request(pbase, { method: "POST", headers: { "content-type": "application/json", ...(ip ? { "cf-connecting-ip": ip } : {}) }, body: JSON.stringify(body) }), env3).then(async r => ({ status: r.status, j: await r.json() }));
+  const pget = () => worker.fetch(new Request(pbase), env3).then(r => r.json());
+  let g = await pget();
+  check("the plan starts with no changes", JSON.stringify(g.jobs) === "{}" && g.log.length === 0);
+  const t0 = Date.now();
+  let x = await ppost({ job: "job-d-d-room", field: "mark", value: "need", name: "Kane", set: t0 });
+  check("a job moves to Needed", x.status === 200 && x.j.jobs["job-d-d-room"].mark === "need");
+  x = await ppost({ job: "job-d-d-room", field: "done", value: true, name: "Lexi", set: t0 + 1 });
+  check("a job is ticked done and keeps its mark", x.j.jobs["job-d-d-room"].done === true && x.j.jobs["job-d-d-room"].mark === "need");
+  x = await ppost({ job: "job-d-d-room", field: "done", value: false, name: "Kane", set: t0 + 2 });
+  check("a job ticked done by mistake can be unticked", x.j.jobs["job-d-d-room"].done === false);
+  check("the log keeps the tick and the untick, newest first, with who did each",
+    x.j.log.length === 3 && x.j.log[0].to === false && x.j.log[0].name === "Kane" && x.j.log[1].to === true && x.j.log[1].name === "Lexi");
+  x = await ppost({ job: "job-d-d-room", field: "done", value: true, name: "Kane", set: t0 + 1 });
+  check("an old tap that waited offline cannot undo a newer one", x.j.stale === true && x.j.jobs["job-d-d-room"].done === false);
+  x = await ppost({ job: "job-d-d-room", field: "mark", value: "need", name: "Kane", set: t0 + 5 });
+  check("setting the same value again adds nothing to the log", x.j.log.length === 3);
+  const many = ["job-paint-the-whole-house", "job-office", "job-deck-rebuild", "job-move"];
+  await Promise.all(many.map((job, i) => ppost({ job, field: "done", value: true, name: "Obo", set: t0 + 10 + i })));
+  g = await pget();
+  check("four ticks from two phones at once all land", many.every(job => g.jobs[job].done === true));
+  x = await ppost({ job: "../etc", field: "done", value: true });
+  check("a job that is not a card id is refused", x.status === 400);
+  x = await ppost({ job: "job-office", field: "mark", value: "fail" });
+  check("a mark other than need or want is refused", x.status === 400);
+  x = await ppost({ job: "job-office", field: "done", value: "yes" });
+  check("done must be true or false", x.status === 400);
+  x = await ppost({ job: "job-office", field: "cost", value: 1 });
+  check("an unknown field is refused", x.status === 400);
+  x = await ppost({ job: "job-office", field: "done", value: true, name: "<b>" });
+  check("a name that is not a name is refused", x.status === 400);
+  const r = await worker.fetch(new Request(pbase, { method: "POST", body: "job=job-office" }), env3);
+  check("a form post to the plan route is refused", r.status === 415);
+  const codes = [];
+  for (let i = 0; i < PLAN_WRITES + 2; i++) codes.push((await ppost({ job: "job-bin-shelving", field: "done", value: i % 2 === 0, set: Date.now() + i }, "198.51.100.9")).status);
+  check("one address is cut off after the plan write cap", codes.slice(0, PLAN_WRITES).every(c => c === 200) && codes.slice(PLAN_WRITES).every(c => c === 429));
+  for (let i = 0; i < PLAN_MAX_JOBS; i++) await ppost({ job: "job-fill-" + i, field: "done", value: true });
+  x = await ppost({ job: "job-one-more", field: "done", value: true });
+  check("a new job past the cap is refused", x.status === 429);
+  x = await ppost({ job: "job-office", field: "done", value: false, set: Date.now() + 1000 });
+  check("a job already in the plan still changes past the cap", x.status === 200 && x.j.jobs["job-office"].done === false);
+  check("the plan log carries no address", !JSON.stringify(await pget()).includes("198.51.100"));
+  const h = await worker.fetch(new Request("https://yesandeverything.com" + HOUSE_ROUTE), env3).then(r => r.json());
+  check("the plan state never reaches the house marks", !JSON.stringify(h).includes("job-"));
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }

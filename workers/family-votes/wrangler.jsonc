@@ -18,21 +18,25 @@
   // the gated-docs and coiled-guardian routes do. Only the vote route, so the page stays static.
   "routes": [
     { "pattern": "yesandeverything.com/thanksgiving-2026/api/*", "zone_name": "yesandeverything.com" },
-    { "pattern": "yesandeverything.com/house-search/api/*", "zone_name": "yesandeverything.com" }
+    { "pattern": "yesandeverything.com/house-search/api/*", "zone_name": "yesandeverything.com" },
+    { "pattern": "yesandeverything.com/house-plan/api/*", "zone_name": "yesandeverything.com" }
   ],
 
   // Every vote goes through one Durable Object, so votes never overwrite each other and every
   // viewer reads the same totals at once. Stored in its own SQLite-backed storage. The house
-  // search marks get their own object, HouseMarks, so the two never share a record.
+  // search marks get their own object, HouseMarks, so the two never share a record. The house plan's
+  // Needed, Wanted and Done state gets a third, PlanState, which outlives the house search.
   "durable_objects": {
     "bindings": [
       { "name": "BOX", "class_name": "VoteBox" },
-      { "name": "HOUSE", "class_name": "HouseMarks" }
+      { "name": "HOUSE", "class_name": "HouseMarks" },
+      { "name": "PLAN", "class_name": "PlanState" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["VoteBox"] },
-    { "tag": "v2", "new_sqlite_classes": ["HouseMarks"] }
+    { "tag": "v2", "new_sqlite_classes": ["HouseMarks"] },
+    { "tag": "v3", "new_sqlite_classes": ["PlanState"] }
   ],
 
   // The first version's store. VoteBox reads it once to carry votes over and never writes it.

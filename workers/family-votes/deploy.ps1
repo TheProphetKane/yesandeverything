@@ -1,6 +1,7 @@
 # deploy.ps1: the one door for shipping the family-votes Worker, which serves
 # yesandeverything.com/thanksgiving-2026/api/* (the Thanksgiving vote) and
-# yesandeverything.com/house-search/api/* (the shared house search marks).
+# yesandeverything.com/house-search/api/* (the shared house search marks) and
+# yesandeverything.com/house-plan/api/* (the house plan's Needed, Wanted and Done state).
 #
 # Order: the self-test, then wrangler deploy, then a live read of both routes. A failing
 # self-test stops the deploy before anything reaches the site, and a route that does not answer
@@ -37,7 +38,8 @@ foreach ($i in 1..6) {
         $r = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/votes" -TimeoutSec 15
         $h = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/house-search/api/marks" -TimeoutSec 15
         $v = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/thanksgiving-2026/api/version" -TimeoutSec 15
-        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"' -and $h.StatusCode -eq 200 -and $h.Content -match '"marks"' -and $v.Content -match $build) { $ok = $true; break }
+        $p = Invoke-WebRequest -UseBasicParsing -Uri "https://yesandeverything.com/house-plan/api/state" -TimeoutSec 15
+        if ($r.StatusCode -eq 200 -and $r.Content -match '"tallies"' -and $h.StatusCode -eq 200 -and $h.Content -match '"marks"' -and $p.StatusCode -eq 200 -and $p.Content -match '"jobs"' -and $v.Content -match $build) { $ok = $true; break }
     } catch { }
     Start-Sleep -Seconds 5
 }

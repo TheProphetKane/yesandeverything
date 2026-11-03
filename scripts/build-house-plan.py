@@ -95,6 +95,7 @@ STYLE = """
   --font-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.55; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 1.75rem max(16px, 2.5vw) 4rem; display: grid; gap: 1.4rem; }
@@ -175,6 +176,24 @@ table.t-total td:nth-child(3), table.t-summary td:nth-child(3) { color: var(--se
 table.t-summary tr.group th { background: var(--bg); padding-top: 0.9rem; }
 table.t-summary td small { display: block; color: var(--muted); font-size: 0.76rem; font-weight: 400; }
 .section-note { color: var(--muted); font-size: 0.9rem; }
+.tag.done-tag { display: none; background: var(--pass-soft); color: var(--pass); }
+.job.done .tag.done-tag, tr.done .tag.done-tag { display: inline-block; }
+.job.done .name, tr.done td:first-child a { text-decoration: line-through; text-decoration-thickness: 2px; }
+.job.done { background: var(--bg); }
+.job.done .what, .job.done .detail, .job.done .when, .job.done .prices { opacity: 0.55; }
+tr.done td { color: var(--muted) !important; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding-top: 0.2rem; }
+.done-label { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-data); font-size: 0.82rem; cursor: pointer; }
+input.done-box { width: 1.15rem; height: 1.15rem; accent-color: var(--pass); cursor: pointer; margin: 0; }
+.list-done { display: inline-flex; vertical-align: -0.2em; margin-right: 0.5rem; }
+button.switch { font: inherit; font-family: var(--font-data); font-size: 0.78rem; background: var(--raise); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 0.3rem 0.7rem; cursor: pointer; }
+button.switch:hover { border-color: var(--sea); }
+.who-bar { color: var(--muted); font-size: 0.9rem; }
+button.linkish { font: inherit; background: none; border: 0; padding: 0; color: var(--sea); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.plan-note { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(92vw, 640px); background: var(--rose-soft); color: var(--ink); border: 1px solid var(--rose); border-radius: 10px; padding: 0.6rem 0.9rem; z-index: 5; max-width: none; }
+details.changes { color: var(--muted); }
+details.changes summary { cursor: pointer; color: var(--ink); }
+details.changes ol { margin: 0.6rem 0 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; font-size: 0.9rem; }
 dialog { border: 0; padding: 0; background: var(--surface); color: var(--ink); border-radius: 12px; width: min(96vw, 1800px); max-height: 94vh; }
 dialog::backdrop { background: rgba(3, 8, 14, 0.82); }
 dialog .bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line); font-family: var(--font-data); font-size: 0.85rem; }
@@ -213,6 +232,186 @@ SCRIPT = """
   img.addEventListener('click', () => pic.classList.toggle('zoom'));
   dlg.querySelector('.close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', ev => { if (ev.target === dlg) dlg.close(); });
+})();
+"""
+
+PLAN_SCRIPT = r"""
+(() => {
+  const cards = [...document.querySelectorAll('article.job[data-job]')];
+  if (!cards.length) return;
+  const API = '/house-plan/api/state';
+  const NAME = 'house-search-name';
+  const LABEL = { need: 'Needed', want: 'Wanted', fail: 'When it fails' };
+  const note = document.getElementById('plan-note');
+  const whoBar = document.getElementById('who-bar');
+  const logEl = document.getElementById('plan-log');
+  const rows = [...document.querySelectorAll('tr[data-job]')];
+  const tbody = rows.length ? rows[0].parentElement : null;
+  const totalRow = tbody ? tbody.querySelector('tr.total') : null;
+  const groups = {};
+  document.querySelectorAll('tr[data-group]').forEach(r => { groups[r.dataset.group] = r; });
+  const byId = {}, base = {};
+  cards.forEach(c => { byId[c.dataset.job] = c; base[c.dataset.job] = c.dataset.mark; });
+  let state = {}, log = [], name = '', queue = Promise.resolve();
+  try { name = localStorage.getItem(NAME) || ''; } catch (err) { /* asked on the first change */ }
+  const pair = s => (s ? s.split(',').map(Number) : null);
+  const money = v => '$' + v.toLocaleString('en-US');
+  const span = (lo, hi) => (hi ? money(Math.floor(lo / 100) * 100) + ' to ' + money(Math.ceil(hi / 100) * 100) : '$0');
+  const markOf = id => (state[id] && state[id].mark) || base[id];
+  const doneOf = id => !!(state[id] && state[id].done);
+  function cleanName(raw) {
+    const n = String(raw || '').replace(/\s+/g, ' ').trim();
+    try { return n.length <= 40 && new RegExp("^\\p{L}[\\p{L} '.-]*$", 'u').test(n) ? n : ''; }
+    catch (err) { return n.length <= 40 && /^[A-Za-z][A-Za-z '.-]*$/.test(n) ? n : ''; }
+  }
+  function warn(msg) {
+    if (!note) return;
+    note.textContent = msg;
+    note.hidden = !msg;
+  }
+  function render() {
+    const zero = () => ({ need: [0, 0, 0, 0], want: [0, 0, 0, 0] });
+    const sec = {}, all = zero();
+    let done = 0, counted = 0;
+    cards.forEach(c => {
+      const id = c.dataset.job, m = markOf(id), d = doneOf(id);
+      c.classList.remove('need', 'want');
+      if (m !== 'fail') c.classList.add(m);
+      const tag = c.querySelector('.tag.mark');
+      if (tag) { tag.className = 'tag mark ' + m; tag.textContent = LABEL[m]; }
+      c.classList.toggle('done', d);
+      const box = c.querySelector('input.done-box');
+      if (box) box.checked = d;
+      const sw = c.querySelector('button.switch');
+      if (sw) sw.textContent = m === 'need' ? 'Move to Wanted' : 'Move to Needed';
+      if (m === 'fail') return;
+      counted += 1;
+      if (d) done += 1;
+      const s = sec[c.dataset.sec] || (sec[c.dataset.sec] = zero());
+      [[pair(c.dataset.fam), 0], [pair(c.dataset.hire), 2]].forEach(([fig, i]) => {
+        if (!fig) return;
+        s[m][i] += fig[0]; s[m][i + 1] += fig[1];
+        all[m][i] += fig[0]; all[m][i + 1] += fig[1];
+      });
+    });
+    const both = t => t.need.map((v, i) => v + t.want[i]);
+    const show = (el, v, side) => { el.textContent = side === 'fam' ? span(v[0], v[1]) : span(v[2], v[3]); };
+    document.querySelectorAll('table.t-total[data-sec]').forEach(table => {
+      const s = sec[table.dataset.sec] || zero();
+      const vals = { need: s.need, want: s.want, both: both(s) };
+      table.querySelectorAll('[data-t]').forEach(td => { const [k, side] = td.dataset.t.split('-'); show(td, vals[k], side); });
+    });
+    document.querySelectorAll('[data-g]').forEach(el => {
+      const [k, side] = el.dataset.g.split('-');
+      show(el, k === 'all' ? both(all) : all[k], side);
+    });
+    if (tbody && totalRow) {
+      const sorted = rows.slice().sort((a, b) => a.dataset.idx - b.dataset.idx);
+      ['need', 'want'].forEach(g => {
+        if (groups[g]) tbody.insertBefore(groups[g], totalRow);
+        sorted.filter(r => markOf(r.dataset.job) === g).forEach(r => tbody.insertBefore(r, totalRow));
+      });
+      rows.forEach(r => {
+        const d = doneOf(r.dataset.job);
+        r.classList.toggle('done', d);
+        const b = r.querySelector('input.done-box');
+        if (b) b.checked = d;
+      });
+    }
+    const prog = document.getElementById('plan-progress');
+    if (prog) prog.textContent = done + ' of ' + counted + ' needed and wanted jobs done.';
+  }
+  function when(at) {
+    try { return new Date(at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    catch (err) { return ''; }
+  }
+  function sentence(e) {
+    const who = e.name || 'Someone';
+    const what = byId[e.job] ? byId[e.job].dataset.name : e.job;
+    const did = e.field === 'done'
+      ? (e.to ? 'marked ' + what + ' done' : 'took the done mark off ' + what)
+      : 'moved ' + what + ' to ' + (e.to === 'need' ? 'Needed' : 'Wanted');
+    return who + ' ' + did + ', ' + when(e.at) + '.';
+  }
+  function showLog() {
+    if (!logEl) return;
+    logEl.textContent = '';
+    (log.length ? log : [null]).forEach(e => {
+      const li = document.createElement('li');
+      li.textContent = e ? sentence(e) : 'Nothing has been changed yet.';
+      logEl.appendChild(li);
+    });
+  }
+  function showWho() {
+    if (!whoBar) return;
+    whoBar.textContent = 'Every job has a Done box and a switch between Needed and Wanted, and a change saves for everyone. '
+      + (name ? 'Changing as ' + name + '. ' : 'The first change asks for your first name. ');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'linkish';
+    b.textContent = name ? 'Not you? Change the name' : 'Set your name now';
+    b.addEventListener('click', () => { askName(true); });
+    whoBar.appendChild(b);
+  }
+  function askName(force) {
+    if (name && !force) return name;
+    const n = window.prompt('Your first name, so everyone can see who changed what. Type the same name on every phone or laptop you use.', name || '');
+    if (n === null) return '';
+    const clean = cleanName(n);
+    if (!clean) { warn('A name is letters and spaces, up to 40 characters. Nothing was saved.'); return ''; }
+    name = clean;
+    try { localStorage.setItem(NAME, clean); } catch (err) { /* asked again next load */ }
+    showWho();
+    return clean;
+  }
+  function take(j) {
+    if (j && j.jobs && typeof j.jobs === 'object') state = j.jobs;
+    if (j && Array.isArray(j.log)) log = j.log;
+    render();
+    showLog();
+  }
+  function change(id, field, value) {
+    const who = askName(false);
+    if (!who) { render(); return; }
+    const before = state[id] ? Object.assign({}, state[id]) : null;
+    state[id] = Object.assign({}, state[id] || {}, { [field]: value });
+    render();
+    const body = JSON.stringify({ job: id, field, value, name: who, set: Date.now() });
+    queue = queue.then(() => fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
+      .then(r => r.json().catch(() => ({})).then(j => {
+        if (!r.ok) throw new Error(j.error || 'The save was refused.');
+        take(j);
+        warn('');
+      }))
+      .catch(err => {
+        if (before) state[id] = before; else delete state[id];
+        render();
+        warn('Not saved: ' + err.message + ' Try it again.');
+      }));
+  }
+  cards.forEach(c => {
+    const id = c.dataset.job;
+    const box = c.querySelector('input.done-box');
+    if (box) box.addEventListener('change', () => change(id, 'done', box.checked));
+    const sw = c.querySelector('button.switch');
+    if (sw) sw.addEventListener('click', () => change(id, 'mark', markOf(id) === 'need' ? 'want' : 'need'));
+  });
+  rows.forEach(r => {
+    const box = r.querySelector('input.done-box');
+    if (box) box.addEventListener('change', () => change(r.dataset.job, 'done', box.checked));
+  });
+  showWho();
+  render();
+  if (typeof fetch === 'function') {
+    fetch(API, { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error('the saved changes did not load.'))))
+      .then(j => {
+        take(j);
+        document.querySelectorAll('.controls, .list-done, #who-bar, #plan-progress, details.changes')
+          .forEach(el => { el.hidden = false; });
+      })
+      .catch(() => { /* no shared state: the page stays the plan as written, with no controls */ });
+  }
 })();
 """
 
@@ -308,7 +507,7 @@ def layout_figure(marker, page_dir):
 
 
 MONEY = re.compile(r"\$([\d,]+(?:\.\d+)?)(?:\s+to\s+\$([\d,]+(?:\.\d+)?))?")
-FAMILY = ("Nick", "Lexi", "Dad", "Grandma", "Everyone", "brother")
+FAMILY = ("Nick", "Lexi", "Bill", "Gannan", "AJ", "Obo", "Dom", "Everyone")
 SET_ASIDE = (("a year", "Every year"), ("if needed", "Only if needed"), ("credit", "Credits asked of the sellers"),
              ("closing costs", "Paid in the closing costs"))
 
@@ -532,8 +731,12 @@ def chips(j):
     return f'<div class="prices">{"".join(out)}</div>' if out else ""
 
 
-def job_card(j):
-    tag = f'<span class="tag {j["tag"]}">{[k for k, v in TAGS.items() if v == j["tag"]][0]}</span>' if j["tag"] else ""
+def figures(pick):
+    return f"{pick[0]:g},{pick[1]:g}" if pick else ""
+
+
+def job_card(j, sec):
+    tag = f'<span class="tag mark {j["tag"]}">{[k for k, v in TAGS.items() if v == j["tag"]][0]}</span>' if j["tag"] else ""
     meta = [html.escape(x) for x in (j["when"], j["who"]) if x and x != j["date"]]
     when = (f'<p class="when">{html.escape(j["date"]) if j["date"] else ""}'
             f'{" " if j["date"] and meta else ""}<span class="meta">{" · ".join(meta)}</span></p>')
@@ -543,31 +746,39 @@ def job_card(j):
         if detail:
             details.append(f"<b>{label}:</b> {inline(detail)}")
     detail = f'<p class="detail">{"<br>".join(details)}</p>' if details else ""
-    return (f'<article class="job {j["tag"] or ""}" id="{j["id"]}">'
-            f'<div class="job-head"><h3>{tag}{html.escape(j["name"])}</h3>{chips(j)}</div>'
-            f'{when}<p class="what">{inline(j["what"])}</p>{detail}</article>')
+    name = html.escape(j["name"])
+    switch = ('<button type="button" class="switch">Move to Wanted</button>' if j["tag"] == "need" else
+              '<button type="button" class="switch">Move to Needed</button>' if j["tag"] == "want" else "")
+    controls = (f'<div class="controls" hidden><label class="done-label"><input type="checkbox" class="done-box" '
+                f'aria-label="{name} is done"> Done</label>{switch}</div>')
+    return (f'<article class="job {j["tag"] or ""}" id="{j["id"]}" data-job="{j["id"]}" data-mark="{j["tag"]}" '
+            f'data-sec="{sec}" data-name="{html.escape(j["name"], quote=True)}" data-fam="{figures(j["fam"])}" '
+            f'data-hire="{figures(j["hire"])}">'
+            f'<div class="job-head"><h3>{tag}<span class="tag done-tag">Done</span><span class="name">{name}</span></h3>'
+            f'{chips(j)}</div>{when}<p class="what">{inline(j["what"])}</p>{detail}{controls}</article>')
 
 
-def total_table(caption, rows):
+def total_table(caption, rows, sec):
     total = ' class="total"'
-    body = "".join(f'<tr{total if bold else ""}><td>{label}</td><td>{fam}</td><td>{hire}</td></tr>'
-                   for label, fam, hire, bold in rows)
-    return (f'<div class="table-wrap"><table class="t-total"><thead><tr><th>{caption}</th><th>Family does it</th>'
-            f'<th>Hired out</th></tr></thead><tbody>{body}</tbody></table></div>')
+    body = "".join(f'<tr{total if bold else ""}><td>{label}</td><td data-t="{key}-fam">{fam}</td>'
+                   f'<td data-t="{key}-hire">{hire}</td></tr>'
+                   for key, label, fam, hire, bold in rows)
+    return (f'<div class="table-wrap"><table class="t-total" data-sec="{sec}"><thead><tr><th>{caption}</th>'
+            f'<th>Family does it</th><th>Hired out</th></tr></thead><tbody>{body}</tbody></table></div>')
 
 
-def section_block(jobs):
+def section_block(jobs, sec):
     need, want = sums(jobs, "need"), sums(jobs, "want")
     both = [a + b for a, b in zip(need, want)]
     table = total_table("Section total", [
-        ("Needed", span(need[0], need[1]), span(need[2], need[3]), False),
-        ("Wanted", span(want[0], want[1]), span(want[2], want[3]), False),
-        ("Needed and wanted", span(both[0], both[1]), span(both[2], both[3]), True),
-    ])
+        ("need", "Needed", span(need[0], need[1]), span(need[2], need[3]), False),
+        ("want", "Wanted", span(want[0], want[1]), span(want[2], want[3]), False),
+        ("both", "Needed and wanted", span(both[0], both[1]), span(both[2], both[3]), True),
+    ], sec)
     fails = sum(1 for j in jobs if j["tag"] == "fail")
     note = (f'<p class="section-note">The {fails} jobs marked When it fails are left out of these totals.</p>'
             if fails else "")
-    return f'<div class="jobs">{"".join(job_card(j) for j in jobs)}</div>{table}{note}', need, want
+    return f'<div class="jobs">{"".join(job_card(j, sec) for j in jobs)}</div>{table}{note}', need, want
 
 
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
@@ -582,14 +793,18 @@ def glance(need, want, fails):
 
     def tile(cls, label, t):
         return (f'<div class="tile {cls}"><span><span class="tag {cls}">{label}</span></span>'
-                f'<div class="row fam"><span>Family does it</span><b>{span(t[0], t[1])}</b></div>'
-                f'<div class="row hire"><span>Hired out</span><b>{span(t[2], t[3])}</b></div></div>')
+                f'<div class="row fam"><span>Family does it</span><b data-g="{cls}-fam">{span(t[0], t[1])}</b></div>'
+                f'<div class="row hire"><span>Hired out</span><b data-g="{cls}-hire">{span(t[2], t[3])}</b></div></div>')
     return (f'<section class="glance" aria-label="The budget at a glance">{tile("need", "Needed", need)}'
             f'{tile("want", "Wanted", want)}{tile("all", "Everything", both)}</section>'
             f'<p class="glance-note">With a {CUSHION * 100:.0f} percent cushion on the high end, plan on up to {up(both[1])} with the '
             f'family doing the work, or up to {up(both[3])} hired out. Insurance, closing costs, anything needed only '
             f'if a test calls for it, and the {WORDS.get(fails, fails)} replacements that wait for the old one to fail sit outside these '
-            f'totals. <a href="#everything-on-one-list">Every job on one list</a> is at the bottom.</p>')
+            f'totals. <a href="#everything-on-one-list">Every job on one list</a> is at the bottom.</p>'
+            f'<p class="glance-note" id="plan-progress" hidden></p>'
+            f'<p class="who-bar" id="who-bar" hidden>Every job has a Done box and a switch between Needed and Wanted. '
+            f'A change saves for everyone who opens the page.</p>'
+            f'<p class="plan-note" id="plan-note" role="status" hidden></p>')
 
 
 def summary(jobs, need, want):
@@ -598,7 +813,7 @@ def summary(jobs, need, want):
     both = [a + b for a, b in zip(need, want)]
     rows = []
     for tag, label in (("need", "Needed"), ("want", "Wanted")):
-        rows.append(f'<tr class="group"><th colspan="3" scope="colgroup"><span class="tag {tag}">{label}</span></th></tr>')
+        rows.append(f'<tr class="group" data-group="{tag}"><th colspan="3" scope="colgroup"><span class="tag {tag}">{label}</span></th></tr>')
         for j in jobs:
             if j["tag"] != tag or not (j["fam"] or j["free"]):
                 continue
@@ -610,7 +825,9 @@ def summary(jobs, need, want):
                 fam_cell = (html.escape(fam_head) if fam_head and not figure(fam_head)[2]
                             else f'{html.escape(hire_head)}<small>same either way</small>')
                 hire_cell = html.escape(hire_head) if hire_head else html.escape(fam_head)
-            rows.append(f'<tr><td><a href="#{j["id"]}">{html.escape(j["name"])}</a></td>'
+            rows.append(f'<tr data-job="{j["id"]}" data-idx="{jobs.index(j)}"><td><label class="list-done" hidden>'
+                        f'<input type="checkbox" class="done-box" aria-label="{html.escape(j["name"], quote=True)} is done">'
+                        f'</label><span class="tag done-tag">Done</span><a href="#{j["id"]}">{html.escape(j["name"])}</a></td>'
                         f'<td>{fam_cell}</td><td>{hire_cell}</td></tr>')
     rows.append(f'<tr class="total"><td>Total</td><td>{span(both[0], both[1])}</td><td>{span(both[2], both[3])}</td></tr>')
     table = ('<div class="table-wrap"><table class="t-summary"><thead><tr><th>Job</th><th>Family does it</th>'
@@ -637,7 +854,9 @@ def summary(jobs, need, want):
             f'does the job either way.</p>{table}'
             f'<p>With a {CUSHION * 100:.0f} percent cushion on the high end, plan on up to {up(both[1])} with the family doing '
             f'the work, or up to {up(both[3])} hired out.</p>'
-            f'<h3>Not in the total</h3><ul class="notes">{"".join(notes)}</ul>')
+            f'<h3>Not in the total</h3><ul class="notes">{"".join(notes)}</ul>'
+            f'<details class="changes" hidden><summary>Recent changes: who ticked, unticked or moved what</summary>'
+            f'<ol id="plan-log"><li>Nothing has been changed yet.</li></ol></details>')
 
 
 def plan_blocks(md):
@@ -658,7 +877,7 @@ def plan_blocks(md):
         if not ("job" in low and any(h.startswith("family") for h in low) and any(h.startswith("hired") for h in low)):
             continue
         jobs = read_jobs(head, rows, headings[start], taken)
-        block, s_need, s_want = section_block(jobs)
+        block, s_need, s_want = section_block(jobs, k)
         blocks[f"jobs-{k}"] = block
         jobs_all[:0] = jobs
         need = [a + b for a, b in zip(need, s_need)]
@@ -721,7 +940,7 @@ def build(page):
 <div class="bar"><span class="title"></span><span><a class="full" href="#" target="_blank" rel="noopener">Full size</a> <button class="close" type="button">Close</button></span></div>
 <div class="pic"><img alt=""></div>
 </dialog>
-<script>{SCRIPT}</script>
+<script>{SCRIPT}{PLAN_SCRIPT if "{{summary}}" in text else ""}</script>
 </body>
 </html>
 """

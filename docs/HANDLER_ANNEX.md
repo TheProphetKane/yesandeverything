@@ -18,7 +18,7 @@ by moving it, never by copying it, so one owner holds each fact.
 | `.nojekyll` | Real 0-byte file at the repo root, left from the branch-deploy builder, where it told Pages to skip Jekyll. The Actions artifact never runs Jekyll, so it does nothing now and sits on the private list. |
 | `workers/gated-docs/` | The server-side gate for the two private design documents, at `/hordes/` and `/brackish-rising/`. Cloudflare Worker on path routes, deployed by wrangler rather than by Pages. **This replaced two static pages here that carried the whole document as base64 with the access phrase in cleartext** (2026-08-25). Those withheld nothing: the payload decoded without the phrase, and this repository is public. The documents now live in the `GATED_DOCS` key-value namespace, written by each project's `publish-gdd.ps1`, and are read only after a signed session cookie validates. Access phrases are Worker secrets, listed in `X:\.secrets\YesAndEverything\gated-docs-access.txt`. The Worker source is safe to be public: it holds no phrase and no payload. |
 | `workers/coiled-guardian/` | Shipped 2026-08-27. The server-side gate for a private page set at `/coiledguardian`. Same shape as `workers/gated-docs/`, with one difference: that Worker serves one document per prefix, this one serves many pages under a single prefix, so the page is resolved from the rest of the path *after* the session cookie validates rather than before it, so an unknown page under a valid session 404s instead of hinting that something is there. Page bodies live in the same `GATED_DOCS` key-value namespace under `cg:`-prefixed keys (so the two gates never collide), written by the owning project's own publish step. **The page bodies are not in this repository and must not come back to it**, the same standing rule as the two design documents. The Worker source is safe to be public: it holds no phrase and no page. What the pages are, where they are written and why they are private is that project's business and is recorded there, not here (compliance-data-steward-03, 2026-09-23). |
-| `workers/family-votes/` | The family vote behind `/thanksgiving-2026/`: a thumbs up or down per listing, one record per device id, kept in a SQLite-backed Durable Object (`VoteBox`). Route `/thanksgiving-2026/api/*`; no secrets. Abuse bounds: 200-voter cap and 12 new device ids per address per hour (per-address counter in the same Durable Object, keyed on `CF-Connecting-IP`, answers 429 with `Retry-After`). `/thanksgiving-2026/api/version` reports the build, the git short hash that `deploy.ps1` passes as `BUILD_HASH`. Ship through `workers/family-votes/deploy.ps1` (self-test, deploy, live check). |
+| `workers/family-votes/` | The family vote behind `/thanksgiving-2026/`: a thumbs up or down per listing, one record per device id, kept in a SQLite-backed Durable Object (`VoteBox`). Route `/thanksgiving-2026/api/*`; no secrets. Abuse bounds: 200-voter cap and 12 new device ids per address per hour (per-address counter in the same Durable Object, keyed on `CF-Connecting-IP`, answers 429 with `Retry-After`). `/thanksgiving-2026/api/version` reports the build, the git short hash that `deploy.ps1` passes as `BUILD_HASH`. Since 2026-11-03 it also keeps the house plan's shared state in a third Durable Object, `PlanState`, on the route `/house-plan/api/*`: per job card, a Needed or Wanted switch and a Done box, each change logged with the name typed and the time. Ship through `workers/family-votes/deploy.ps1` (self-test, deploy, live check). |
 | `projects/here-there-be-hordes/gdd.html` | Dead-weight legacy file from pre-v0.26.18 publish flow. Now a meta-refresh stub that redirects to `/projects/here-be-hordes/design.html` so any old bookmark still lands on a gated page. It used to point at `/hordes/`, which made it a public link into a robots-disallowed path. Folder path kept (not renamed) because no live link on the site references it; the redirect just covers external bookmarks. |
 | `projects/scheduler/{index,design}.html` | Scheduler project landing + design preview. |
 | `projects/{apothecary,brackish-rising,budget,cattery,chains,gnosis,here-be-hordes,ring}/` | Per-project Details + Design pages (`index.html` + `design.html` each; design pages are client-gated). `projects/budget/` also carries `pre-install`, `privacy`, `security`, and `security-notices` sub-pages, plus a nested `security/pgp-key` page. Every PUBLIC project gets a homepage card (alphabetical by project word) with Details / Design / Launch buttons plus this page pair. Version/milestone values carry `<!--live:...-->` markers stamped by `scripts/update-project-pages.mjs` (run in the Pages deploy workflow), so a project release refreshes the deployed pages via its status JSON push. Agents is deliberately absent from the homepage grid (2026-07-06, still current) but is tracked on the robots-gated dashboard and status tier (restored 2026-07-08), so don't add an Agents card without Kane's explicit ask. The two private projects (see the private handler list) are never listed. |
@@ -137,7 +137,8 @@ private prior owners stay unnamed, companies may be named. The pieces:
 - End condition: when a house is under contract, stop the `house-search-sync` routine, wipe the
   shared marks (the `HouseMarks` storage in `workers/family-votes`), remove `house-search` from
   `scripts/stage-site.mjs`, and delete `house-search/`, `data/house-search*.json` and the two
-  `house-search` scripts. The Worker route can then drop with its next deploy.
+  `house-search` scripts. The `/house-search/api/*` route can then drop with the Worker's next
+  deploy; the Worker itself stays, because the house plan's `PlanState` lives in it.
 
 ### House search: under contract, routine stopped (2026-11-02)
 
@@ -189,10 +190,20 @@ unlisted like the search (noindex, robots-disallowed). They are not part of the 
 condition: when the search retires at closing, `house-plan` stays on the allowlist, and the link
 from the report goes with the report.
 
+Every job card carries a Done box, and every Needed or Wanted card a switch between the two, by
+Nick's ask of 2026-11-03. The state is shared: the `PlanState` Durable Object in
+`workers/family-votes` keeps it on `/house-plan/api/state`, and the page redraws every total from
+it, so moving a job moves its money between the needed and wanted figures. A Done box can be
+unticked, and the page's Recent changes list names who ticked or moved what and when, under the
+first name the house search already asks for (the same `house-search-name` in local storage).
+The built page is the plan as written; the shared state only overrides it, so a job whose card id
+changes in the source loses its saved state. Keep a card's short name stable once the family is
+using it. `PlanState` is not wiped at closing.
+
 ### Retirement: Thanksgiving 2026 page, due 2026-12-15 (2026-10-29)
 
 The stay runs 22 to 29 November 2026. On 2026-12-15: remove `thanksgiving-2026` from the
 allowlist in `scripts/stage-site.mjs`, delete the `thanksgiving-2026/` page, wipe the `VoteBox`
 storage in `workers/family-votes` (votes and device ids), and keep the Worker for the house
-marks while the house search lives. The removal happens on that date; this entry is the
-instruction. If the house search has also ended by then, retire the Worker too.
+marks and the house plan. The removal happens on that date; this entry is the instruction. The
+Worker stays after the house search ends, since the house plan's state lives in it.

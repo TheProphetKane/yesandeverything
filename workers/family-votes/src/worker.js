@@ -20,6 +20,12 @@
 // whoever set it, and the last tap won, which is how marks went missing between two people
 // with nothing on record to say who cleared them. The marks from that version are carried over
 // as unnamed votes, each claimed by the first person who sets the same mark under a name.
+//
+// Since 2026-11-03 the same Worker keeps the house plan's shared state (yesandeverything.com/house-plan/,
+// the Needed and Wanted switch and the Done box on every job) in a third Durable Object, PlanState.
+// It is its own object because the plan outlives the house search: the HouseMarks storage is wiped
+// at closing and this one is not. Every change is logged with who made it and when, so a job ticked
+// done by mistake can be unticked and the log still shows both.
 
 export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
@@ -64,6 +70,18 @@ export const HOUSE_LOG_KEEP = 1000;
 export const HOUSE_LOG_SEND = 40;
 // The voter the single-mark version's marks are carried over under.
 export const EARLIER = "earlier";
+
+// The house plan's shared state: one record per job card, in the PlanState Durable Object.
+export const PLAN_ROUTE = "/house-plan/api/state";
+// A job id is the card's own anchor on the plan page (job-d-d-room); anything else is refused.
+export const PLAN_JOB = /^job-[a-z0-9-]{1,80}$/;
+export const PLAN_MARKS = new Set(["need", "want"]);
+// More jobs than the plan will ever hold, so a stray visitor cannot fill the store.
+export const PLAN_MAX_JOBS = 300;
+// Writes one address may make per hour.
+export const PLAN_WRITES = 300;
+export const PLAN_LOG_KEEP = 1000;
+export const PLAN_LOG_SEND = 60;
 
 // A name as typed ("Kane", "kane ") becomes one voter key, so the same person on a phone and a
 // laptop holds one vote. Letters, spaces, apostrophes, hyphens and periods, up to 40 characters.
@@ -312,6 +330,80 @@ export class HouseMarks {
   }
 }
 
+// The house plan's state. Each job holds two fields that change on their own: mark, need or want,
+// which overrides the mark the page was built with, and done, true or false. Each field keeps when
+// it was last set by the tapping person's clock, so an old tap that waited offline cannot undo a
+// newer one. One object serves every request in turn, so two people tapping at once never collide.
+export class PlanState {
+  constructor(ctx) {
+    this.storage = ctx.storage;
+  }
+
+  async view() {
+    const jobs = {};
+    let at = 0;
+    const all = await this.storage.list({ prefix: "j:" });
+    for (const [k, rec] of all) {
+      const out = {};
+      if (rec.mark) out.mark = rec.mark;
+      if (rec.done !== undefined) out.done = rec.done;
+      if (Object.keys(out).length) jobs[k.slice(2)] = out;
+      if (rec.at > at) at = rec.at;
+    }
+    const logged = await this.storage.list({ prefix: "log:" });
+    const log = [...logged.values()].slice(-PLAN_LOG_SEND).reverse()
+      .map(e => ({ job: e.job, field: e.field, from: e.from, to: e.to, name: e.name || "", at: e.at }));
+    return { jobs, at, log, count: all.size };
+  }
+
+  async fetch(request) {
+    if (request.method === "GET") {
+      const { jobs, at, log } = await this.view();
+      return json({ jobs, at, log });
+    }
+    const { job, field, value, name, set } = await request.json();
+    const now = Date.now();
+    const ip = request.headers.get("x-client-ip");
+    if (ip) {
+      const step = rateStep(await this.storage.get("r:" + ip), now, PLAN_WRITES, IP_WINDOW_MS);
+      if (!step.allowed) {
+        return new Response(JSON.stringify({ error: "Too many changes from this address. Try again later." }), {
+          status: 429, headers: { ...HEADERS, "retry-after": String(step.retryAfter) },
+        });
+      }
+      await this.storage.put("r:" + ip, step.rec);
+      const old = await this.storage.list({ prefix: "r:" });
+      for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
+    }
+    const key = "j:" + job;
+    const stored = await this.storage.get(key);
+    const rec = { ...(stored || {}), sets: { ...((stored && stored.sets) || {}) } };
+    if (rec.sets[field] && rec.sets[field] > set) {
+      const state = await this.view();
+      return json({ ok: true, stale: true, jobs: state.jobs, at: state.at, log: state.log });
+    }
+    if (!stored) {
+      const { count } = await this.view();
+      if (count >= PLAN_MAX_JOBS) return json({ error: "The plan is full." }, 429);
+    }
+    const from = rec[field] === undefined ? null : rec[field];
+    rec[field] = value;
+    rec.sets[field] = set;
+    rec.at = now;
+    await this.storage.put(key, rec);
+    if (from !== value) {
+      let seq = (await this.storage.get("logseq")) || 0;
+      await this.storage.put("log:" + String(++seq).padStart(10, "0"), { job, field, from, to: value, name, at: now });
+      await this.storage.put("logseq", seq);
+      const logged = await this.storage.list({ prefix: "log:" });
+      const extra = logged.size - PLAN_LOG_KEEP;
+      if (extra > 0) for (const k of [...logged.keys()].slice(0, extra)) await this.storage.delete(k);
+    }
+    const state = await this.view();
+    return json({ ok: true, jobs: state.jobs, at: state.at, log: state.log });
+  }
+}
+
 function box(env) {
   return env.BOX.get(env.BOX.idFromName("thanksgiving-2026"));
 }
@@ -354,6 +446,44 @@ async function houseRoute(request, env) {
   }));
 }
 
+function plan(env) {
+  return env.PLAN.get(env.PLAN.idFromName("house-plan"));
+}
+
+// The house plan route: GET reads every job's state, POST {job, field, value, name, set} sets one
+// field of one job: field "mark" with value "need" or "want", or field "done" with true or false.
+async function planRoute(request, env) {
+  if (request.method === "GET") return plan(env).fetch(new Request("https://planstate" + PLAN_ROUTE));
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+  if (!(request.headers.get("content-type") || "").includes("application/json")) {
+    return json({ error: "Send the change as JSON." }, 415);
+  }
+  if (Number(request.headers.get("content-length") || 0) > 1024) {
+    return json({ error: "That request is too large." }, 413);
+  }
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "That change could not be read." }, 400); }
+  const job = body && typeof body.job === "string" && PLAN_JOB.test(body.job) ? body.job : null;
+  if (!job) return json({ error: "That job is not on the plan." }, 400);
+  let value;
+  if (body.field === "mark" && PLAN_MARKS.has(body.value)) value = body.value;
+  else if (body.field === "done" && typeof body.value === "boolean") value = body.value;
+  else return json({ error: "A change is a mark of need or want, or done true or false." }, 400);
+  if (body.name !== undefined && body.name !== "" && !cleanName(body.name)) {
+    return json({ error: "A name is letters and spaces, up to 40 characters." }, 400);
+  }
+  const now = Date.now();
+  const set = Number.isFinite(body.set) && body.set > now - 30 * 86400000 && body.set < now + 300000 ? body.set : now;
+  return plan(env).fetch(new Request("https://planstate" + PLAN_ROUTE, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-client-ip": request.headers.get("cf-connecting-ip") || "",
+    },
+    body: JSON.stringify({ job, field: body.field, value, name: cleanName(body.name), set }),
+  }));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -361,6 +491,7 @@ export default {
       return json({ worker: "family-votes", build: env.BUILD_HASH || "dev" });
     }
     if (url.pathname === HOUSE_ROUTE) return houseRoute(request, env);
+    if (url.pathname === PLAN_ROUTE) return planRoute(request, env);
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {
