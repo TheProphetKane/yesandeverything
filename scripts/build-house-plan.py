@@ -7,11 +7,14 @@ Each page's source is a markdown file in docs/ that the prose gate measures: doc
 for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layout. Edit the source, build, ship;
 never edit a page by hand. Tables become cards on a phone, each cell labeled with its column. A line holding
 {{floor-plans}} becomes the plan's picture gallery; a line holding {{layout}} becomes the basement
-layout's drawing, which scripts/draw-basement-layouts.py writes. Pictures open in a pop-out over the page,
+layout's drawing, which scripts/draw-basement-layouts.py writes. Every table with a family column and a
+hired column gets a section total row, and a line holding {{totals}} becomes the conclusion: the rule is
+that the first dollar figure in a cost cell is that row's total, and everything after it is detail. Pictures open in a pop-out over the page,
 or full size in a new tab without scripts.
 """
 
 import html
+import math
 import re
 import sys
 from pathlib import Path
@@ -99,6 +102,7 @@ table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 th { text-align: left; font-family: var(--font-data); font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); background: var(--raise); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: bottom; }
 td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
+tr.total td { background: var(--raise) !important; border-top: 2px solid var(--sea); font-weight: 700; }
 tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
 td.c-when, td.c-date, td.c-item, td.c-project { font-weight: 700; }
 td.c-when, td.c-date { white-space: nowrap; }
@@ -178,7 +182,10 @@ def label_table(match):
             if i is None:
                 return cell.group(0)
             return f'<td class="{column_class(heads[i])}" data-label="{html.escape(heads[i], quote=True)}"'
-        return re.sub(r"<td(?=[\s>])", label_cell, row.group(0))
+        row_html = re.sub(r"<td(?=[\s>])", label_cell, row.group(0))
+        if "<strong>Section total</strong>" in row_html or re.search(r"<td[^>]*><strong>", row_html[:400]):
+            row_html = row_html.replace("<tr>", '<tr class="total">', 1)
+        return row_html
 
     table = re.sub(r"<tr>.*?</tr>", label_row, table, flags=re.S)
     table = table.replace("<table>", f'<table class="{kind}">', 1)
@@ -216,6 +223,122 @@ def layout_figure():
             f'<figcaption><a href="{name}" target="_blank" rel="noopener">Full size in a new tab</a></figcaption></figure>')
 
 
+MONEY = re.compile(r"\$([\d,]+(?:\.\d+)?)(?:\s+to\s+\$([\d,]+(?:\.\d+)?))?")
+FAMILY = ("Nick", "Lexi", "Dad", "Grandma", "Everyone", "brother")
+SET_ASIDE = (("a year", "Every year"), ("if needed", "Only if needed"), ("credit", "Credits asked of the sellers"),
+             ("closing costs", "Paid in the closing costs"))
+
+
+def money(text):
+    return float(text.replace(",", ""))
+
+
+def figure(cell):
+    """The row's figure, read from a cost cell: the first dollar amount, which by the page's rule is the
+    row's total, with everything after it detail. Returns (low, high, set_aside, clause) or None. A
+    figure whose clause says a year, if needed, credit or closing costs is set aside: the totals leave
+    it out and the conclusion lists it."""
+    for clause in re.split(r";|\.\s", cell):
+        m = MONEY.search(clause)
+        if m:
+            low = money(m.group(1))
+            high = money(m.group(2) or m.group(1))
+            kind = next((name for word, name in SET_ASIDE if word in clause.lower()), None)
+            return low, high, kind, clause.strip().rstrip(".")
+    return None
+
+
+def cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def dollars(value, up):
+    step = 100
+    rounded = (math.ceil(value / step) if up else math.floor(value / step)) * step
+    return f"${rounded:,.0f}"
+
+
+def span(low, high):
+    if not high:
+        return "None"
+    return f"{dollars(low, False)} to {dollars(high, True)}"
+
+
+def add_totals(md):
+    """Give every table with a family column and a hired column a section total row, and fill the
+    {{totals}} marker with the conclusion: each section's totals, the subtotals, and every figure the
+    totals set aside. The family total takes the family figure for each job the family does and the
+    hired figure for the rest; the hired total hires every job."""
+    lines = md.split("\n")
+    out, sections, aside = [], [], {}
+    heading = ""
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("## "):
+            heading = line[3:].strip()
+        if not (line.startswith("|") and i + 1 < len(lines) and re.match(r"^\|[\s:|-]+\|$", lines[i + 1].strip())):
+            out.append(line)
+            i += 1
+            continue
+        head = cells(line)
+        j = i + 2
+        while j < len(lines) and lines[j].startswith("|"):
+            j += 1
+        rows = [cells(r) for r in lines[i + 2:j]]
+        out.extend(lines[i:j])
+        fam_col = next((k for k, h in enumerate(head) if h.lower().startswith("family")), None)
+        hired_col = next((k for k, h in enumerate(head) if h.lower().startswith("hired")), None)
+        if fam_col is None or hired_col is None:
+            i = j
+            continue
+        who_col = next((k for k, h in enumerate(head) if h.lower() == "who"), None)
+        totals = [0.0, 0.0, 0.0, 0.0]
+        for row in rows:
+            fam, hired = figure(row[fam_col]), figure(row[hired_col])
+            for cell in (row[fam_col], row[hired_col]):
+                for clause in re.split(r";|\.\s", cell):
+                    found = figure(clause)
+                    if found and found[2]:
+                        aside.setdefault(found[2], {}).setdefault(found[3].lower(), found[3])
+            family_does = who_col is None or any(name in row[who_col] for name in FAMILY)
+            for slot, pick in ((0, fam if (fam and family_does) else hired), (2, hired or fam)):
+                if pick and not pick[2]:
+                    totals[slot] += pick[0]
+                    totals[slot + 1] += pick[1]
+        total_row = [""] * len(head)
+        total_row[0] = "**Section total**"
+        total_row[fam_col] = f"**{span(totals[0], totals[1])}**"
+        total_row[hired_col] = f"**{span(totals[2], totals[3])}**"
+        out.append("| " + " | ".join(total_row) + " |")
+        sections.append((heading, totals))
+        i = j
+    md = "\n".join(out)
+    if "{{totals}}" not in md:
+        return md
+
+    def total_of(picked):
+        return [sum(t[k] for _, t in picked) for k in range(4)]
+
+    table = ["| Section | Family does what it can | Hired out, all of it |", "|---|---|---|"]
+    for name, t in sections:
+        table.append(f"| {name} | {span(t[0], t[1])} | {span(t[2], t[3])} |")
+    near = [s for s in sections if not s[0].lower().startswith("long term")]
+    later = [s for s in sections if s[0].lower().startswith("long term")]
+    before = [s for s in near if s[0].lower().startswith(("before closing", "closing to move-in"))]
+    for name, picked in (("Cash out before move-in", before), ("Contract day to the last basement room", near),
+                         ("Everything on this page, long term included", near + later)):
+        t = total_of(picked)
+        table.append(f"| **{name}** | **{span(t[0], t[1])}** | **{span(t[2], t[3])}** |")
+    notes = []
+    for _, name in SET_ASIDE:
+        if name in aside:
+            items = "; ".join(v[0].upper() + v[1:] for v in aside[name].values())
+            notes.append(f"- {name}: {items}.")
+    block = "\n".join(table) + "\n\nLeft out of every total above:\n\n" + "\n".join(notes)
+    return md.replace("{{totals}}", block)
+
+
 def build(page):
     text = page["src"].read_text(encoding="utf-8")
     first = text.splitlines()[0]
@@ -223,7 +346,8 @@ def build(page):
         sys.exit(f"{page['src'].name} must open on its title heading")
     title = first[2:].strip()
     body_md = text.split("\n", 1)[1]
-    body = markdown.markdown(body_md, extensions=["tables"], output_format="html")
+    body_md = add_totals(body_md)
+    body = markdown.markdown(body_md, extensions=["tables", "toc"], output_format="html")
     body = re.sub(r"<table>.*?</table>", label_table, body, flags=re.S)
     if "{{floor-plans}}" in text:
         body = body.replace("<p>{{floor-plans}}</p>", gallery())

@@ -2,7 +2,7 @@
 
 The family went under contract on Sunday, November 1, 2026, at the asking price of $330,000. The sellers close on their next house on Monday, November 30, so this one closes by then. This page is the plan from the inspection to the last basement room, if the inspection and the appraisal both clear.
 
-Dates after closing assume a closing on Monday, November 30, and a move-in on Saturday, December 19, because the family spends November 22 to 29 away at Thanksgiving and an earlier closing signed ahead would leave the house waiting on them anyway. Every price is an estimate. The family column counts materials only, since Nick, Dad, Nick's brother and Grandma supply the labor, while the hired column prices the same job done by a contractor at St. Louis rates, labor included.
+Dates after closing assume a closing on Monday, November 30, and a move-in on Saturday, December 19, because the family spends November 22 to 29 away at Thanksgiving and an earlier closing signed ahead would leave the house waiting on them anyway. Every price is an estimate. The family column counts materials only, since Nick, Dad, Nick's brother and Grandma supply the labor, while the hired column prices the same job done by a contractor at St. Louis rates, labor included. Each table ends on its section total, and the [estimated totals](#estimated-totals) close the page.
 
 {{floor-plans}}
 
@@ -35,15 +35,15 @@ Dates after closing assume a closing on Monday, November 30, and a move-in on Sa
 | When | Date | What | Who | Family, materials (estimate) | Hired out (estimate) |
 |---|---|---|---|---|---|
 | Contract day | Sunday, November 1 | Book the whole-house inspection with radon, a sewer camera and a termite check. Send the signed contract to the lender, then pay the earnest money on the contract's schedule. | Nick, Lexi | | $850 to $1,200 for the inspection set |
-| Contract day + 3 days | Wednesday, November 4 | Three insurance quotes, each given the 2024 roof date. The insurance agent pulls the claims history on the address. | Nick | | $2,800 to $4,000 a year |
+| Contract day + 3 days | Wednesday, November 4 | Three insurance quotes, each given the 2024 roof date. The insurance agent pulls the claims history on the address. | Nick | | Insurance $2,800 to $4,000 a year |
 | Contract day + 5 days | Friday, November 6 | The seller's disclosure is due under the standard contract. The trustees hand over the indenture, the budget, the reserve balance and any assessment. | Nick, Lexi | | |
 | Inspection day | By Monday, November 9 | Bring the black light and a tape measure. Read the data plates and count the condensers. The inspector photographs the deck posts, beam and ledger for the credit request, then checks the attic, where a second set of nail holes in the sheathing proves the 2024 reroof. Check the basement for a sump, wall staining and the grade at the walkout. Black light the carpet upstairs and the living room patches, then measure every room. | Nick, Dad, inspector | | In the inspection set |
-| Contract day + 10 days | Wednesday, November 11 | The inspection response, inside the contract's window. Ask once, on paper, for a credit priced from the report: the deck supports at the cost of a rebuild, plus any failed system or pet damage it finds. | Nick, Lexi, agent | Deck rebuild credit: $2,800 to $4,000 | |
+| Contract day + 10 days | Wednesday, November 11 | The inspection response, inside the contract's window. Ask once, on paper, for a credit priced from the report: the deck supports at the cost of a rebuild, plus any failed system or pet damage it finds. | Nick, Lexi, agent | Deck rebuild credit $2,800 to $4,000 | |
 | Contract day + 11 days | Thursday, November 12 | Appraisal and title search ordered. Radon and sewer camera results in hand. | Lender, title company | | Appraisal $500 to $700, in closing costs |
 | Contract day + 18 days | Thursday, November 19 | Clear to close. Policy bound. Confirm the wire instructions by phone, with the number from the title company's own site. Ameren, Spire and the city switch over on closing day, with internet booked for the same week. | Nick, Lexi | | Water deposit $150 |
-| Thanksgiving | Sunday, November 22 to Sunday, November 29 | The family is away. A closing on November 24 or 25 means signing ahead with a mobile notary or a power of attorney. | Nick, Lexi, title company | | Mobile notary $75 to $200 |
+| Thanksgiving | Sunday, November 22 to Sunday, November 29 | The family is away. A closing on November 24 or 25 means signing ahead with a mobile notary or a power of attorney. | Nick, Lexi, title company | | Mobile notary $75 to $200, if needed for a closing before Thanksgiving |
 | Closing day − 1 day | Sunday, November 29 | Final walkthrough. The house matches the inspection, agreed repairs are done, the deck is untouched unless a rebuild was agreed, and the manuals and remotes stay. | Nick, Lexi | | |
-| Closing day | Monday, November 30 | Close. Rekey every outside lock, photograph the meters, then run the furnace, the air conditioner and every faucet once. Lock the deck slider and set a bar in its track until the new deck is up. A radon result over 4.0 books a mitigation. | Nick, Lexi | Rekey kits $40 to $80, slider bar $10 to $30 | Locksmith $150 to $250; radon system $1,000 to $1,600 if needed |
+| Closing day | Monday, November 30 | Close. Rekey every outside lock, photograph the meters, then run the furnace, the air conditioner and every faucet once. Lock the deck slider and set a bar in its track until the new deck is up. A radon result over 4.0 books a mitigation. | Nick, Lexi | $50 to $110: rekey kits $40 to $80, a slider bar $10 to $30 | $160 to $280: a locksmith $150 to $250, the slider bar $10 to $30; radon system $1,000 to $1,600, if needed |
 
 ## Closing to move-in: the empty house
 
@@ -90,7 +90,7 @@ The order matters. Tear-out comes first, then the subfloor, then paint, then har
 |---|---|---|---|
 | Third bath on the rough-in, 5.3 by 9 feet, with a 60-inch tub and shower | After the basement rooms. The rough-in is already there. A tub drains from one end, so the slab gets a short cut if the rough-in's shower box sits elsewhere. | $2,000 to $4,000 | $9,000 to $16,000 |
 | Fifth bedroom on the walkout wall | Its escape window is a normal window cut into the framed wall, $300 to $600. | $2,500 to $4,000 | $8,000 to $14,000 |
-| Radon pipe | Only after a test over 4.0. Pipe in during the finish, fan outside. | $100 to $200 for the pipe | $1,000 to $1,600 |
+| Radon pipe | Only after a test over 4.0. Pipe in during the finish, fan outside. | Radon pipe $100 to $200, if needed | Radon system $1,000 to $1,600, if needed |
 | Kitchen refresh | When the money is there. The twin next door gained $75,000 of value from its kitchen and bath. | $4,000 to $9,000 to paint the oak and replace the counters | $12,000 to $25,000 |
 | Driveway apron | The listing photo shows a wide crack where the apron meets the garage slab. | $30 to $60 to seal it | $1,000 to $3,000 to replace the apron |
 | Windows | As the 2003 seals fail. 711 Autumn Glen replaced its own in 2022. | | $8,000 to $15,000 |
@@ -98,6 +98,12 @@ The order matters. Tear-out comes first, then the subfloor, then paint, then har
 | Water heater | When it fails. | $600 to $800 | $1,500 to $2,300 |
 | Primary bath | Last, and cosmetic: the laminate top and the framed shower. | $1,500 to $4,000 | $8,000 to $15,000 |
 | Roof | Replaced about 2024, so the next one comes around 2044 to 2049. | | $12,000 to $20,000 |
+
+## Estimated totals
+
+These are sums of the estimates above, rebuilt with the page, so a flooring or carpet choice that changes a row changes them too. The family column assumes the family does every job it can and hires the rest at the hired price. The hired column hires all of it. Low ends round down and high ends round up to the next hundred dollars. Where a row offers options, the total counts the first one listed: the 12 by 16 treated deck, sealing the driveway apron rather than replacing it.
+
+{{totals}}
 
 ## Sources
 
