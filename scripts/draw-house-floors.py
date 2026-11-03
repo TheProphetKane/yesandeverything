@@ -218,6 +218,84 @@ class Plan:
                    (bx - 0.45 * math.cos(ang + 0.5), by - 0.45 * math.sin(ang + 0.5))]
             self.over.append(f'<polygon points="{self.pts(tip)}" fill="#312e81"/>')
 
+    def piece(self, x0, y0, x1, y1, text="", ink="#334155", size=8, turn=False, fill="#ffffff", dash=""):
+        """A piece of furniture seen from above, outlined in its room's ink and labeled in place."""
+        self.over.append(self.rect(x0, y0, x1, y1, fill, ink, 1.4, 3, dash))
+        if text and turn:
+            self.vnote((x0 + x1) / 2, (y0 + y1) / 2, text, size, ink)
+        elif text:
+            self.note((x0 + x1) / 2, (y0 + y1) / 2 + 0.2, text, size, ink)
+
+    def bed(self, x0, y0, x1, y1, head, text, ink, size=9):
+        """A bed with its headboard and pillows on the `head` side, 'right' or 'up', and the turned-down
+        cover drawn across it."""
+        self.piece(x0, y0, x1, y1, "", ink)
+        if head == "right":
+            width = y1 - y0
+            self.over.append(self.rect(x1 - 0.3, y0, x1, y1, ink, ink, 1, 2))
+            n = 2 if width >= 4.5 else 1
+            step = (width - 0.3 * (n + 1)) / n
+            for k in range(n):
+                a = y0 + 0.3 + k * (step + 0.3)
+                self.over.append(self.rect(x1 - 1.55, a, x1 - 0.45, a + step, "#f8fafc", ink, 1, 6))
+            fold = x1 - 2.4
+            self.over.append(f'<line x1="{self.X(fold):.1f}" y1="{self.Y(y0):.1f}" x2="{self.X(fold):.1f}" y2="{self.Y(y1):.1f}" stroke="{ink}" stroke-width="1"/>')
+            self.note((x0 + fold) / 2, (y0 + y1) / 2 + 0.25, text, size, ink)
+        else:
+            width = x1 - x0
+            self.over.append(self.rect(x0, y0, x1, y0 + 0.3, ink, ink, 1, 2))
+            n = 2 if width >= 4.5 else 1
+            step = (width - 0.3 * (n + 1)) / n
+            for k in range(n):
+                a = x0 + 0.3 + k * (step + 0.3)
+                self.over.append(self.rect(a, y0 + 0.45, a + step, y0 + 1.4, "#f8fafc", ink, 1, 6))
+            fold = y0 + 2.0
+            self.over.append(f'<line x1="{self.X(x0):.1f}" y1="{self.Y(fold):.1f}" x2="{self.X(x1):.1f}" y2="{self.Y(fold):.1f}" stroke="{ink}" stroke-width="1"/>')
+            self.vnote((x0 + x1) / 2, (fold + y1) / 2, text, size, ink)
+
+    def crib(self, x0, y0, x1, y1, ink):
+        """A crib: rails all round, slats drawn along its long sides."""
+        self.piece(x0, y0, x1, y1, "", ink)
+        self.over.append(self.rect(x0 + 0.2, y0 + 0.2, x1 - 0.2, y1 - 0.2, "#f8fafc", ink, 1, 2))
+        k = y0 + 0.5
+        while k < y1 - 0.3:
+            for xx in (x0 + 0.1, x1 - 0.1):
+                self.over.append(f'<line x1="{self.X(xx - 0.08):.1f}" y1="{self.Y(k):.1f}" x2="{self.X(xx + 0.08):.1f}" y2="{self.Y(k):.1f}" stroke="{ink}" stroke-width="1"/>')
+            k += 0.35
+        self.vnote((x0 + x1) / 2, (y0 + y1) / 2, "crib", 9, ink)
+
+    def chair(self, cx, cy, ink, r=0.6):
+        self.over.append(f'<rect x="{self.X(cx - r):.1f}" y="{self.Y(cy - r):.1f}" width="{2 * r * S:.1f}" height="{2 * r * S:.1f}" rx="5" fill="#ffffff" stroke="{ink}" stroke-width="1.2"/>')
+
+    def round_table(self, cx, cy, r, seats, text, ink):
+        """A round table with its chairs pulled in around it."""
+        for k in range(seats):
+            a = 2 * math.pi * k / seats + math.pi / 4
+            self.chair(cx + (r + 0.35) * math.cos(a), cy + (r + 0.35) * math.sin(a), ink)
+        self.over.append(f'<circle cx="{self.X(cx):.1f}" cy="{self.Y(cy):.1f}" r="{r * S:.1f}" fill="#ffffff" stroke="{ink}" stroke-width="1.4"/>')
+        self.note(cx, cy + 0.2, text, 8, ink)
+
+    def long_table(self, x0, y0, x1, y1, text, ink):
+        """A rectangular table running along y, two chairs down each long side and one at each end."""
+        cx = (x0 + x1) / 2
+        for cy in (y0 + (y1 - y0) * 0.27, y0 + (y1 - y0) * 0.73):
+            self.chair(x0 - 0.35, cy, ink)
+            self.chair(x1 + 0.35, cy, ink)
+        self.chair(cx, y0 - 0.35, ink)
+        self.chair(cx, y1 + 0.35, ink)
+        self.piece(x0, y0, x1, y1, "", ink)
+        self.vnote(cx, (y0 + y1) / 2, text, 8, ink)
+
+    def sectional(self, pts, back, text, at, ink):
+        """An L-shaped sectional: its outline, the line where the back cushions meet the seats."""
+        self.over.append(f'<polygon points="{self.pts(pts)}" fill="#ffffff" stroke="{ink}" stroke-width="1.4" stroke-linejoin="round"/>')
+        self.over.append(f'<polyline points="{self.pts(back)}" fill="none" stroke="{ink}" stroke-width="1"/>')
+        self.note(*at, text, 9, ink)
+
+    def wall_tv(self, x, y0, y1, ink):
+        """A television hung flat on a wall that runs along y at x."""
+        self.over.append(self.rect(x, y0, x + 0.22, y1, "#1e1b4b", "#1e1b4b", 1, 1))
+
     def note(self, x, y, text, size=10, color="#475569", anchor="middle"):
         self.labels.append(f'<text x="{self.X(x):.1f}" y="{self.Y(y):.1f}" font-size="{size}" fill="{color}" text-anchor="{anchor}">{html.escape(text)}</text>')
 
@@ -282,10 +360,10 @@ def main_floor():
     breakfast_bay = [(9.0, 0.45), (9.0, 0.2), (10.6, -1.8), (18.4, -1.8), (20.0, 0.2), (20.0, 0.45)]
     family_bay = [(23.5, 0.45), (23.5, 0.2), (25.1, -1.8), (31.9, -1.8), (33.5, 0.2), (33.5, 0.45)]
     p.room("Kitchen", "kitchen", [(0.4, 0.4, 9.0, 16.15)], (5.1, 12.0), size=(9, 16), compact=True)
-    p.room("Breakfast room", "kitchen", [(9.0, 0.4, 20.0, 12.5)], (14.5, 6.4), size=(11, 12), polys=[breakfast_bay])
-    p.room("Family room", "gather", [(20.0, 0.4, 35.6, 19.2), (19.7, 12.5, 20.0, 19.2)], (28.0, 9.6), size=(15.5, 19), polys=[family_bay])
-    p.room("Dining room", "gather", [(0.4, 16.5, 12.1, 32.6)], (6.2, 24.4), size=(12, 15.7))
-    p.room("Living room", "gather", [(24.2, 19.4, 35.6, 32.6)], (29.9, 25.6), size=(12, 13))
+    p.room("Breakfast room", "kitchen", [(9.0, 0.4, 20.0, 12.5)], (14.6, 11.0), size=(11, 12), polys=[breakfast_bay])
+    p.room("Family room", "gather", [(20.0, 0.4, 35.6, 19.2), (19.7, 12.5, 20.0, 19.2)], (30.6, 15.8), size=(15.5, 19), polys=[family_bay])
+    p.room("Dining room", "gather", [(0.4, 16.5, 12.1, 32.6)], (6.0, 31.2), size=(12, 15.7))
+    p.room("Toy room", "gather", [(24.2, 19.4, 35.6, 32.6)], (29.6, 22.0), line2="the living room, 12 by 13 ft")
     p.room("Foyer", "hall", [(12.4, 22.8, 15.2, 34.6), (15.2, 27.2, 20.4, 34.6), (20.4, 19.4, 23.8, 34.6)], (18.0, 30.0))
     p.room("Half bath", "bath", [(15.6, 19.4, 20.0, 24.4)], (19.4, 23.15), compact=True, line2="", turn=True)
     p.room("Coats", "storage", [(15.6, 24.7, 20.0, 27.0)], (17.8, 26.65), compact=True, line2="")
@@ -394,17 +472,31 @@ def main_floor():
     p.wall(23.8, 19.0, 27.4, 19.4)
     p.wall(32.2, 19.0, 35.8, 19.4)
     p.open_side((27.4, 19.2), (32.2, 19.2))
+
+    # the furniture, mocked up to be moved: the family's own pieces, a dining table still to buy
+    pink, red, green = COLORS["gather"][1], COLORS["kitchen"][1], COLORS["storage"][1]
+    p.sectional([(21.0, 3.0), (24.0, 3.0), (24.0, 10.0), (29.5, 10.0), (29.5, 13.0), (21.0, 13.0)],
+                [(21.8, 3.0), (21.8, 12.2), (29.5, 12.2)], "sectional", (26.6, 11.55), pink)
+    p.piece(25.5, 4.5, 29.5, 8.5, "coffee table", pink, 8)
+    p.note(27.5, 7.25, "4 by 4 ft", 7, pink)
+    p.round_table(14.8, 6.4, 1.75, 4, "table", red)
+    p.long_table(4.35, 22.0, 7.65, 28.0, "dining table, to buy", pink)
+    p.piece(8.2, 16.55, 12.05, 18.5, "frog shelf", green, 8, fill="#f0fdf4")
+    p.note(10.1, 18.15, "2 by 4 ft", 7, green)
+    p.piece(28.0, 25.0, 32.0, 27.7, "train table", pink, 9)
+    p.piece(34.55, 24.2, 35.55, 27.2, "bookshelf", pink, 8, turn=True)
+    p.piece(28.5, 31.0, 31.5, 32.55, "toy chest", pink, 8)
     return p.svg("rear, the deck side", "garage side", "front, the street side · 1 square = 1 foot"), p.summary()
 
 
 def upper_floor():
     p = Plan("upper", "The upper floor of 45 Autumn Crest Ct", (-1.4, -1.0, 38.4, 36.2), [(0.0, 0.0, 36.0, 35.0)])
-    p.room("Primary bedroom", "primary", [(0.4, 14.6, 12.1, 24.4), (0.4, 24.4, 10.2, 29.5), (0.4, 29.5, 12.0, 32.6)], (6.0, 22.6), size=(12, 18))
+    p.room("Primary bedroom", "primary", [(0.4, 14.6, 12.1, 24.4), (0.4, 24.4, 10.2, 29.5), (0.4, 29.5, 12.0, 32.6)], (6.1, 26.7), size=(12, 18))
     p.room("Primary bath", "primary", [(0.4, 0.4, 9.6, 6.8), (0.4, 6.8, 7.3, 14.3), (9.9, 0.4, 12.8, 6.8)], (4.9, 9.4), compact=True)
     p.room("Walk-in closet", "storage", [(7.6, 7.1, 12.5, 12.6), (7.6, 12.6, 12.1, 14.3)], (10.1, 9.55), compact=True, line2="")
-    p.room("Bedroom 4", "bedroom", [(13.1, 0.4, 23.8, 10.0), (17.9, 10.0, 23.8, 12.4)], (18.5, 5.4), size=(11, 11))
-    p.room("Bedroom 3", "bedroom", [(24.2, 0.4, 35.6, 11.5), (24.2, 11.5, 27.8, 12.4)], (29.9, 5.4), size=(11, 11))
-    p.room("Bedroom 2", "bedroom", [(24.2, 21.9, 35.6, 32.6), (24.2, 19.4, 28.1, 21.9)], (29.9, 26.6), size=(12, 11))
+    p.room("Infant's room", "bedroom", [(13.1, 0.4, 23.8, 10.0), (17.9, 10.0, 23.8, 12.4)], (18.1, 9.0), line2="bedroom 4, 11 by 11 ft")
+    p.room("Toddler's room", "bedroom", [(24.2, 0.4, 35.6, 11.5), (24.2, 11.5, 27.8, 12.4)], (29.5, 6.0), line2="bedroom 3, 11 by 11 ft")
+    p.room("Guest room", "bedroom", [(24.2, 21.9, 35.6, 32.6), (24.2, 19.4, 28.1, 21.9)], (30.0, 31.3), line2="bedroom 2, 12 by 11 ft")
     p.room("Hall bath", "bath", [(28.1, 14.3, 35.6, 19.0)], (31.0, 16.0), compact=True)
     p.room("Hall", "hall", [(19.6, 12.7, 27.8, 19.4)], (23.9, 16.6), compact=True, line2="")
     p.room("Loft", "loft", [(15.4, 19.4, 23.8, 24.0), (12.4, 24.0, 23.8, 34.6), (10.2, 24.7, 12.4, 29.5)], (18.6, 27.6))
@@ -509,6 +601,38 @@ def upper_floor():
     p.wall(12.0, 29.5, 12.4, 33.0)
     p.door(10.3, 24.7, 2.4, 0, 90)
     p.door(10.3, 29.5, 2.4, 0, -90)
+
+    # the furniture, mocked up to be moved
+    violet, blue, fuchsia = COLORS["primary"][1], COLORS["bedroom"][1], COLORS["loft"][1]
+    # the primary bedroom: the king bed inside the doors on the right, its head on that wall, facing the
+    # television on the garage-side wall above a dresser, an end table each side, a second dresser by the windows
+    p.bed(5.1, 16.4, 12.05, 22.6, "right", "king bed", violet, 10)
+    p.piece(10.55, 14.7, 12.05, 16.3, "", violet)
+    p.piece(10.55, 22.7, 12.05, 24.3, "", violet)
+    p.vnote(11.3, 15.5, "end", 7, violet)
+    p.vnote(11.3, 23.5, "end", 7, violet)
+    p.piece(0.45, 16.9, 2.05, 22.1, "dresser, television above", violet, 7, turn=True)
+    p.wall_tv(0.42, 17.2, 21.8, violet)
+    p.piece(0.45, 25.4, 2.05, 29.4, "dresser", violet, 8, turn=True)
+    # the infant's room: the crib on the wall shared with the toddler, not the one behind the primary toilet,
+    # and off the window wall; a glider in the corner and the changing dresser across the room
+    p.crib(21.35, 3.5, 23.75, 7.9, blue)
+    p.over.append(f'<circle cx="{p.X(14.75):.1f}" cy="{p.Y(2.05):.1f}" r="{1.2 * S:.1f}" fill="#ffffff" stroke="{blue}" stroke-width="1.4"/>')
+    p.note(14.75, 2.3, "glider", 8, blue)
+    p.piece(13.15, 4.0, 14.75, 8.5, "changing dresser", blue, 8, turn=True)
+    # the toddler's room: the bed in the corner, two walls to roll against, a dresser and a low shelf
+    p.bed(32.9, 0.45, 35.55, 5.2, "up", "toddler bed", blue, 8)
+    p.piece(24.25, 3.0, 25.85, 7.0, "dresser", blue, 8, turn=True)
+    p.piece(34.35, 6.2, 35.55, 10.2, "books and toys", blue, 7, turn=True)
+    # the guest room: a queen bed, its head on the far wall, end tables, a dresser
+    p.bed(28.55, 24.6, 35.55, 29.9, "right", "queen bed", blue, 9)
+    p.piece(34.05, 22.95, 35.55, 24.5, "", blue)
+    p.piece(34.05, 30.0, 35.55, 31.55, "", blue)
+    p.vnote(34.8, 23.7, "end", 7, blue)
+    p.vnote(34.8, 30.8, "end", 7, blue)
+    p.piece(24.25, 24.8, 25.85, 28.8, "dresser", blue, 8, turn=True)
+    # the frogs' other possible spot, against the guest room wall
+    p.piece(21.75, 26.0, 23.75, 30.0, "frogs, other spot", fuchsia, 7, turn=True, fill="#fdf4ff", dash="4,3")
     return p.svg("rear, over the deck", "garage side", "front, the street side · 1 square = 1 foot"), p.summary()
 
 

@@ -34,14 +34,15 @@ PLAN_GALLERY = [
         "thumb": "floors/main.svg",
         "page": "floors/",
         "title": "The main floor",
-        "text": "Every room colored by its use: the kitchen and breakfast room in the rear bay, the split stair, "
-                "the half bath, the garage and laundry.",
+        "text": "Every room colored by its use and furnished as a first pass: the sectional, the toy room with "
+                "the train table, the frog shelf, and tables for the breakfast and dining rooms.",
     },
     {
         "thumb": "floors/upper.svg",
         "page": "floors/#the-upper-floor",
         "title": "The upper floor",
-        "text": "Four bedrooms, two baths and the loft, floored to the front wall with no lookdown over the foyer.",
+        "text": "The king bed facing the television, the infant's crib, the toddler's bed and the guest room, "
+                "with the loft floored to the front wall.",
     },
     {
         "thumb": "basement/layout.svg",
