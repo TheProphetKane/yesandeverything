@@ -38,7 +38,7 @@ The stair splits. One flight climbs from the foyer and a second from the family 
 | Loft | About 170 square feet | The hall opens into it where the stair arrives. The frog shelf's other spot is dashed in, on the guest room wall. |
 | Hall | About 55 square feet | A linen closet beside the stair. Three bedrooms and the hall bath open off it. |
 
-Carpet goes down on this whole floor ten to fourteen days after closing: builder grade, on a moisture-barrier pad, the main stair included. Nothing moves in until it is down. All of the old carpet goes, since years of cleaning left it matted. Each bedroom gets a new smoke alarm the day after move-in. The hall's alarm also senses carbon monoxide.
+Carpet goes down on this whole floor ten to fourteen days after closing: builder grade, on a moisture-barrier pad, the main stair included. New baseboard goes in the day before, because the house has none outside the kitchen and the carpet tucks against it. Nothing moves in until it is down. All of the old carpet goes, since years of cleaning left it matted. Each bedroom gets a new smoke alarm the day after move-in. The hall's alarm also senses carbon monoxide.
 
 ## The basement
 
