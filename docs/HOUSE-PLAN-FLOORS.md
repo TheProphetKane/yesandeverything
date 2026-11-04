@@ -12,8 +12,8 @@ The furniture is a first placement, there to be moved. Pieces the family owns ar
 |---|---|---|
 | Kitchen | 9 by 16 feet | Oak cabinets from 2003, black laminate counters, a gas range and a loose island. The torn sheet vinyl gets plank the week after closing, about 300 square feet with the breakfast room, in a color of its own. |
 | Breakfast room | 11 by 12 feet | It fills the rear bay, with the sliding glass door to the deck. A small rectangular table sits in the middle, a bench down each long side and a chair at each end. The vinyl tore by that door, and it gets plank with the kitchen. |
-| Family room | 15.5 by 19 feet | The sectional's long side backs onto the breakfast room and faces the fireplace on the end wall, its short side toward the toy room. The 4 by 4 coffee table sits 18 inches off both. New plank goes down the week after closing, in the main floor's color. |
-| Toy room, the living room | 12 by 13 feet | The main floor's toy room and play room, right of the front door. The train table stands in the middle, the bookshelf on the far wall and the toy chest under the front windows. Its old plank and carpet patches come up for new plank in the main floor's color. |
+| Family room | 15.5 by 19 feet | The sectional's long side backs onto the breakfast room and faces the fireplace on the end wall, its short side toward the toy room. The 4 by 4 coffee table sits 18 inches off both. New plank goes down the week after closing, in the main floor's color. Its baseboard was pulled, so new baseboard goes on over the plank. |
+| Toy room, the living room | 12 by 13 feet | The main floor's toy room and play room, right of the front door. The train table stands in the middle, the bookshelf on the far wall and the toy chest under the front windows. Its old plank and carpet patches come up for new plank in the main floor's color. Its baseboard was pulled, so new baseboard goes on over the plank. |
 | Dining room | 12 by 15.7 feet | Left of the front door and open to the foyer. The table is still to buy, drawn as a common 40 by 72 inch table for six. The frog shelf stands against the wall shared with the pantry. Its red walls over wainscot are on the paint list, and it gets the main floor's plank. |
 | Foyer | About 120 square feet | The front door, the coat closet and the foot of the stair. Tile here and in the laundry is Wanted. |
 | Half bath | About 4.4 by 5 feet | Beside the stair, its door on the family room side. Plank, with the rest of the main floor. |
@@ -38,7 +38,7 @@ The stair splits. One flight climbs from the foyer and a second from the family 
 | Loft | About 170 square feet | The hall opens into it where the stair arrives. The frog shelf's other spot is dashed in, on the guest room wall. |
 | Hall | About 55 square feet | A linen closet beside the stair. Three bedrooms and the hall bath open off it. |
 
-Carpet goes down on this whole floor ten to fourteen days after closing: builder grade, on a moisture-barrier pad, the main stair included. New baseboard goes in the day before, because the house has none outside the kitchen and the carpet tucks against it. Nothing moves in until it is down. All of the old carpet goes, since years of cleaning left it matted. Each bedroom gets a new smoke alarm the day after move-in. The hall's alarm also senses carbon monoxide.
+Carpet goes down on this whole floor ten to fourteen days after closing: builder grade, on a moisture-barrier pad, the main stair included. Nothing moves in until it is down. All of the old carpet goes, since years of cleaning left it matted. Each bedroom gets a new smoke alarm the day after move-in. The hall's alarm also senses carbon monoxide.
 
 ## The basement
 
