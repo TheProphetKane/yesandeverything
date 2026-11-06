@@ -419,13 +419,20 @@ def hall(p):
     p.note(13.0, 33.8, "all round the basket", 7, "#475569", "start")
 
 
-def office(p, sound=False):
+def office(p, sound=False, studio_door=False):
     """The office in the rear corner on the far side: the window behind the desk, two low windows on the far
-    wall, the door off the lane north of the first post, which lands in the office's wall."""
+    wall, the door off the lane north of the first post, which lands in the office's wall. With the studio
+    next door, a second door at the far end of the shared wall opens into the office."""
     p.room("Office", "office", [(23.9, Y0, X1, 16.0)], (29.0, 8.4))
     p.wall(23.4, Y0, 23.9, 9.5)
     p.wall(23.4, 12.5, 23.9, 16.4)
-    p.wall(23.4, 16.0, X1, 16.4, sound)
+    if studio_door:
+        p.wall(23.4, 16.0, 32.6, 16.4, sound)
+        p.wall(35.0, 16.0, X1, 16.4, sound)
+        p.door(35.0, 16.2, 2.4, 270, -90)
+        p.note(33.8, 12.9, "door to the studio", 7, "#1e3a8a")
+    else:
+        p.wall(23.4, 16.0, X1, 16.4, sound)
     p.door(23.65, 12.5, 3.0, 0, -90)
     corner_desk(p)
     p.thing(24.5, 13.4, 30.7, 15.8, "disc golf bags and racks", "#ffe4e6", "#e11d48", 9)
@@ -477,7 +484,8 @@ def front_play(p):
 
 
 def front_studio(p):
-    """Layout A: the D&D studio in the front corner on the far side, beside the office, the lane at its door.
+    """Layout A: the D&D studio in the front corner on the far side, beside the office, the lane at its door and
+    a second door through to the office at the far end of the shared wall.
     The minis closet on the office wall, the second post boxed in the corner by the door, the table in the
     middle, the bar and the rack on the hall wall, the game PC desk under the small high window on the front
     wall, west of the panel's working space. Speakers on the ceiling."""
@@ -496,7 +504,7 @@ def front_studio(p):
     p.note(28.0, 31.5, "game PC desk", 8, "#1e1b4b")
     p.over.append(f'<circle cx="{X(27.1):.1f}" cy="{Y(29.5):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
     front_panel(p)
-    p.speakers([(24.6, 22.0), (34.6, 17.0), (25.0, 31.6), (34.6, 31.6)])
+    p.speakers([(24.6, 22.0), (34.5, 20.3), (25.0, 31.6), (34.6, 31.6)])
     p.note(33.2, 19.4, "speakers on the ceiling", 7, "#4c1d95")
     front_window(p)
 
@@ -539,7 +547,7 @@ def shared(p, studio_in_front):
     utility(p)
     lounge(p)
     hall(p)
-    office(p, sound=studio_in_front)
+    office(p, sound=studio_in_front, studio_door=studio_in_front)
     bath(p)
     structure(p)
 
