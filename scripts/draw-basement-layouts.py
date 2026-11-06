@@ -1,7 +1,8 @@
-"""Draw the basement layout for 45 Autumn Crest Ct as an SVG plan.
+"""Draw the two basement layouts for 45 Autumn Crest Ct as SVG plans.
 
-    python scripts/draw-basement-layouts.py     writes house-plan/basement/layout.svg
-                                               and prints each room's size, the bin count and the lane
+    python scripts/draw-basement-layouts.py     writes house-plan/basement/layout-office.svg (the D&D studio
+                                               beside the office) and layout-utility.svg (the studio beside the
+                                               utilities), and prints each room's size, the bin count and the lane
 
 Feet throughout, measured from the basement's rear corner on the garage side: x runs toward the far
 wall, y runs from the walkout wall toward the street. The basement is a 36 by 33 rectangle with
@@ -9,10 +10,10 @@ wall, y runs from the walkout wall toward the street. The basement is a 36 by 33
 November 5, 2026 found real. What the layout keeps where it is: the stair (the run under the loft
 stair, the landing, the run toward the front), the bath rough-in at the stair's foot, the walkout
 slider and the window in the rear wall, the furnace and water heater about 9 feet off the garage
-wall, the sump pit in the corner the old studio closet would have covered, the finished room at the
-stair's foot, the two electrical panels and the two steel posts under the beam. Positions marked
-"about" come from the walk-through notes, not a tape, and move when the basement is cleared and
-measured. Shelf bays are 2 feet deep and hold 27-gallon bins (31 by 20 inches) three across every
+wall, the sump pit hard in the foundation corner, the finished room at the stair's foot with its reach-in
+closet and its step, the two electrical panels and the two staggered posts under the far beam. Positions
+marked "about" come from Kane's marked-up plan of November 5 at 20:05, the walk-through video and the
+photos, not a tape, and move when the basement is cleared and measured. Shelf bays are 2 feet deep and hold 27-gallon bins (31 by 20 inches) three across every
 8 feet, four tiers high.
 """
 
@@ -33,10 +34,10 @@ RUN1 = (15.3, 15.9, 19.7, 19.1)   # from the door under the loft stair, down tow
 RUN2 = (12.3, 19.1, 15.3, 26.0)   # from the landing down toward the front wall
 ROUGH = (16.5, 25.4)
 BUMP = (12.0, 24.0, 2.0)          # the porch bump-out: x from, x to, depth past the front wall
-BEAMS = (11.8, 23.7)              # two steel beams running front to back, one each side of the stair, about a third of the width in
-POSTS = ((11.8, 5.5), (11.8, 11.0), (11.8, 24.0), (23.7, 9.5), (23.7, 18.5), (23.7, 27.5))   # staggered along the two beams, all about
+BEAMS = (11.8, 24.0)              # two steel beams running front to back, one each side of the stair, about
+POSTS = ((23.4, 14.4), (24.7, 18.5))   # the two posts Kane marked, staggered under the far beam, about
 SUMP = (1.9, 1.9)                 # the open pit, hard against the foundation corner on the garage side at the rear
-DRAIN = (9.3, 16.2)               # the floor drain beside the furnace, where Kane put it on November 5
+DRAIN = (10.7, 16.4)              # the floor drain south-west of the furnace, where Kane marked it
 BIN_LONG = 31 / 12
 TIERS = 4
 
@@ -198,7 +199,7 @@ class Plan:
         self.over.append(f'<text x="{X(x):.1f}" y="{Y(y):.1f}" font-size="{size}" fill="{color}" text-anchor="{anchor}">{html.escape(text)}</text>')
 
     def svg(self):
-        out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {PW} {PH}" width="{PW}" height="{PH}" font-family="Segoe UI, Arial, sans-serif" role="img" aria-label="{self.title}">',
+        out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {PW} {PH}" width="{PW}" height="{PH}" font-family="Segoe UI, Arial, sans-serif" role="img" aria-label="{html.escape(self.title)}">',
                f'<rect width="{PW}" height="{PH}" fill="#ffffff"/>']
         out.append(f'<rect x="{X(0):.1f}" y="{Y(0):.1f}" width="{W * S:.1f}" height="{H * S:.1f}" fill="#f8fafc"/>')
         out.append(f'<rect x="{X(BUMP[0]):.1f}" y="{Y(H):.1f}" width="{(BUMP[1] - BUMP[0]) * S:.1f}" height="{BUMP[2] * S:.1f}" fill="#f8fafc"/>')
@@ -245,82 +246,189 @@ class Plan:
         return {"key": self.key, "title": self.title, "rooms": self.rooms, "bins": sum(self.shelves), "lanes": self.lanes}
 
 
-def studio(p):
-    """The D&D studio where Nick planned it, in the rear corner on the garage side, reorganized around what the
-    walk-through found: the sump pit hard in the foundation corner, boxed into a closet, and the furnace about
-    9 feet off the garage wall, which takes the room's front half down to about 8 feet wide. The game PC desk
-    and the rack stand on the garage wall below the sump closet, the cube shelves of books on the rear wall,
-    the bar on the door wall, the table in the front half, and the closet of minis in the recess at the front
-    on the garage side, beside the finished room's closet. Speakers on the ceiling in the corners."""
-    # the sump closet in the foundation corner: the pit lidded and sealed, the pump's line out through the wall
+def sump_closet(p):
+    """The sump pit boxed into a closet in the foundation corner: the pit lidded and sealed, the pump's line out
+    through the wall, the door in the closet's south side hinged at the garage wall so it swings clear of
+    whatever stands east of it."""
     p.under.append(f'<rect x="{X(X0):.1f}" y="{Y(Y0):.1f}" width="{(3.3 - X0) * S:.1f}" height="{(3.75 - Y0) * S:.1f}" fill="#e2e8f0"/>')
     p.wall(X0, 3.75, 3.65, 4.1)
-    p.wall(3.3, Y0, 3.65, 1.0)
-    p.door(3.5, 3.3, 2.3, -90, 90)
+    p.wall(3.3, Y0, 3.65, 4.1)
+    p.door(1.0, 4.0, 2.3, 90, -90)
     p.over.append(f'<circle cx="{X(SUMP[0]):.1f}" cy="{Y(SUMP[1]):.1f}" r="{0.95 * S:.1f}" fill="#bae6fd" stroke="#0369a1" stroke-width="1.5"/>')
     p.over.append(f'<circle cx="{X(SUMP[0]):.1f}" cy="{Y(SUMP[1]):.1f}" r="{0.55 * S:.1f}" fill="none" stroke="#0369a1" stroke-width="1" stroke-dasharray="2,2"/>')
     p.note(2.0, 2.15, "sump", 8, "#0c4a6e")
     p.note(2.0, 3.3, "closet", 7, "#334155")
-    p.note(5.2, 5.0, "lidded pit, pump", 7, "#334155")
-    # the game PC desk and the rack on the garage wall, below the sump closet
-    p.thing(X0 + 0.02, 5.6, 2.75, 9.1, "", "#c4b5fd", "#5b21b6", 8)
-    p.vnote(1.75, 7.35, "game PC desk", 8, "#1e1b4b")
-    p.thing(X0 + 0.02, 9.3, 2.75, 11.3, "rack", "#ffffff", "#5b21b6", 8)
-    p.over.append(f'<circle cx="{X(3.55):.1f}" cy="{Y(7.35):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
-    # cube shelves of books along the rear wall, right of the sump closet
-    x = 5.5
-    for cols in (1, 3):
-        x = p.cubes(x, Y0 + 0.05, cols) + 0.15
-    p.note(7.9, 2.55, "cube shelves: books", 8, "#4c1d95")
-    # the bar on the door wall, dry for now
-    p.thing(9.4, 4.6, 11.38, 7.6, "", "#ede9fe", "#5b21b6", 8)
-    p.note(10.4, 5.5, "bar", 9, "#4c1d95")
-    p.thing(9.5, 6.2, 11.3, 7.5, "fridge", "#ffffff", "#5b21b6", 7)
-    p.game_table(4.9, 11.2)
-    # the closet of minis in the recess at the front on the garage side, 2 feet deep, two pairs of sliding doors
-    p.under.append(f'<rect x="{X(X0):.1f}" y="{Y(20.1):.1f}" width="{(7.0 - X0) * S:.1f}" height="{(22.2 - 20.1) * S:.1f}" fill="#ddd6fe"/>')
-    p.wall(X0, 19.75, 1.2, 20.1)
-    p.wall(3.7, 19.75, 4.1, 20.1)
-    p.wall(6.6, 19.75, 7.4, 20.1)
-    for a, b in ((1.2, 3.7), (4.1, 6.6)):
-        m = (a + b) / 2
-        p.over.append(f'<line x1="{X(a):.1f}" y1="{Y(19.84):.1f}" x2="{X(m + 0.2):.1f}" y2="{Y(19.84):.1f}" stroke="#334155" stroke-width="2"/>')
-        p.over.append(f'<line x1="{X(m - 0.2):.1f}" y1="{Y(20.01):.1f}" x2="{X(b):.1f}" y2="{Y(20.01):.1f}" stroke="#334155" stroke-width="2"/>')
-    p.note(3.9, 21.4, "closet: minis", 9, "#4c1d95")
-    p.speakers([(4.2, 1.3), (10.8, 1.35), (1.35, 18.9), (8.4, 18.9)])
-    p.note(5.0, 19.3, "speakers on the ceiling", 7, "#4c1d95")
 
 
-def play_area(p):
-    """The kids' play area in the front corner on the far side, as planned: the play rug in the middle, toy
-    shelves on the far wall, the electrical panel on the front wall beside the small high window (photo P08)
-    with its working space kept clear, a half wall on the hall side so the kids stay in view, and a 3-foot gate
-    at the street end that folds back flat against the front wall."""
-    p.thing(24.9, 19.6, 32.6, 27.8, "play rug", "#fdf2f8", "#db2777", 10, 10)
-    p.thing(33.6, 18.6, 35.2, 28.6, "", "#ffffff", "#be185d", 8)
-    p.vnote(34.4, 23.6, "toy shelves", 9, "#9d174d")
-    p.thing(31.0, Y1 - 0.4, 32.5, Y1, "", "#fde68a", "#b45309", 7, 1)
-    p.over.append(f'<rect x="{X(30.25):.1f}" y="{Y(Y1 - 3.0):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
-    p.note(31.75, Y1 - 2.1, "panel", 8, "#92400e")
-    p.note(31.75, Y1 - 1.3, "30 by 36 in", 7, "#92400e")
-    p.note(31.75, Y1 - 0.6, "kept clear", 7, "#92400e")
-    p.over.append(f'<rect x="{X(23.4):.1f}" y="{Y(16.4):.1f}" width="{0.5 * S:.1f}" height="{(29.1 - 16.4) * S:.1f}" fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>')
-    p.door(23.65, 32.1, 3.0, 0, -90)
-    p.vnote(24.4, 22.5, "half wall, 42 in", 8, "#475569")
-    p.note(24.3, 30.9, "gate", 8, "#475569", "start")
+def minis_closet(p, x0, x1, y0, facing):
+    """A 2-foot reach-in closet for the minis against a wall, its front across the room side with two pairs of
+    sliding doors. facing is 'south' when the closet stands on the rear wall and 'south' again on the office
+    wall; the front is always the side away from the wall."""
+    depth = 2.0
+    if facing == "south":
+        p.under.append(f'<rect x="{X(x0):.1f}" y="{Y(y0):.1f}" width="{(x1 - x0) * S:.1f}" height="{depth * S:.1f}" fill="#ddd6fe"/>')
+        front = y0 + depth
+        p.wall(x0 - 0.35, y0, x0, front + 0.35)
+        p.wall(x1, y0, x1 + 0.35, front + 0.35)
+        mid = (x0 + x1) / 2
+        for a, b in ((x0, mid), (mid, x1)):
+            m = (a + b) / 2
+            p.over.append(f'<line x1="{X(a):.1f}" y1="{Y(front + 0.09):.1f}" x2="{X(m + 0.2):.1f}" y2="{Y(front + 0.09):.1f}" stroke="#334155" stroke-width="2"/>')
+            p.over.append(f'<line x1="{X(m - 0.2):.1f}" y1="{Y(front + 0.26):.1f}" x2="{X(b):.1f}" y2="{Y(front + 0.26):.1f}" stroke="#334155" stroke-width="2"/>')
+        p.note(mid, y0 + 1.25, "closet: minis, sliding doors", 8, "#4c1d95")
+
+
+def corner_studio(p):
+    """Layout B: the D&D studio in the rear corner on the garage side, beside the utilities. The sump closet in
+    the foundation corner, the minis closet next to it on the rear wall, the bar on the door wall, the door into
+    the lounge where the end table stood, the table in the middle, the game PC desk and the rack on the garage
+    wall in the room's south half, the cube shelves of books on the south wall. Speakers on the ceiling."""
+    p.room("D&D studio", "studio", [(X0, Y0, 11.4, 9.1), (X0, 9.1, 9.0, 16.6)], (7.4, 4.15))
+    p.wall(11.4, Y0, 12.0, 5.6, True)
+    p.wall(11.4, 8.6, 12.0, 9.1, True)
+    p.wall(9.0, 9.1, 9.4, 16.6, True)
+    p.wall(9.0, 9.1, 15.0, 9.5, True)
+    p.door(11.7, 8.6, 3.0, 0, -90)
+    sump_closet(p)
+    minis_closet(p, 4.0, 9.0, Y0, "south")
+    p.thing(9.4, 1.2, 11.38, 5.2, "", "#ede9fe", "#5b21b6", 8)
+    p.note(10.4, 2.2, "bar", 9, "#4c1d95")
+    p.thing(9.5, 3.4, 11.3, 5.1, "fridge", "#ffffff", "#5b21b6", 7)
+    p.game_table(5.1, 5.4)
+    p.thing(X0 + 0.02, 11.5, 2.75, 15.0, "", "#c4b5fd", "#5b21b6", 8)
+    p.vnote(1.75, 13.25, "game PC desk", 8, "#1e1b4b")
+    p.thing(X0 + 0.02, 15.2, 2.75, 16.5, "rack", "#ffffff", "#5b21b6", 7)
+    p.over.append(f'<circle cx="{X(3.5):.1f}" cy="{Y(13.5):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
+    p.cubes(3.6, 15.5, 4)
+    p.note(5.9, 15.2, "cube shelves: books", 8, "#4c1d95")
+    p.speakers([(1.3, 8.6), (10.9, 7.2), (1.3, 10.6), (8.6, 14.5)])
+    p.note(6.0, 14.5, "speakers on the ceiling", 7, "#4c1d95")
+
+
+def corner_bins(p):
+    """Layout A: the rear corner on the garage side holds the bins instead, since the play room cannot sit next
+    to the furnace. Shelves on three walls around the sump closet and the door."""
+    p.room("Bin room", "storage", [(X0, Y0, 11.4, 9.1), (X0, 9.1, 9.0, 16.6)], (6.1, 9.3), compact=True)
+    p.wall(11.4, Y0, 12.0, 5.6)
+    p.wall(11.4, 8.6, 12.0, 9.1)
+    p.wall(9.0, 9.1, 9.4, 16.6)
+    p.wall(9.0, 9.1, 15.0, 9.5)
+    p.door(11.7, 8.6, 3.0, 0, -90)
+    sump_closet(p)
+    p.shelf(3.65, Y0, 9.4, Y0 + 2.0)
+    p.shelf(X0, 6.5, X0 + 2.0, 16.6)
+    p.shelf(2.75, 14.6, 9.0, 16.6)
+    p.shelf(9.4, Y0, 11.4, 5.3)
+    p.note(5.9, 12.0, "the furnace is through this wall,", 7, "#166534")
+    p.note(5.9, 12.7, "which is why the bins are here", 7, "#166534")
+
+
+def finished_room(p, use):
+    """The room the sellers finished at the foot of the stair, drawn from Kane's marks of November 5 at 20:05
+    and the walk-through video: 11 feet wide along the front wall and 15 deep, its doorway facing the stair's
+    foot, a reach-in closet immediately inside on the right along the stair's framed side, the wall stepping in
+    further where the closet ends, and the room's north end 8 feet wide beyond that step. The counter and the
+    desk stand along the front wall, the panel on the garage wall, the bed along the garage wall with its head
+    at the north wall, where a framed black rectangle sits."""
+    rects = [(X0, 17.0, 9.0, 20.0), (X0, 20.0, 12.0, Y1)]
+    if use == "bins":
+        p.room("Bin room, the finished room", "storage", rects, (6.6, 28.3), compact=True)
+    else:
+        p.room("Play room, the finished room", "lounge", rects, (6.6, 28.3), compact=True)
+    p.wall(X0, 16.6, 9.4, 17.0)
+    p.wall(9.0, 16.6, 9.4, 20.4)
+    p.wall(9.0, 20.0, 12.3, 20.4)
+    p.wall(12.0, 20.0, 12.3, 26.4)
+    p.wall(12.0, 28.9, 12.4, Y1)
+    p.door(12.2, 28.9, 2.5, 180, 90)
+    p.note(12.6, 27.3, "door to add", 7, "#475569", "start")
+    # the reach-in closet along the stair's side, its sliding doors gone, the rod to refit
+    p.under.append(f'<rect x="{X(10.5):.1f}" y="{Y(20.4):.1f}" width="{(12.0 - 10.5) * S:.1f}" height="{(26.0 - 20.4) * S:.1f}" fill="#e2e8f0"/>')
+    p.wall(10.3, 26.0, 12.0, 26.4)
+    for a, b, off in ((20.6, 23.3, 0.0), (23.1, 25.8, 0.17)):
+        p.over.append(f'<line x1="{X(10.42 + off):.1f}" y1="{Y(a):.1f}" x2="{X(10.42 + off):.1f}" y2="{Y(b):.1f}" stroke="#334155" stroke-width="2"/>')
+    p.vnote(11.25, 23.2, "closet, doors gone", 7, "#334155")
+    p.note(8.9, 20.95, "steps in", 6, "#475569", "end")
+    # the panel on the garage wall, its working space kept clear
+    p.thing(X0, 25.0, X0 + 0.4, 26.5, "", "#fde68a", "#b45309", 7, 1)
+    p.over.append(f'<rect x="{X(X0):.1f}" y="{Y(24.5):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
+    p.note(2.6, 25.7, "panel, about", 7, "#92400e")
+    p.note(2.6, 26.5, "kept clear", 7, "#92400e")
+    # the framed black rectangle on the north wall, above where the bed's head stands
+    p.over.append(f'<rect x="{X(0.9):.1f}" y="{Y(17.0):.1f}" width="{1.7 * S:.1f}" height="{0.3 * S:.1f}" fill="#1e293b"/>')
+    p.note(1.75, 17.9, "framed", 6, "#475569")
+    p.note(1.75, 18.5, "opening", 6, "#475569")
+    if use == "bins":
+        p.shelf(X0, 18.8, X0 + 2.0, 24.4)
+        p.shelf(3.0, 17.3, 8.6, 19.3)
+        p.shelf(3.0, 30.25, 11.6, Y1)
+        p.shelf(X0, 27.6, X0 + 2.0, 30.25)
+        p.note(6.6, 30.0, "counter out, shelves in", 7, "#166534")
+    else:
+        p.thing(1.6, 18.9, 7.4, 24.4, "play rug", "#fdf2f8", "#db2777", 10, 10)
+        p.thing(3.0, 30.3, 9.6, Y1 - 0.05, "the counter stays: toy storage", "#ffffff", "#be185d", 7)
+        p.thing(X0 + 0.02, 28.0, 2.6, 30.0, "toy shelf", "#ffffff", "#be185d", 7)
+        p.note(6.6, 26.2, "a gate at the door; the closet takes toys", 7, "#9d174d")
+        p.note(6.6, 26.9, "or a guest room as it stands, bed and all", 7, "#9d174d")
 
 
 def utility(p):
-    """The furnace and the water heater where the walk-through found them, about 9 feet off the garage wall and
-    north of the landing, their controls facing the garage side, with the floor drain on the slab in front of
-    them toward the beam. The furnace keeps 30 by 30 inches clear in front of its controls."""
-    p.thing(12.3, 12.4, 14.58, 15.7, "furnace", "#ffffff", "#334155", 8)
-    p.over.append(f'<rect x="{X(9.8):.1f}" y="{Y(12.4):.1f}" width="{2.5 * S:.1f}" height="{3.3 * S:.1f}" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3,2"/>')
-    p.note(11.05, 14.3, "30 in clear", 7, "#334155")
-    p.over.append(f'<circle cx="{X(13.6):.1f}" cy="{Y(11.3):.1f}" r="{0.85 * S:.1f}" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>')
-    p.note(13.6, 11.55, "heater", 7, "#334155")
+    """The furnace and the water heater where Kane's marks put them, about 12 to 15 feet off the garage wall
+    and north of the landing, their controls facing the garage side with 30 inches kept clear there, the floor
+    drain in the slab south-west of the furnace. The room runs under the landing's north edge and south into
+    the pocket beside the stair, and its door opens east into the lounge, clear of every wall."""
+    p.room("Utility", "utility", [(9.4, 9.5, 15.0, 15.9), (9.4, 15.9, 12.3, 20.0)], (10.9, 11.1), compact=True)
+    p.wall(14.6, 9.1, 15.0, 10.0)
+    p.wall(14.6, 12.6, 15.0, 16.3)
+    p.wall(12.3, 15.9, 15.0, 16.3)
+    p.door(14.8, 12.6, 2.6, 0, -90)
+    p.thing(12.4, 12.2, 14.8, 15.5, "furnace", "#ffffff", "#334155", 8)
+    p.over.append(f'<rect x="{X(9.9):.1f}" y="{Y(12.2):.1f}" width="{2.5 * S:.1f}" height="{3.3 * S:.1f}" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3,2"/>')
+    p.note(11.15, 14.1, "30 in clear", 7, "#334155")
+    p.over.append(f'<circle cx="{X(13.7):.1f}" cy="{Y(10.6):.1f}" r="{1.0 * S:.1f}" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>')
+    p.note(13.7, 10.85, "heater", 7, "#334155")
     p.over.append(f'<circle cx="{X(DRAIN[0]):.1f}" cy="{Y(DRAIN[1]):.1f}" r="4" fill="none" stroke="#334155" stroke-width="1.2"/>')
-    p.note(DRAIN[0], DRAIN[1] - 0.5, "floor drain", 7, "#334155")
+    p.note(DRAIN[0], DRAIN[1] + 0.9, "floor drain", 7, "#334155")
+    p.note(10.8, 18.6, "pocket by", 7, "#334155")
+    p.note(10.8, 19.3, "the stair", 7, "#334155")
+
+
+def lounge(p):
+    """The slider opens into the lounge; the couch faces the yard with the end table at its far end, so the
+    corner room's door swings into the space where the end table used to stand."""
+    p.room("Lounge", "lounge", [(12.0, Y0, 23.4, 9.1), (15.0, 9.1, 20.4, 15.9)], (17.7, 12.0))
+    p.thing(14.9, 6.0, 20.25, 8.55, "couch", "#fbcfe8", "#be185d", 9, 6)
+    p.thing(20.4, 6.0, 21.75, 8.05, "", "#ffffff", "#be185d", 8, 2)
+    p.vnote(21.08, 7.0, "end table", 7, "#9d174d")
+    p.gear(17.6, 3.75, 1.5, "gear table")
+    p.note(17.5, 17.8, "tools under the upper run", 7, "#312e81")
+
+
+def hall(p):
+    """The stair's foot, the lane down the far side between the bath and the far beam's posts, and the porch
+    bump-out at the front holding the tee."""
+    p.room("Hall", "hall", [(20.4, 9.1, 23.4, 19.1), (20.4, 19.1, 23.4, 28.9), (12.4, 26.0, 15.3, 28.9), (12.4, 28.9, 23.4, Y1), (BUMP[0] + 0.75, Y1, BUMP[1] - 0.75, Y1 + BUMP[2])], (17.3, 30.9))
+    p.lane(22.0, Y1 + BUMP[2] - 0.6, 22.0, 2.0, -1)
+    p.over.append(f'<line x1="{X(19.6):.1f}" y1="{Y(0.95):.1f}" x2="{X(23.4):.1f}" y2="{Y(0.95):.1f}" stroke="#be123c" stroke-width="3" stroke-dasharray="2,3"/>')
+    p.note(19.7, 1.75, "net", 8, "#be123c", "start")
+    p.note(14.0, 33.3, "porch bump-out", 8, "#475569", "start")
+    p.note(14.0, 34.0, "damp band at the slab: check", 7, "#b45309", "start")
+
+
+def office(p, sound=False):
+    """The office in the rear corner on the far side: the window behind the desk, two low windows on the far
+    wall, the door off the lane north of the first post, which lands in the office's wall."""
+    p.room("Office", "office", [(23.9, Y0, X1, 16.0)], (29.0, 8.4))
+    p.wall(23.4, Y0, 23.9, 9.5)
+    p.wall(23.4, 12.5, 23.9, 16.4)
+    p.wall(23.4, 16.0, X1, 16.4, sound)
+    p.door(23.65, 12.5, 3.0, 0, -90)
+    corner_desk(p)
+    p.thing(24.5, 13.4, 30.7, 15.8, "disc golf bags and racks", "#ffe4e6", "#e11d48", 9)
+    for a, b in ((3.5, 5.0), (7.3, 8.8)):
+        p.over.append(f'<rect x="{X(X1):.1f}" y="{Y(a):.1f}" width="{0.75 * S:.1f}" height="{(b - a) * S:.1f}" fill="#e0f2fe"/>')
+        p.over.append(f'<line x1="{X(X1 + 0.38):.1f}" y1="{Y(a):.1f}" x2="{X(X1 + 0.38):.1f}" y2="{Y(b):.1f}" stroke="#0284c7" stroke-width="3"/>')
+    p.note(30.0, 11.2, "two low windows on the far wall, about", 7, "#0369a1")
 
 
 def corner_desk(p):
@@ -332,11 +440,68 @@ def corner_desk(p):
     p.note(31.6, 5.9, "chair", 8, "#1e3a8a")
 
 
+def front_window(p):
+    p.over.append(f'<rect x="{X(27.5):.1f}" y="{Y(Y1):.1f}" width="{2.0 * S:.1f}" height="{0.75 * S:.1f}" fill="#e0f2fe"/>')
+    p.over.append(f'<line x1="{X(27.5):.1f}" y1="{Y(Y1 + 0.38):.1f}" x2="{X(29.5):.1f}" y2="{Y(Y1 + 0.38):.1f}" stroke="#0284c7" stroke-width="3"/>')
+    p.note(28.5, Y1 + 1.5, "small high window, about", 7, "#0369a1")
+
+
+def front_panel(p):
+    p.thing(31.0, Y1 - 0.4, 32.5, Y1, "", "#fde68a", "#b45309", 7, 1)
+    p.over.append(f'<rect x="{X(30.25):.1f}" y="{Y(Y1 - 3.0):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
+    p.note(31.75, Y1 - 2.1, "panel", 8, "#92400e")
+    p.note(31.75, Y1 - 1.3, "30 by 36 in", 7, "#92400e")
+    p.note(31.75, Y1 - 0.6, "kept clear", 7, "#92400e")
+
+
+def front_play(p):
+    """Layout B: the kids' play area in the front corner on the far side, as planned: the play rug in the
+    middle, toy shelves on the far wall, the panel on the front wall beside the small high window with its
+    working space kept clear, a half wall on the hall side so the kids stay in view, a 3-foot gate at the
+    street end that folds back flat against the front wall, and the second post boxed just inside."""
+    p.room("Play area", "lounge", [(23.9, 16.4, X1, Y1)], (29.3, 18.0))
+    p.thing(25.4, 19.8, 32.6, 27.8, "play rug", "#fdf2f8", "#db2777", 10, 10)
+    p.thing(33.6, 18.6, 35.2, 28.6, "", "#ffffff", "#be185d", 8)
+    p.vnote(34.4, 23.6, "toy shelves", 9, "#9d174d")
+    front_panel(p)
+    p.over.append(f'<rect x="{X(23.4):.1f}" y="{Y(16.4):.1f}" width="{0.5 * S:.1f}" height="{(29.1 - 16.4) * S:.1f}" fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>')
+    p.door(23.65, 32.1, 3.0, 0, -90)
+    p.vnote(24.4, 23.5, "half wall, 42 in", 8, "#475569")
+    p.note(24.3, 30.9, "gate", 8, "#475569", "start")
+    p.note(25.4, 19.2, "post: box it", 7, "#334155", "start")
+    front_window(p)
+
+
+def front_studio(p):
+    """Layout A: the D&D studio in the front corner on the far side, beside the office, the lane at its door.
+    The minis closet on the office wall, the second post boxed in the corner by the door, the table in the
+    middle, the bar and the rack on the hall wall, the game PC desk under the small high window on the front
+    wall, west of the panel's working space. Speakers on the ceiling."""
+    p.room("D&D studio", "studio", [(23.9, 16.4, X1, Y1)], (27.0, 19.6))
+    p.wall(23.4, 16.4, 23.9, 20.0, True)
+    p.wall(23.4, 23.0, 23.9, Y1, True)
+    p.door(23.65, 23.0, 3.0, 0, -90)
+    p.note(24.0, 19.1, "post: box it", 7, "#334155", "start")
+    minis_closet(p, 26.5, 32.5, 16.4, "south")
+    p.thing(23.9, 24.0, 25.9, 28.0, "", "#ede9fe", "#5b21b6", 8)
+    p.vnote(24.9, 25.2, "bar", 9, "#4c1d95")
+    p.thing(24.0, 26.3, 25.8, 27.9, "fridge", "#ffffff", "#5b21b6", 7)
+    p.thing(23.9, 28.3, 25.9, 30.2, "rack", "#ffffff", "#5b21b6", 7)
+    p.game_table(30.6, 20.6)
+    p.thing(24.4, 30.3, 29.9, Y1 - 0.05, "", "#c4b5fd", "#5b21b6", 8)
+    p.note(28.0, 31.5, "game PC desk", 8, "#1e1b4b")
+    p.over.append(f'<circle cx="{X(27.1):.1f}" cy="{Y(29.5):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
+    front_panel(p)
+    p.speakers([(24.6, 22.0), (34.6, 17.0), (25.0, 31.6), (34.6, 31.6)])
+    p.note(33.2, 19.4, "speakers on the ceiling", 7, "#4c1d95")
+    front_window(p)
+
+
 def bath(p, bottom=28.5):
-    """The bath on the rough-in, 5.3 by 9 feet inside: a 60-inch tub and shower across the north end, the
-    toilet backed onto the stair-side wall at the rough-in, the sink on the hall wall. The fit is unproven:
-    the rough-in sits right beside the stair stringers, and the toilet needs 15 inches from its center to
-    that wall, so the room may shift east or turn once the tape has the real spot."""
+    """The bath on the rough-in, 4.3 by 9 feet inside: a 60-inch tub and shower along the stair-side wall, the
+    toilet on the rough-in, the sink across from it, the door in the south wall opening in. The fit is
+    unproven: the rough-in sits right beside the stair stringers, and the toilet needs 15 inches from its
+    center to that wall, so the room may shift east or turn once the tape has the real spot."""
     p.room("Bath", "bath", [(15.7, 19.5, 20.0, bottom)], (18.9, 20.6), compact=True)
     p.wall(15.3, 19.1, 20.4, 19.5)
     p.wall(15.3, 19.1, 15.7, bottom + 0.4)
@@ -353,105 +518,61 @@ def bath(p, bottom=28.5):
 
 
 def structure(p):
-    """Two steel beams running front to back, one each side of the stair about a third of the width in, each on
-    staggered posts, drawn where the walk-through's three beam photos put them. Both beams land in wall lines:
-    the garage-side one in the studio's and the bin room's wall, the other in the hall's wall, which is why the
-    hall is 3 feet wide and no wider."""
+    """Two steel beams running front to back, dashed where they run overhead. The far one carries the two posts
+    Kane marked on November 5 at 20:05, staggered about a foot and a half apart either side of the hall's wall
+    line; the garage-side one runs along the corner room's wall and over the finished room's closet, boxed in
+    there, and its posts are not yet marked."""
     for x in BEAMS:
         p.over.append(f'<line x1="{X(x):.1f}" y1="{Y(Y0):.1f}" x2="{X(x):.1f}" y2="{Y(Y1):.1f}" stroke="#334155" stroke-width="1.6" stroke-dasharray="9,5" opacity="0.75"/>')
-    p.vnote(11.8, 22.0, "steel beam, about", 7, "#334155")
-    p.vnote(23.7, 5.5, "steel beam, about", 7, "#334155")
+    p.vnote(11.8, 3.0, "steel beam, about", 7, "#334155")
+    p.vnote(11.8, 30.5, "its posts not marked yet", 7, "#334155")
+    p.vnote(24.0, 5.5, "steel beam, about", 7, "#334155")
     for x, y in POSTS:
         p.over.append(f'<rect x="{X(x) - 4:.1f}" y="{Y(y) - 4:.1f}" width="8" height="8" fill="#334155" stroke="#ffffff" stroke-width="1"/>')
-    p.note(11.8, 5.5 - 0.6, "post", 7, "#334155")
-    p.note(23.7, 9.5 - 0.6, "post", 7, "#334155")
+    p.note(22.6, 14.7, "post", 7, "#334155", "end")
 
 
-def layout():
-    p = Plan("a", "The basement layout: studio, office, play area and the center lane, drawn from the walk-through")
-    # the studio in the rear corner on the garage side, its front half narrowed by the utility room
-    p.room("D&D studio", "studio", [(X0, Y0, 11.4, 10.0), (X0, 10.0, 9.0, 19.75)], (7.6, 9.2))
-    p.wall(11.4, Y0, 12.0, 1.4, True)
-    p.wall(11.4, 4.4, 12.0, 10.0, True)
-    p.wall(9.0, 9.6, 9.4, 20.1, True)
-    p.wall(7.0, 19.75, 12.0, 20.1, True)
-    p.wall(X0, 22.2, 7.4, 22.6, True)
-    p.wall(7.0, 20.1, 7.4, 22.6, True)
-    p.door(11.7, 4.4, 3.0, 180, 90)
-    studio(p)
-    # the utility room against the studio, the furnace and heater facing the garage side, the door to the lounge
-    p.room("Utility", "utility", [(9.4, 10.0, 14.6, 16.0)], (10.7, 10.9), compact=True)
-    p.wall(9.0, 9.6, 15.0, 10.0)
-    p.wall(14.6, 9.6, 15.0, 16.4)
-    p.wall(9.0, 16.0, 15.0, 16.4)
+def shared(p, studio_in_front):
     utility(p)
-    # the lounge: the slider opens into it, the couch faces the yard, the basket stands at its rear wall
-    p.room("Lounge", "lounge", [(12.0, Y0, 23.4, 9.6), (15.0, 9.6, 20.4, 15.9)], (18.6, 4.6))
-    p.thing(13.6, 6.0, 18.95, 8.55, "couch", "#fbcfe8", "#be185d", 9, 6)
-    p.thing(12.1, 6.0, 13.45, 8.05, "", "#ffffff", "#be185d", 8, 2)
-    p.vnote(12.78, 7.0, "end table", 7, "#9d174d")
-    p.gear(16.28, 3.75, 1.5, "gear table")
-    # the utility door off the lounge, in the room's north wall
-    p.wall(9.0, 9.6, 10.4, 10.0)
-    p.door(13.2, 9.8, 2.6, 180, 90)
-    # the hall: the stair's foot, the lane down the far side, and the porch bump-out at the front holding the tee
-    p.room("Hall", "hall", [(20.4, 9.6, 23.4, 19.1), (20.4, 19.1, 23.4, 28.9), (12.0, 26.0, 15.3, 28.9), (12.0, 28.9, 23.4, Y1), (BUMP[0] + 0.75, Y1, BUMP[1] - 0.75, Y1 + BUMP[2])], (17.0, 30.9))
-    p.lane(22.0, Y1 + BUMP[2] - 0.6, 22.0, 2.0, -1)
-    p.over.append(f'<line x1="{X(19.6):.1f}" y1="{Y(0.95):.1f}" x2="{X(23.4):.1f}" y2="{Y(0.95):.1f}" stroke="#be123c" stroke-width="3" stroke-dasharray="2,3"/>')
-    p.note(19.7, 1.75, "net", 8, "#be123c", "start")
-    p.note(14.0, 33.3, "porch bump-out", 8, "#475569", "start")
-    p.note(14.0, 34.0, "damp band at the slab: check", 7, "#b45309", "start")
-    p.note(13.65, 27.6, "tools under stair", 7, "#312e81")
-    # the office in the rear corner on the far side, the window behind the desk, two low windows on the far wall
-    p.room("Office", "office", [(23.9, Y0, X1, 16.0)], (29.0, 8.4))
-    p.wall(23.4, Y0, 23.9, 9.5)
-    p.wall(23.4, 12.5, 23.9, 16.4)
-    p.wall(23.4, 16.0, X1, 16.4)
-    p.door(23.65, 12.5, 3.0, 0, -90)
-    corner_desk(p)
-    p.thing(24.5, 13.4, 30.7, 15.8, "disc golf bags and racks", "#ffe4e6", "#e11d48", 9)
-    for a, b in ((3.5, 5.0), (7.3, 8.8)):
-        p.over.append(f'<rect x="{X(X1):.1f}" y="{Y(a):.1f}" width="{0.75 * S:.1f}" height="{(b - a) * S:.1f}" fill="#e0f2fe"/>')
-        p.over.append(f'<line x1="{X(X1 + 0.38):.1f}" y1="{Y(a):.1f}" x2="{X(X1 + 0.38):.1f}" y2="{Y(b):.1f}" stroke="#0284c7" stroke-width="3"/>')
-    p.note(30.0, 11.2, "two low windows on the far wall, about", 7, "#0369a1")
-    # the play area in the front corner on the far side, as planned, with the panel on its front wall
-    p.room("Play area", "lounge", [(23.9, 16.4, X1, Y1)], (29.3, 18.0))
-    play_area(p)
-    p.over.append(f'<rect x="{X(27.5):.1f}" y="{Y(Y1):.1f}" width="{2.0 * S:.1f}" height="{0.75 * S:.1f}" fill="#e0f2fe"/>')
-    p.over.append(f'<line x1="{X(27.5):.1f}" y1="{Y(Y1 + 0.38):.1f}" x2="{X(29.5):.1f}" y2="{Y(Y1 + 0.38):.1f}" stroke="#0284c7" stroke-width="3"/>')
-    p.note(28.5, Y1 + 1.5, "small high window, about", 7, "#0369a1")
+    lounge(p)
+    hall(p)
+    office(p, sound=studio_in_front)
     bath(p)
-    # the bin room is the room the sellers finished at the stair's foot: in through the curtained doorway, the
-    # closet is immediately on the right, and the room narrows again at the far end where the bed stands. It
-    # stays as it stands and takes the bins; the shelves run where the bed and the desk are now.
-    p.room("Bin room, the finished room", "storage", [(7.4, 20.1, 11.6, Y1), (X0, 22.6, 7.4, Y1)], (6.6, 27.0), compact=True)
-    p.wall(11.6, 20.1, 12.0, 26.8)
-    p.wall(11.6, 29.7, 12.0, Y1)
-    p.door(11.8, 26.8, 2.9, 90, 90)
-    p.note(12.5, 28.3, "door to add", 7, "#15803d", "start")
-    p.under.append(f'<rect x="{X(8.4):.1f}" y="{Y(20.1):.1f}" width="{(11.6 - 8.4) * S:.1f}" height="{(23.6 - 20.1) * S:.1f}" fill="#bbf7d0"/>')
-    p.wall(8.0, 20.1, 8.4, 23.6)
-    p.wall(8.0, 23.2, 10.2, 23.6)
-    p.note(10.0, 21.4, "closet, no door:", 7, "#166534")
-    p.note(10.0, 22.1, "refit the shelving", 7, "#166534")
-    p.thing(X0, 25.0, X0 + 0.4, 26.5, "", "#fde68a", "#b45309", 7, 1)
-    p.over.append(f'<rect x="{X(X0):.1f}" y="{Y(24.5):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
-    p.note(2.6, 25.6, "panel, about", 7, "#92400e")
-    p.note(2.6, 26.4, "kept clear", 7, "#92400e")
-    p.note(2.35, 23.5, "narrows here, about", 7, "#166534")
-    p.shelf(4.0, 22.6, 7.4, 24.6)
-    p.shelf(X0, 27.6, 2.75, Y1)
-    p.shelf(2.75, 30.25, 11.6, Y1)
-    p.shelf(9.6, 23.6, 11.6, 26.6)
     structure(p)
+
+
+def layout_utility():
+    """Layout B: the studio in the rear corner by the utilities, the play area in the front corner by the
+    office, the finished room holding the bins."""
+    p = Plan("utility", "The basement with the D&D studio by the utilities: studio, office, play area, bins in the finished room, the lane")
+    corner_studio(p)
+    finished_room(p, "bins")
+    front_play(p)
+    shared(p, False)
+    return p
+
+
+def layout_office():
+    """Layout A: the studio in the front corner beside the office, the bins in the rear corner by the
+    utilities, since the play room cannot sit next to the furnace, and the finished room as the play room."""
+    p = Plan("office", "The basement with the D&D studio by the office: studio, office, bins by the utilities, the finished room as the play room, the lane")
+    corner_bins(p)
+    finished_room(p, "play")
+    front_studio(p)
+    shared(p, True)
     return p
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    p = layout()
-    (OUT / "layout.svg").write_text(p.svg(), encoding="utf-8", newline="\n")
-    print(json.dumps(p.summary(), indent=1))
+    stale = OUT / "layout.svg"
+    if stale.exists():
+        stale.unlink()
+    for name, build in (("layout-office.svg", layout_office), ("layout-utility.svg", layout_utility)):
+        p = build()
+        (OUT / name).write_text(p.svg(), encoding="utf-8", newline="\n")
+        print(name)
+        print(json.dumps(p.summary(), indent=1))
 
 
 if __name__ == "__main__":

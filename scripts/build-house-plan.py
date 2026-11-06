@@ -14,8 +14,8 @@ section closes on its totals, needed, wanted and the two together. A cost cell o
 and the words that qualify it; a colon or a semicolon starts the detail. A line holding {{headline}}
 becomes the budget at a glance, and a line holding {{summary}} becomes the one list of every job with its
 two prices and the total. Any other table becomes cards on a phone, each cell labeled with its column.
-A line holding {{floor-plans}} becomes the plan's picture gallery; a line holding {{layout}} becomes the
-basement layout's drawing, which scripts/draw-basement-layouts.py writes, and {{main-floor}} and
+A line holding {{floor-plans}} becomes the plan's picture gallery; a line holding {{layout-office}} or {{layout-utility}} becomes one of
+the two basement drawings, which scripts/draw-basement-layouts.py writes, and {{main-floor}} and
 {{upper-floor}} become the floor drawings scripts/draw-house-floors.py writes. Pictures open in a pop-out
 over the page, or full size in a new tab without scripts.
 """
@@ -49,12 +49,13 @@ PLAN_GALLERY = [
                 "room's full bed.",
     },
     {
-        "thumb": "basement/layout.svg",
+        "thumb": "basement/layout-utility.svg",
         "page": "basement/",
-        "title": "The basement layout",
-        "text": "Nick's layout redrawn on November 5 around what the walk-through found: every room where he "
-                "planned it, the studio boxing the sump pit into a closet in its corner, the bins in the room the sellers "
-                "finished, a 32-foot putting lane, drawn around the stair, the furnace and the two beams.",
+        "title": "The basement layouts",
+        "text": "Two layouts drawn November 5 from Nick's marked-up plan: the studio beside the utilities with the "
+                "play area by the office, or the studio beside the office with the bins by the utilities and the finished "
+                "room as the play room. Both keep the office, the lounge, the bath, the 32-foot putting lane, the finished "
+                "room's walls and the two posts where the walk-through found them.",
     },
 ]
 
@@ -70,16 +71,16 @@ PAGES = [
     {
         "src": ROOT / "docs" / "HOUSE-PLAN-BASEMENT-LAYOUTS.md",
         "out": ROOT / "house-plan" / "basement" / "index.html",
-        "eyebrow": "Basement layout, 1 square to the foot",
+        "eyebrow": "Basement layouts, 1 square to the foot",
         "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/floors/", "The floor plans")],
-        "description": "The basement layout for 45 Autumn Crest Ct: a D&D studio, an office, a play area, bins and a putting lane.",
+        "description": "Two basement layouts for 45 Autumn Crest Ct: the D&D studio beside the utilities or beside the office, with the office, the play room, the bins, the bath and the putting lane around it.",
         "status_first": False,
     },
     {
         "src": ROOT / "docs" / "HOUSE-PLAN-FLOORS.md",
         "out": ROOT / "house-plan" / "floors" / "index.html",
         "eyebrow": "Every floor, 1 square to the foot",
-        "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/basement/", "The basement layout")],
+        "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/basement/", "The basement layouts")],
         "description": "The main floor, the upper floor and the basement of 45 Autumn Crest Ct, every room colored by its use.",
         "status_first": False,
     },
@@ -488,7 +489,8 @@ def gallery():
 
 
 FIGURES = {
-    "layout": ("basement", "layout.svg", "The basement layout"),
+    "layout-office": ("basement", "layout-office.svg", "The basement with the studio beside the office"),
+    "layout-utility": ("basement", "layout-utility.svg", "The basement with the studio beside the utilities"),
     "main-floor": ("floors", "main.svg", "The main floor"),
     "upper-floor": ("floors", "upper.svg", "The upper floor"),
 }
