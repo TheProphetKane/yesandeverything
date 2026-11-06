@@ -127,6 +127,11 @@ dialog .pic { overflow: auto; max-height: calc(94vh - 3.2rem); background: #fff;
 dialog .pic img { display: block; width: 100%; height: auto; }
 dialog .pic.zoom img { width: auto; max-width: none; }
 table.t-close td.c-num { color: var(--muted); font-family: var(--font-data); font-size: 0.82rem; white-space: nowrap; }
+table.t-close tr.close-row { cursor: pointer; }
+table.t-close tr.close-row:hover td { background: var(--raise) !important; }
+table.t-close tr.close-group th { background: var(--bg); color: var(--ink); text-transform: none; letter-spacing: 0; font-family: var(--font-display); font-size: 1rem; padding: 1rem 0.75rem 0.5rem; border-top: 1px solid var(--line); }
+table.t-close tr.close-group th .sum { float: right; font-family: var(--font-data); font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+table.t-close tr.close-group:first-child th { border-top: 0; padding-top: 0.8rem; }
 table.t-close td.c-cost { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
 table.t-close td.c-who { white-space: nowrap; }
 table.t-close td.c-more { text-align: right; white-space: nowrap; }
@@ -160,6 +165,9 @@ tr.close-detail[hidden] { display: none !important; }
   .cards table.t-close td.c-more, .cards table.t-close tr.close-detail td { grid-template-columns: 1fr; }
   .cards table.t-close td.c-more::before, .cards table.t-close tr.close-detail td::before { display: none; }
   .cards table.t-close td.c-more { text-align: left; }
+  .cards table.t-close tr.close-group { background: none; border: 0; padding: 0.4rem 0 0; margin-bottom: 0.4rem; }
+  .cards table.t-close tr.close-group th { display: block; border-top: 0; padding: 0.6rem 0.2rem 0.2rem; }
+  .cards table.t-close tr.close-group th .sum { float: none; display: block; }
   .cards table.t-close td { white-space: normal !important; }
   .close-dl div { grid-template-columns: 1fr; gap: 0.1rem; }
   .price { min-width: 0; flex: 1 1 8rem; }
@@ -461,7 +469,13 @@ tr.close-detail[hidden] { display: none !important; }
     btn.closest('tr').classList.toggle('open', open);
   };
   document.querySelectorAll('table.t-close button.more').forEach(b =>
-    b.addEventListener('click', () => set(b, b.getAttribute('aria-expanded') !== 'true')));
+    b.addEventListener('click', ev => { ev.stopPropagation(); set(b, b.getAttribute('aria-expanded') !== 'true'); }));
+  document.querySelectorAll('table.t-close tr.close-row').forEach(r =>
+    r.addEventListener('click', ev => {
+      if (ev.target.closest('a')) return;
+      const b = r.querySelector('button.more');
+      set(b, b.getAttribute('aria-expanded') !== 'true');
+    }));
   document.querySelectorAll('button[data-close-all]').forEach(all => all.addEventListener('click', () => {
     const open = all.dataset.closeAll === 'open';
     const table = all.parentElement.nextElementSibling.querySelector('table.t-close');

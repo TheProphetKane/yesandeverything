@@ -206,6 +206,11 @@ dialog .pic { overflow: auto; max-height: calc(94vh - 3.2rem); background: #fff;
 dialog .pic img { display: block; width: 100%; height: auto; }
 dialog .pic.zoom img { width: auto; max-width: none; }
 table.t-close td.c-num { color: var(--muted); font-family: var(--font-data); font-size: 0.82rem; white-space: nowrap; }
+table.t-close tr.close-row { cursor: pointer; }
+table.t-close tr.close-row:hover td { background: var(--raise) !important; }
+table.t-close tr.close-group th { background: var(--bg); color: var(--ink); text-transform: none; letter-spacing: 0; font-family: var(--font-display); font-size: 1rem; padding: 1rem 0.75rem 0.5rem; border-top: 1px solid var(--line); }
+table.t-close tr.close-group th .sum { float: right; font-family: var(--font-data); font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+table.t-close tr.close-group:first-child th { border-top: 0; padding-top: 0.8rem; }
 table.t-close td.c-cost { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
 table.t-close td.c-who { white-space: nowrap; }
 table.t-close td.c-more { text-align: right; white-space: nowrap; }
@@ -239,6 +244,9 @@ tr.close-detail[hidden] { display: none !important; }
   .cards table.t-close td.c-more, .cards table.t-close tr.close-detail td { grid-template-columns: 1fr; }
   .cards table.t-close td.c-more::before, .cards table.t-close tr.close-detail td::before { display: none; }
   .cards table.t-close td.c-more { text-align: left; }
+  .cards table.t-close tr.close-group { background: none; border: 0; padding: 0.4rem 0 0; margin-bottom: 0.4rem; }
+  .cards table.t-close tr.close-group th { display: block; border-top: 0; padding: 0.6rem 0.2rem 0.2rem; }
+  .cards table.t-close tr.close-group th .sum { float: none; display: block; }
   .cards table.t-close td { white-space: normal !important; }
   .close-dl div { grid-template-columns: 1fr; gap: 0.1rem; }
   .price { min-width: 0; flex: 1 1 8rem; }
@@ -275,7 +283,13 @@ CLOSE_SCRIPT = """
     btn.closest('tr').classList.toggle('open', open);
   };
   document.querySelectorAll('table.t-close button.more').forEach(b =>
-    b.addEventListener('click', () => set(b, b.getAttribute('aria-expanded') !== 'true')));
+    b.addEventListener('click', ev => { ev.stopPropagation(); set(b, b.getAttribute('aria-expanded') !== 'true'); }));
+  document.querySelectorAll('table.t-close tr.close-row').forEach(r =>
+    r.addEventListener('click', ev => {
+      if (ev.target.closest('a')) return;
+      const b = r.querySelector('button.more');
+      set(b, b.getAttribute('aria-expanded') !== 'true');
+    }));
   document.querySelectorAll('button[data-close-all]').forEach(all => all.addEventListener('click', () => {
     const open = all.dataset.closeAll === 'open';
     const table = all.parentElement.nextElementSibling.querySelector('table.t-close');
@@ -488,20 +502,27 @@ def column_class(label):
 
 def close_table(table, heads):
     """The closing table. The number, the item, who and the cost stay in the row; every other column folds into
-    a detail row under it, opened by the row's button, so the page shows what matters and keeps the rest a click
-    away. Without scripts every detail row shows."""
+    a detail row under it, opened by the row's button or a click anywhere on the row, so the page shows what
+    matters and keeps the rest a click away. A row with no number is a group heading for the rows under it, its
+    cost cell the group's sum. Without scripts every detail row shows."""
     show = 4
     classes = [column_class(h) for h in heads[:show]]
     head_html = "".join(f"<th>{html.escape(h)}</th>" for h in heads[:show]) + '<th><span class="sr">Detail</span></th>'
     out = []
-    for n, row in enumerate(re.findall(r"<tr>\s*<td.*?</tr>", table, re.S), 1):
+    n = 0
+    for row in re.findall(r"<tr>\s*<td.*?</tr>", table, re.S):
         cells = [c.strip() for c in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
         if len(cells) != len(heads):
-            sys.exit(f"the closing table's row {n} has {len(cells)} cells for {len(heads)} columns")
+            sys.exit(f"the closing table's row {n + 1} has {len(cells)} cells for {len(heads)} columns")
+        if not cells[0]:
+            total = f'<span class="sum">{cells[3]}</span>' if cells[3] else ""
+            out.append(f'<tr class="close-group"><th colspan="{show + 1}" scope="rowgroup">{cells[1]}{total}</th></tr>')
+            continue
+        n += 1
         tds = "".join(f'<td class="{classes[i]}" data-label="{html.escape(heads[i], quote=True)}">{cells[i]}</td>'
                       for i in range(show))
         alt = " alt" if n % 2 == 0 else ""
-        out.append(f'<tr class="close-row{alt}">{tds}<td class="c-more" data-label="">'
+        out.append(f'<tr class="close-row{alt}" data-detail="close-d-{n}">{tds}<td class="c-more" data-label="">'
                    f'<button type="button" class="more" aria-expanded="false" aria-controls="close-d-{n}">More</button></td></tr>')
         detail = "".join(f"<div><dt>{html.escape(heads[i])}</dt><dd>{cells[i]}</dd></div>"
                          for i in range(show, len(heads)) if cells[i])
