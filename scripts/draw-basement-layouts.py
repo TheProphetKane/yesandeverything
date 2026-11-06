@@ -291,7 +291,7 @@ def corner_studio(p):
     p.wall(9.0, 9.1, 15.0, 9.5, True)
     p.door(11.7, 8.6, 3.0, 0, -90)
     sump_closet(p)
-    minis_closet(p, 4.0, 9.0, Y0, "south")
+    minis_closet(p, 4.0, 11.05, Y0, "south")
     p.game_table(5.1, 5.4)
     p.thing(X0 + 0.02, 12.0, X0 + 1.35, 14.58, "", "#c4b5fd", "#5b21b6", 8)
     p.vnote(1.42, 13.3, "PC desk", 7, "#1e1b4b")
@@ -327,7 +327,7 @@ def finished_room(p, use, utility_door=False):
     foot, a reach-in closet immediately inside on the right along the stair's framed side, the wall stepping in
     further where the closet ends, and the room's north end 8 feet wide beyond that step. The counter and the
     desk stand along the front wall, the panel on the garage wall, the bed along the garage wall with its head
-    at the north wall, where a framed black rectangle sits centered behind the bed."""
+    at the north wall, where a framed opening sits centered behind the bed, to be filled in."""
     rects = [(X0, 17.0, 9.0, 20.0), (X0, 20.0, 12.0, Y1)]
     if use == "bins":
         p.room("Bin room, the finished room", "storage", rects, (6.6, 28.3), compact=True)
@@ -357,9 +357,9 @@ def finished_room(p, use, utility_door=False):
     p.over.append(f'<rect x="{X(X0):.1f}" y="{Y(24.5):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
     p.note(2.6, 25.7, "panel, about", 7, "#92400e")
     p.note(2.6, 26.5, "kept clear", 7, "#92400e")
-    # the framed black rectangle on the north wall, above where the bed's head stands
-    p.over.append(f'<rect x="{X(3.9):.1f}" y="{Y(17.0):.1f}" width="{2.0 * S:.1f}" height="{0.3 * S:.1f}" fill="#1e293b"/>')
-    p.note(5.6, 20.9, "framed opening, centered, about", 6, "#475569")
+    # the framed opening on the north wall, above where the bed's head stands, to be filled in
+    p.over.append(f'<rect x="{X(3.9):.1f}" y="{Y(17.0):.1f}" width="{2.0 * S:.1f}" height="{0.3 * S:.1f}" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="2,2"/>')
+    p.note(5.6, 20.9, "framed opening, centered, to be filled", 6, "#475569")
     if use == "bins":
         p.shelf(X0, 18.8, X0 + 2.0, 24.4)
         p.shelf(3.0, 17.3, 6.0, 19.3)
@@ -501,7 +501,7 @@ def front_studio(p):
     p.wall(23.4, 23.0, 23.9, Y1, True)
     p.door(23.65, 23.0, 3.0, 0, -90)
     p.note(24.0, 19.1, "post: box it", 7, "#334155", "start")
-    minis_closet(p, 26.5, 32.5, 16.4, "south")
+    minis_closet(p, 25.3, 32.4, 16.4, "south")
     p.game_table(30.8, 20.6)
     p.thing(23.9, 24.0, 25.15, 30.5, "", "#ede9fe", "#5b21b6", 7)
     p.vnote(24.52, 27.25, "shelves, 78 by 15", 7, "#1e1b4b")
