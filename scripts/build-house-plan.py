@@ -52,10 +52,9 @@ PLAN_GALLERY = [
         "thumb": "basement/layout.svg",
         "page": "basement/",
         "title": "The basement layout",
-        "text": "Nick's layout redrawn on November 5 around what the walk-through found: the D&D studio in the front "
-                "corner on the far side with a door to the office, the play area over the sump closet, the bins in the "
-                "room the sellers finished, a bigger "
-                "bath and a 32-foot putting lane, drawn around the stair, the furnace and the sump pit.",
+        "text": "Nick's layout redrawn on November 5 around what the walk-through found: every room where he "
+                "planned it, the studio boxing the sump pit into a closet in its corner, the bins in the room the sellers "
+                "finished, a 32-foot putting lane, drawn around the stair, the furnace and the two beams.",
     },
 ]
 
