@@ -34,8 +34,8 @@ RUN1 = (15.3, 15.9, 19.7, 19.1)   # from the door under the loft stair, down tow
 RUN2 = (12.3, 19.1, 15.3, 26.0)   # from the landing down toward the front wall
 ROUGH = (16.5, 25.4)
 BUMP = (12.0, 24.0, 2.0)          # the porch bump-out: x from, x to, depth past the front wall
-BEAMS = (11.8, 24.0)              # two steel beams running front to back, one each side of the stair, about
-POSTS = ((23.4, 14.4), (24.7, 18.5))   # the two posts Kane marked, staggered under the far beam, about
+BEAMS = (14.4, 18.5)              # two steel beams running left to right, one each side of the stair, through the posts Kane marked, about
+POSTS = ((23.4, 14.4), (24.7, 18.5))   # the two posts Kane marked, staggered, one under each beam, about
 SUMP = (1.9, 1.9)                 # the open pit, hard against the foundation corner on the garage side at the rear
 DRAIN = (10.7, 16.4)              # the floor drain south-west of the furnace, where Kane marked it
 BIN_LONG = 31 / 12
@@ -286,7 +286,7 @@ def corner_studio(p):
     p.room("D&D studio", "studio", [(X0, Y0, 11.4, 9.1), (X0, 9.1, 9.0, 16.6)], (7.4, 4.15))
     p.wall(11.4, Y0, 12.0, 5.6, True)
     p.wall(11.4, 8.6, 12.0, 9.1, True)
-    p.wall(9.0, 9.1, 9.4, 16.6, True)
+    p.wall(9.0, 9.1, 9.4, 13.6, True)
     p.wall(9.0, 9.1, 15.0, 9.5, True)
     p.door(11.7, 8.6, 3.0, 0, -90)
     sump_closet(p)
@@ -299,10 +299,11 @@ def corner_studio(p):
     p.vnote(1.75, 13.25, "game PC desk", 8, "#1e1b4b")
     p.thing(X0 + 0.02, 15.2, 2.75, 16.5, "rack", "#ffffff", "#5b21b6", 7)
     p.over.append(f'<circle cx="{X(3.5):.1f}" cy="{Y(13.5):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
-    p.cubes(3.6, 15.5, 4)
-    p.note(5.9, 15.2, "cube shelves: books", 8, "#4c1d95")
-    p.speakers([(1.3, 8.6), (10.9, 7.2), (1.3, 10.6), (8.6, 14.5)])
-    p.note(6.0, 14.5, "speakers on the ceiling", 7, "#4c1d95")
+    p.cubes(2.9, 15.5, 3)
+    p.note(4.6, 15.2, "cube shelves: books", 8, "#4c1d95")
+    p.note(7.9, 14.9, "utility door", 6, "#334155")
+    p.speakers([(1.3, 8.6), (10.9, 7.2), (1.3, 10.6), (8.7, 12.4)])
+    p.note(4.6, 3.75, "speakers on the ceiling", 7, "#4c1d95")
 
 
 def corner_bins(p):
@@ -311,13 +312,14 @@ def corner_bins(p):
     p.room("Bin room", "storage", [(X0, Y0, 11.4, 9.1), (X0, 9.1, 9.0, 16.6)], (6.1, 9.3), compact=True)
     p.wall(11.4, Y0, 12.0, 5.6)
     p.wall(11.4, 8.6, 12.0, 9.1)
-    p.wall(9.0, 9.1, 9.4, 16.6)
+    p.wall(9.0, 9.1, 9.4, 13.6)
     p.wall(9.0, 9.1, 15.0, 9.5)
     p.door(11.7, 8.6, 3.0, 0, -90)
     sump_closet(p)
     p.shelf(3.65, Y0, 9.4, Y0 + 2.0)
     p.shelf(X0, 6.5, X0 + 2.0, 16.6)
-    p.shelf(2.75, 14.6, 9.0, 16.6)
+    p.shelf(2.75, 14.6, 6.4, 16.6)
+    p.note(7.9, 14.9, "utility door", 6, "#334155")
     p.shelf(9.4, Y0, 11.4, 5.3)
     p.note(5.9, 12.0, "the furnace is through this wall,", 7, "#166534")
     p.note(5.9, 12.7, "which is why the bins are here", 7, "#166534")
@@ -329,7 +331,7 @@ def finished_room(p, use):
     foot, a reach-in closet immediately inside on the right along the stair's framed side, the wall stepping in
     further where the closet ends, and the room's north end 8 feet wide beyond that step. The counter and the
     desk stand along the front wall, the panel on the garage wall, the bed along the garage wall with its head
-    at the north wall, where a framed black rectangle sits."""
+    at the north wall, where a framed black rectangle sits centered behind the bed."""
     rects = [(X0, 17.0, 9.0, 20.0), (X0, 20.0, 12.0, Y1)]
     if use == "bins":
         p.room("Bin room, the finished room", "storage", rects, (6.6, 28.3), compact=True)
@@ -355,9 +357,8 @@ def finished_room(p, use):
     p.note(2.6, 25.7, "panel, about", 7, "#92400e")
     p.note(2.6, 26.5, "kept clear", 7, "#92400e")
     # the framed black rectangle on the north wall, above where the bed's head stands
-    p.over.append(f'<rect x="{X(0.9):.1f}" y="{Y(17.0):.1f}" width="{1.7 * S:.1f}" height="{0.3 * S:.1f}" fill="#1e293b"/>')
-    p.note(1.75, 17.9, "framed", 6, "#475569")
-    p.note(1.75, 18.5, "opening", 6, "#475569")
+    p.over.append(f'<rect x="{X(3.9):.1f}" y="{Y(17.0):.1f}" width="{2.0 * S:.1f}" height="{0.3 * S:.1f}" fill="#1e293b"/>')
+    p.note(4.9, 19.95, "framed opening, centered, about", 6, "#475569")
     if use == "bins":
         p.shelf(X0, 18.8, X0 + 2.0, 24.4)
         p.shelf(3.0, 17.3, 8.6, 19.3)
@@ -365,7 +366,7 @@ def finished_room(p, use):
         p.shelf(X0, 27.6, X0 + 2.0, 30.25)
         p.note(6.6, 30.0, "counter out, shelves in", 7, "#166534")
     else:
-        p.thing(1.6, 18.9, 7.4, 24.4, "play rug", "#fdf2f8", "#db2777", 10, 10)
+        p.thing(1.6, 20.3, 7.4, 24.4, "play rug", "#fdf2f8", "#db2777", 10, 10)
         p.thing(3.0, 30.3, 9.6, Y1 - 0.05, "the counter stays: toy storage", "#ffffff", "#be185d", 7)
         p.thing(X0 + 0.02, 28.0, 2.6, 30.0, "toy shelf", "#ffffff", "#be185d", 7)
         p.note(6.6, 26.2, "a gate at the door; the closet takes toys", 7, "#9d174d")
@@ -376,12 +377,12 @@ def utility(p):
     """The furnace and the water heater where Kane's marks put them, about 12 to 15 feet off the garage wall
     and north of the landing, their controls facing the garage side with 30 inches kept clear there, the floor
     drain in the slab south-west of the furnace. The room runs under the landing's north edge and south into
-    the pocket beside the stair, and its door opens east into the lounge, clear of every wall."""
+    the pocket beside the stair, and its door is in its west wall, opening into the corner room, where the
+    furnace's controls face."""
     p.room("Utility", "utility", [(9.4, 9.5, 15.0, 15.9), (9.4, 15.9, 12.3, 20.0)], (10.9, 11.1), compact=True)
-    p.wall(14.6, 9.1, 15.0, 10.0)
-    p.wall(14.6, 12.6, 15.0, 16.3)
+    p.wall(14.6, 9.1, 15.0, 16.3)
     p.wall(12.3, 15.9, 15.0, 16.3)
-    p.door(14.8, 12.6, 2.6, 0, -90)
+    p.door(9.2, 16.2, 2.6, 180, 90)
     p.thing(12.4, 12.2, 14.8, 15.5, "furnace", "#ffffff", "#334155", 8)
     p.over.append(f'<rect x="{X(9.9):.1f}" y="{Y(12.2):.1f}" width="{2.5 * S:.1f}" height="{3.3 * S:.1f}" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3,2"/>')
     p.note(11.15, 14.1, "30 in clear", 7, "#334155")
@@ -397,22 +398,25 @@ def lounge(p):
     """The slider opens into the lounge; the couch faces the yard with the end table at its far end, so the
     corner room's door swings into the space where the end table used to stand."""
     p.room("Lounge", "lounge", [(12.0, Y0, 23.4, 9.1), (15.0, 9.1, 20.4, 15.9)], (17.7, 12.0))
-    p.thing(14.9, 6.0, 20.25, 8.55, "couch", "#fbcfe8", "#be185d", 9, 6)
-    p.thing(20.4, 6.0, 21.75, 8.05, "", "#ffffff", "#be185d", 8, 2)
-    p.vnote(21.08, 7.0, "end table", 7, "#9d174d")
-    p.gear(17.6, 3.75, 1.5, "gear table")
+    p.thing(21.0, 2.5, 23.35, 8.5, "", "#fbcfe8", "#be185d", 9, 6)
+    p.vnote(22.18, 5.5, "couch, facing the room", 8, "#9d174d")
+    p.thing(21.0, 0.95, 22.35, 2.3, "", "#ffffff", "#be185d", 8, 2)
+    p.note(21.68, 1.75, "table", 6, "#9d174d")
+    p.gear(16.6, 5.5, 1.5, "gear table")
+    p.note(19.3, 2.6, "tee", 8, "#be123c", "end")
     p.note(17.5, 17.8, "tools under the upper run", 7, "#312e81")
 
 
 def hall(p):
-    """The stair's foot, the lane down the far side between the bath and the far beam's posts, and the porch
-    bump-out at the front holding the tee."""
+    """The stair's foot, the lane down the far side between the bath and the first post, and the porch
+    bump-out at the front holding the basket, with the net on the concrete behind it; the tee stands at the
+    rear wall, so a miss lands on bare concrete and the couch can back onto the office wall."""
     p.room("Hall", "hall", [(20.4, 9.1, 23.4, 19.1), (20.4, 19.1, 23.4, 28.9), (12.4, 26.0, 15.3, 28.9), (12.4, 28.9, 23.4, Y1), (BUMP[0] + 0.75, Y1, BUMP[1] - 0.75, Y1 + BUMP[2])], (17.3, 30.9))
-    p.lane(22.0, Y1 + BUMP[2] - 0.6, 22.0, 2.0, -1)
-    p.over.append(f'<line x1="{X(19.6):.1f}" y1="{Y(0.95):.1f}" x2="{X(23.4):.1f}" y2="{Y(0.95):.1f}" stroke="#be123c" stroke-width="3" stroke-dasharray="2,3"/>')
-    p.note(19.7, 1.75, "net", 8, "#be123c", "start")
-    p.note(14.0, 33.3, "porch bump-out", 8, "#475569", "start")
-    p.note(14.0, 34.0, "damp band at the slab: check", 7, "#b45309", "start")
+    p.lane(19.6, 1.6, 22.0, Y1 + BUMP[2] - 0.9, 1)
+    p.over.append(f'<line x1="{X(19.0):.1f}" y1="{Y(Y1 + BUMP[2] - 0.08):.1f}" x2="{X(BUMP[1] - 0.8):.1f}" y2="{Y(Y1 + BUMP[2] - 0.08):.1f}" stroke="#be123c" stroke-width="3" stroke-dasharray="2,3"/>')
+    p.note(18.6, Y1 + BUMP[2] - 0.3, "net", 8, "#be123c", "end")
+    p.note(13.0, 33.1, "porch bump-out: concrete", 7, "#475569", "start")
+    p.note(13.0, 33.8, "all round the basket", 7, "#475569", "start")
 
 
 def office(p, sound=False):
@@ -518,15 +522,14 @@ def bath(p, bottom=28.5):
 
 
 def structure(p):
-    """Two steel beams running front to back, dashed where they run overhead. The far one carries the two posts
-    Kane marked on November 5 at 20:05, staggered about a foot and a half apart either side of the hall's wall
-    line; the garage-side one runs along the corner room's wall and over the finished room's closet, boxed in
-    there, and its posts are not yet marked."""
-    for x in BEAMS:
-        p.over.append(f'<line x1="{X(x):.1f}" y1="{Y(Y0):.1f}" x2="{X(x):.1f}" y2="{Y(Y1):.1f}" stroke="#334155" stroke-width="1.6" stroke-dasharray="9,5" opacity="0.75"/>')
-    p.vnote(11.8, 3.0, "steel beam, about", 7, "#334155")
-    p.vnote(11.8, 30.5, "its posts not marked yet", 7, "#334155")
-    p.vnote(24.0, 5.5, "steel beam, about", 7, "#334155")
+    """Two steel beams running left to right, one each side of the stair, dashed where they run overhead,
+    each through one of the two posts Kane marked on November 5 at 20:05 and corrected on November 6 at 13:28:
+    the north beam about 14 feet from the rear wall, the south one about 18.5, boxed where it crosses the
+    finished room. Where the south beam clears the stair gets taped."""
+    for y in BEAMS:
+        p.over.append(f'<line x1="{X(X0):.1f}" y1="{Y(y):.1f}" x2="{X(X1):.1f}" y2="{Y(y):.1f}" stroke="#334155" stroke-width="1.6" stroke-dasharray="9,5" opacity="0.75"/>')
+    p.note(6.6, 14.1, "steel beam, left to right, about", 7, "#334155")
+    p.note(21.9, 19.6, "beam, about", 6, "#334155")
     for x, y in POSTS:
         p.over.append(f'<rect x="{X(x) - 4:.1f}" y="{Y(y) - 4:.1f}" width="8" height="8" fill="#334155" stroke="#ffffff" stroke-width="1"/>')
     p.note(22.6, 14.7, "post", 7, "#334155", "end")
