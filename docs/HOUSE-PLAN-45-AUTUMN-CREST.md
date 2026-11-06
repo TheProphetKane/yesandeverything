@@ -60,7 +60,7 @@ Checked line by line against the six reports on November 6 at 14:10. The sellers
 | Fascia and exterior trim | Family | Nothing, unless their roofer wraps it while the roof goes on | Paints it in spring, or has it wrapped with the roof | $1,500 to $3,000 painted; $1,200 to $2,250 wrapped |
 | Splash blocks, downspout extensions, driveway joints, gutters, the furnace filter | Family | Nothing | The first dry weekend | $350 to $700, plus a filter at store price and an hour on the gutters |
 | Dryer cord | Family | Nothing | A 4-prong cord for the family's dryer, since the laundry has a 4-slot 220-volt outlet | $18 to $30, Home Depot's listings |
-| Sewer videos | Family | Nothing | Downloads Archway's videos before they expire on February 3, 2027 | $0 |
+| Sewer video | Family, done November 6 | Nothing | Archway's report holds one video, the camera's pull-back from the city main at 99 feet 6 inches to the stack at 2 feet 9 inches, 2 minutes 32 seconds long. It sits in the media folder's sewer-2026-11-05 with three stills and the report | $0 |
 | The inspector's guarantee | Family | Nothing | BPG's 90-day guarantee on major components runs to February 3, 2027; its discounted one-year warranty must be ordered by December 5, which is Nick's call | $0 for the 90 days; the one-year warranty priced by BPG at 800-285-3001 |
 
 The sums: the sellers' replacements $25,000 to $43,000; the sellers' repairs before closing $5,900 to $10,100; the sellers' credits $10,000 to $19,800, which sits at the lender's cap on its own, so anything the sellers would rather do than pay comes off that line.
