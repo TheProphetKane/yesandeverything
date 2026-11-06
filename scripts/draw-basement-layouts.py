@@ -450,12 +450,14 @@ def office(p, sound=False, studio_door=False):
 
 
 def corner_desk(p):
-    """Nick's desk: the computer tower in the corner where the rear and far walls meet, the desk running
-    along the far wall from it, so he faces the wall with the window behind him to his left."""
+    """Nick's desk, 63 by 32 inches as he measured it on November 6: the computer tower in the corner where the
+    rear and far walls meet, the desk running along the far wall from it, so he faces the wall with the window
+    behind him to his left."""
     p.thing(33.6, 0.9, 35.2, 2.7, "PC", "#93c5fd", "#1d4ed8", 9)
-    p.thing(32.6, 2.7, 35.2, 9.2, "desk", "#bfdbfe", "#1d4ed8", 10)
-    p.over.append(f'<circle cx="{X(31.6):.1f}" cy="{Y(5.6):.1f}" r="{0.9 * S:.1f}" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.2"/>')
-    p.note(31.6, 5.9, "chair", 8, "#1e3a8a")
+    p.thing(32.58, 2.9, 35.23, 8.15, "", "#bfdbfe", "#1d4ed8", 10)
+    p.vnote(33.9, 5.5, "desk, 63 by 32", 9, "#1e3a8a")
+    p.over.append(f'<circle cx="{X(31.6):.1f}" cy="{Y(5.5):.1f}" r="{0.9 * S:.1f}" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.2"/>')
+    p.note(31.6, 5.8, "chair", 8, "#1e3a8a")
 
 
 def front_window(p):
