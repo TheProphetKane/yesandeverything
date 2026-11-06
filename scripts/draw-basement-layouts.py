@@ -359,10 +359,14 @@ def finished_room(p, use, utility_door=False):
     p.note(2.6, 26.5, "kept clear", 7, "#92400e")
     # the framed black rectangle on the north wall, above where the bed's head stands
     p.over.append(f'<rect x="{X(3.9):.1f}" y="{Y(17.0):.1f}" width="{2.0 * S:.1f}" height="{0.3 * S:.1f}" fill="#1e293b"/>')
-    p.note(4.9, 19.95, "framed opening, centered, about", 6, "#475569")
+    p.note(5.6, 20.9, "framed opening, centered, about", 6, "#475569")
     if use == "bins":
         p.shelf(X0, 18.8, X0 + 2.0, 24.4)
-        p.shelf(3.0, 17.3, 8.6, 19.3)
+        p.shelf(3.0, 17.3, 6.0, 19.3)
+        if utility_door:
+            p.over.append(f'<rect x="{X(6.0):.1f}" y="{Y(17.3):.1f}" width="{3.0 * S:.1f}" height="{2.7 * S:.1f}" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3,2"/>')
+            p.note(7.5, 18.5, "kept clear:", 6, "#334155")
+            p.note(7.5, 19.1, "utility door", 6, "#334155")
         p.shelf(3.0, 30.25, 11.6, Y1)
         p.shelf(X0, 27.6, X0 + 2.0, 30.25)
         p.note(6.6, 30.0, "counter out, shelves in", 7, "#166534")
