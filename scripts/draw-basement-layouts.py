@@ -395,24 +395,23 @@ def utility(p):
 
 
 def lounge(p):
-    """The slider opens into the lounge; the couch faces the yard with the end table at its far end, so the
-    corner room's door swings into the space where the end table used to stand."""
+    """The slider opens into the lounge; the couch backs onto the office wall and faces the room, so the corner
+    room's door swings into open floor and the putter stands at the office door behind the couch's end."""
     p.room("Lounge", "lounge", [(12.0, Y0, 23.4, 9.1), (15.0, 9.1, 20.4, 15.9)], (17.7, 12.0))
-    p.thing(21.0, 2.5, 23.35, 8.5, "", "#fbcfe8", "#be185d", 9, 6)
-    p.vnote(22.18, 5.5, "couch, facing the room", 8, "#9d174d")
-    p.thing(21.0, 0.95, 22.35, 2.3, "", "#ffffff", "#be185d", 8, 2)
-    p.note(21.68, 1.75, "table", 6, "#9d174d")
+    p.thing(21.0, 1.6, 23.35, 7.6, "", "#fbcfe8", "#be185d", 9, 6)
+    p.vnote(22.18, 4.6, "couch, facing the room", 8, "#9d174d")
     p.gear(16.6, 5.5, 1.5, "gear table")
-    p.note(19.3, 2.6, "tee", 8, "#be123c", "end")
+    p.note(21.3, 8.9, "tee, at the office door", 7, "#be123c", "end")
     p.note(17.5, 17.8, "tools under the upper run", 7, "#312e81")
 
 
 def hall(p):
     """The stair's foot, the lane down the far side between the bath and the first post, and the porch
-    bump-out at the front holding the basket, with the net on the concrete behind it; the tee stands at the
-    rear wall, so a miss lands on bare concrete and the couch can back onto the office wall."""
+    bump-out at the front holding the basket, with the net on the concrete behind it; the tee stands just outside
+    the office door, 25 feet from the basket, so a miss lands on bare concrete and the couch backs onto the
+    office wall."""
     p.room("Hall", "hall", [(20.4, 9.1, 23.4, 19.1), (20.4, 19.1, 23.4, 28.9), (12.4, 26.0, 15.3, 28.9), (12.4, 28.9, 23.4, Y1), (BUMP[0] + 0.75, Y1, BUMP[1] - 0.75, Y1 + BUMP[2])], (17.3, 30.9))
-    p.lane(19.6, 1.6, 22.0, Y1 + BUMP[2] - 0.9, 1)
+    p.lane(21.9, 8.6, 21.9, Y1 + BUMP[2] - 0.9, 1)
     p.over.append(f'<line x1="{X(19.0):.1f}" y1="{Y(Y1 + BUMP[2] - 0.08):.1f}" x2="{X(BUMP[1] - 0.8):.1f}" y2="{Y(Y1 + BUMP[2] - 0.08):.1f}" stroke="#be123c" stroke-width="3" stroke-dasharray="2,3"/>')
     p.note(18.6, Y1 + BUMP[2] - 0.3, "net", 8, "#be123c", "end")
     p.note(13.0, 33.1, "porch bump-out: concrete", 7, "#475569", "start")

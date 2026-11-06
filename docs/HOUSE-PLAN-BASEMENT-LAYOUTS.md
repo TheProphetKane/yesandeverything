@@ -16,7 +16,7 @@ Every spot marked "about" comes from the marks, the photos and the video, not a 
 | Bin room | L-shaped, 10.7 wide at the rear, 8.2 at the front | 151 | The corner beside the utilities: 32 bins on four tiers along three walls, the rear one, the garage one and the one it shares with the finished room, around the sump closet and the door. |
 | Play room, the finished room | L-shaped, 11 by 15 with a step | 163 | The one enclosed room with a door, at the stair's foot and away from the furnace: a play rug in its north end, the counter kept along the front wall as toy storage, the closet for toys, a gate in the doorway. It could be a guest room as it stands instead, bed and all; nothing in the layout depends on which. |
 | Office | 11.4 by 15.2 feet | 173 | The far side's rear corner: the computer tower where the two outer walls meet, the desk along the far wall, the window behind and to the left, two low windows on the far wall. Disc golf bags and racks hang on the wall the studio shares. The door sits on the lane, north of the first post, which lands in the office's wall. |
-| Lounge | L-shaped | 132 | The couch backed onto the office wall, facing the room, a small table at its end, the gear table in front of it. The putting tee stands at the rear wall beside the window, so the whole lounge opens toward the slider. |
+| Lounge | L-shaped | 132 | The couch backed onto the office wall, facing the room, the gear table in front of it. The putting tee stands just outside the office door, past the couch's end, so the whole lounge opens toward the slider. |
 | Utility | L-shaped | 48 | The furnace and the water heater, their controls facing the garage side with 30 inches kept clear, the floor drain south-west of it. The room runs under the landing's north edge and south into the pocket beside the stair. Its door is in its west wall, opening into the corner room, where the controls face. |
 | Hall | L-shaped, 3 feet wide down the far side | 126 | The stair's foot, the lane between the bath and the first post, and the porch bump-out at the front, where the basket stands; the net hangs on the concrete behind it. Tools go under the upper run. |
 | Bath | 4.3 by 9 feet | 39 | A 60-inch tub and shower along the stair-side wall, the toilet on the rough-in, the sink across from it. The fit is unproven, see below. |
@@ -36,7 +36,7 @@ Every spot marked "about" comes from the marks, the photos and the video, not a 
 | Hall | L-shaped, 3 feet wide down the far side | 126 | As in layout 1. |
 | Bath | 4.3 by 9 feet | 39 | As in layout 1. |
 
-Bins: 32 on four tiers in the finished room, 28 in the corner room, a quarter more on five tiers. Putting lane: 32 feet in both. The tee stands at the rear wall; the basket sits in the bump-out.
+Bins: 32 on four tiers in the finished room, 28 in the corner room, a quarter more on five tiers. Putting lane: 25 feet in both. The tee stands just outside the office door; the basket sits in the bump-out.
 
 ## What the walk-through and Nick's marks settled, in both layouts
 
@@ -52,7 +52,7 @@ Bins: 32 on four tiers in the finished room, 28 in the corner room, a quarter mo
 
 ## How the rooms work
 
-In layout 1, players come in through the slider past the couch, which backs onto the office wall and faces the room, then walk the lane down the far side to the studio door; Nick comes through from the office, whose door sits where the shared wall ends. The lane doubles as the hall, 3 feet wide between the bath and the first post. Players putt 32 feet from the rear wall toward the bump-out, and a miss lands on bare concrete around the basket, with the net hanging behind it. The kids are behind a door in the finished room, at the stair's foot, with the counter and the closet holding their things.
+In layout 1, players come in through the slider past the couch, which backs onto the office wall and faces the room, then walk the lane down the far side to the studio door; Nick comes through from the office, whose door sits where the shared wall ends. The lane doubles as the hall, 3 feet wide between the bath and the first post. Players putt 25 feet from the office door toward the bump-out, and a miss lands on bare concrete around the basket, with the net hanging behind it. The kids are behind a door in the finished room, at the stair's foot, with the counter and the closet holding their things.
 
 In layout 2, the studio door is a few steps left of the slider, and the office's sits down the lane across from the utility room's. Inside the studio the bar is the first thing on the right, the two closets along the rear wall, the table in the middle, the desk down the garage side past it. The play area sits behind the half wall on the far side, in view from the couch.
 

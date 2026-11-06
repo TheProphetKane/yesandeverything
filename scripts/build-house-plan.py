@@ -54,7 +54,7 @@ PLAN_GALLERY = [
         "title": "The basement layouts",
         "text": "Two layouts drawn November 5 from Nick's marked-up plan: the studio beside the utilities with the "
                 "play area by the office, or the studio beside the office with the bins by the utilities and the finished "
-                "room as the play room. Both keep the office, the lounge, the bath, the 32-foot putting lane, the finished "
+                "room as the play room. Both keep the office, the lounge, the bath, the 25-foot putting lane, the finished "
                 "room's walls and the two posts where the walk-through found them.",
     },
 ]
