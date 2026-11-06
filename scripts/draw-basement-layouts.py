@@ -127,14 +127,13 @@ class Plan:
     def seat(self, x, y, w, h):
         self.over.append(f'<rect x="{X(x):.1f}" y="{Y(y):.1f}" width="{w * S:.1f}" height="{h * S:.1f}" rx="3" fill="#ddd6fe" stroke="#7c3aed"/>')
 
-    def game_table(self, cx, y0, tv=42, side=2.0, end=2.25, cut=1.5):
-        """Nick's table, sized from the TV set flat in its middle: a 16:9 screen of `tv` inches with about
-        a third of an inch of bezel, `side` feet of table along its long edges and `end` feet past its short
-        ones, each corner cut at 45 degrees with a face `cut` feet long. One seat at each end and two along
-        each long side. A 42-inch TV makes the table about 5.8 by 7.6 feet."""
+    def game_table(self, cx, y0, tv=42, length_in=80, width_in=62, cut=1.5):
+        """Nick's table, 80 by 62 inches as he measured it on November 6, each corner cut at 45 degrees with
+        a face `cut` feet long, a 16:9 TV of `tv` inches set flat in its middle. One seat at each end and two
+        along each long side."""
         tv_long = (tv * 16 / math.hypot(16, 9) + 0.7) / 12
         tv_short = (tv * 9 / math.hypot(16, 9) + 0.7) / 12
-        w, length = tv_short + 2 * side, tv_long + 2 * end
+        w, length = width_in / 12, length_in / 12
         c = cut / math.sqrt(2)
         x0, x1, y1 = cx - w / 2, cx + w / 2, y0 + length
         pts = [(x0 + c, y0), (x1 - c, y0), (x1, y0 + c), (x1, y1 - c), (x1 - c, y1), (x0 + c, y1), (x0, y1 - c), (x0, y0 + c)]
@@ -281,27 +280,24 @@ def minis_closet(p, x0, x1, y0, facing):
 def corner_studio(p):
     """Layout B: the D&D studio in the rear corner on the garage side, beside the utilities. The sump closet in
     the foundation corner, the minis closet next to it on the rear wall, the bar on the door wall, the door into
-    the lounge where the end table stood, the table in the middle, the game PC desk and the rack on the garage
+    the lounge where the end table stood, the table in the middle, the game PC desk on the garage wall, the 78-inch
+    shelves along the finished room's wall with the drawer unit at its east end. Nothing overlaps, and every long
+    side keeps 2 feet of floor in front, since that is where it is reached. The desk and the rack on the garage
     wall in the room's south half, the cube shelves of books on the south wall. Speakers on the ceiling."""
     p.room("D&D studio", "studio", [(X0, Y0, 11.4, 9.1), (X0, 9.1, 9.0, 16.6)], (7.4, 4.15))
     p.wall(11.4, Y0, 12.0, 5.6, True)
     p.wall(11.4, 8.6, 12.0, 9.1, True)
-    p.wall(9.0, 9.1, 9.4, 13.6, True)
+    p.wall(9.0, 9.1, 9.4, 16.6, True)
     p.wall(9.0, 9.1, 15.0, 9.5, True)
     p.door(11.7, 8.6, 3.0, 0, -90)
     sump_closet(p)
     minis_closet(p, 4.0, 9.0, Y0, "south")
-    p.thing(9.4, 1.2, 11.38, 5.2, "", "#ede9fe", "#5b21b6", 8)
-    p.note(10.4, 2.2, "bar", 9, "#4c1d95")
-    p.thing(9.5, 3.4, 11.3, 5.1, "fridge", "#ffffff", "#5b21b6", 7)
     p.game_table(5.1, 5.4)
-    p.thing(X0 + 0.02, 11.5, 2.75, 15.0, "", "#c4b5fd", "#5b21b6", 8)
-    p.vnote(1.75, 13.25, "game PC desk", 8, "#1e1b4b")
-    p.thing(X0 + 0.02, 15.2, 2.75, 16.5, "rack", "#ffffff", "#5b21b6", 7)
-    p.over.append(f'<circle cx="{X(3.5):.1f}" cy="{Y(13.5):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
-    p.cubes(2.9, 15.5, 3)
-    p.note(4.6, 15.2, "cube shelves: books", 8, "#4c1d95")
-    p.note(7.9, 14.9, "utility door", 6, "#334155")
+    p.thing(X0 + 0.02, 12.0, X0 + 1.35, 14.58, "", "#c4b5fd", "#5b21b6", 8)
+    p.vnote(1.42, 13.3, "PC desk", 7, "#1e1b4b")
+    p.thing(X0 + 0.02, 15.35, X0 + 6.52, 16.6, "shelves, 78 by 15", "#ede9fe", "#5b21b6", 7)
+    p.thing(7.33, 15.27, 9.0, 16.6, "", "#ede9fe", "#5b21b6", 7)
+    p.note(8.17, 16.1, "drawers", 6, "#1e1b4b")
     p.speakers([(1.3, 8.6), (10.9, 7.2), (1.3, 10.6), (8.7, 12.4)])
     p.note(4.6, 3.75, "speakers on the ceiling", 7, "#4c1d95")
 
@@ -325,7 +321,7 @@ def corner_bins(p):
     p.note(5.9, 12.7, "which is why the bins are here", 7, "#166534")
 
 
-def finished_room(p, use):
+def finished_room(p, use, utility_door=False):
     """The room the sellers finished at the foot of the stair, drawn from Kane's marks of November 5 at 20:05
     and the walk-through video: 11 feet wide along the front wall and 15 deep, its doorway facing the stair's
     foot, a reach-in closet immediately inside on the right along the stair's framed side, the wall stepping in
@@ -338,7 +334,12 @@ def finished_room(p, use):
     else:
         p.room("Play room, the finished room", "lounge", rects, (6.6, 28.3), compact=True)
     p.wall(X0, 16.6, 9.4, 17.0)
-    p.wall(9.0, 16.6, 9.4, 20.4)
+    if utility_door:
+        p.wall(9.0, 16.6, 9.4, 17.3)
+        p.wall(9.0, 19.9, 9.4, 20.4)
+        p.note(9.5, 18.0, "utility door", 6, "#334155", "start")
+    else:
+        p.wall(9.0, 16.6, 9.4, 20.4)
     p.wall(9.0, 20.0, 12.3, 20.4)
     p.wall(12.0, 20.0, 12.3, 26.4)
     p.wall(12.0, 28.9, 12.4, Y1)
@@ -373,16 +374,19 @@ def finished_room(p, use):
         p.note(6.6, 26.9, "or a guest room as it stands, bed and all", 7, "#9d174d")
 
 
-def utility(p):
+def utility(p, door="corner"):
     """The furnace and the water heater where Kane's marks put them, about 12 to 15 feet off the garage wall
     and north of the landing, their controls facing the garage side with 30 inches kept clear there, the floor
     drain in the slab south-west of the furnace. The room runs under the landing's north edge and south into
-    the pocket beside the stair, and its door is in its west wall, opening into the corner room, where the
-    furnace's controls face."""
+    the pocket beside the stair, and its door is on its west side, where the furnace's controls face: from the
+    corner room in layout 1, from the finished room into the pocket in layout 2."""
     p.room("Utility", "utility", [(9.4, 9.5, 15.0, 15.9), (9.4, 15.9, 12.3, 20.0)], (10.9, 11.1), compact=True)
     p.wall(14.6, 9.1, 15.0, 16.3)
     p.wall(12.3, 15.9, 15.0, 16.3)
-    p.door(9.2, 16.2, 2.6, 180, 90)
+    if door == "corner":
+        p.door(9.2, 16.2, 2.6, 180, 90)
+    else:
+        p.door(9.2, 19.9, 2.6, 0, -90)
     p.thing(12.4, 12.2, 14.8, 15.5, "furnace", "#ffffff", "#334155", 8)
     p.over.append(f'<rect x="{X(9.9):.1f}" y="{Y(12.2):.1f}" width="{2.5 * S:.1f}" height="{3.3 * S:.1f}" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="3,2"/>')
     p.note(11.15, 14.1, "30 in clear", 7, "#334155")
@@ -486,7 +490,7 @@ def front_studio(p):
     """Layout A: the D&D studio in the front corner on the far side, beside the office, the lane at its door and
     a second door through to the office at the far end of the shared wall.
     The minis closet on the office wall, the second post boxed in the corner by the door, the table in the
-    middle, the bar and the rack on the hall wall, the game PC desk under the small high window on the front
+    middle, the game PC desk, 31 by 16 inches, under the small high window on the front
     wall, west of the panel's working space. Speakers on the ceiling."""
     p.room("D&D studio", "studio", [(23.9, 16.4, X1, Y1)], (27.0, 19.6))
     p.wall(23.4, 16.4, 23.9, 20.0, True)
@@ -494,16 +498,14 @@ def front_studio(p):
     p.door(23.65, 23.0, 3.0, 0, -90)
     p.note(24.0, 19.1, "post: box it", 7, "#334155", "start")
     minis_closet(p, 26.5, 32.5, 16.4, "south")
-    p.thing(23.9, 24.0, 25.9, 28.0, "", "#ede9fe", "#5b21b6", 8)
-    p.vnote(24.9, 25.2, "bar", 9, "#4c1d95")
-    p.thing(24.0, 26.3, 25.8, 27.9, "fridge", "#ffffff", "#5b21b6", 7)
-    p.thing(23.9, 28.3, 25.9, 30.2, "rack", "#ffffff", "#5b21b6", 7)
-    p.game_table(30.6, 20.6)
-    p.thing(24.4, 30.3, 29.9, Y1 - 0.05, "", "#c4b5fd", "#5b21b6", 8)
-    p.note(28.0, 31.5, "game PC desk", 8, "#1e1b4b")
-    p.over.append(f'<circle cx="{X(27.1):.1f}" cy="{Y(29.5):.1f}" r="{0.7 * S:.1f}" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>')
+    p.game_table(30.8, 20.6)
+    p.thing(23.9, 24.0, 25.15, 30.5, "", "#ede9fe", "#5b21b6", 7)
+    p.vnote(24.52, 27.25, "shelves, 78 by 15", 7, "#1e1b4b")
+    p.thing(27.2, Y1 - 1.38, 29.78, Y1 - 0.05, "", "#c4b5fd", "#5b21b6", 8)
+    p.note(28.5, Y1 - 1.6, "PC desk, 31 by 16", 7, "#1e1b4b")
+    p.thing(25.4, Y1 - 1.38, 27.07, Y1 - 0.05, "drawers", "#ede9fe", "#5b21b6", 6)
     front_panel(p)
-    p.speakers([(24.6, 22.0), (34.5, 20.3), (25.0, 31.6), (34.6, 31.6)])
+    p.speakers([(24.6, 22.0), (34.5, 20.3), (24.6, 29.6), (34.6, 31.6)])
     p.note(33.2, 19.4, "speakers on the ceiling", 7, "#4c1d95")
     front_window(p)
 
@@ -543,7 +545,7 @@ def structure(p):
 
 
 def shared(p, studio_in_front):
-    utility(p)
+    utility(p, door="corner" if studio_in_front else "finished")
     lounge(p)
     hall(p)
     office(p, sound=studio_in_front, studio_door=studio_in_front)
@@ -556,7 +558,7 @@ def layout_utility():
     office, the finished room holding the bins."""
     p = Plan("utility", "The basement with the D&D studio by the utilities: studio, office, play area, bins in the finished room, the lane")
     corner_studio(p)
-    finished_room(p, "bins")
+    finished_room(p, "bins", utility_door=True)
     front_play(p)
     shared(p, False)
     return p
