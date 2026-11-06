@@ -44,7 +44,7 @@ Carpet goes down on this whole floor ten to fourteen days after closing: builder
 
 {{layout}}
 
-Nick's layout for the unfinished basement: the D&D studio, the office, the kids' play area, the bins, the bath and the putting lane. Each room's size, what it holds, the stair and the furnace are on [the basement layout page](../basement/).
+Nick's layout for the basement, redrawn on November 5 around what the walk-through found: the D&D studio in the far side's front corner, a door through to the office beside it, the kids' play area with the sump pit boxed into its closet, the bins in the room the sellers finished at the foot of the stair, the bath and the putting lane. Each room's size, what it holds, the stair, the furnace and what moved are on [the basement layout page](../basement/).
 
 ## Who sleeps where
 
