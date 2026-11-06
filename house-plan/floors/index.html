@@ -126,6 +126,24 @@ dialog .bar button { font: inherit; background: var(--raise); color: var(--ink);
 dialog .pic { overflow: auto; max-height: calc(94vh - 3.2rem); background: #fff; }
 dialog .pic img { display: block; width: 100%; height: auto; }
 dialog .pic.zoom img { width: auto; max-width: none; }
+table.t-close td.c-num { color: var(--muted); font-family: var(--font-data); font-size: 0.82rem; white-space: nowrap; }
+table.t-close td.c-cost { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
+table.t-close td.c-who { white-space: nowrap; }
+table.t-close td.c-more { text-align: right; white-space: nowrap; }
+table.t-close button.more { font: inherit; font-family: var(--font-data); font-size: 0.76rem; background: var(--raise); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 0.25rem 0.6rem; cursor: pointer; min-width: 3.6rem; }
+table.t-close button.more:hover, table.t-close tr.open button.more { border-color: var(--sea); color: var(--sea); }
+table.t-close tbody tr:nth-child(even) td { background: none; }
+table.t-close tr.close-row.alt td { background: rgba(255, 255, 255, 0.025); }
+table.t-close tr.open td, table.t-close tr.close-detail td { background: var(--raise) !important; }
+table.t-close tr.open td { border-bottom: 0; }
+table.t-close tr.close-detail td { padding: 0.1rem 0.75rem 0.9rem; }
+tr.close-detail[hidden] { display: none !important; }
+.close-dl { display: grid; gap: 0.45rem; margin: 0; max-width: 100ch; font-size: 0.92rem; }
+.close-dl div { display: grid; grid-template-columns: 8rem 1fr; gap: 0.6rem; }
+.close-dl dt { font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding-top: 0.2rem; }
+.close-dl dd { margin: 0; }
+.close-bar { display: flex; justify-content: flex-end; margin: 0 0 0.5rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 860px) {
   .table-wrap.cards { border: 0; background: none; overflow: visible; }
   .cards table, .cards tbody, .cards tr, .cards td { display: block; width: 100%; }
@@ -138,6 +156,12 @@ dialog .pic.zoom img { width: auto; max-width: none; }
   table.t-total, table.t-summary { font-size: 0.86rem; }
   table.t-total td, table.t-total th, table.t-summary td, table.t-summary th { padding: 0.5rem 0.5rem; }
   table.t-total td:not(:first-child), table.t-summary td:not(:first-child) { white-space: normal; }
+  .cards table.t-close tr.close-detail { margin-top: -0.9rem; border-top: 0; border-radius: 0 0 12px 12px; padding-top: 0; }
+  .cards table.t-close td.c-more, .cards table.t-close tr.close-detail td { grid-template-columns: 1fr; }
+  .cards table.t-close td.c-more::before, .cards table.t-close tr.close-detail td::before { display: none; }
+  .cards table.t-close td.c-more { text-align: left; }
+  .cards table.t-close td { white-space: normal !important; }
+  .close-dl div { grid-template-columns: 1fr; gap: 0.1rem; }
   .price { min-width: 0; flex: 1 1 8rem; }
   .prices { width: 100%; }
   .plan-card img { height: 200px; }
@@ -424,6 +448,27 @@ dialog .pic.zoom img { width: auto; max-width: none; }
   img.addEventListener('click', () => pic.classList.toggle('zoom'));
   dlg.querySelector('.close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', ev => { if (ev.target === dlg) dlg.close(); });
+})();
+
+(() => {
+  if (!document.querySelector('table.t-close')) return;
+  const set = (btn, open) => {
+    const d = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!d) return;
+    d.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? 'Less' : 'More';
+    btn.closest('tr').classList.toggle('open', open);
+  };
+  document.querySelectorAll('table.t-close button.more').forEach(b =>
+    b.addEventListener('click', () => set(b, b.getAttribute('aria-expanded') !== 'true')));
+  document.querySelectorAll('button[data-close-all]').forEach(all => all.addEventListener('click', () => {
+    const open = all.dataset.closeAll === 'open';
+    const table = all.parentElement.nextElementSibling.querySelector('table.t-close');
+    table.querySelectorAll('button.more').forEach(b => set(b, open));
+    all.dataset.closeAll = open ? 'close' : 'open';
+    all.textContent = open ? 'Close every row' : 'Open every row';
+  }));
 })();
 </script>
 </body>

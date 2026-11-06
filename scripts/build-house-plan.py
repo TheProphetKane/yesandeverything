@@ -13,7 +13,9 @@ A table with a Job column, a Family column and a Hired column is a list of jobs:
 section closes on its totals, needed, wanted and the two together. A cost cell opens on that row's figure
 and the words that qualify it; a colon or a semicolon starts the detail. A line holding {{headline}}
 becomes the budget at a glance, and a line holding {{summary}} becomes the one list of every job with its
-two prices and the total. Any other table becomes cards on a phone, each cell labeled with its column.
+two prices and the total. A table opening on #, Item, Who and Cost in the area with more columns behind
+them is the closing table: those four stay in the row and the rest fold under it, opened by the row's button.
+Any other table becomes cards on a phone, each cell labeled with its column.
 A line holding {{floor-plans}} becomes the plan's picture gallery; a line holding {{layout-office}} or {{layout-utility}} becomes one of
 the two basement drawings, which scripts/draw-basement-layouts.py writes, and {{main-floor}} and
 {{upper-floor}} become the floor drawings scripts/draw-house-floors.py writes. Pictures open in a pop-out
@@ -203,6 +205,24 @@ dialog .bar button { font: inherit; background: var(--raise); color: var(--ink);
 dialog .pic { overflow: auto; max-height: calc(94vh - 3.2rem); background: #fff; }
 dialog .pic img { display: block; width: 100%; height: auto; }
 dialog .pic.zoom img { width: auto; max-width: none; }
+table.t-close td.c-num { color: var(--muted); font-family: var(--font-data); font-size: 0.82rem; white-space: nowrap; }
+table.t-close td.c-cost { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
+table.t-close td.c-who { white-space: nowrap; }
+table.t-close td.c-more { text-align: right; white-space: nowrap; }
+table.t-close button.more { font: inherit; font-family: var(--font-data); font-size: 0.76rem; background: var(--raise); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 0.25rem 0.6rem; cursor: pointer; min-width: 3.6rem; }
+table.t-close button.more:hover, table.t-close tr.open button.more { border-color: var(--sea); color: var(--sea); }
+table.t-close tbody tr:nth-child(even) td { background: none; }
+table.t-close tr.close-row.alt td { background: rgba(255, 255, 255, 0.025); }
+table.t-close tr.open td, table.t-close tr.close-detail td { background: var(--raise) !important; }
+table.t-close tr.open td { border-bottom: 0; }
+table.t-close tr.close-detail td { padding: 0.1rem 0.75rem 0.9rem; }
+tr.close-detail[hidden] { display: none !important; }
+.close-dl { display: grid; gap: 0.45rem; margin: 0; max-width: 100ch; font-size: 0.92rem; }
+.close-dl div { display: grid; grid-template-columns: 8rem 1fr; gap: 0.6rem; }
+.close-dl dt { font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding-top: 0.2rem; }
+.close-dl dd { margin: 0; }
+.close-bar { display: flex; justify-content: flex-end; margin: 0 0 0.5rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 860px) {
   .table-wrap.cards { border: 0; background: none; overflow: visible; }
   .cards table, .cards tbody, .cards tr, .cards td { display: block; width: 100%; }
@@ -215,6 +235,12 @@ dialog .pic.zoom img { width: auto; max-width: none; }
   table.t-total, table.t-summary { font-size: 0.86rem; }
   table.t-total td, table.t-total th, table.t-summary td, table.t-summary th { padding: 0.5rem 0.5rem; }
   table.t-total td:not(:first-child), table.t-summary td:not(:first-child) { white-space: normal; }
+  .cards table.t-close tr.close-detail { margin-top: -0.9rem; border-top: 0; border-radius: 0 0 12px 12px; padding-top: 0; }
+  .cards table.t-close td.c-more, .cards table.t-close tr.close-detail td { grid-template-columns: 1fr; }
+  .cards table.t-close td.c-more::before, .cards table.t-close tr.close-detail td::before { display: none; }
+  .cards table.t-close td.c-more { text-align: left; }
+  .cards table.t-close td { white-space: normal !important; }
+  .close-dl div { grid-template-columns: 1fr; gap: 0.1rem; }
   .price { min-width: 0; flex: 1 1 8rem; }
   .prices { width: 100%; }
   .plan-card img { height: 200px; }
@@ -234,6 +260,29 @@ SCRIPT = """
   img.addEventListener('click', () => pic.classList.toggle('zoom'));
   dlg.querySelector('.close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', ev => { if (ev.target === dlg) dlg.close(); });
+})();
+"""
+
+CLOSE_SCRIPT = """
+(() => {
+  if (!document.querySelector('table.t-close')) return;
+  const set = (btn, open) => {
+    const d = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!d) return;
+    d.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? 'Less' : 'More';
+    btn.closest('tr').classList.toggle('open', open);
+  };
+  document.querySelectorAll('table.t-close button.more').forEach(b =>
+    b.addEventListener('click', () => set(b, b.getAttribute('aria-expanded') !== 'true')));
+  document.querySelectorAll('button[data-close-all]').forEach(all => all.addEventListener('click', () => {
+    const open = all.dataset.closeAll === 'open';
+    const table = all.parentElement.nextElementSibling.querySelector('table.t-close');
+    table.querySelectorAll('button.more').forEach(b => set(b, open));
+    all.dataset.closeAll = open ? 'close' : 'open';
+    all.textContent = open ? 'Close every row' : 'Open every row';
+  }));
 })();
 """
 
@@ -418,7 +467,7 @@ PLAN_SCRIPT = r"""
 """
 
 COLUMN_CLASS = [
-    (r"^when$", "when"), (r"^date$", "date"), (r"^what$", "what"), (r"^who$", "who"),
+    (r"^#$", "num"), (r"^cost", "cost"), (r"^when$", "when"), (r"^date$", "date"), (r"^what$", "what"), (r"^who$", "who"),
     (r"^family", "family"), (r"^hired", "hired"), (r"^item$", "item"), (r"^fact$", "fact"),
     (r"^source$", "source"), (r"^project$", "project"), (r"^when and why$", "why"),
     (r"family$", "family"), (r"hired$", "hired"),
@@ -437,9 +486,37 @@ def column_class(label):
     return "c-other"
 
 
+def close_table(table, heads):
+    """The closing table. The number, the item, who and the cost stay in the row; every other column folds into
+    a detail row under it, opened by the row's button, so the page shows what matters and keeps the rest a click
+    away. Without scripts every detail row shows."""
+    show = 4
+    classes = [column_class(h) for h in heads[:show]]
+    head_html = "".join(f"<th>{html.escape(h)}</th>" for h in heads[:show]) + '<th><span class="sr">Detail</span></th>'
+    out = []
+    for n, row in enumerate(re.findall(r"<tr>\s*<td.*?</tr>", table, re.S), 1):
+        cells = [c.strip() for c in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
+        if len(cells) != len(heads):
+            sys.exit(f"the closing table's row {n} has {len(cells)} cells for {len(heads)} columns")
+        tds = "".join(f'<td class="{classes[i]}" data-label="{html.escape(heads[i], quote=True)}">{cells[i]}</td>'
+                      for i in range(show))
+        alt = " alt" if n % 2 == 0 else ""
+        out.append(f'<tr class="close-row{alt}">{tds}<td class="c-more" data-label="">'
+                   f'<button type="button" class="more" aria-expanded="false" aria-controls="close-d-{n}">More</button></td></tr>')
+        detail = "".join(f"<div><dt>{html.escape(heads[i])}</dt><dd>{cells[i]}</dd></div>"
+                         for i in range(show, len(heads)) if cells[i])
+        out.append(f'<tr class="close-detail" id="close-d-{n}" hidden><td colspan="{show + 1}">'
+                   f'<dl class="close-dl">{detail}</dl></td></tr>')
+    bar = '<p class="close-bar"><button type="button" class="switch" data-close-all="open">Open every row</button></p>'
+    return (f'{bar}<div class="table-wrap cards"><noscript><style>tr.close-detail[hidden]{{display:table-row!important}}</style></noscript>'
+            f'<table class="t-close"><thead><tr>{head_html}</tr></thead><tbody>{"".join(out)}</tbody></table></div>')
+
+
 def label_table(match):
     table = match.group(0)
     heads = [text_of(h) for h in re.findall(r"<th[^>]*>(.*?)</th>", table, re.S)]
+    if heads[:4] == ["#", "Item", "Who", "Cost in the area"] and len(heads) > 4:
+        return close_table(table, heads)
     kind = "t-facts" if "Fact" in heads else "t-long"
 
     def label_row(row):
@@ -943,7 +1020,7 @@ def build(page):
 <div class="bar"><span class="title"></span><span><a class="full" href="#" target="_blank" rel="noopener">Full size</a> <button class="close" type="button">Close</button></span></div>
 <div class="pic"><img alt=""></div>
 </dialog>
-<script>{SCRIPT}{PLAN_SCRIPT if "{{summary}}" in text else ""}</script>
+<script>{SCRIPT}{CLOSE_SCRIPT}{PLAN_SCRIPT if "{{summary}}" in text else ""}</script>
 </body>
 </html>
 """
