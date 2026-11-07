@@ -137,8 +137,10 @@ private prior owners stay unnamed, companies may be named. The pieces:
 - End condition: when a house is under contract, stop the `house-search-sync` routine, wipe the
   shared marks (the `HouseMarks` storage in `workers/family-votes`), remove `house-search` from
   `scripts/stage-site.mjs`, and delete `house-search/`, `data/house-search*.json` and the two
-  `house-search` scripts. The `/house-search/api/*` route can then drop with the Worker's next
-  deploy; the Worker itself stays, because the house plan's `PlanState` lives in it.
+  `house-search` scripts. Take the house report crumb (`REPORT`) out of
+  `scripts/build-house-plan.py` and rebuild in the same change, or the plan's first link goes dead.
+  The `/house-search/api/*` route can then drop with the Worker's next deploy; the Worker itself
+  stays, because the house plan's `PlanState` lives in it.
 
 ### House search: under contract, routine stopped (2026-11-02)
 
@@ -163,7 +165,9 @@ layout Nick chose, drawn to a 1-foot grid (the other two options came off on 202
 main and upper floors in the same colors, with the basement drawing repeated below them. The site shows only these color-coded plans: Nick does not want
 traditional floor plans, so the builder's drawing and the gridded sheet made from it came off on
 2026-11-03 and stay off. Nick asked for the plan live beside the house search and linked from
-it, and the site names him Nick, never by his gamer tag, because the family reads it. The sources are
+it, and the site names him Nick, never by his gamer tag, because the family reads it. The pages call
+it the new house and never print its street address (bar-raise compliance-data-steward-01,
+2026-11-06); a relative's trade shows only where the plan turns on it, as AJ's does for the permit. The sources are
 `docs/HOUSE-PLAN-45-AUTUMN-CREST.md`, `docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md` and `docs/HOUSE-PLAN-FLOORS.md`,
 which the prose gate measures; `python scripts/build-house-plan.py` writes all three pages, and `--check`
 exits 1 when any is stale. `python scripts/draw-house-floors.py` draws the main and upper floor plans. `python scripts/draw-basement-layouts.py` draws the layout picture from the fixed stair,

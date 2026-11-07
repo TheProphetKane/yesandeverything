@@ -1,4 +1,4 @@
-# The floor plans for 45 Autumn Crest Ct
+# The floor plans for the new house
 
 The main and upper floors are Burkemper Homes' own Rockport drawing, taken from its 2007 brochure and laid over the county's measured outline one square to the foot. The basement below them is Nick's layout on the same grid, so a spot on one floor sits right over the same spot on the floor below. Each room is colored by its use. Where the brochure prints a room's size, the plan carries it; every other size is read off the drawing and runs close, not exact. It is a sales drawing. An owner may have moved a wall since 2003, so the tape at the inspection settles anything that matters.
 

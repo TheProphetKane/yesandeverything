@@ -1,4 +1,4 @@
-"""Draw the two basement layouts for 45 Autumn Crest Ct as SVG plans.
+"""Draw the two basement layouts for the new house as SVG plans.
 
     python scripts/draw-basement-layouts.py     writes house-plan/basement/layout-office.svg (the D&D studio
                                                beside the office) and layout-utility.svg (the studio beside the

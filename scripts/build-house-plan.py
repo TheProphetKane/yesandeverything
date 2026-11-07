@@ -1,4 +1,4 @@
-"""Build the house plan pages for 45 Autumn Crest Ct.
+"""Build the house plan pages for the new house.
 
     python scripts/build-house-plan.py          writes house-plan/index.html, house-plan/basement/index.html
                                                 and house-plan/floors/index.html
@@ -69,7 +69,7 @@ PAGES = [
         "out": ROOT / "house-plan" / "index.html",
         "eyebrow": "House plan, if the purchase goes through",
         "crumbs": [(REPORT, "The house report"), ("/house-search/", "The house search")],
-        "description": "The family's plan for 45 Autumn Crest Ct, Wentzville, from the inspection to the basement.",
+        "description": "The family's plan for the new house, from the inspection to the basement.",
         "status_first": True,
     },
     {
@@ -77,7 +77,7 @@ PAGES = [
         "out": ROOT / "house-plan" / "basement" / "index.html",
         "eyebrow": "Basement layouts, 1 square to the foot",
         "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/floors/", "The floor plans")],
-        "description": "Two basement layouts for 45 Autumn Crest Ct: the D&D studio beside the utilities or beside the office, with the office, the play room, the bins, the bath and the putting lane around it.",
+        "description": "Two basement layouts for the new house: the D&D studio beside the utilities or beside the office, with the office, the play room, the bins, the bath and the putting lane around it.",
         "status_first": False,
     },
     {
@@ -85,7 +85,7 @@ PAGES = [
         "out": ROOT / "house-plan" / "floors" / "index.html",
         "eyebrow": "Every floor, 1 square to the foot",
         "crumbs": [("/house-plan/", "The house plan"), ("/house-plan/basement/", "The basement layouts")],
-        "description": "The main floor, the upper floor and the basement of 45 Autumn Crest Ct, every room colored by its use.",
+        "description": "The main floor, the upper floor and the basement of the new house, every room colored by its use.",
         "status_first": False,
     },
 ]

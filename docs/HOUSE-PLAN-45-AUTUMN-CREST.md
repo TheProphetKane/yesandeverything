@@ -1,4 +1,4 @@
-# 45 Autumn Crest Ct: the house plan
+# The house plan
 
 Under contract since Sunday, November 1, 2026, at $330,000. Closing is by Monday, November 30, and the family moves in on Saturday, December 19, after a week away for Thanksgiving. This page lists every job planned for the house, in the order it happens, with two prices for each: what the materials cost if the family does the work, and what a contractor would charge.
 
@@ -229,7 +229,7 @@ These wait until the basement is done, until the money is there, or until someth
 | Insurance | $2,800 to $4,000 a year on a house this size in Saint Charles County. A separate wind and hail deductible of 1 to 5 percent is common. | Missouri insurance department, carriers |
 | Permits the work needs | The deck, the finished basement, and any new wiring, plumbing or ductwork. None for flooring, paint, carpet or a reroof. The fee is half a percent of the declared cost, with a $35 minimum, plus a $50 plan review. | City permit and fee pages |
 | Building code | The 2021 International Residential Code. Deck footings go 30 inches down. Basement rooms need 7-foot ceilings, or 6 feet 4 inches under beams. A bedroom needs its own escape window. Smoke alarms must be wired together. | City basement guide, July 2025 |
-| Wiring and plumbing | AJ, Nick's brother, is an electrician and does the wiring. The city's permit form lets a homeowner apply, but its pages never say whether the homeowner may do the plumbing; the basement permit application settles it. A licensed plumber would add $1,500 to $4,000. | City permit form |
+| Wiring and plumbing | AJ, an electrician, does the wiring. The city's permit form lets a homeowner apply, but its pages never say whether the homeowner may do the plumbing; the basement permit application settles it. A licensed plumber would add $1,500 to $4,000. | City permit form |
 
 ### Sources
 

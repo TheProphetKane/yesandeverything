@@ -1,4 +1,4 @@
-"""Draw the main and upper floors of 45 Autumn Crest Ct as SVG plans.
+"""Draw the main and upper floors of the new house as SVG plans.
 
     python scripts/draw-house-floors.py     writes house-plan/floors/main.svg and house-plan/floors/upper.svg
                                            and prints each room's size
@@ -341,7 +341,7 @@ class Plan:
 
 
 def main_floor():
-    p = Plan("main", "The main floor of 45 Autumn Crest Ct", (-21.8, -11.2, 37.8, 38.6), [(0.0, -2.0, 36.0, 38.0), (-21.3, 7.45, 0.0, 38.0)])
+    p = Plan("main", "The main floor of the new house", (-21.8, -11.2, 37.8, 38.6), [(0.0, -2.0, 36.0, 38.0), (-21.3, 7.45, 0.0, 38.0)])
     # outside: the deck behind the breakfast bay, the porch across the front
     p.outside([(9.0, -10.0), (21.0, -10.0), (21.0, 0.0), (9.0, 0.0)], "deck", (15.0, -6.2))
     p.outside([(0.4, 33.0), (12.0, 33.0), (12.0, 35.0), (24.2, 35.0), (24.2, 33.0), (36.0, 33.0), (36.0, 38.0), (0.4, 38.0)],
@@ -487,7 +487,7 @@ def main_floor():
 
 
 def upper_floor():
-    p = Plan("upper", "The upper floor of 45 Autumn Crest Ct", (-1.4, -1.0, 38.4, 36.2), [(0.0, 0.0, 36.0, 35.0)])
+    p = Plan("upper", "The upper floor of the new house", (-1.4, -1.0, 38.4, 36.2), [(0.0, 0.0, 36.0, 35.0)])
     p.room("Primary bedroom", "primary", [(0.4, 14.6, 12.1, 24.4), (0.4, 24.4, 10.2, 29.5), (0.4, 29.5, 12.0, 32.6)], (6.1, 26.7), size=(12, 18))
     p.room("Primary bath", "primary", [(0.4, 0.4, 9.6, 6.8), (0.4, 6.8, 7.3, 14.3), (9.9, 0.4, 12.8, 6.8)], (4.9, 9.4), compact=True)
     p.room("Walk-in closet", "storage", [(7.6, 7.1, 12.5, 12.6), (7.6, 12.6, 12.1, 14.3)], (10.1, 9.55), compact=True, line2="")

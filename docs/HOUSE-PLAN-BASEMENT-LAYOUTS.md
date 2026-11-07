@@ -1,4 +1,4 @@
-# The basement layouts for 45 Autumn Crest Ct
+# The basement layouts for the new house
 
 The basement is a 36 by 33 foot rectangle outside its 9-inch poured walls, about 34 by 31 inside, plus a 12 by 2 bump-out under the front porch. Two layouts are drawn here, both from Nick's marked-up shell of November 5 at 20:05 and the walk-through video of that afternoon. They share everything the house fixes: the stair, the bath rough-in, the walkout slider, the windows, the sump pit hard in the foundation corner, the furnace and the water heater 12 to 15 feet off the garage wall, two steel beams running left to right one each side of the stair on two staggered posts, the two electrical panels, and the sellers' finished room, kept as it stands. They also share the office, the lounge, the bath, the utility room, the hall and the 32-foot putting lane.
 
