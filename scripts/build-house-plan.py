@@ -9,6 +9,8 @@ for the plan, docs/HOUSE-PLAN-BASEMENT-LAYOUTS.md for the basement layout, docs/
 main and upper floors. Edit the source, build, ship; never edit a page by hand.
 
 A table with a Job column, a Family column and a Hired column is a list of jobs: each row becomes a card
+keyed by the {#short-name} that ends its Job cell (the build stops on a row without one, a pin used twice,
+or one past 80 characters, the Worker's limit),
 (the mark and the short name, both prices, the date, who, what it takes, then the cost detail), and the
 section closes on its totals, needed, wanted and the two together. A cost cell opens on that row's figure
 and the words that qualify it; a colon or a semicolon starts the detail. A line holding {{headline}}
@@ -724,6 +726,11 @@ def check_dates(md):
 
 TAGS = {"Needed": "need", "Wanted": "want", "When it fails": "fail"}
 TAG = re.compile(r"^\*\*(Needed|Wanted|When it fails)\.\*\*\s*")
+# Every job row ends its Job cell on {#short-name}, the card's pinned id. The shared Done and Needed or
+# Wanted state in workers/family-votes is keyed by it, so a renamed job keeps its state. The Worker
+# takes job-[a-z0-9-]{1,80}, so a pin longer than 80 characters would be refused there.
+PIN = re.compile(r"\s*\{#([a-z0-9-]+)\}\s*$")
+PIN_MAX = 80
 
 
 def inline(text):
@@ -746,13 +753,22 @@ def split_cost(text):
     return (m.group(0) + rest[:cut]).strip(), rest[cut + 1:].strip()
 
 
-def slug(name, taken):
-    base = "job-" + (re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "row")
-    out, n = base, 2
-    while out in taken:
-        out, n = f"{base}-{n}", n + 1
+def pinned_id(cell, taken):
+    """The job's pinned id and the cell without it. A row with no pin, a pin already used, or a pin past
+    the Worker's limit stops the build, since each would orphan or merge the family's saved state."""
+    pin = PIN.search(cell)
+    if not pin:
+        sys.exit(f"a job row carries no pinned id; end its Job cell on {{#short-name}}: {cell}")
+    key = pin.group(1).strip("-")
+    if not key or key != pin.group(1):
+        sys.exit(f"a pinned id must open and close on a letter or digit: {cell}")
+    if len(key) > PIN_MAX:
+        sys.exit(f"a pinned id runs past the Worker's {PIN_MAX} characters: {key}")
+    out = "job-" + key
+    if out in taken:
+        sys.exit(f"two job rows share the pinned id {key}")
     taken.add(out)
-    return out
+    return out, cell[:pin.start()].rstrip()
 
 
 def read_jobs(head, rows, heading, taken):
@@ -766,9 +782,10 @@ def read_jobs(head, rows, heading, taken):
     for row in rows:
         row = row + [""] * (len(head) - len(row))
         get = lambda key: row[col[key]].strip() if col[key] is not None else ""
-        m = TAG.match(get("job"))
+        job_id, job = pinned_id(get("job"), taken)
+        m = TAG.match(job)
         tag = TAGS[m.group(1)] if m else None
-        name = get("job")[m.end():].strip() if m else get("job")
+        name = job[m.end():].strip() if m else job
         fam_text, hire_text = get("family"), get("hired")
         fam, hire = figure(fam_text, True), figure(hire_text, True)
         if (fam or hire or fam_text or hire_text) and not tag:
@@ -785,7 +802,7 @@ def read_jobs(head, rows, heading, taken):
         counted_fam = fam if (fam and not fam[2]) else (hire if (hire and not hire[2]) else None)
         counted_hire = hire if (hire and not hire[2]) else (fam if (fam and not fam[2]) else None)
         jobs.append({
-            "name": name, "tag": tag, "id": slug(name, taken), "section": heading,
+            "name": name, "tag": tag, "id": job_id, "section": heading,
             "when": get("when"), "date": get("date"), "what": get("what"), "who": get("who"),
             "fam_text": fam_text, "hire_text": hire_text,
             "fam": counted_fam, "hire": counted_hire, "aside": list(aside.values()),

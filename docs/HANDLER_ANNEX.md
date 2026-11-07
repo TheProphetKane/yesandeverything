@@ -196,9 +196,11 @@ Nick's ask of 2026-11-03. The state is shared: the `PlanState` Durable Object in
 it, so moving a job moves its money between the needed and wanted figures. A Done box can be
 unticked, and the page's Recent changes list names who ticked or moved what and when, under the
 first name the house search already asks for (the same `house-search-name` in local storage).
-The built page is the plan as written; the shared state only overrides it, so a job whose card id
-changes in the source loses its saved state. Keep a card's short name stable once the family is
-using it. `PlanState` is not wiped at closing; it goes at the plan's retirement below.
+The built page is the plan as written; the shared state only overrides it, keyed by each card's id.
+Every job row ends its Job cell on `{#short-name}`, the card's pinned id, so renaming a job keeps its
+saved state (pinned on 2026-11-06 at the ids the names gave then, and the build came out byte for
+byte the same). The build stops on a row with no pin, a pin used twice, or one past 80 characters,
+the Worker's limit. A new row takes a new pin; never change or reuse one the family has used. `PlanState` is not wiped at closing; it goes at the plan's retirement below.
 
 ### Retirement: house plan, due 2027-06-02 (2026-11-06)
 
