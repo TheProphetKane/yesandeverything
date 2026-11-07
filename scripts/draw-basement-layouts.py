@@ -467,22 +467,24 @@ def front_window(p):
 
 
 def front_panel(p):
-    p.thing(31.0, Y1 - 0.4, 32.5, Y1, "", "#fde68a", "#b45309", 7, 1)
-    p.over.append(f'<rect x="{X(30.25):.1f}" y="{Y(Y1 - 3.0):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
-    p.note(31.75, Y1 - 2.1, "panel", 8, "#92400e")
-    p.note(31.75, Y1 - 1.3, "30 by 36 in", 7, "#92400e")
-    p.note(31.75, Y1 - 0.6, "kept clear", 7, "#92400e")
+    """The front far room's electrical panel, on the far wall across from the finished room's panel, where the
+    walk-through photo P08 and Nick put it (November 6), with 30 by 36 inches kept clear before it."""
+    p.thing(X1 - 0.4, 19.5, X1, 21.0, "", "#fde68a", "#b45309", 7, 1)
+    p.over.append(f'<rect x="{X(X1 - 3.0):.1f}" y="{Y(19.0):.1f}" width="{3.0 * S:.1f}" height="{3.0 * S:.1f}" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>')
+    p.note(X1 - 1.5, 20.0, "panel", 8, "#92400e")
+    p.note(X1 - 1.5, 21.0, "30 by 36 in", 7, "#92400e")
+    p.note(X1 - 1.5, 21.8, "kept clear", 7, "#92400e")
 
 
 def front_play(p):
     """Layout B: the kids' play area in the front corner on the far side, as planned: the play rug in the
-    middle, toy shelves on the far wall, the panel on the front wall beside the small high window with its
-    working space kept clear, a half wall on the hall side so the kids stay in view, a 3-foot gate at the
-    street end that folds back flat against the front wall, and the second post boxed just inside."""
+    middle, the panel on the far wall with its working space kept clear and the toy shelves on that wall
+    south of it, a half wall on the hall side so the kids stay in view, a 3-foot gate at the street end that
+    folds back flat against the front wall, and the second post boxed just inside."""
     p.room("Play area", "lounge", [(23.9, 16.4, X1, Y1)], (29.3, 18.0))
-    p.thing(25.4, 19.8, 32.6, 27.8, "play rug", "#fdf2f8", "#db2777", 10, 10)
-    p.thing(33.6, 18.6, 35.2, 28.6, "", "#ffffff", "#be185d", 8)
-    p.vnote(34.4, 23.6, "toy shelves", 9, "#9d174d")
+    p.thing(25.0, 19.8, 32.1, 27.8, "play rug", "#fdf2f8", "#db2777", 10, 10)
+    p.thing(33.6, 22.6, 35.2, 31.0, "", "#ffffff", "#be185d", 8)
+    p.vnote(34.4, 26.8, "toy shelves", 9, "#9d174d")
     front_panel(p)
     p.over.append(f'<rect x="{X(23.4):.1f}" y="{Y(16.4):.1f}" width="{0.5 * S:.1f}" height="{(29.1 - 16.4) * S:.1f}" fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>')
     p.door(23.65, 32.1, 3.0, 0, -90)
@@ -495,24 +497,24 @@ def front_play(p):
 def front_studio(p):
     """Layout A: the D&D studio in the front corner on the far side, beside the office, the lane at its door and
     a second door through to the office at the far end of the shared wall.
-    The minis closet on the office wall, the second post boxed in the corner by the door, the table in the
-    middle, the game PC desk, 31 by 16 inches, under the small high window on the front
-    wall, west of the panel's working space. Speakers on the ceiling."""
+    The minis closet on the office wall, the second post boxed in the corner by the door, the panel on the far
+    wall with its working space clear, the table in the middle west of that space, the game PC desk, 31 by 16
+    inches, under the small high window on the front wall. Speakers on the ceiling."""
     p.room("D&D studio", "studio", [(23.9, 16.4, X1, Y1)], (27.0, 19.6))
     p.wall(23.4, 16.4, 23.9, 20.0, True)
     p.wall(23.4, 23.0, 23.9, Y1, True)
     p.door(23.65, 23.0, 3.0, 0, -90)
     p.note(24.0, 19.1, "post: box it", 7, "#334155", "start")
     minis_closet(p, 25.3, 32.4, 16.4, "south")
-    p.game_table(30.8, 20.6)
-    p.thing(23.9, 24.0, 25.15, 30.5, "", "#ede9fe", "#5b21b6", 7)
-    p.vnote(24.52, 27.25, "shelves, 78 by 15", 7, "#1e1b4b")
+    p.game_table(28.9, 21.5)
+    p.thing(23.9, 24.6, 25.15, 31.1, "", "#ede9fe", "#5b21b6", 7)
+    p.vnote(24.52, 27.85, "shelves, 78 by 15", 7, "#1e1b4b")
     p.thing(27.2, Y1 - 1.38, 29.78, Y1 - 0.05, "", "#c4b5fd", "#5b21b6", 8)
     p.note(28.5, Y1 - 1.6, "PC desk, 31 by 16", 7, "#1e1b4b")
     p.thing(25.4, Y1 - 1.38, 27.07, Y1 - 0.05, "drawers", "#ede9fe", "#5b21b6", 6)
     front_panel(p)
     p.speakers([(24.6, 22.0), (34.5, 20.3), (24.6, 29.6), (34.6, 31.6)])
-    p.note(33.2, 19.4, "speakers on the ceiling", 7, "#4c1d95")
+    p.note(33.4, 23.0, "speakers on the ceiling", 7, "#4c1d95")
     front_window(p)
 
 
