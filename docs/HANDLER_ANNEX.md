@@ -233,3 +233,34 @@ allowlist in `scripts/stage-site.mjs`, delete the `thanksgiving-2026/` page, wip
 storage in `workers/family-votes` (votes and device ids), and keep the Worker for the house
 marks and the house plan. The removal happens on that date; this entry is the instruction. The
 Worker stays after the house search ends, since the house plan's state lives in it.
+
+## Hard-won hazards (moved from CLAUDE.md, 2026-11-06)
+
+These are bug patterns that have eaten 5+ patch cycles each on Nick's projects. Apply preemptively.
+
+#### Two-failed-fix rule
+
+After two failed fix attempts on the same symptom, stop shipping fixes. Add instrumentation. Trace code paths. Speculation past attempt two costs more than diagnosis would. That IS the full rule; memory `debugging-discipline` carries the history.
+
+#### Parallel implementations
+
+YaE has at least three fork points for the same content. The hand-authored landing pages in `index.html` + per-project sub-pages. The `workers/gated-docs/` Worker that serves the two design documents from the `GATED_DOCS` key-value namespace after a signed session cookie validates. The `apothecary/` mirror copied from `X:\YesAndApothecary` via that repo's `scripts/release.ps1`. A "page content is wrong" bug could be in any of three places. Identify which generator owns the page before editing the HTML directly. Memory `parallel-implementation-trap`.
+
+#### FUSE Edit-tool truncation
+
+The Edit tool truncates files mid-write on this mount with non-trivial frequency. v0.74.30 GDD shipped without `</html>`. For `index.html` and `apothecary/*`, prefer Python atomic-write-with-readback (canonical implementation: `X:\YesAndChains\tools\safe_write.py`). Tail-check every touched file before declaring done. Memory `htbh-fuse-edit-tool-truncation`.
+
+#### Check the product, never the producer
+
+The build dashboard froze on the previous day's payload for most of 2026-08-24 and every existing check stayed green. The collector routine ran on time, `dashboard/data/usage.json` was fresh to the minute, and the routine watchdog passed its artifact-freshness sweep. The publish to Cloudflare key-value storage had been failing since 02:19 with `2>&1 | Out-Null` eating wrangler's error text, and the script exited 0 anyway, so three ticks in a row reported success while nothing reached the page.
+
+Two rules came out of it, and they generalize past this repo:
+
+- **A publish that fails is a failure.** Never let a publish, deploy or upload step print a warning and exit 0. `X:\PortfolioOps\scripts\collect-usage.ps1` now retries the key-value put three times, then reads back the live endpoint and confirms it is serving the stamp just written, and exits non-zero if it is not, including under `-NoPush` (which is how the every-4-hours routine calls it).
+- **Freshness is measured at the endpoint a visitor reads.** `scripts/check-dashboard-live.ps1` hits `usage.yesandeverything.com` and fails when the payload is older than 5.5 hours, when its newest day is older than yesterday, or when the statuses bundle thins out. The daily `routine-health-watch` runs it. An mtime check on the local file is not a substitute: that file being fresh is exactly the condition that hid this outage.
+
+The related history: the collector did not run at all from 2026-08-05 to 2026-08-12, and by the time it resumed on 08-13 the local session transcripts for 08-05 and 08-06 had passed their roughly eight-day retention window and been deleted, so those two days of token history are gone permanently. Local transcripts are the only source, retention is short, and a collector outage longer than a week is unrecoverable data loss rather than a delay.
+
+#### Cross-project consistency
+
+Cross-project rules live in `X:\ARCHITECTURE.md`, `X:\HAZARDS.md` and `X:\DECISIONS.md` (the two old governance docs retired to `X:\_archive-2026-08-17\` on 2026-08-17 and no longer sit at this root). Per-project CLAUDE.md files inherit from that root layer and add project-local hazards. When updating a cross-project rule, update the root layer first, then propagate to the per-project handlers.
