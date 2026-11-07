@@ -198,7 +198,27 @@ unticked, and the page's Recent changes list names who ticked or moved what and 
 first name the house search already asks for (the same `house-search-name` in local storage).
 The built page is the plan as written; the shared state only overrides it, so a job whose card id
 changes in the source loses its saved state. Keep a card's short name stable once the family is
-using it. `PlanState` is not wiped at closing.
+using it. `PlanState` is not wiped at closing; it goes at the plan's retirement below.
+
+### Retirement: house plan, due 2027-06-02 (2026-11-06)
+
+The plan's last dated job is the play room, lounge and hall, Move-in + 105 to 135 days, which ends
+Monday 2027-05-03 on the planned move-in of Saturday 2026-12-19. Thirty days after that, on
+2027-06-02:
+
+- remove `house-plan` from the allowlist in `scripts/stage-site.mjs`;
+- wipe the `PlanState` storage in `workers/family-votes`, which holds every job's Done and
+  Needed or Wanted state with the first names and times in the Recent changes list;
+- delete `house-plan/`, the three `docs/HOUSE-PLAN-*.md` sources, `scripts/build-house-plan.py`,
+  `scripts/draw-house-floors.py` and `scripts/draw-basement-layouts.py`, or move the page set and
+  its sources to a private repository and serve it from there.
+
+The Thanksgiving page goes on 2026-12-15 and the house search at closing, so the house plan is the
+Worker's last user: the `family-votes` Worker comes down the same day. If the plan's last date
+moves, this date moves with it, to thirty days after the new last date. The bar-raise finding of
+2026-11-05 (strategic-kill-this-01) asked for move-in plus thirty days, 2027-01-18, which would take
+the page down with six of its jobs still ahead; the date above meets the same end, a page with a
+date it comes off, without cutting the plan short.
 
 ### Retirement: Thanksgiving 2026 page, due 2026-12-15 (2026-10-29)
 

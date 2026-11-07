@@ -90,11 +90,12 @@ Design documents are not published from this repo. The `workers/gated-docs` Work
 ## House search (Kane, 2026-10-27)
 
 `/house-search/` is Kane's house hunt, generated from `data/house-search.json` by
-`scripts/build-house-search.py` and checked twice a day by `scripts/house-search-scan.py`
-through the `house-search-sync` routine. The page names the town of the daycare and withholds its exact
-location. The page ends when a house is under contract (end condition in the annex). The files, the
-feeds that answer unattended, the must-have answers every house must carry, and the release
-line are in `docs/HANDLER_ANNEX.md` under "House search", which binds as if written here.
+`scripts/build-house-search.py`. The scan (`scripts/house-search-scan.py`, run twice a day by the
+`house-search-sync` routine) stopped on 2026-11-02, the day after the family went under contract.
+The page names the town of the daycare and withholds its exact location. It stays up until closing,
+by 2026-11-30, and the end condition in the annex runs then. The files, the feeds, the must-have
+answers every house must carry, the release line and the house plan's own retirement date are in
+`docs/HANDLER_ANNEX.md` under "House search", which binds as if written here.
 
 ## Discord webhooks
 
