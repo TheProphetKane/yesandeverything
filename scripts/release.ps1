@@ -10,7 +10,7 @@
 # whatever another session left staged into your commit. Routines write
 # status/data, dashboard/data and the queue continuously, so an unscoped
 # release almost always carries someone else's work:
-#   .\scripts\release.ps1 -Path status/data/Ring.json
+#   .\scripts\release.ps1 -Path status/data/Gnosis.json
 #
 # Note: HBH's publish-gdd.ps1 already pushes to this repo from the HBH
 # side. THIS script is for direct YaE edits (landing-page changes, new

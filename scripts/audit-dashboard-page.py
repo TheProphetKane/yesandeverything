@@ -15,7 +15,7 @@ WORKER = "https://usage.yesandeverything.com"
 CANON = r"X:\PortfolioOps\status\data"
 REPOS = {"Agents": r"X:\YesAndAgents", "Apothecary": r"X:\YesAndApothecary", "Budget": r"X:\YesAndBudget", "Cattery": r"X:\YesAndCattery",
          "Chains": r"X:\YesAndChains", "Everything": r"X:\YesAndEverything", "Gnosis": r"X:\YesAndGnosis", "Hordes": r"X:\HereBeHordes",
-         "Ring": r"X:\YesAndRing", "Rising": r"X:\BrackishRising", "Scheduler": r"X:\YesAndScheduler"}
+         "Rising": r"X:\BrackishRising"}
 DISPLAY = {"Agents": "Yes& Agents", "Apothecary": "Yes& Apothecary", "Architecture": "Yes& Architecture", "Budget": "Yes& Budget",
            "Cattery": "Yes& Cattery", "Chains": "Yes& Chains", "Everything": "Yes& Everything", "Gnosis": "Gnosis",
            "Guardian": "Coiled Guardian", "Hordes": "Here Be Hordes", "Ring": "Yes& Ring", "Rising": "Brackish Rising",

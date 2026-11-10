@@ -8,7 +8,7 @@
 # -Path scopes the staging to explicit pathspecs. Without it the script stages
 # everything, which sweeps whatever another session left staged into this
 # commit. Pass -Path when you are shipping a targeted edit:
-#   .\scripts\push-to-github.ps1 -Path status/data/Ring.json
+#   .\scripts\push-to-github.ps1 -Path status/data/Gnosis.json
 
 param(
     [string[]]$Path = @(),
