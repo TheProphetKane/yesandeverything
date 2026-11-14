@@ -62,8 +62,9 @@ export function saveLabel(name, snapshot) {
     state: structuredClone(snapshot),
   };
   list.push(entry);
-  write(list);
-  return entry;
+  // A failed write (full storage quota) returns null so the panel keeps the
+  // typed name for a retry instead of clearing it over a save that never landed.
+  return write(list) ? entry : null;
 }
 
 export function loadLabel(id) {

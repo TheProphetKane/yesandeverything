@@ -71,8 +71,9 @@ export function mountSavedLabels(root, state, ctx) {
 
   saveBtn.addEventListener('click', () => {
     const name = nameInput.value.trim() || `Label ${new Date().toLocaleDateString()}`;
-    saveLabel(name, state.get());
-    nameInput.value = '';
+    // saveLabel returns null when storage refused the write; the warning is
+    // already on screen, so keep the typed name for another try.
+    if (saveLabel(name, state.get())) nameInput.value = '';
     refresh();
   });
 
