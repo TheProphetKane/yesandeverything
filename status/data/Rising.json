@@ -1,9 +1,9 @@
 {
   "project": "Rising",
   "displayName": "Brackish Rising",
-  "version": "0.97.21",
-  "lastReleaseAt": "2026-11-16T08:30:26-06:00",
-  "lastReleaseMessage": "v0.97.21 - The gameplay music now has a test. Under 75 Sonic Pressure the default music plays; at 75 and above the tense music takes over, and dropping back returns the default. Each change starts the new track silent on the second player and fades it up while the old one fades out and stops. A horde landing brings the wave music, which outranks any Sonic Pressure, and it holds until no awake enemy has stood on the map for four seconds. A sleeping garrison does not hold it, an enemy waking restarts the count, and a second horde does too. When a track ends the next is a different variant of the same music, at its own volume. With no wave director the music still follows Sonic Pressure.",
+  "version": "0.97.22",
+  "lastReleaseAt": "2026-11-17T00:24:41-06:00",
+  "lastReleaseMessage": "v0.97.22 - The Barracks training-queue strip now has a test. It builds hidden under the selected panel with a Queue header and five 40 by 40 slots, each with its own style box. No selection, a building with no queue, or a freed one hides it. A Barracks fills the slots with each unit's short name, the first in the training colour and the rest waiting, and a shorter queue empties the slots it left. The progress bar in the first slot follows the training fraction across the slot's width and hides on an empty queue. A left press on a slot asks the HUD to cancel that slot; a release, a right press or a mouse move cancels nothing.",
   "milestone": {
     "id": "M6",
     "label": "Art Integration",
@@ -37,8 +37,8 @@
   "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
   "workTreeClean": true,
   "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-11-16.md",
-    "latestReportAt": "2026-11-16T19:03:48Z",
+    "latestReportPath": "docs/AUDIT-2026-11-13.md",
+    "latestReportAt": "2026-11-13T20:42:05Z",
     "findings": {
       "critical": 0,
       "high": 0,
@@ -47,13 +47,35 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-11-15.md",
-    "latestReportAt": "2026-11-16T00:36:37Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-11-16.md",
+    "latestReportAt": "2026-11-17T00:38:01Z",
     "verdict": "in-progress",
-    "topFinding": "Nineteen commits since 2026-11-02 on the main tree, eleven of them releases, then v0.97.3 to v0.97.15 from the lane worktree. All three hard rules pass. The six art and sound deferrals all stand. The four Godot gates in the nightly audit have not run since 2026-11-11, for want of a Godot executable on the audit path.",
-    "actionsOpen": 0,
+    "topFinding": "The nightly audit has not really run the four Godot gates or the slot boot probe since 2026-11-11, across twenty unattended releases (v0.97.3 to v0.97.21): the Python gates resolve Godot only from --godot or GODOT while find-godot.ps1 finds the Desktop install, and the audit measures the main tree at v0.97.2 rather than origin/main. All three hard rules pass and the six art and sound deferrals stand; the lane's patches are almost all new tests, so the roadmap holds at 63 percent.",
+    "actionsOpen": 3,
     "actionsClosed": 148,
-    "actions": [],
+    "actions": [
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "observability",
+        "title": "Make the four Godot gates and the slot probe fall back to the find-godot.ps1 lookup, and report a SKIP older than 48 hours as a finding."
+      },
+      {
+        "id": "performance-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "performance",
+        "title": "Measure the first-scroll hitch (42 to 63 ms, OPTIMIZATION_LOG.md Row 21) on a release export and log it as Row 22."
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "performance",
+        "title": "Re-run tools/frame_trace.gd on a release export of origin/main for both maps with the 400-horde cases and append the table to docs/OPTIMIZATION_LOG.md."
+      }
+    ],
     "deferred": [
       {
         "id": "game-design-asset-pipeline-01",
@@ -98,121 +120,101 @@
         "reason": "waiting on the artist's tower and gate rigs; same art as art-direction-consistency-02"
       }
     ],
-    "health": 89,
+    "health": 88,
     "lensScores": {
-      "architecture": 87,
-      "reliability": 92,
+      "architecture": 88,
+      "reliability": 91,
       "security": 95,
-      "performance": 91,
-      "data-integrity": 91,
-      "maintainability": 88,
-      "solo-tool-ux": 90,
-      "cost-economics": 92,
-      "dependency": 91,
-      "observability": 90,
-      "strategic-kill-this": 80,
-      "compliance-data-steward": 87,
-      "release-pipeline-per-project-ps1-stack": 93,
+      "performance": 88,
+      "data-integrity": 92,
+      "maintainability": 90,
+      "solo-tool-ux": 88,
+      "cost-economics": 88,
+      "dependency": 90,
+      "observability": 82,
+      "strategic-kill-this": 78,
+      "compliance-data-steward": 92,
+      "release-pipeline-per-project-ps1-stack": 91,
       "release-pipeline-discord-notify-wiring": 93,
       "release-pipeline-version-pill-drift": 96,
-      "release-pipeline-gate-page-publish": 93,
+      "release-pipeline-gate-page-publish": 94,
       "game-design-playability": 80,
-      "game-design-scope-discipline": 86,
+      "game-design-scope-discipline": 88,
       "game-design-scale-architecture": 88,
       "game-design-asset-pipeline": 83,
-      "game-design-voice-and-tone": 91,
-      "game-design-sound-design-discipline": 74,
-      "game-design-art-direction-consistency": 85,
-      "game-design-save-format-stability": 91
+      "game-design-voice-and-tone": 92,
+      "game-design-sound-design-discipline": 76,
+      "game-design-art-direction-consistency": 86,
+      "game-design-save-format-stability": 90
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "observability-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-16"
+      },
+      {
+        "id": "performance-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-16"
+      },
+      {
+        "id": "performance-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-16"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
-          "architecture",
-          "maintainability"
+          "maintainability",
+          "performance"
         ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "compliance-data-steward",
-          "cost-economics"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "cost-economics",
-          "game-design-sound-design-discipline"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "cost-economics",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "data-integrity",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "game-design-asset-pipeline",
-          "game-design-playability"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "game-design-asset-pipeline",
-          "game-design-scope-discipline"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "game-design-asset-pipeline",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "game-design-playability",
-          "game-design-scale-architecture"
-        ],
-        "runsSeen": 1
-      },
-      {
-        "lenses": [
-          "game-design-playability",
-          "game-design-scope-discipline"
-        ],
-        "runsSeen": 1
+        "runsSeen": 8
       },
       {
         "lenses": [
           "game-design-scope-discipline",
           "strategic-kill-this"
         ],
+        "runsSeen": 4
+      },
+      {
+        "lenses": [
+          "architecture",
+          "maintainability"
+        ],
         "runsSeen": 3
       },
       {
         "lenses": [
           "maintainability",
-          "performance"
+          "strategic-kill-this"
         ],
-        "runsSeen": 7
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "cost-economics",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "reliability"
+        ],
+        "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-11-02 per-project pass: previous openFindings was empty, so nothing to verify or close. The live queue held no Rising review row; the one live Rising row is br-legal-sign-artist-agreement (blocked-on-user, hands). Three MEDIUM findings enqueued.",
+    "reconcileNote": "2026-11-16 per-project pass: previous openFindings was empty, so nothing to verify or close. The one live Rising row is br-legal-sign-artist-agreement (blocked-on-user, hands). The 2026-11-15 low Godot-gate note is superseded by observability-01. Three MEDIUM findings enqueued.",
     "closedLog": [
       {
         "date": "2026-09-22",
@@ -741,7 +743,7 @@
     },
     {
       "k": "tests",
-      "v": "40"
+      "v": "41"
     },
     {
       "k": "scenes",
@@ -749,7 +751,7 @@
     },
     {
       "k": "gdd kb",
-      "v": "1739"
+      "v": "1740"
     }
   ],
   "workQueueDepth": 0,
