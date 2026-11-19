@@ -68,60 +68,96 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-11-15.md",
-    "latestReportAt": "2026-11-16T00:36:37Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-11-18.md",
+    "latestReportAt": "2026-11-19T00:45:00Z",
     "verdict": "working",
-    "topFinding": "v1.3.3 to v1.3.5 shipped 2026-11-13 and 2026-11-14. v1.3.6 (backlog B02, escaping saved-label ids and filtering malformed stored entries) passes 52 tests and waits uncommitted on Kane's go.",
-    "actionsOpen": 0,
+    "topFinding": "Working at health 88, down from 92 on 2026-11-04 because this pass graded the open backlog rows harder, not because anything shipped broke: no commit has landed since v1.3.5 on 2026-11-14. Four lenses independently flagged backlog B03, a print from the browser menu that skips flushPrintStage() (no beforeprint listener anywhere in src/, read 2026-11-18), as the defect most worth doing next. One new gap has no backlog row: an unreadable saved-labels entry makes read() return an empty list, and the next save overwrites the whole library (src/util/saved-labels.js), now queued. v1.3.6 (B02) still waits uncommitted in the working tree on Kane's go.",
+    "actionsOpen": 2,
     "actionsClosed": 67,
-    "actions": [],
-    "deferred": [],
-    "health": 92,
+    "actions": [
+      {
+        "id": "data-integrity-03",
+        "severity": "MED",
+        "lens": "data-integrity",
+        "title": "Keep a backup of an unreadable saved-labels entry so the next save, rename or delete cannot overwrite the whole library (src/util/saved-labels.js)"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "lens": "maintainability",
+        "title": "Put the layout designer's zone and item reordering logic under a test (src/ui/layout-designer.js, 634 lines, no suite covers it)"
+      }
+    ],
+    "deferred": [
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "lens": "strategic-kill-this",
+        "title": "Release v1.3.6 (backlog B02, escaped saved-label ids and filtered entries), written and passing 52 tests, uncommitted since 2026-11-14",
+        "reason": "waiting on Kane's go-ahead to release (open loop raised 2026-11-14)"
+      }
+    ],
+    "health": 88,
     "lensScores": {
-      "architecture": 92,
-      "reliability": 90,
-      "security": 94,
-      "performance": 90,
-      "data-integrity": 88,
-      "maintainability": 90,
-      "solo-tool-ux": 90,
-      "cost-economics": 97,
-      "dependency": 93,
-      "observability": 90,
-      "strategic-kill-this": 92,
-      "compliance-data-steward": 87,
-      "generative-art-schema-driven-correctness": 94,
-      "generative-art-print-fidelity": 89,
-      "generative-art-palette-discipline": 93,
-      "release-pipeline-per-project-ps1-stack": 92,
-      "release-pipeline-discord-notify-wiring": 91,
-      "release-pipeline-version-pill-drift": 97,
-      "release-pipeline-gate-page-publish": 92
+      "architecture": 90,
+      "reliability": 84,
+      "security": 93,
+      "performance": 86,
+      "data-integrity": 82,
+      "maintainability": 88,
+      "solo-tool-ux": 88,
+      "cost-economics": 96,
+      "dependency": 92,
+      "observability": 86,
+      "strategic-kill-this": 88,
+      "compliance-data-steward": 80,
+      "generative-art-schema-driven-correctness": 90,
+      "generative-art-print-fidelity": 84,
+      "generative-art-palette-discipline": 91,
+      "release-pipeline-per-project-ps1-stack": 90,
+      "release-pipeline-discord-notify-wiring": 84,
+      "release-pipeline-version-pill-drift": 96,
+      "release-pipeline-gate-page-publish": 93
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "data-integrity-03",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-18"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-18"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
           "compliance-data-steward",
           "strategic-kill-this"
         ],
-        "runsSeen": 9,
-        "note": "promote via adr-promoter: illustration half decided at PROJECT_SPEC.md:346; symbol sources resolve when each asset is next touched"
+        "runsSeen": 10,
+        "note": "promote via adr-promoter: illustration half decided at PROJECT_SPEC.md:346; the repository-copy sentence is backlog B14"
       },
       {
         "lenses": [
           "generative-art-print-fidelity",
           "performance"
         ],
-        "runsSeen": 7,
-        "note": "promote via adr-promoter: decided 2026-10-14, screen texture tier for the preview, full resolution for print and export"
+        "runsSeen": 8,
+        "note": "promote via adr-promoter: decided 2026-10-14, screen texture tier for the preview (backlog B18), full resolution for print and export"
       },
       {
         "lenses": [
           "dependency",
           "maintainability"
         ],
-        "runsSeen": 4,
+        "runsSeen": 5,
         "note": "promote via adr-promoter: keep the pinned cdnjs build, vendor only if cdnjs drops 1.4.1"
       },
       {
@@ -129,24 +165,33 @@
           "observability",
           "solo-tool-ux"
         ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "reliability",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 2
+        "runsSeen": 3,
+        "note": "promote via adr-promoter: plain one-line error for the user, full error kept in the console (backlog B05)"
       },
       {
         "lenses": [
           "security",
           "dependency"
         ],
-        "runsSeen": 2
+        "runsSeen": 3,
+        "note": "promote via adr-promoter: a content security policy (B17) lists cdnjs and Google Fonts beside their pins"
+      },
+      {
+        "lenses": [
+          "reliability",
+          "observability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "strategic-kill-this",
+          "maintainability"
+        ],
+        "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-11-04: previous openFindings empty, nothing to close; every finding this run is LOW, so nothing enqueued.",
+    "reconcileNote": "2026-11-18: previous openFindings empty and no live apothecary queue row, so nothing to close. Findings already carried as BACKLOG.md rows (B03, B04, B05, B06, B07, B08, B09, B13, B14, B16, B18, B20) stay in the backlog bucket and were not enqueued, so no item sits in two buckets. Two findings with no backlog row enqueued at P2: data-integrity-03 and maintainability-01.",
     "closedLog": [
       {
         "date": "2026-09-02",
