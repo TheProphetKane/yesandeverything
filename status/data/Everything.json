@@ -20,55 +20,128 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-11-15.md",
-    "latestReportAt": "2026-11-16T00:36:37Z",
-    "verdict": "working",
-    "topFinding": "No breach in 63 commits. The canonical status file's `version` holds the commit hash cf311fd9, and `scripts/audit-dashboard-page.py` lines 365 to 367 skip the version check for Everything, so nothing flags it. The last dashboard page audit is dated 2026-09-23.",
-    "actionsOpen": 0,
+    "latestReportPath": "docs/BAR_RAISE-2026-11-19.md",
+    "latestReportAt": "2026-11-20T00:36:53Z",
+    "verdict": "needs-attention",
+    "topFinding": "The dashboard this hub serves has been frozen since 2026-11-11: usage.json reads generatedAt 2026-11-11T16:29:11Z and the live statuses feed still shows Rising 0.97.1 and Gnosis 0.3.757 against 0.97.31 and 0.3.796 on disk, read live at 18:33 on 2026-11-19. The collector behind both lives in X:/PortfolioOps and is queued at P1, so the fix is not in this repository, but the breakage is on this hub's pages. The checks built to catch it fired from 2026-11-13 and reached the queue only on 2026-11-17, and the rendered-page audit that defines an up-to-date dashboard last ran 2026-09-23. The site itself holds: every hard rule verified, no hand-authored change in 20 commits since 2026-11-16.",
+    "actionsOpen": 4,
     "actionsClosed": 107,
-    "actions": [],
-    "deferred": [],
-    "health": 88,
+    "actions": [
+      {
+        "id": "usage-collector-stalled-01",
+        "severity": "HIGH",
+        "title": "Make the usage collector finish a run again, so the dashboard usage panel and the live status feed stop reading 2026-11-11.",
+        "lens": "observability",
+        "priority": 25
+      },
+      {
+        "id": "observability-03",
+        "severity": "MED",
+        "title": "Have a red check-dashboard-live.ps1 result raise or update one queue row on its first failing run, instead of repeating DASHBOARD STALE in a log.",
+        "lens": "observability",
+        "priority": 12
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "title": "Put the rendered-page dashboard audit on a weekly schedule and fail it when the newest DASHBOARD_AUDIT file is older than seven days.",
+        "lens": "observability",
+        "priority": 12
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "title": "Add scripts/registry.selftest.mjs to the release.ps1 self-test list and give update-project-pages.mjs a small fixture self-test.",
+        "lens": "maintainability",
+        "priority": 8
+      }
+    ],
+    "deferred": [
+      {
+        "id": "skill-suite-health-01",
+        "severity": "HIGH",
+        "lens": "skill-suite-health",
+        "title": "Republish the personal-skills plugin from current source, then re-run check-plugin-snapshot.ps1.",
+        "reason": "blocked on Kane: the plugin upload is his hands (queue row bar-raise-2026-08-26-scheduler-skill-suite-health-01, blocked-on-user)"
+      }
+    ],
+    "health": 89,
     "lensScores": {
       "architecture": 89,
       "reliability": 88,
-      "security": 90,
+      "security": 92,
       "performance": 91,
       "data-integrity": 88,
-      "maintainability": 86,
+      "maintainability": 85,
       "solo-tool-ux": 90,
-      "cost-economics": 95,
-      "dependency": 90,
-      "observability": 90,
-      "strategic-kill-this": 86,
-      "compliance-data-steward": 84,
+      "cost-economics": 94,
+      "dependency": 92,
+      "observability": 72,
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 82,
       "static-site-build-config": 96,
-      "static-site-page-weight": 89,
+      "static-site-page-weight": 84,
       "static-site-link-rot": 95,
-      "static-site-gh-pages-quirks": 94,
-      "static-site-seo-and-open-graph": 92,
-      "static-site-accessibility-baseline": 94
+      "static-site-gh-pages-quirks": 95,
+      "static-site-seo-and-open-graph": 94,
+      "static-site-accessibility-baseline": 95
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "usage-collector-stalled-01",
+        "severity": "HIGH",
+        "priority": 25,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-17"
+      },
+      {
+        "id": "observability-03",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-19"
+      },
+      {
+        "id": "observability-02",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-19"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "priority": 8,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-19"
+      }
+    ],
     "tensionsOpen": [
       {
         "lenses": [
           "compliance-data-steward",
           "solo-tool-ux"
         ],
-        "runsSeen": 2
-      },
-      {
-        "lenses": [
-          "strategic-kill-this",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 1
+        "runsSeen": 3
       },
       {
         "lenses": [
           "static-site-page-weight",
           "solo-tool-ux"
+        ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "observability",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "reliability"
         ],
         "runsSeen": 1
       }
@@ -298,7 +371,7 @@
       }
     ],
     "closedThisRun": [],
-    "reconcileNote": "2026-11-05: previous openFindings was empty, nothing to close; 4 new MED findings enqueued at P2."
+    "reconcileNote": "2026-11-19: previous openFindings was empty, nothing to close. Reverse leg named usage-collector-stalled-01 (minted as a HIGH ledger row against its live queue row) and skill-suite-health-01 (kept in deferred, blocked on Kane). 3 new MED findings enqueued at P2."
   },
   "stale": false,
   "staleReason": null,
