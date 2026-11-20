@@ -6,9 +6,12 @@
 //
 //   node scripts/audit-dashboard-page.mjs [out.json]
 import { spawn } from "node:child_process";
-import { readFileSync, writeFileSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, existsSync } from "node:fs";
 const out = process.argv[2] || "scripts/.audit-capture.json";
-const chrome = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
+// Chrome sits under Program Files (x86) on kane-pc and under Program Files on the
+// Dungeons and Dragons computer; the first one that exists runs.
+const chromePaths = ["C:/Program Files (x86)/Google/Chrome/Application/chrome.exe", "C:/Program Files/Google/Chrome/Application/chrome.exe"];
+const chrome = chromePaths.find((p) => existsSync(p)) || chromePaths[0];
 const port = 9340;
 const profile = "X:/YesAndEverything/scripts/.chrome-audit";
 const site = "https://yesandeverything.com";
