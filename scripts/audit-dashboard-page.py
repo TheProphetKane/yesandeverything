@@ -6,8 +6,9 @@ files behind the feeds. Writes docs/DASHBOARD_AUDIT-<date>.md. Exit 1 when any r
    node scripts/audit-dashboard-page.mjs scripts/.audit-capture.json
    python scripts/audit-dashboard-page.py scripts/.audit-capture.json
 """
-import glob, io, json, os, re, subprocess, sys, urllib.request
+import glob, io, json, math, os, re, subprocess, sys, urllib.request
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 
 CAP = sys.argv[1] if len(sys.argv) > 1 else "scripts/.audit-capture.json"
 SITE = "https://yesandeverything.com"
@@ -36,21 +37,29 @@ def load(p):
         return json.load(f)
 
 
+def to_fixed(n, places):
+    # JavaScript's toFixed, which every page formats with: the exact value of the double,
+    # a tie going to the larger number. Python's "%.0f" sends a tie to the even neighbour,
+    # so Apothecary's all-time cost of exactly 1216.5 printed $1216 here and $1217 on the
+    # page (2026-11-20).
+    return str(Decimal(n).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP))
+
+
 def fmt_tok(n):
     if n is None:
         return "0"
     if n >= 1e9:
-        return "%.2fB" % (n / 1e9)
+        return to_fixed(n / 1e9, 2) + "B"
     if n >= 1e6:
-        return "%.2fM" % (n / 1e6)
+        return to_fixed(n / 1e6, 2) + "M"
     if n >= 1e3:
-        return "%.1fk" % (n / 1e3)
-    return str(int(round(n)))
+        return to_fixed(n / 1e3, 1) + "k"
+    return str(math.floor(n + 0.5))
 
 
 def fmt_usd(n):
     n = n or 0
-    return "$" + ("%.0f" % n if n >= 100 else "%.2f" % n)
+    return "$" + (to_fixed(n, 0) if n >= 100 else to_fixed(n, 2))
 
 
 def total_tok(r):
@@ -72,8 +81,15 @@ def row(surface, item, shown, expected, ok=None, note=""):
 
 
 cap = load(CAP)
-usage = fetch(WORKER + "/usage.json")
-statuses = fetch(WORKER + "/statuses.json")
+# The worker feeds the dashboard capture read before and after the page and found unchanged
+# (see audit-dashboard-page.mjs). Every dashboard number is judged against these, so a
+# collector run after the capture cannot split the page from its feeds. A capture without
+# them falls back to a fresh fetch, and the row below fails, because the numbers may differ.
+feeds = cap.get("feeds") or {}
+usage = json.loads(feeds["usage"]) if feeds.get("usage") else fetch(WORKER + "/usage.json")
+statuses = json.loads(feeds["statuses"]) if feeds.get("statuses") else fetch(WORKER + "/statuses.json")
+row("feed", "worker feeds held still through the dashboard capture", "yes" if feeds.get("usage") and feeds.get("statuses") else "no", "yes",
+    note="when they moved three reads running, the page is judged against a later fetch")
 constellation = fetch(SITE + "/status/data/constellation.json")
 lean = fetch(SITE + "/dashboard/data/usage-today.json")
 backfill = fetch(SITE + "/dashboard/data/backfill.json")
@@ -85,6 +101,70 @@ for pid in list(statuses.keys()):
         pages[pid] = None
 
 # ---------- layer 1: canonical -> feeds ----------
+# Canonical is written on the collecting machine (kane-pc), by the releases, lanes and sweeps
+# that run there, and its collector state file marks it. On any other machine canonical is
+# the last commit, and the sweeps commit twice a day, at 01:00 and 13:00. A release written
+# on the collecting machine since then is in the feed but not in the copy here. Brackish
+# Rising shipped 0.98.1 at 14:25 on 2026-11-20, and the copy here read 0.97.37 until the
+# next sweep. Judged against that snapshot, a correct feed failed.
+#
+# So off the collecting machine, each block (release, audit, barRaise) whose feed timestamp
+# is newer than the copy here is checked against the feed instead, under one row saying so.
+# A block whose copy here is as new or newer stays strict, which is how a stale feed fails
+# (Everything's audit block on 2026-11-20, three hours behind canonical). On the collecting
+# machine every block is strict, since a feed ahead of canonical there means a writer
+# bypassed canonical.
+ON_COLLECTOR = os.path.exists(r"X:\YesAndEverything\dashboard\data\.usage-state.json")
+
+
+def stamp(x):
+    try:
+        t = datetime.fromisoformat(str(x).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    # A stamp written without a zone is read as UTC, so it compares instead of raising.
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
+def block_stamp(d, block):
+    if block == "release":
+        vals = [d.get(k) for k in ("lastReleaseAt", "updatedAt", "generatedAt")]
+    else:
+        vals = [(d.get(block) or {}).get("latestReportAt")]
+    got = [t for t in (stamp(v) for v in vals if v) if t]
+    return max(got) if got else None
+
+
+def repo_names(repo, v):
+    # Off the collecting machine the clones here are mirrors that trail their upstream: the
+    # Gnosis clone sat 45 commits behind on 2026-11-20 and failed a version that was released
+    # and pushed. So there the upstream's history and version files count too, after a fetch.
+    refs = ["HEAD"]
+    if not ON_COLLECTOR:
+        subprocess.call(["git", "-C", repo, "fetch", "-q"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+        if subprocess.call(["git", "-C", repo, "rev-parse", "-q", "--verify", "@{u}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+            refs.append("@{u}")
+    log = subprocess.check_output(["git", "-C", repo, "log", "-40", "--format=%s"] + refs, text=True, encoding="utf-8", errors="replace")
+    if v in log:
+        return True
+    if re.fullmatch(r"[0-9a-f]{7,12}", v) and subprocess.call(["git", "-C", repo, "cat-file", "-e", v], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+        return True
+    for cand in ("PROJECT_SPEC.md", "package.json", "project.godot", "index.html"):
+        fp = os.path.join(repo, cand)
+        if os.path.exists(fp) and v in io.open(fp, encoding="utf-8", errors="replace").read():
+            return True
+        if "@{u}" in refs:
+            up = subprocess.run(["git", "-C", repo, "show", "@{u}:" + cand], capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if up.returncode == 0 and v in up.stdout:
+                return True
+    return False
+
+
+def ms(x):
+    m = x.get("milestone")
+    return m.get("label") if isinstance(m, dict) else m
+
+
 canon = {}
 for p in sorted(glob.glob(os.path.join(CANON, "*.json"))):
     d = load(p)
@@ -99,50 +179,54 @@ for pid, c in sorted(canon.items()):
     if not s:
         row("feed", pid + " in statuses.json", "missing", "present", False)
         continue
+    ref = {}
+    for block in ("release", "audit", "barRaise"):
+        here, live = block_stamp(c, block), block_stamp(s, block)
+        behind = not ON_COLLECTOR and here is not None and live is not None and live > here
+        ref[block] = s if behind else c
+        if behind:
+            row("feed", "%s %s: canonical here behind the feed" % (pid, block), "behind, %s here, %s live" % (here.isoformat(), live.isoformat()), "behind is expected off the collecting machine", True,
+                "written on the collecting machine since the last sweep, so checked against the feed here; strict on the collecting machine")
     br = c.get("barRaise") or {}
     sb = s.get("barRaise") or {}
-    for k in ("version", "lastReleaseAt", "workTreeClean", "stale"):
-        row("feed", pid + " " + k, s.get(k), c.get(k))
-    for k in ("actionsOpen", "actionsClosed", "health", "verdict"):
-        row("feed", pid + " barRaise." + k, sb.get(k), br.get(k))
-    row("feed", pid + " completion", (s.get("completion") or {}).get("pct"), (c.get("completion") or {}).get("pct"))
-    row("feed", pid + " audit findings", json.dumps((s.get("audit") or {}).get("findings"), sort_keys=True), json.dumps((c.get("audit") or {}).get("findings"), sort_keys=True))
-    def ms(x):
-        m = x.get("milestone")
-        return m.get("label") if isinstance(m, dict) else m
-    row("feed", pid + " milestone", ms(s), ms(c))
+    if ref["release"] is c:
+        for k in ("version", "lastReleaseAt", "workTreeClean", "stale"):
+            row("feed", pid + " " + k, s.get(k), c.get(k))
+        row("feed", pid + " completion", (s.get("completion") or {}).get("pct"), (c.get("completion") or {}).get("pct"))
+        row("feed", pid + " milestone", ms(s), ms(c))
+    if ref["barRaise"] is c:
+        for k in ("actionsOpen", "actionsClosed", "health", "verdict"):
+            row("feed", pid + " barRaise." + k, sb.get(k), br.get(k))
+    if ref["audit"] is c:
+        row("feed", pid + " audit findings", json.dumps((s.get("audit") or {}).get("findings"), sort_keys=True), json.dumps((c.get("audit") or {}).get("findings"), sort_keys=True))
+    rb = ref["barRaise"].get("barRaise") or {}
     if g:
-        row("pages copy", pid + " version", g.get("version"), c.get("version"))
-        row("pages copy", pid + " actionsOpen", (g.get("barRaise") or {}).get("actionsOpen"), br.get("actionsOpen"))
-        row("pages copy", pid + " verdict", (g.get("barRaise") or {}).get("verdict"), br.get("verdict"))
-        row("pages copy", pid + " audit", json.dumps((g.get("audit") or {}).get("findings"), sort_keys=True), json.dumps((c.get("audit") or {}).get("findings"), sort_keys=True))
+        row("pages copy", pid + " version", g.get("version"), ref["release"].get("version"))
+        row("pages copy", pid + " actionsOpen", (g.get("barRaise") or {}).get("actionsOpen"), rb.get("actionsOpen"))
+        row("pages copy", pid + " verdict", (g.get("barRaise") or {}).get("verdict"), rb.get("verdict"))
+        row("pages copy", pid + " audit", json.dumps((g.get("audit") or {}).get("findings"), sort_keys=True), json.dumps((ref["audit"].get("audit") or {}).get("findings"), sort_keys=True))
     else:
         row("pages copy", pid + " served", "404", "200", False)
     repo = REPOS.get(pid)
     if repo and os.path.isdir(repo):
+        v = str(ref["release"].get("version") or "").lstrip("v")
         try:
-            log = subprocess.check_output(["git", "-C", repo, "log", "-40", "--format=%s"], text=True, encoding="utf-8", errors="replace")
-            v = str(c.get("version") or "").lstrip("v")
-            hit = bool(v) and (v in log)
-            if not hit and re.fullmatch(r"[0-9a-f]{7,12}", v):
-                hit = subprocess.call(["git", "-C", repo, "cat-file", "-e", v], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
-            for cand in ("PROJECT_SPEC.md", "package.json", "project.godot", "index.html"):
-                fp = os.path.join(repo, cand)
-                if os.path.exists(fp):
-                    spec = io.open(fp, encoding="utf-8", errors="replace").read()
-                    if v and v in spec:
-                        hit = True
-                        break
-            row("repo", pid + " version " + v + " named in the repo", "yes" if hit else "no", "yes", hit, "last 40 commit subjects or the version source")
+            hit = bool(v) and repo_names(repo, v)
+            row("repo", pid + " version " + v + " named in the repo", "yes" if hit else "no", "yes", hit, "last 40 commit subjects or the version source" + ("" if ON_COLLECTOR else ", here or upstream"))
         except Exception as e:
             row("repo", pid + " version", "git failed: %s" % e, "readable", False)
 gen = datetime.strptime(usage["generatedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 captured = datetime.strptime(cap["capturedAt"][:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
 age_h = (datetime.now(timezone.utc) - gen).total_seconds() / 3600
-age_at_capture_min = int((captured - gen).total_seconds() / 60)
 row("feed", "usage.json age (hours)", "%.1f" % age_h, "under 5.5", age_h < 5.5)
 local_usage = load(r"X:\YesAndEverything\dashboard\data\usage.json")
-row("feed", "usage.json worker vs local generatedAt", usage["generatedAt"], local_usage["generatedAt"])
+# At or newer, the collector's own readback rule. On the collecting machine the local copy is
+# the run it just wrote. Anywhere else it is the last committed copy, which trails the worker
+# by up to four hours by design, so an equality test failed on every other machine. Only a
+# worker OLDER than the local copy means a key-value push failed, which is the freeze this
+# row exists to catch.
+local_gen = datetime.fromisoformat(local_usage["generatedAt"].replace("Z", "+00:00"))
+row("feed", "usage.json worker at or newer than local", usage["generatedAt"], "at or after " + local_usage["generatedAt"], gen >= local_gen, "an older worker means the key-value push failed")
 local_cn = load(os.path.join(CANON, "constellation.json"))
 row("feed", "constellation generatedAt pages vs canonical", constellation.get("generatedAt"), local_cn.get("generatedAt"))
 cn_age = (datetime.now(timezone.utc) - datetime.strptime(constellation["generatedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)).days
@@ -177,11 +261,30 @@ shown_delta = re.sub(r"[^\d-]", "", cell[2])
 row("dashboard", "vs yesterday (percent)", shown_delta, delta.lstrip("-"), shown_delta == delta.lstrip("-"), "sign carried by the arrow")
 row("dashboard", "all-time tokens", cell[3], fmt_tok(a_tok + (bf.get("estTokens") or 0)) + "tok est")
 row("dashboard", "all-time cost", cell[4], fmt_usd(a_cost + (bf.get("estCostUSD") or 0)) + "est")
-row("dashboard", "burn rate today", cell[5], "$%.3f/1k" % ((t_cost / (t_tok / 1000)) if t_tok else 0))
+row("dashboard", "burn rate today", cell[5], "$%s/1k" % to_fixed((t_cost / (t_tok / 1000)) if t_tok else 0, 3))
 open_sum = sum((s.get("barRaise") or {}).get("actionsOpen") or 0 for s in statuses.values())
 row("dashboard", "review actions open", cell[6], "%dopen" % open_sum)
-shown_age = int(re.sub(r"\D", "", cell[7]) or 0) if "m ago" in cell[7] else -1
-row("dashboard", "last collected", cell[7], "%dm ago" % age_at_capture_min, abs(shown_age - age_at_capture_min) <= 3, "age at capture time, within three minutes")
+# The page floors the age into one unit, as fmtAgo in dashboard/index.html does: seconds,
+# minutes under an hour, hours under a day, then days. This row read minutes only, so a
+# collection more than an hour old failed as "1h ago" against "88m ago" (2026-11-20).
+def ago_text(sec):
+    sec = int(sec)
+    if sec < 60:
+        return "%ds ago" % sec
+    if sec < 3600:
+        return "%dm ago" % (sec // 60)
+    if sec < 86400:
+        return "%dh ago" % (sec // 3600)
+    return "%dd ago" % (sec // 86400)
+
+
+age_at_capture_s = (captured - gen).total_seconds()
+ma = re.match(r"^(\d+)([smhd]) ago", cell[7])
+ok_age = False
+if ma:
+    unit = {"s": 1, "m": 60, "h": 3600, "d": 86400}[ma.group(2)]
+    ok_age = int(ma.group(1)) * unit - 180 <= age_at_capture_s < (int(ma.group(1)) + 1) * unit + 180
+row("dashboard", "last collected", cell[7], ago_text(age_at_capture_s), ok_age, "age at capture time, within three minutes of the unit shown")
 row("dashboard", "band health", D["band"]["health"].replace("\n", ""), "%s/100" % constellation.get("portfolioHealth"))
 row("dashboard", "band verdict", D["band"]["verdict"].lower(), constellation.get("portfolioVerdict"))
 since = constellation["generatedAt"]
@@ -235,7 +338,10 @@ for i, n in enumerate(names):
     row("dashboard", "radar completion " + n, nums_r[i] if i < len(nums_r) else "?", (s.get("completion") or {}).get("pct"))
 for sp in D["spotlights"]:
     t = sp["text"]
-    m = re.search(r"^(.*?)(vv?\d[\w.]*)?↗?▶?(\d+) / 14\n", t, re.M)
+    # Any wheel length, and a commit-hash version as Everything carries. This pattern read
+    # "/ 14", so once the wheel held 13 cards no spotlight matched and every spotlight row
+    # was skipped without a word (found 2026-11-20).
+    m = re.search(r"^(.*?)(v(?:v?\d[\w.]*|[0-9a-f]{7,12}))?↗?▶?(\d+) / (\d+)\n", t, re.M)
     if not m:
         continue
     disp = m.group(1).strip()
@@ -318,6 +424,8 @@ for pid, s in statuses.items():
         continue
     want = "%s v%s" % (pid, s["version"])
     row("dashboard", "ticker " + pid, want if want in D["ticker"] else "missing", want)
+lt = str(D.get("listsTitle") or "").strip()
+row("dashboard", "lists scope", lt, "lists", lt.lower() == "lists", "no project filter, so the lists cover every project")
 for pid, s in statuses.items():
     br = s.get("barRaise") or {}
     if br.get("actionsOpen") is None or pid in RETIRED:
@@ -328,21 +436,29 @@ for pid, s in statuses.items():
     row("dashboard", "lists found " + pid, "present" if ok else "absent", "present", ok, exp)
 
 # ---------- layer 2b: feeds -> status page ----------
-for card in cap["status"].get("cards") or []:
+pills = cap["status"].get("versions")
+pills = pills if isinstance(pills, list) else []  # an exception on the page arrives as a string
+for ci, card in enumerate(cap["status"].get("cards") or []):
     head = card.split("\n")[0]
     pid = next((k for k, v in DISPLAY.items() if head.startswith(v + " (")), None)
     if not pid:
         continue
     g = pages.get(pid) or statuses.get(pid) or {}
     txt = card.replace("\n", " ")
-    mv = re.search(r"(?<![A-Za-z])v(v?\d[\w.]*)", txt)
-    row("status page", pid + " version", (mv.group(1) if mv else "?").lstrip("v"), str(g.get("version") or "").lstrip("v"))
+    if pills:
+        shown_v = (pills[ci] if ci < len(pills) else None) or ""
+    else:
+        # A capture from before the pill list. The stale badge runs into the pill in the card
+        # text ("STALEv1.4.1") and Everything's version is a commit hash, so this can misread.
+        mv = re.search(r"(?<![A-Za-z])v(v?\d[\w.]*|[0-9a-f]{7,12})", txt)
+        shown_v = mv.group(1) if mv else "?"
+    row("status page", pid + " version", shown_v.lstrip("v"), str(g.get("version") or "").lstrip("v"))
     if g.get("workTreeClean") is not None:
         row("status page", pid + " tree", "clean" if "treeclean" in txt else ("dirty" if "treedirty" in txt else "?"), "clean" if g["workTreeClean"] else "dirty")
     lp = (lean.get("projects") or {}).get(pid)
     if lp:
         tt = total_tok(lp)
-        exp = ("%.2fM" % (tt / 1e6)) if tt >= 1e6 else (("%.1fk" % (tt / 1e3)) if tt >= 1e3 else str(tt))
+        exp = (to_fixed(tt / 1e6, 2) + "M") if tt >= 1e6 else ((to_fixed(tt / 1e3, 1) + "k") if tt >= 1e3 else str(tt))
         mt = re.search(r"tokens today([\d.]+[Mk]?)", txt)
         row("status page", pid + " tokens today", mt.group(1) if mt else "?", exp)
     f = (g.get("audit") or {}).get("findings")
@@ -357,7 +473,10 @@ for card in cap["status"].get("cards") or []:
         exp = "%d actions open / %d closed" % (br.get("actionsOpen") or 0, br.get("actionsClosed") or 0)
         row("status page", pid + " actions", "present" if exp in txt else "absent", "present", exp in txt, exp)
 top = cap["status"].get("top") or ""
-row("status page", "rollup verdict", "needs-attention" if "needs-attention" in top else top[:40], constellation.get("portfolioVerdict"))
+# The verdict is its own line under the PORTFOLIO VERDICT label. This row looked for the one
+# word needs-attention, so any other verdict printed the label as a failure (2026-11-20).
+want_verdict = constellation.get("portfolioVerdict")
+row("status page", "rollup verdict", want_verdict if want_verdict in [l.strip() for l in top.split("\n")] else top[:40], want_verdict)
 shown_top = [l for l in top.split("\n") if l.startswith("high /") or l.startswith("medium /") or l.startswith("low /")]
 row("status page", "top actions shown", len(shown_top), min(5, len(open_actions)))
 home = cap["homepage"].get("body") or ""
