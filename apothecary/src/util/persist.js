@@ -4,6 +4,11 @@
 // Debounced save so we don't write on every keystroke.
 
 const STORAGE_KEY = 'yesandapothecary.v1.state';
+// Backlog B04: an autosave entry that will not parse is copied here before
+// the editor starts fresh, because the next debounced save writes over the
+// main key. One copy, the latest unreadable one; a person can recover it by
+// hand from the browser's storage panel.
+export const STATE_BACKUP_KEY = STORAGE_KEY + '.corrupt-backup';
 
 // Broadcast a storage failure so the editor can show a status line. Detail
 // carries which store failed, the error name (QuotaExceededError,
@@ -17,17 +22,36 @@ export function notifyStorageError(key, err, op = 'write') {
   }));
 }
 
-export function loadState() {
+// Copies an unreadable entry aside. Returns false when the copy could not be
+// written either (a full quota is the likely reason), so the caller still
+// warns and nothing worse happens than before the backup existed.
+function backupUnreadable(raw) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    localStorage.setItem(STATE_BACKUP_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function loadState() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-    return parsed;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    // Valid JSON that is not a state object (a bare number, null, an array)
+    // is as unreadable as broken JSON, and the next save overwrites it too.
+    backupUnreadable(raw);
+    notifyStorageError('state', null, 'read');
+    return null;
   } catch (err) {
     // A corrupted or unparseable entry silently discarded the user's
     // autosaved label with no on-screen warning before this call
-    // (bar-raise reliability-01). Surface it; the app still boots clean.
+    // (bar-raise reliability-01). Surface it; the app still boots clean,
+    // with the raw string copied aside first (backlog B04).
+    if (raw) backupUnreadable(raw);
     notifyStorageError('state', err, 'read');
     return null;
   }

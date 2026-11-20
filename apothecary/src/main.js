@@ -126,12 +126,24 @@ async function main() {
     // before it ever reaches render.js's unescaped src="..." attributes.
     symbolIds: new Set([...Object.keys(SYMBOL_LABELS), ...Object.keys(SYMBOL_ALIASES), 'none']),
     illustrationKeywords: new Set(illustrations.map(i => i.keyword)),
+    // Backlog B06: the zone layout modes the renderer styles, so a tampered
+    // layoutMode never reaches zoneHtml's class attribute.
+    zoneLayoutModes: ZONE_LAYOUT_MODES,
   };
   // generative-art-print-fidelity-01: the flush was exported in v1.1.14 and
   // never called. These two wrappers are its only call sites; the editor gets
   // them under the same names it always had.
   const printLabelFresh = () => { flushPrintStage(); printLabel(); };
   const exportPngFresh = (filename) => { flushPrintStage(); return exportPng(filename); };
+
+  // The editor's status line starts listening for yaa:storage-error inside
+  // mountEditor, below. loadState runs first, so a boot-time read failure,
+  // the one that matters most, used to fire into nothing and the person never
+  // saw the warning. Hold what fires before the editor mounts and replay it
+  // after (found while proving backlog B04 in the browser).
+  const earlyStorageErrors = [];
+  const holdStorageError = (e) => earlyStorageErrors.push(e.detail);
+  document.addEventListener('yaa:storage-error', holdStorageError);
 
   const persisted = loadState();
   const initial = normalizeState(persisted ?? defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID, herbDB), migrateCtx);
@@ -179,6 +191,10 @@ async function main() {
       state.set(defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID, herbDB));
     },
   });
+  document.removeEventListener('yaa:storage-error', holdStorageError);
+  for (const detail of earlyStorageErrors) {
+    document.dispatchEvent(new CustomEvent('yaa:storage-error', { detail }));
+  }
 
   const previewMount = document.querySelector('[data-preview]');
   const printStageMount = document.querySelector('[data-print-stage]');
@@ -286,6 +302,12 @@ async function main() {
       flushPrintStage();
     }
   }, true);
+  // Backlog B03: a print started from the browser menu, or any other path
+  // that skips both the Print button and Ctrl/Cmd+P, still fires
+  // beforeprint before the page is laid out for paper. Flushing there means
+  // every print reads the stage the current state built. A flush with
+  // nothing queued does nothing, so a print that already flushed is fine.
+  window.addEventListener('beforeprint', () => flushPrintStage());
 
   document.addEventListener('keydown', (e) => {
     const inField = e.target instanceof HTMLElement &&

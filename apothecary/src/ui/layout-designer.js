@@ -2,10 +2,11 @@
 // zones, per-zone width/layoutMode/align, per-instance color/glow, hidden
 // rail). v0.9 + v0.11 alignment selector.
 //
-// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc and
-// preserveScroll travel through the deps object mountEditor builds, not a
-// static import (see editor.js's top-of-file note on why cross-module
-// references travel through ctx/deps in this app).
+// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc,
+// preserveScroll and layoutOps travel through the deps object mountEditor
+// builds, not a static import (see editor.js's top-of-file note on why
+// cross-module references travel through ctx/deps in this app). This file
+// draws and wires; src/util/layout-ops.js does every layout mutation.
 
 const LAYOUT_MODE_LABELS = {
   'stack':       'Stack (vertical)',
@@ -21,7 +22,7 @@ const ZONE_ALIGN_LABELS = {
 };
 
 export function mountLayoutDesigner(root, state, deps) {
-  const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone, esc, preserveScroll } = deps;
+  const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone, esc, preserveScroll, layoutOps } = deps;
   let dragPayload = null;
   let lastLayout = null;
   let lastCustom = null;
@@ -380,107 +381,19 @@ export function mountLayoutDesigner(root, state, deps) {
     });
   }
 
-  function findZone(layout, zoneId) {
-    for (const side of ['front', 'back']) {
-      const idx = (layout[side] || []).findIndex(z => z.id === zoneId);
-      if (idx >= 0) return { side, idx, zone: layout[side][idx] };
-    }
-    return null;
+  // The zone and item mutations live in src/util/layout-ops.js as pure
+  // functions over a layout (bar-raise 2026-11-18 maintainability-01), so
+  // test-layout-ops.mjs covers them. Each returns the changed layout, or null
+  // when the target zone is gone; only a real change reaches state.set.
+  function commit(next) { if (next) state.set({ layout: next }); }
+  function updateZone(zoneId, fn) { commit(layoutOps.updateZone(state.get().layout, zoneId, fn)); }
+  function removeZone(zoneId) { commit(layoutOps.removeZone(state.get().layout, zoneId)); }
+  function addZone(side) { commit(layoutOps.addZone(state.get().layout, side, makeZone)); }
+  function moveItem(key, fromZoneId, fromIndex, toZoneId, insertHint) {
+    commit(layoutOps.moveItem(state.get().layout, key, fromZoneId, fromIndex, toZoneId, insertHint));
   }
-
-  function updateZone(zoneId, fn) {
-    const layout = structuredClone(state.get().layout);
-    const found = findZone(layout, zoneId);
-    if (!found) return;
-    layout[found.side][found.idx] = fn(found.zone);
-    state.set({ layout });
-  }
-
-  function removeZone(zoneId) {
-    const layout = structuredClone(state.get().layout);
-    const found = findZone(layout, zoneId);
-    if (!found) return;
-    const items = found.zone.items || [];
-    layout[found.side].splice(found.idx, 1);
-    layout.hidden = [...(layout.hidden || []), ...items.filter(i => !(layout.hidden || []).includes(i))];
-    state.set({ layout });
-  }
-
-  function addZone(side) {
-    const layout = structuredClone(state.get().layout);
-    const newZone = makeZone({ layoutMode: 'stack', width: side === 'front' ? 50 : 100, items: [] });
-    layout[side] = [...(layout[side] || []), newZone];
-    state.set({ layout });
-  }
-
-  // v0.15: items are now { key, color?, glow? } instances. Drag identifies
-  // an instance by its (zone, index) coordinate, not just by key, so we can
-  // support multiple instances of the same key in the same zone. Hidden rail
-  // continues to dedupe by key (no point hiding the same item twice).
-  function itemKey(it) { return typeof it === 'string' ? it : (it && it.key) || ''; }
-  function itemMatches(it, key) { return itemKey(it) === key; }
-
-  function moveItem(itemKeyStr, fromZoneId, fromIndex, toZoneId, insertHint) {
-    const layout = structuredClone(state.get().layout);
-    let movedInstance = null;
-
-    if (fromZoneId === 'hidden') {
-      // Remove first matching key from hidden.
-      const idx = (layout.hidden || []).findIndex(it => itemMatches(it, itemKeyStr));
-      if (idx >= 0) {
-        movedInstance = layout.hidden[idx];
-        layout.hidden.splice(idx, 1);
-      }
-    } else {
-      const src = findZone(layout, fromZoneId);
-      if (src) {
-        const i = (typeof fromIndex === 'number' && fromIndex >= 0)
-          ? fromIndex
-          : src.zone.items.findIndex(it => itemMatches(it, itemKeyStr));
-        if (i >= 0) {
-          movedInstance = src.zone.items[i];
-          src.zone.items.splice(i, 1);
-        }
-      }
-    }
-
-    // Normalize: if the moved instance was a bare string from legacy state,
-    // promote it to an object so future color/glow edits work.
-    if (typeof movedInstance === 'string') movedInstance = { key: movedInstance };
-    if (!movedInstance) movedInstance = { key: itemKeyStr };
-
-    if (toZoneId === 'hidden') {
-      // Hidden rail dedupes - never two of the same key in there.
-      const present = (layout.hidden || []).some(it => itemMatches(it, itemKeyStr));
-      if (!present) layout.hidden = [...(layout.hidden || []), movedInstance];
-    } else {
-      const dst = findZone(layout, toZoneId);
-      if (!dst) return;
-      // v0.15: zones now ALLOW duplicates. Don't strip existing entries with
-      // the same key - place the moved instance next to insertHint.
-      if (insertHint) {
-        const after = insertHint.endsWith(':after');
-        const target = parseInt(after ? insertHint.slice(0, -':after'.length) : insertHint, 10);
-        if (Number.isFinite(target)) {
-          dst.zone.items.splice(after ? target + 1 : target, 0, movedInstance);
-        } else {
-          dst.zone.items.push(movedInstance);
-        }
-      } else {
-        dst.zone.items.push(movedInstance);
-      }
-    }
-    state.set({ layout });
-  }
-
   function updateInstance(zoneId, index, patch) {
-    const layout = structuredClone(state.get().layout);
-    const z = findZone(layout, zoneId);
-    if (!z) return;
-    let cur = z.zone.items[index];
-    if (typeof cur === 'string') cur = { key: cur };
-    z.zone.items[index] = { ...cur, ...patch };
-    state.set({ layout });
+    commit(layoutOps.updateInstance(state.get().layout, zoneId, index, patch));
   }
 
   function openItemPicker(zoneId, anchorBtn) {
@@ -511,12 +424,7 @@ export function mountLayoutDesigner(root, state, deps) {
       if (!btn) return;
       // v0.15: append a fresh instance to the target zone. We don't move
       // any existing instance - duplicates are intentional.
-      const itemKeyStr = btn.dataset.pickItem;
-      const layoutNow = structuredClone(state.get().layout);
-      const z = findZone(layoutNow, zoneId);
-      if (!z) return;
-      z.zone.items.push({ key: itemKeyStr });
-      state.set({ layout: layoutNow });
+      commit(layoutOps.addItem(state.get().layout, zoneId, btn.dataset.pickItem));
     });
 
     setTimeout(() => {
@@ -545,8 +453,7 @@ export function mountLayoutDesigner(root, state, deps) {
     // to the clicked dot via getBoundingClientRect.
     document.querySelectorAll('.layout-color-popover').forEach(p => p.remove());
 
-    const layout = state.get().layout;
-    const z = findZone(layout, zoneId);
+    const z = layoutOps.findZone(state.get().layout, zoneId);
     if (!z) return;
     const cur = z.zone.items[idx];
     const currentVal = (cur && typeof cur === 'object') ? (cur[field] || '') : '';
@@ -612,16 +519,6 @@ export function mountLayoutDesigner(root, state, deps) {
       };
       document.addEventListener('click', onDocClick);
     }, 0);
-  }
-
-  function locateItem(layout, item) {
-    if ((layout.hidden || []).includes(item)) return 'hidden';
-    for (const side of ['front', 'back']) {
-      for (const z of (layout[side] || [])) {
-        if (z.items.includes(item)) return z.id;
-      }
-    }
-    return null;
   }
 
   // performance-02 (2026-09-23): the designer draws the layout and the custom

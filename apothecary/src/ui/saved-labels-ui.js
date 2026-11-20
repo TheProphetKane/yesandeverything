@@ -53,17 +53,20 @@ export function mountSavedLabels(root, state, ctx) {
       listEl.innerHTML = `<li class="saved-empty">No saved labels yet. Save the current label above.</li>`;
       return;
     }
+    // Backlog B02: the id lands in an attribute, so it is escaped like the
+    // name. read() already keeps only entries with a string id; this holds
+    // even if an id arrives with a quote in it.
     listEl.innerHTML = entries.map(e => `
-      <li class="saved-item" data-id="${e.id}">
+      <li class="saved-item" data-id="${esc(e.id)}">
         <div class="saved-item-main">
           <span class="saved-item-name">${esc(e.name)}</span>
           <span class="saved-item-date">${fmt(e.updatedAt)}</span>
         </div>
         <div class="saved-item-actions">
-          <button type="button" data-act="load"      data-id="${e.id}" title="Load"      aria-label="Load ${esc(e.name)}">↥</button>
-          <button type="button" data-act="duplicate" data-id="${e.id}" title="Duplicate" aria-label="Duplicate ${esc(e.name)}">⎘</button>
-          <button type="button" data-act="rename"    data-id="${e.id}" title="Rename"    aria-label="Rename ${esc(e.name)}">✎</button>
-          <button type="button" data-act="delete"    data-id="${e.id}" title="Delete"    aria-label="Delete ${esc(e.name)}">✕</button>
+          <button type="button" data-act="load"      data-id="${esc(e.id)}" title="Load"      aria-label="Load ${esc(e.name)}">↥</button>
+          <button type="button" data-act="duplicate" data-id="${esc(e.id)}" title="Duplicate" aria-label="Duplicate ${esc(e.name)}">⎘</button>
+          <button type="button" data-act="rename"    data-id="${esc(e.id)}" title="Rename"    aria-label="Rename ${esc(e.name)}">✎</button>
+          <button type="button" data-act="delete"    data-id="${esc(e.id)}" title="Delete"    aria-label="Delete ${esc(e.name)}">✕</button>
         </div>
       </li>
     `).join('');

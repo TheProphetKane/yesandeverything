@@ -29,6 +29,36 @@
 // nothing on legitimate state and only rejects a tampered or hand-edited one.
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
+// Backlog B06: normalizeState used to check layout.front and nothing else, so
+// a back side that was not an array, a zone with no items array, or an item
+// that was neither a key nor a { key } object reached render.js and the
+// layout designer, which both assume the shape. zoneHtml also interpolates a
+// zone's layoutMode, align and width into a class name and a style attribute
+// unescaped, the same exposure security-02 closed for colours.
+const ZONE_ALIGNS = ['left', 'center', 'right'];
+
+function isItemEntry(it) {
+  if (typeof it === 'string') return it.length > 0;
+  return !!it && typeof it === 'object' && !Array.isArray(it)
+    && typeof it.key === 'string' && it.key.length > 0;
+}
+
+// Both sides are arrays of zone objects, each with a string id and an items
+// array. A layout that fails this falls back to the template's default; a
+// bad item or a bad zone field inside a sound layout is repaired in place.
+export function isWellFormedLayout(layout) {
+  if (!layout || typeof layout !== 'object' || Array.isArray(layout)) return false;
+  for (const side of ['front', 'back']) {
+    if (!Array.isArray(layout[side])) return false;
+    for (const z of layout[side]) {
+      if (!z || typeof z !== 'object' || Array.isArray(z)) return false;
+      if (typeof z.id !== 'string' || !z.id) return false;
+      if (!Array.isArray(z.items)) return false;
+    }
+  }
+  return true;
+}
+
 // Build a v0.9 layout from a pre-v0.9 saved state. Reads state.placement
 // (per-item front/back booleans) and state.notesSplit (combined vs three-col
 // back-bottom-row) to reconstruct what the user had, then maps onto the new
@@ -225,10 +255,17 @@ export function normalizeState(initial, ctx) {
   // then drop the retired fields.
   if (!initial.layout || !Array.isArray(initial.layout.front)) {
     initial.layout = migrateLayoutFrom(initial, defaults, ctx);
+  } else if (!isWellFormedLayout(initial.layout)) {
+    // Backlog B06: a v0.9+ layout whose back side or a zone is malformed
+    // cannot be repaired item by item, so it takes the default layout.
+    initial.layout = ctx.defaultLayout(initial.templateId, templates, defaultTemplateId);
   } else {
     // Already on v0.9 shape - just ensure hidden array exists.
     if (!Array.isArray(initial.layout.hidden)) initial.layout.hidden = [];
   }
+  // Backlog B06: an entry that is neither a key nor a { key } object is
+  // dropped from the hidden rail; the zone loop below does the same in zones.
+  initial.layout.hidden = initial.layout.hidden.filter(isItemEntry);
   delete initial.placement;
   delete initial.notesSplit;
 
@@ -269,10 +306,20 @@ export function normalizeState(initial, ctx) {
   // A field that fails it is dropped rather than defaulted: render.js's
   // instanceColor/instanceGlow already fall back to state.accent / no glow
   // when the field is absent, which is the correct per-item default.
+  // Backlog B06: the same rule for the zone fields zoneHtml interpolates.
+  // An align outside the designer's three becomes 'center'; a layoutMode
+  // outside ctx.zoneLayoutModes becomes 'stack'; a width that is not a
+  // number from 1 to 100 becomes 100. Each replacement is what render.js
+  // already drew for a missing field. ctx.zoneLayoutModes is optional for
+  // the same reason ctx.symbolIds is above.
+  const zoneModes = Array.isArray(ctx.zoneLayoutModes) ? ctx.zoneLayoutModes : null;
   for (const side of ['front', 'back']) {
     for (const z of (initial.layout?.[side] ?? [])) {
-      if (!z.align) z.align = 'center';
-      for (const it of (z.items ?? [])) {
+      if (!ZONE_ALIGNS.includes(z.align)) z.align = 'center';
+      if (zoneModes && !zoneModes.includes(z.layoutMode)) z.layoutMode = 'stack';
+      if (!(typeof z.width === 'number' && z.width >= 1 && z.width <= 100)) z.width = 100;
+      z.items = (z.items ?? []).filter(isItemEntry);
+      for (const it of z.items) {
         if (!it || typeof it !== 'object') continue;
         if (it.color !== undefined && !HEX_COLOR_RE.test(it.color)) delete it.color;
         if (it.glow !== undefined && !HEX_COLOR_RE.test(it.glow)) delete it.glow;

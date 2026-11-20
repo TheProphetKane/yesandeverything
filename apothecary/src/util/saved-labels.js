@@ -17,21 +17,74 @@ export function configure({ notifyStorageError: fn } = {}) {
   if (typeof fn === 'function') notifyStorageError = fn;
 }
 
-function read() {
+// Backlog B02 and data-integrity-03 (bar-raise 2026-11-18). A stored library
+// that will not parse, or that holds an entry without a string id and an
+// object state, is copied whole to this key before anything else happens to
+// it. read() then returns only the usable entries, and write() refuses to
+// replace an unreadable library until that copy is safely stored, because
+// every save, rename and delete writes a list built from read() straight
+// back over the main key.
+export const SAVED_BACKUP_KEY = KEY + '.corrupt-backup';
+
+function isEntry(e) {
+  return !!e && typeof e === 'object' && !Array.isArray(e)
+    && typeof e.id === 'string' && e.id.length > 0
+    && !!e.state && typeof e.state === 'object' && !Array.isArray(e.state);
+}
+
+// { list, clean, error }: clean is false when the raw string did not parse to
+// an array, or when any entry in it failed isEntry.
+function parseLibrary(raw) {
+  if (raw == null) return { list: [], clean: true, error: null };
+  let v;
   try {
-    const v = JSON.parse(localStorage.getItem(KEY));
-    return Array.isArray(v) ? v : [];
+    v = JSON.parse(raw);
   } catch (err) {
-    // A corrupted entry used to silently discard the user's entire
-    // saved-label library with no on-screen warning (bar-raise
-    // reliability-01). Surface it; the panel still renders empty-but-safe.
+    return { list: [], clean: false, error: err };
+  }
+  if (!Array.isArray(v)) return { list: [], clean: false, error: null };
+  const list = v.filter(isEntry);
+  return { list, clean: list.length === v.length, error: null };
+}
+
+// True once the backup key holds exactly this string.
+function keepCopy(raw) {
+  try {
+    if (localStorage.getItem(SAVED_BACKUP_KEY) !== raw) localStorage.setItem(SAVED_BACKUP_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function read() {
+  let raw;
+  try {
+    raw = localStorage.getItem(KEY);
+  } catch (err) {
     notifyStorageError('saved-labels', err, 'read');
     return [];
   }
+  const { list, clean, error } = parseLibrary(raw);
+  if (!clean) {
+    // A corrupted entry used to silently discard the user's entire
+    // saved-label library with no on-screen warning (bar-raise
+    // reliability-01). Surface it; the panel still renders what it can.
+    keepCopy(raw);
+    notifyStorageError('saved-labels', error, 'read');
+  }
+  return list;
 }
 
 function write(list) {
   try {
+    const current = localStorage.getItem(KEY);
+    if (current != null && !parseLibrary(current).clean && !keepCopy(current)) {
+      // The library on disk is unreadable and no copy of it could be kept,
+      // so overwriting it now would destroy the only one.
+      notifyStorageError('saved-labels', null, 'write');
+      return false;
+    }
     localStorage.setItem(KEY, JSON.stringify(list));
     return true;
   } catch (err) {

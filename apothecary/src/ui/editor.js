@@ -41,6 +41,7 @@ const [
   { mountLayoutDesigner },
   { mountIllustrationPicker },
   { resolveIllustration },
+  layoutOps,
 ] = await Promise.all([
   import('../util/escape-html.js' + ESC_V),
   import('./title-editor.js' + ESC_V),
@@ -52,6 +53,10 @@ const [
   // shared with render.js via main.js's ctx so both call sites use the same
   // three-step chain instead of two independently drifting copies.
   import('../util/resolve-illustration.js' + ESC_V),
+  // bar-raise 2026-11-18 maintainability-01: the layout designer's zone and
+  // item mutations, pure and under test-layout-ops.mjs. The whole module
+  // rides into the designer through deps.
+  import('../util/layout-ops.js' + ESC_V),
 ]);
 
 const SWATCH_COLORS = [
@@ -548,7 +553,7 @@ export function mountEditor(root, ctx) {
   const deps = {
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
-    FACTORY_PRESETS, esc, preserveScroll,
+    FACTORY_PRESETS, esc, preserveScroll, layoutOps,
   };
   // Each mounter used to run back to back with no try/catch, so one throw
   // propagated to main().catch and replaced the whole page with the failure
