@@ -21,6 +21,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
@@ -97,6 +98,22 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: '_site'
+      - name: Wait until the run lists the artifact
+        # 2026-11-20: four deploys in a row failed with "No artifacts named
+        # github-pages were found" about a second after the upload step had
+        # finalized the artifact; the run's artifact list lagged the upload.
+        # deploy-pages looks once and gives up, so this polls the same list for
+        # up to two minutes first, and lets deploy-pages report it if it never shows.
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 24); do
+            n=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?name=github-pages" --jq '.total_count' 2>/dev/null || echo 0)
+            if [ "${n:-0}" -ge 1 ]; then echo "artifact listed after $(( (i - 1) * 5 ))s"; exit 0; fi
+            sleep 5
+          done
+          echo "artifact still unlisted after 120s; deploy-pages will report it"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
