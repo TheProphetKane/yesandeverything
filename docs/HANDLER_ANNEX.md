@@ -260,6 +260,12 @@ Two rules came out of it, and they generalize past this repo:
 
 The related history: the collector did not run at all from 2026-08-05 to 2026-08-12, and by the time it resumed on 08-13 the local session transcripts for 08-05 and 08-06 had passed their roughly eight-day retention window and been deleted, so those two days of token history are gone permanently. Local transcripts are the only source, retention is short, and a collector outage longer than a week is unrecoverable data loss rather than a delay.
 
+#### Weekly dashboard page audit and the stale-feed queue row (2026-11-19)
+
+Two checks sit behind `scripts/check-dashboard-live.ps1` now. When the usage feed or the weekly rollup is past its age limit, the script files one priority-1 row, finding `dashboard-stale-01`, through `scripts/file-dashboard-stale.py`, which writes with `X:\PortfolioOps\queue\queue_write.py` and does nothing while a pending or blocked row with that finding already exists. The script also fails when the newest `docs/DASHBOARD_AUDIT-*.md` is older than seven days.
+
+The report comes from a pair that runs once a week, on Sunday, as a step of the nightly sweep routine (`C:\Users\Kane\.claude\scheduled-tasks\nightly-sweep\SKILL.md`), from `X:\YesAndEverything`: `node scripts/audit-dashboard-page.mjs`, then `python scripts/audit-dashboard-page.py`. The first reads the live pages past the gate with headless Chrome, the second compares them with the feeds and the canonical status files and writes the dated report (local only, gitignored). Disagreements are findings to read, not noise to filter: the run exits 1 when any row fails.
+
 #### Cross-project consistency
 
 Cross-project rules live in `X:\ARCHITECTURE.md`, `X:\HAZARDS.md` and `X:\DECISIONS.md` (the two old governance docs retired to `X:\_archive-2026-08-17\` on 2026-08-17 and no longer sit at this root). Per-project CLAUDE.md files inherit from that root layer and add project-local hazards. When updating a cross-project rule, update the root layer first, then propagate to the per-project handlers.

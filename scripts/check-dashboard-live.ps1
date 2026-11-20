@@ -56,6 +56,8 @@ $ROLLUP_URL   = "https://yesandeverything.com/status/data/constellation.json"
 
 $fail = @()
 $note = @()
+# Evidence lines for the queue row filed when a feed is past its age limit (observability-03).
+$staleFeed = @()
 
 function Get-LiveJson([string]$url) {
   # no-cache on the request as well as the Worker's own no-store, so a proxy
@@ -80,6 +82,7 @@ if ($usage) {
       $note += ("usage.json generated {0:yyyy-MM-dd HH:mm}Z, {1:N1}h old" -f $gen, $ageH)
       if ($ageH -gt $MaxAgeHours) {
         $fail += ("usage.json is {0:N1}h old (limit {1}h); the live dashboard is frozen" -f $ageH, $MaxAgeHours)
+        $staleFeed += ("usage.json generated {0:yyyy-MM-dd HH:mm}Z, {1:N1}h old (limit {2}h)" -f $gen, $ageH, $MaxAgeHours)
       }
     }
   }
@@ -126,10 +129,30 @@ try {
     $note += ("rollup generated {0:yyyy-MM-dd HH:mm}Z, {1:N1} days old, health {2} {3}" -f $rgen, $ageD, $rollup.portfolioHealth, $rollup.portfolioVerdict)
     if ($ageD -gt $MaxRollupAgeDays) {
       $fail += ("the rollup is {0:N1} days old (limit {1}); the band's score and verdict are stale, run the constellation bar-raise" -f $ageD, $MaxRollupAgeDays)
+      $staleFeed += ("constellation.json generated {0:yyyy-MM-dd HH:mm}Z, {1:N1} days old (limit {2})" -f $rgen, $ageD, $MaxRollupAgeDays)
     }
   }
 } catch {
   $fail += "constellation.json unreachable: $($_.Exception.Message)"
+}
+
+# ----- 5b: the dashboard page audit report -------------------------------------
+# observability-02: scripts/audit-dashboard-page.mjs then .py write docs/DASHBOARD_AUDIT-<date>.md.
+# The newest report older than seven days (or none at all) means the weekly page audit stopped.
+$auditDir = Join-Path (Split-Path $PSScriptRoot -Parent) "docs"
+$auditNewest = Get-ChildItem -Path $auditDir -Filter "DASHBOARD_AUDIT-*.md" -ErrorAction SilentlyContinue |
+  Sort-Object Name -Descending | Select-Object -First 1
+if (-not $auditNewest) {
+  $fail += "no docs/DASHBOARD_AUDIT-*.md report exists; run scripts/audit-dashboard-page.mjs then audit-dashboard-page.py"
+} else {
+  $auditDate = $null
+  if ($auditNewest.Name -match 'DASHBOARD_AUDIT-(\d{4}-\d{2}-\d{2})\.md$') { $auditDate = [datetime]::ParseExact($Matches[1], "yyyy-MM-dd", $null) }
+  if (-not $auditDate) { $auditDate = $auditNewest.LastWriteTime }
+  $auditAge = ((Get-Date).Date - $auditDate.Date).TotalDays
+  $note += ("newest dashboard page audit: {0}, {1:N0} days old" -f $auditNewest.Name, $auditAge)
+  if ($auditAge -gt 7) {
+    $fail += ("the newest dashboard page audit ({0}) is {1:N0} days old (limit 7); run scripts/audit-dashboard-page.mjs then audit-dashboard-page.py" -f $auditNewest.Name, $auditAge)
+  }
 }
 
 # ----- 6: a stuck merge in this repository ---------------------------------------
@@ -302,6 +325,10 @@ $note | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 if ($fail.Count -gt 0) {
   Write-Host "DASHBOARD STALE:" -ForegroundColor Red
   $fail | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+  if ($staleFeed.Count -gt 0) {
+    $filed = & python (Join-Path $PSScriptRoot "file-dashboard-stale.py") --evidence ($staleFeed -join "; ") 2>&1 | Out-String
+    Write-Host ("  queue: " + $filed.Trim()) -ForegroundColor Yellow
+  }
   Write-Host "Republish with: powershell -NoProfile -ExecutionPolicy Bypass -File X:\PortfolioOps\scripts\collect-usage.ps1 -NoPush" -ForegroundColor Yellow
   exit 1
 }
