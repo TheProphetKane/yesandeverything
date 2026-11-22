@@ -14,8 +14,9 @@ name: Sync dashboard data from the live KV endpoint
 # 2026-09-06, finding observability-01), which would have shown stale numbers to
 # anyone who ever needed the fallback. This workflow closes that gap on its own
 # schedule, independent of the local machine and independent of whether a release
-# ships. It only ever writes dashboard/data/usage.json, matches the same 4-hour
-# cadence as the live refresh, and commits nothing when the payload has not moved.
+# ships. It writes dashboard/data/usage.json and the one-day summary derived from it,
+# matches the same 4-hour cadence as the live refresh, and commits nothing when the
+# payload has not moved.
 
 on:
   schedule:
@@ -47,17 +48,53 @@ jobs:
           python3 -c "import json; json.load(open('/tmp/usage.json'))"
           cp /tmp/usage.json dashboard/data/usage.json
 
+      # The status page prints tokens today on each card from dashboard/data/usage-today.json,
+      # a one-day summary. The collector wrote it beside usage.json, but its four-hourly run
+      # commits nothing, so the copy on Pages froze at 2026-10-04 and the status page printed
+      # that day as today until 2026-11-21. It is written here from the same payload, in the
+      # collector's shape, so the two files always describe one run. Only a project with a
+      # public status card gets a line: those are the only readers, and a private project has
+      # no card by rule, so no second privacy list is kept here.
+      - name: Write the one-day summary from the same payload
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import glob, json, os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+
+          payload = json.load(open("dashboard/data/usage.json", encoding="utf-8"))
+          stamp = payload["generatedAt"]
+          # The collector buckets days in Central time, so the day is the Central date of its run.
+          at = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+          day = at.astimezone(ZoneInfo("America/Chicago")).strftime("%Y-%m-%d")
+          cards = {os.path.basename(p)[:-5] for p in glob.glob("status/data/*.json")} - {"constellation"}
+          projects = {}
+          for name in sorted(payload.get("projects") or {}):
+              if name not in cards:
+                  continue
+              rows = [d for d in payload["projects"][name].get("daily") or [] if d.get("d") == day]
+              projects[name] = {k: sum(int(d.get(k) or 0) for d in rows) for k in ("input", "output", "cacheRead", "cacheWrite")}
+          out = "dashboard/data/usage-today.json"
+          with open(out + ".tmp", "w", encoding="utf-8", newline="\n") as f:
+              json.dump({"generatedAt": stamp, "day": day, "projects": projects}, f, indent=2)
+              f.write("\n")
+          json.load(open(out + ".tmp", encoding="utf-8"))
+          os.replace(out + ".tmp", out)
+          print("usage-today.json: %s, %d projects" % (day, len(projects)))
+          PY
+
       - name: Commit and push only if the payload actually moved
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -- dashboard/data/usage.json
-          if git diff --cached --quiet -- dashboard/data/usage.json; then
+          git add -- dashboard/data/usage.json dashboard/data/usage-today.json
+          if git diff --cached --quiet -- dashboard/data/usage.json dashboard/data/usage-today.json; then
             echo "no change; nothing to publish"
             exit 0
           fi
-          git commit -m "dashboard data sync: pick up the live KV payload" -- dashboard/data/usage.json
+          git commit -m "dashboard data sync: pick up the live KV payload" -- dashboard/data/usage.json dashboard/data/usage-today.json
           git push
 
       # A push made with the workflow's own token never starts another workflow, so the

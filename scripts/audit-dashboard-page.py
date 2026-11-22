@@ -66,9 +66,16 @@ def total_tok(r):
     return (r.get("input") or 0) + (r.get("cacheRead") or 0) + (r.get("cacheWrite") or 0) + (r.get("output") or 0)
 
 
-def central_day(offset=0):
-    now = datetime.now(timezone.utc) - timedelta(days=offset)
-    return (now - timedelta(hours=5)).strftime("%Y-%m-%d")  # Central is UTC-5 in September
+def central(utc):
+    """Central time for a UTC moment, by the US rule since 2007: UTC-5 from the second Sunday
+    of March at 08:00 UTC to the first Sunday of November at 07:00 UTC, UTC-6 otherwise. This
+    subtracted five hours all year, so from November to March a run between 23:00 and
+    midnight Central judged every "today" row against tomorrow (review of 2026-11-21)."""
+    start = datetime(utc.year, 3, 8, 8, tzinfo=timezone.utc)
+    start += timedelta(days=(6 - start.weekday()) % 7)
+    end = datetime(utc.year, 11, 1, 7, tzinfo=timezone.utc)
+    end += timedelta(days=(6 - end.weekday()) % 7)
+    return utc + (timedelta(hours=-5) if start <= utc < end else timedelta(hours=-6))
 
 
 rows = []
@@ -81,6 +88,13 @@ def row(surface, item, shown, expected, ok=None, note=""):
 
 
 cap = load(CAP)
+captured = datetime.strptime(cap["capturedAt"][:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+# The capture is judged against the feeds it held, so an old one would pass against its own
+# old feeds. audit-dashboard-page.mjs deletes the last capture before it starts; this row
+# catches a capture run by hand long before the comparison.
+cap_age_min = (datetime.now(timezone.utc) - captured).total_seconds() / 60
+row("feed", "capture age (minutes)", "%.1f" % cap_age_min, "under 20", 0 <= cap_age_min < 20,
+    "an older capture is judged against the feeds of its own moment, not today's")
 # The worker feeds the dashboard capture read before and after the page and found unchanged
 # (see audit-dashboard-page.mjs). Every dashboard number is judged against these, so a
 # collector run after the capture cannot split the page from its feeds. A capture without
@@ -128,7 +142,11 @@ def stamp(x):
 
 def block_stamp(d, block):
     if block == "release":
-        vals = [d.get(k) for k in ("lastReleaseAt", "updatedAt", "generatedAt")]
+        # The release fields only. Agents' generatedAt is its tunnel heartbeat, refreshed every
+        # few hours, and counted here it marked the whole release block "behind" and waved its
+        # version, release date, tree state, completion and milestone past canonical
+        # (review of 2026-11-21).
+        vals = [d.get(k) for k in ("lastReleaseAt", "lastCommitAt")]
     else:
         vals = [(d.get(block) or {}).get("latestReportAt")]
     got = [t for t in (stamp(v) for v in vals if v) if t]
@@ -165,6 +183,7 @@ def ms(x):
     return m.get("label") if isinstance(m, dict) else m
 
 
+unchecked = []
 canon = {}
 for p in sorted(glob.glob(os.path.join(CANON, "*.json"))):
     d = load(p)
@@ -185,7 +204,11 @@ for pid, c in sorted(canon.items()):
         behind = not ON_COLLECTOR and here is not None and live is not None and live > here
         ref[block] = s if behind else c
         if behind:
-            row("feed", "%s %s: canonical here behind the feed" % (pid, block), "behind, %s here, %s live" % (here.isoformat(), live.isoformat()), "behind is expected off the collecting machine", True,
+            # The sweep commits canonical every day, so a write older than a day and a half
+            # should be in the copy here. Past that, a sweep missed it or this clone is unpulled.
+            lag_h = (datetime.now(timezone.utc) - live).total_seconds() / 3600
+            row("feed", "%s %s: canonical here behind the feed" % (pid, block), "behind, %s here, %s live" % (here.isoformat(), live.isoformat()),
+                "a feed write under 36 hours old", lag_h < 36,
                 "written on the collecting machine since the last sweep, so checked against the feed here; strict on the collecting machine")
     br = c.get("barRaise") or {}
     sb = s.get("barRaise") or {}
@@ -208,6 +231,8 @@ for pid, c in sorted(canon.items()):
     else:
         row("pages copy", pid + " served", "404", "200", False)
     repo = REPOS.get(pid)
+    if repo and not os.path.isdir(repo):
+        unchecked.append(pid)  # named in the report, so the skip is not silent
     if repo and os.path.isdir(repo):
         v = str(ref["release"].get("version") or "").lstrip("v")
         try:
@@ -216,10 +241,11 @@ for pid, c in sorted(canon.items()):
         except Exception as e:
             row("repo", pid + " version", "git failed: %s" % e, "readable", False)
 gen = datetime.strptime(usage["generatedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-captured = datetime.strptime(cap["capturedAt"][:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
 age_h = (datetime.now(timezone.utc) - gen).total_seconds() / 3600
 row("feed", "usage.json age (hours)", "%.1f" % age_h, "under 5.5", age_h < 5.5)
-local_usage = load(r"X:\YesAndEverything\dashboard\data\usage.json")
+# Held in the same reads as the worker feeds, so a collector run after the capture cannot
+# make the worker read as older than a local copy it was never compared with.
+local_usage = json.loads(feeds["local_usage"]) if feeds.get("local_usage") else load(r"X:\YesAndEverything\dashboard\data\usage.json")
 # At or newer, the collector's own readback rule. On the collecting machine the local copy is
 # the run it just wrote. Anywhere else it is the last committed copy, which trails the worker
 # by up to four hours by design, so an equality test failed on every other machine. Only a
@@ -234,8 +260,10 @@ row("feed", "constellation age (days)", cn_age, "under 8", cn_age < 8)
 
 # ---------- layer 2: feeds -> dashboard page ----------
 D = cap["dashboard"]
-today = central_day(0)
-yester = central_day(1)
+# The Central day of the capture, which is the day the page itself was reading.
+today_c = central(captured)
+today = today_c.strftime("%Y-%m-%d")
+yester = (today_c.date() - timedelta(days=1)).isoformat()
 withheld = set(usage.get("dailyCurvesWithheld") or [])
 t_tok = t_cost = y_tok = a_tok = a_cost = 0
 sessions = 0
@@ -336,15 +364,24 @@ nums_r = re.findall(r"^(\d+)$", rad, re.M)
 for i, n in enumerate(names):
     s = statuses.get(n) or {}
     row("dashboard", "radar completion " + n, nums_r[i] if i < len(nums_r) else "?", (s.get("completion") or {}).get("pct"))
+wheel_seen = []  # (position, name) of every card read
 for sp in D["spotlights"]:
     t = sp["text"]
-    # Any wheel length, and a commit-hash version as Everything carries. This pattern read
-    # "/ 14", so once the wheel held 13 cards no spotlight matched and every spotlight row
-    # was skipped without a word (found 2026-11-20).
-    m = re.search(r"^(.*?)(v(?:v?\d[\w.]*|[0-9a-f]{7,12}))?↗?▶?(\d+) / (\d+)\n", t, re.M)
-    if not m:
-        continue
-    disp = m.group(1).strip()
+    h = sp.get("head")
+    if h:
+        disp, shown_ver = (h.get("name") or "").strip(), h.get("version") or ""
+        pm = re.match(r"^(\d+) / (\d+)$", (h.get("pos") or "").strip())
+        if pm:
+            wheel_seen.append((int(pm.group(1)), disp))
+    else:
+        # A capture from before the header fields. Any wheel length, and a commit-hash version
+        # as Everything carries; this pattern read "/ 14", so once the wheel held 13 cards
+        # every spotlight row was skipped without a word (found 2026-11-20).
+        m = re.search(r"^(.*?)(v(?:v?\d[\w.]*|[0-9a-f]{7,12}))?↗?▶?(\d+) / (\d+)\n", t, re.M)
+        if not m:
+            continue
+        disp, shown_ver = m.group(1).strip(), m.group(2) or ""
+        wheel_seen.append((int(m.group(3)), disp))
     pid = next((k for k, v in DISPLAY.items() if v == disp), None)
     if disp == "All Projects":
         mm = re.search(r"today (\S+) \((\$[\d.]+)\) / all-time (\S+) \((\$[\d.]+)\) / (\d+) sessions", t)
@@ -372,7 +409,9 @@ for sp in D["spotlights"]:
             row("dashboard", "spotlight %s sessions" % pid, mm.group(3), u.get("sessions"))
     s = statuses.get(pid)
     if s:
-        row("dashboard", "spotlight %s version" % pid, (m.group(2) or "").lstrip("v"), str(s.get("version") or "").lstrip("v"))
+        row("dashboard", "spotlight %s version" % pid, shown_ver.lstrip("v"), str(s.get("version") or "").lstrip("v"))
+        if h:
+            row("dashboard", "spotlight %s stale badge" % pid, "shown" if h.get("stale") else "none", "shown" if s.get("stale") is True else "none")
         mc = re.search(r"(\d+)%\nCOMPLETE", t)
         mh = re.search(r"(\d+)\nHEALTH", t)
         if s.get("completion"):
@@ -386,6 +425,14 @@ for sp in D["spotlights"]:
         if br.get("verdict"):
             exp_v = "%s %s" % (br["verdict"], br.get("health"))
             row("dashboard", "spotlight %s verdict chip" % pid, "present" if exp_v in chips else chips[:60], "present", exp_v in chips, exp_v)
+# Coverage, so a card that is not read fails instead of dropping its rows: a wheel that does
+# not turn reads one position many times, a project missing from the wheel leaves a name
+# out, and a header that does not parse leaves a position out (review of 2026-11-21).
+want_wheel = ["All Projects"] + [p.get("displayName") for p in (_reg.get("projects") or []) if not p.get("retired")]
+row("dashboard", "spotlight wheel length", D.get("wheel"), len(want_wheel), note="the page's count against the live roster in data/projects.json")
+row("dashboard", "spotlight positions read", ",".join(str(p) for p, _n in sorted(wheel_seen)),
+    ",".join(str(i) for i in range(1, len(want_wheel) + 1)), note="each card once")
+row("dashboard", "spotlight cards read", "; ".join(sorted(n for _p, n in wheel_seen)), "; ".join(sorted(want_wheel)))
 for mini in D["strip"]:
     parts = mini.split("\n")
     if len(parts) < 2:
@@ -436,13 +483,37 @@ for pid, s in statuses.items():
     row("dashboard", "lists found " + pid, "present" if ok else "absent", "present", ok, exp)
 
 # ---------- layer 2b: feeds -> status page ----------
+# The status page takes tokens today from the one-day file only when that file is for today's
+# Central date, and from the full file otherwise (status/index.html). The one-day file sat at
+# 2026-10-04 for 48 days, and these rows compared the page with that same file, so its stale
+# numbers passed as today's (review of 2026-11-21).
+lean_gen = stamp(lean.get("generatedAt") or "")
+row("status page", "one-day usage file current", "%s, day %s" % (lean.get("generatedAt"), lean.get("day")),
+    "generated under 12 hours before the capture", bool(lean_gen) and timedelta(0) <= captured - lean_gen < timedelta(hours=12),
+    "sync-dashboard-data.yml writes it from each data sync")
+if lean.get("day") == today:
+    def page_today(pid):
+        lp = (lean.get("projects") or {}).get(pid)
+        return total_tok(lp) if lp else None
+else:
+    full = fetch(SITE + "/dashboard/data/usage.json")
+    full_gen = stamp(full.get("generatedAt") or "")
+    row("status page", "full usage file current", full.get("generatedAt"), "generated under 12 hours before the capture",
+        bool(full_gen) and timedelta(0) <= captured - full_gen < timedelta(hours=12),
+        "the page's source while the one-day file is not for today")
+
+    def page_today(pid):
+        u = (full.get("projects") or {}).get(pid)
+        return sum(total_tok(d) for d in (u.get("daily") or []) if d.get("d") == today) if u else None
 pills = cap["status"].get("versions")
 pills = pills if isinstance(pills, list) else []  # an exception on the page arrives as a string
+cards_seen = []
 for ci, card in enumerate(cap["status"].get("cards") or []):
     head = card.split("\n")[0]
     pid = next((k for k, v in DISPLAY.items() if head.startswith(v + " (")), None)
     if not pid:
         continue
+    cards_seen.append(pid)
     g = pages.get(pid) or statuses.get(pid) or {}
     txt = card.replace("\n", " ")
     if pills:
@@ -455,9 +526,8 @@ for ci, card in enumerate(cap["status"].get("cards") or []):
     row("status page", pid + " version", shown_v.lstrip("v"), str(g.get("version") or "").lstrip("v"))
     if g.get("workTreeClean") is not None:
         row("status page", pid + " tree", "clean" if "treeclean" in txt else ("dirty" if "treedirty" in txt else "?"), "clean" if g["workTreeClean"] else "dirty")
-    lp = (lean.get("projects") or {}).get(pid)
-    if lp:
-        tt = total_tok(lp)
+    tt = page_today(pid)
+    if tt is not None:
         exp = (to_fixed(tt / 1e6, 2) + "M") if tt >= 1e6 else ((to_fixed(tt / 1e3, 1) + "k") if tt >= 1e3 else str(tt))
         mt = re.search(r"tokens today([\d.]+[Mk]?)", txt)
         row("status page", pid + " tokens today", mt.group(1) if mt else "?", exp)
@@ -472,6 +542,9 @@ for ci, card in enumerate(cap["status"].get("cards") or []):
     if br.get("actionsOpen") is not None:
         exp = "%d actions open / %d closed" % (br.get("actionsOpen") or 0, br.get("actionsClosed") or 0)
         row("status page", pid + " actions", "present" if exp in txt else "absent", "present", exp in txt, exp)
+# Every public status file gets a card, so an empty or short card list fails here instead of
+# passing with no rows (review of 2026-11-21).
+row("status page", "cards", ", ".join(sorted(cards_seen)), ", ".join(sorted(pid for pid in statuses if pages.get(pid))))
 top = cap["status"].get("top") or ""
 # The verdict is its own line under the PORTFOLIO VERDICT label. This row looked for the one
 # word needs-attention, so any other verdict printed the label as a failure (2026-11-20).
@@ -493,6 +566,8 @@ out = "docs/DASHBOARD_AUDIT-%s.md" % day
 lines = ["# Dashboard audit, %s" % datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %z"), "",
          "Every value the live dashboard, the public status page and the homepage show, read past the gate by `scripts/audit-dashboard-page.mjs`, compared with the feeds the pages read and with the canonical status files behind the feeds. Capture taken %s." % cap.get("capturedAt"), "",
          "Rows: %d. Failing: %d." % (len(rows), len(fails)), ""]
+if unchecked:
+    lines += ["Not checked here: the repository row for %s, whose clones are not on this machine." % ", ".join(unchecked), ""]
 if fails:
     lines += ["## Failing", "", "| surface | item | shown | expected | note |", "|---|---|---|---|---|"]
     lines += ["| %s | %s | %s | %s | %s |" % (r[0], r[1], r[2].replace("|", "/"), r[3].replace("|", "/"), r[5]) for r in fails]
@@ -502,6 +577,8 @@ lines += ["| %s | %s | %s | %s | %s |" % ("yes" if r[4] else "NO", r[0], r[1], r
 with io.open(out, "w", encoding="utf-8", newline="\n") as f:
     f.write("\n".join(lines) + "\n")
 print("rows %d failing %d -> %s" % (len(rows), len(fails), out))
+if unchecked:
+    print("  not checked here: the repository row for %s" % ", ".join(unchecked))
 for r in fails:
     print("  FAIL %s | %s | shown %s | expected %s | %s" % (r[0], r[1], r[2][:70], r[3][:70], r[5]))
 sys.exit(1 if fails else 0)

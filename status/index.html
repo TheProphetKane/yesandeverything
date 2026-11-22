@@ -683,9 +683,15 @@
     // project, which is all the lean one carries. The fallback keeps the page working
     // before the collector next runs and on a checkout without the file; a fallback that
     // silently costs 590 KB is worth having when the alternative is a blank dashboard.
+    //
+    // The lean file holds one Central day, and only a copy for today stands in for the full
+    // file. Any copy was taken as today until 2026-11-21: the collector stopped committing it
+    // after its run of 2026-10-04, and every card printed that day's tokens as today's for 48
+    // days. An older copy now falls back to the full file, which carries every day.
+    var leanToday = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
     var jobs = [fetchJson("data/constellation.json"),
       fetchJson("../dashboard/data/usage-today.json").then(function (lean) {
-        return lean || fetchJson("../dashboard/data/usage.json");
+        return (lean && lean.day === leanToday) ? lean : fetchJson("../dashboard/data/usage.json");
       })].concat(
       PROJECTS.map(function (p) { return fetchJson("data/" + p.id + ".json"); })
     );

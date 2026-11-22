@@ -32,6 +32,10 @@ const readFeeds = async () => {
       if (!r.ok) throw new Error(`${k}.json answered ${r.status}`);
       o[k] = await r.text();
     }
+    // The local copy is held in the same reads. On the collecting machine a collector run
+    // between the capture and the comparison rewrote it, and the worker then read as older
+    // than a file it had never been compared with (review of 2026-11-21).
+    o.local_usage = readFileSync("dashboard/data/usage.json", "utf8");
     return o;
   } catch (err) {
     // An error page read twice would match itself, so a failed read counts as a mismatch.
@@ -47,6 +51,9 @@ const readFeeds = async () => {
 // instead of swallowed.
 let proc;
 let ws;
+// A run that fails partway writes nothing, so the comparison must not find an earlier capture
+// from the same day and pass it against its own old feeds (review of 2026-11-21).
+rmSync(out, { force: true });
 try {
   proc = spawn(chrome, ["--headless=new", "--disable-gpu", "--no-sandbox", "--window-size=1600,4000", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
   let targets;
@@ -78,8 +85,12 @@ try {
     D.radar = await ev('document.getElementById("panel-radar").innerText');
     D.wheel = (await spotPos())[1];
     D.spotlights = [];
+    // The card's header is read element by element. Read as text, the stale badge ran into
+    // the position ("Here Be Hordesv0.99.86↗STALE11 / 13") and the card fell out of every row.
+    const head = `JSON.stringify((function(){var n=document.querySelector("#spotlight .spot-head .name");if(!n)return null;var t="";n.childNodes.forEach(function(c){if(c.nodeType===3)t+=c.textContent;});var v=n.querySelector(".ver"),p=n.querySelector(".spot-pos");return {name:t.trim(),version:v?v.textContent:null,pos:p?p.textContent:null,stale:!!n.querySelector(".stale-badge")};})())`;
     for (let i = 0; i < (D.wheel || 14); i++) {
-      D.spotlights.push({ text: await ev('document.getElementById("spotlight").innerText'), chips: await texts("#spotlight .chip") });
+      const h = await ev(head);
+      D.spotlights.push({ text: await ev('document.getElementById("spotlight").innerText'), chips: await texts("#spotlight .chip"), head: typeof h === "string" && h.startsWith("{") ? JSON.parse(h) : null });
       await ev('document.getElementById("nav-next").click()'); await sleep(700);
     }
     // Land on card 1, All Projects, before opening the lists, so they cover every project.
@@ -102,7 +113,7 @@ try {
     cap.capturedAt = new Date().toISOString();
     cap.dashboard = await captureDashboard();
     const after = await readFeeds();
-    if (before && after && before.usage === after.usage && before.statuses === after.statuses) { cap.feeds = after; break; }
+    if (before && after && before.usage === after.usage && before.statuses === after.statuses && before.local_usage === after.local_usage) { cap.feeds = after; break; }
     console.log(`the worker feeds moved during dashboard read ${attempt} of 3; reading it again`);
   }
   // ----- status page -----
