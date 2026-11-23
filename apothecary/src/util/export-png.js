@@ -94,6 +94,28 @@ export const PRINT_STAGE_RULES = `
   }
 `;
 
+// The one line a person sees when an export fails (backlog B05). It used to be
+// "See console for details", which told nobody without a developer console
+// what went wrong or what to try. The full error still goes to the console.
+// The common causes get their own wording; anything else names the browser's
+// own message, cut short, and points at the console for the rest.
+export const EXPORT_REASON_MAX = 120;
+
+export function explainExportFailure(err) {
+  const name = (err && err.name) || '';
+  const raw = String((err && err.message) || err || '').replace(/\s+/g, ' ').trim();
+  if (name === 'SecurityError' || /tainted|cross-origin/i.test(raw)) {
+    return 'PNG export failed because the browser blocked reading the label image, which happens when the page is opened as a local file. Open the app from its web address and try again.';
+  }
+  if (name === 'RangeError' || /too large|out of memory|canvas size/i.test(raw)) {
+    return 'PNG export failed because the label image was too large for this browser to draw. Try a smaller label size, or use Print and save as PDF.';
+  }
+  const reason = raw.length > EXPORT_REASON_MAX
+    ? raw.slice(0, EXPORT_REASON_MAX - 3).trimEnd() + '...'
+    : (raw || 'an unknown error');
+  return 'PNG export failed: ' + reason + '. Reload the page and try again; the full error is in the browser console.';
+}
+
 export async function exportPng(filename = 'apothecary-label.png') {
   if (typeof window === 'undefined') return;
   try {
@@ -151,13 +173,17 @@ export async function exportPng(filename = 'apothecary-label.png') {
     const link = document.createElement('a');
     link.download = filename.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase();
     if (!link.download.endsWith('.png')) link.download += '.png';
-    link.href = canvas.toDataURL('image/png');
+    const href = canvas.toDataURL('image/png');
+    // A canvas past the browser's size limit returns an empty data URL rather
+    // than throwing, which used to download an empty file without a word.
+    if (!href || href === 'data:,') throw new RangeError('canvas too large to encode');
+    link.href = href;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   } catch (err) {
     console.error('PNG export failed:', err);
-    alert('PNG export failed. See console for details.');
+    alert(explainExportFailure(err));
   } finally {
     sheet.remove();
     stage.setAttribute('style', prev);
