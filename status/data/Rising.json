@@ -37,8 +37,8 @@
   "repoUrl": "https://github.com/TheProphetKane/brackish-rising",
   "workTreeClean": true,
   "audit": {
-    "latestReportPath": "docs/CANONICAL_AUDIT-2026-11-22.md",
-    "latestReportAt": "2026-11-22T19:09:31Z",
+    "latestReportPath": "docs/CANONICAL_AUDIT-2026-11-23.md",
+    "latestReportAt": "2026-11-23T19:08:26Z",
     "findings": {
       "critical": 0,
       "high": 0,
@@ -47,123 +47,209 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-11-16.md",
-    "latestReportAt": "2026-11-17T00:38:01Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-11-23.md",
+    "latestReportAt": "2026-11-24T00:40:00Z",
     "verdict": "in-progress",
-    "topFinding": "The nightly audit runs the four Godot gates and the slot boot probe again: v0.97.26 (ad0b42a) pointed the gates at the Desktop Godot install and added a stale-skip rule, and CANONICAL_AUDIT-2026-11-22 shows all 32 gates at exit 0. The main tree sits 12 commits behind origin at v0.98.10 while the live version is 0.98.20, which is the lane worktree design working, and it is the one failing row on the 2026-11-22 dashboard page audit.",
-    "actionsOpen": 0,
+    "topFinding": "Brackish Rising is in good order at v0.98.30: all three findings from 2026-11-16 are closed on evidence (OPTIMIZATION_LOG.md rows 22 to 28 carry release-build frame traces after the hitch fixes, and the 2026-11-23 canonical audit shows the Godot gates running rather than skipping). The two open actions are in the release pipeline: a bounced hub dashboard push and a failed Discord post both print to the console and never reach the release warn log, which is how YesAndEverything's local main came to sit 11 ahead and 3 behind its origin since 00:12 today with no release reporting it. The larger question is direction: 22 releases since 2026-11-21 are design-document parity tests while the critical path waits on the artist, the composers and the owner's rulings.",
+    "actionsOpen": 2,
     "actionsClosed": 151,
-    "actions": [],
+    "actions": [
+      {
+        "id": "release-pipeline-per-project-ps1-stack-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "release-pipeline-per-project-ps1-stack",
+        "title": "Route a bounced hub dashboard push through Write-ReleaseWarn and have write-dashboard-status.ps1 return a failure, so a stranded status commit shows in the release record."
+      },
+      {
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "severity": "MED",
+        "priority": 12,
+        "lens": "release-pipeline-discord-notify-wiring",
+        "title": "Have discord-notify.ps1 report its four failure paths (webhook file missing or empty, either post failing) to the release warn log instead of the console only."
+      }
+    ],
     "deferred": [
       {
         "id": "game-design-asset-pipeline-01",
         "severity": "MED",
-        "title": "Three of six units and six of eight enemies still render a frozen single frame, and no rig has a death clip.",
         "lens": "game-design-asset-pipeline",
-        "reason": "waiting on the artist's rig deliveries"
+        "title": "Three of six units and six of eight enemies still render a frozen single frame, and no rig has a death clip.",
+        "reason": "Waiting on the artist's rig deliveries."
       },
       {
         "id": "game-design-asset-pipeline-02",
         "severity": "MED",
-        "title": "The Leviathan fights on the Brinecaster's acid blob and a scaffold explosion sheet, both owed replacements.",
         "lens": "game-design-asset-pipeline",
-        "reason": "waiting on the artist's Leviathan kit"
+        "title": "The Leviathan fights on the Brinecaster's acid blob and a scaffold explosion sheet, both owed replacements.",
+        "reason": "Waiting on the artist's Leviathan kit."
       },
       {
         "id": "game-design-sound-design-discipline-01",
         "severity": "MED",
-        "title": "All 150 audio cues are free-licence placeholders; the commissioned set is blocked on outside composers with nothing delivered.",
         "lens": "game-design-sound-design-discipline",
-        "reason": "waiting on the commissioned composers"
+        "title": "All 158 audio cues are free-licence placeholders; the commissioned set is blocked on outside composers with nothing delivered.",
+        "reason": "Waiting on the commissioned composers."
       },
       {
         "id": "game-design-art-direction-consistency-01",
         "severity": "MED",
-        "title": "The acid projectile and impact sheet on the Brinecaster, Leviathan and Bilgemaw are Here Be Hordes scaffold files, accepted as placeholders by the 2026-10-26 ruling.",
         "lens": "game-design-art-direction-consistency",
-        "reason": "waiting on the artist's acid replacement"
+        "title": "The acid projectile and impact sheet on the Brinecaster, Leviathan and Bilgemaw are Here Be Hordes scaffold files, accepted as placeholders by the 2026-10-26 ruling.",
+        "reason": "Waiting on the artist's acid replacement."
       },
       {
         "id": "game-design-art-direction-consistency-02",
         "severity": "MED",
-        "title": "Towers and gates render the old test House sprite and both wall tiers wear the wooden rig.",
         "lens": "game-design-art-direction-consistency",
-        "reason": "waiting on the artist's tower, gate and Stone Wall rigs"
+        "title": "Towers and gates render the old test House sprite and both wall tiers wear the wooden rig.",
+        "reason": "Waiting on the artist's tower, gate and Stone Wall rigs. game-design-asset-pipeline-03 (2026-11-23) restates this finding and is folded in here."
+      },
+      {
+        "id": "game-design-playability-02",
+        "severity": "MED",
+        "lens": "game-design-playability",
+        "title": "No played run of the default mission is on record since the wave schedule was last tuned; wave_director.gd:30-31 still calls the cadence first-pass.",
+        "reason": "A played run on his machine is Kane's hands (D52)."
+      },
+      {
+        "id": "strategic-kill-this-03",
+        "severity": "MED",
+        "lens": "strategic-kill-this",
+        "title": "The last 22 releases (v0.98.9 to v0.98.30) are design-document parity tests plus a review of the previous patch, while the critical path waits on the artist, the composers and the owner's rulings.",
+        "reason": "Lane cadence: the Rising lane's orders live in the foreman outside the repository, which the constellation pass owns."
+      },
+      {
+        "id": "strategic-kill-this-04",
+        "severity": "LOW",
+        "lens": "strategic-kill-this",
+        "title": "The two sale gates, the Spine editor licence (BACKLOG.md:47) and the signed artist agreement (queue row br-legal-sign-artist-agreement), have no decision date.",
+        "reason": "Money and hands: a licence purchase and a signature are Kane's."
       }
     ],
     "health": 88,
     "lensScores": {
-      "architecture": 88,
+      "architecture": 89,
       "reliability": 91,
       "security": 95,
-      "performance": 88,
-      "data-integrity": 92,
+      "performance": 92,
+      "data-integrity": 93,
       "maintainability": 90,
-      "solo-tool-ux": 88,
-      "cost-economics": 88,
-      "dependency": 90,
-      "observability": 82,
-      "strategic-kill-this": 78,
-      "compliance-data-steward": 92,
-      "release-pipeline-per-project-ps1-stack": 91,
-      "release-pipeline-discord-notify-wiring": 93,
+      "solo-tool-ux": 87,
+      "cost-economics": 92,
+      "dependency": 92,
+      "observability": 87,
+      "strategic-kill-this": 80,
+      "compliance-data-steward": 94,
+      "release-pipeline-per-project-ps1-stack": 80,
+      "release-pipeline-discord-notify-wiring": 80,
       "release-pipeline-version-pill-drift": 96,
-      "release-pipeline-gate-page-publish": 94,
+      "release-pipeline-gate-page-publish": 95,
       "game-design-playability": 80,
-      "game-design-scope-discipline": 88,
-      "game-design-scale-architecture": 88,
-      "game-design-asset-pipeline": 83,
-      "game-design-voice-and-tone": 92,
-      "game-design-sound-design-discipline": 76,
-      "game-design-art-direction-consistency": 86,
+      "game-design-scope-discipline": 90,
+      "game-design-scale-architecture": 90,
+      "game-design-asset-pipeline": 82,
+      "game-design-voice-and-tone": 93,
+      "game-design-sound-design-discipline": 78,
+      "game-design-art-direction-consistency": 88,
       "game-design-save-format-stability": 90
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "release-pipeline-per-project-ps1-stack-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-23"
+      },
+      {
+        "id": "release-pipeline-discord-notify-wiring-01",
+        "severity": "MED",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-23"
+      }
+    ],
     "tensionsOpen": [
-      {
-        "lenses": [
-          "maintainability",
-          "performance"
-        ],
-        "runsSeen": 8
-      },
-      {
-        "lenses": [
-          "game-design-scope-discipline",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 4
-      },
       {
         "lenses": [
           "architecture",
           "maintainability"
         ],
-        "runsSeen": 3
+        "runsSeen": 4
       },
       {
         "lenses": [
           "maintainability",
           "strategic-kill-this"
         ],
-        "runsSeen": 1
+        "runsSeen": 2
       },
       {
         "lenses": [
           "cost-economics",
-          "maintainability"
+          "strategic-kill-this"
         ],
         "runsSeen": 1
       },
       {
         "lenses": [
           "observability",
-          "reliability"
+          "release-pipeline-per-project-ps1-stack"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "release-pipeline-discord-notify-wiring"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "game-design-scale-architecture",
+          "maintainability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "maintainability",
+          "security"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "reliability",
+          "solo-tool-ux"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "game-design-sound-design-discipline",
+          "performance"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "architecture",
+          "observability"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "observability",
+          "performance"
         ],
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-11-16 per-project pass: previous openFindings was empty, so nothing to verify or close. The one live Rising row is br-legal-sign-artist-agreement (blocked-on-user, hands). The 2026-11-15 low Godot-gate note is superseded by observability-01. Three MEDIUM findings enqueued.",
+    "reconcileNote": "2026-11-23 per-project pass: previous openFindings was empty; observability-01, performance-01 and performance-02 had been closed by the reconciler, and this run re-verified each against the code and logs (audit gates ran, OPTIMIZATION_LOG.md rows 22 to 28). Two MEDIUM findings enqueued. The one other Rising row is br-legal-sign-artist-agreement (blocked-on-user, hands).",
     "closedLog": [
       {
         "date": "2026-09-22",
