@@ -26,6 +26,16 @@
 // It is its own object because the plan outlives the house search: the HouseMarks storage is wiped
 // at closing and this one is not. Every change is logged with who made it and when, so a job ticked
 // done by mistake can be unticked and the log still shows both.
+//
+// Since 2026-11-24 the same Worker keeps the board for Golden's Guzzlers, the family's annual blind
+// beer tasting (yesandeverything.com/goldens-guzzlers/), in a fourth Durable Object, BeerBoard. The
+// board is one record: every pour, its six thumbs, the guesses on who brought it, the reveal, the
+// next puller and the surprise pick. A phone sends one change at a time, each with its own id, and
+// the object applies it to the record and answers with the whole board, so every phone at the table
+// reads the same standings. A change sent twice, because an answer was lost on bad wifi, applies
+// once. Clearing the board for next year keeps the cleared board as an archive, and a pour taken off
+// the board is kept too, so neither can be lost to a slipped tap. The query ?board=test points at a
+// second object with the same rules, so the page can be tried without touching the real standings.
 
 export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
@@ -484,6 +494,234 @@ async function planRoute(request, env) {
   }));
 }
 
+// Golden's Guzzlers: the beer tasting board, in the BeerBoard Durable Object.
+export const BEER_ROUTE = "/goldens-guzzlers/api/board";
+export const BEER_ROSTER = ["Mike", "Bill", "Brennan", "Nick", "AJ", "Gannan"];
+export const BEER_VOTES = new Set(["up", "side", "down"]);
+// Six people bring about six beers each; twice that still fits.
+export const BEER_MAX_POURS = 80;
+// Changes one address may send per hour. Every phone in one house shares one address, and a whole
+// night of six thumbs, six guesses and a reveal per pour is about five hundred.
+export const BEER_WRITES = 1200;
+// Change ids remembered, so a change sent again after a lost answer applies once.
+export const BEER_SEEN_KEEP = 400;
+// Cleared boards and removed pours kept for recovery.
+export const BEER_ARCHIVE_KEEP = 5;
+export const BEER_REMOVED_KEEP = 60;
+const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
+const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
+
+export function beerFresh() {
+  return { v: 1, rev: 0, nextPuller: BEER_ROSTER[0], surprise: null, pours: [] };
+}
+
+// Text from the page: no control characters, one space at a time, cut to a length.
+export function beerText(raw, max) {
+  if (typeof raw !== "string") return "";
+  return raw.normalize("NFC").replace(/[\u0000-\u001f\u007f]/g, "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function beerWho(raw) {
+  return BEER_ROSTER.includes(raw) ? raw : "";
+}
+
+function beerMap(raw, ok) {
+  const out = {};
+  if (raw && typeof raw === "object") for (const n of BEER_ROSTER) if (ok(raw[n])) out[n] = raw[n];
+  return out;
+}
+
+// One change applied to the board. Pure, so the self-test can run it on its own. Answers
+// {board, changed} with the new board, or {error} for a change the board refuses. A pull while
+// another pour is still in its coozie changes nothing, so two phones pulling at once make one pour.
+export function beerApply(board, op, now) {
+  const b = structuredClone(board);
+  const find = id => b.pours.find(p => p.id === id);
+  const last = b.pours[b.pours.length - 1];
+  const current = last && !last.revealed ? last : null;
+  let archive = null, removed = null;
+  switch (op.op) {
+    case "puller": {
+      const name = beerWho(op.name);
+      if (!name) return { error: "That puller is not at the table." };
+      b.nextPuller = name;
+      break;
+    }
+    case "pour": {
+      if (current || find(op.pid)) return { board, changed: false };
+      if (typeof op.pid !== "string" || !BEER_POUR_ID.test(op.pid)) return { error: "That pour could not be read." };
+      if (b.pours.length >= BEER_MAX_POURS) return { error: "The board is full." };
+      const n = b.pours.reduce((m, p) => Math.max(m, p.n), 0) + 1;
+      b.pours.push({ id: op.pid, n, puller: b.nextPuller, votes: {}, guesses: {}, revealed: false, name: "", brewery: "", style: "", provider: "", at: now });
+      b.nextPuller = BEER_ROSTER[(BEER_ROSTER.indexOf(b.nextPuller) + 1) % BEER_ROSTER.length];
+      break;
+    }
+    case "unpour": {
+      if (!current || current.id !== op.pid || Object.keys(current.votes).length) return { board, changed: false };
+      b.pours.pop();
+      b.nextPuller = current.puller;
+      break;
+    }
+    case "vote": {
+      const p = find(op.pid), name = beerWho(op.name);
+      if (!p) return { error: "That pour is not on the board." };
+      if (!name) return { error: "That taster is not at the table." };
+      if (op.v === "") delete p.votes[name];
+      else if (BEER_VOTES.has(op.v)) p.votes[name] = op.v;
+      else return { error: "A vote is up, side, down or cleared." };
+      break;
+    }
+    case "guess": {
+      const p = find(op.pid), name = beerWho(op.name), who = beerWho(op.who);
+      if (!p) return { error: "That pour is not on the board." };
+      if (!name) return { error: "That taster is not at the table." };
+      if (who) p.guesses[name] = who;
+      else if (op.who === "") delete p.guesses[name];
+      else return { error: "A guess names someone at the table." };
+      break;
+    }
+    case "reveal":
+    case "edit": {
+      const p = find(op.pid);
+      if (!p) return { error: "That pour is not on the board." };
+      const name = beerText(op.name, 80);
+      if (!name) return { error: "A revealed beer needs its name." };
+      p.name = name;
+      p.brewery = beerText(op.brewery, 80);
+      p.style = beerText(op.style, 60);
+      p.provider = beerWho(op.provider);
+      if (op.op === "edit") {
+        p.votes = beerMap(op.votes, v => BEER_VOTES.has(v));
+        p.guesses = beerMap(op.guesses, w => BEER_ROSTER.includes(w));
+      }
+      if (!p.revealed) { p.revealed = true; p.revealedAt = now; }
+      break;
+    }
+    case "remove": {
+      const p = find(op.pid);
+      if (!p) return { board, changed: false };
+      b.pours = b.pours.filter(x => x.id !== op.pid);
+      if (b.surprise === op.pid) b.surprise = null;
+      removed = p;
+      break;
+    }
+    case "surprise": {
+      if (op.pid === null || op.pid === "") { b.surprise = null; break; }
+      const p = find(op.pid);
+      if (!p || !p.revealed) return { error: "Pick a beer that has been revealed." };
+      b.surprise = p.id;
+      break;
+    }
+    case "clear": {
+      if (op.confirm !== "clear") return { error: "Clearing the board takes the word clear." };
+      archive = board;
+      b.pours = [];
+      b.surprise = null;
+      break;
+    }
+    default:
+      return { error: "That change is not one the board knows." };
+  }
+  b.rev = (b.rev || 0) + 1;
+  b.at = now;
+  return { board: b, changed: true, archive, removed };
+}
+
+export class BeerBoard {
+  constructor(ctx) {
+    this.storage = ctx.storage;
+  }
+
+  async board() {
+    return (await this.storage.get("board")) || beerFresh();
+  }
+
+  // Keep the newest entries under one prefix and drop the rest.
+  async trim(prefix, keep) {
+    const all = await this.storage.list({ prefix });
+    const extra = all.size - keep;
+    if (extra > 0) for (const k of [...all.keys()].slice(0, extra)) await this.storage.delete(k);
+  }
+
+  async fetch(request) {
+    if (request.method === "GET") return json({ ok: true, board: await this.board() });
+    const op = await request.json();
+    const now = Date.now();
+    const ip = request.headers.get("x-client-ip");
+    if (ip) {
+      const step = rateStep(await this.storage.get("r:" + ip), now, BEER_WRITES, IP_WINDOW_MS);
+      if (!step.allowed) {
+        return new Response(JSON.stringify({ error: "Too many changes from this address. Try again later." }), {
+          status: 429, headers: { ...HEADERS, "retry-after": String(step.retryAfter) },
+        });
+      }
+      await this.storage.put("r:" + ip, step.rec);
+      const old = await this.storage.list({ prefix: "r:" });
+      for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
+    }
+    const board = await this.board();
+    const seen = (await this.storage.get("seen")) || [];
+    if (op.opId && seen.includes(op.opId)) return json({ ok: true, board, changed: false, repeat: true });
+    const out = beerApply(board, op, now);
+    if (out.error) return json({ error: out.error, board }, 400);
+    if (out.changed) {
+      let seq = (await this.storage.get("seq")) || 0;
+      if (out.archive) {
+        await this.storage.put("archive:" + String(++seq).padStart(8, "0"), { at: now, board: out.archive });
+        await this.trim("archive:", BEER_ARCHIVE_KEEP);
+      }
+      if (out.removed) {
+        await this.storage.put("removed:" + String(++seq).padStart(8, "0"), { at: now, pour: out.removed });
+        await this.trim("removed:", BEER_REMOVED_KEEP);
+      }
+      if (out.archive || out.removed) await this.storage.put("seq", seq);
+      await this.storage.put("board", out.board);
+    }
+    if (op.opId) {
+      seen.push(op.opId);
+      await this.storage.put("seen", seen.slice(-BEER_SEEN_KEEP));
+    }
+    return json({ ok: true, board: out.board, changed: out.changed });
+  }
+}
+
+function beer(env, which) {
+  return env.BEER.get(env.BEER.idFromName(which === "test" ? "goldens-guzzlers-test" : "goldens-guzzlers"));
+}
+
+// The beer board route: GET reads the board, POST sends one change, {op, opId, ...}. The checks
+// here are shape only; beerApply applies the rules. ?board=test reads and writes the test board.
+async function beerRoute(request, env) {
+  const url = new URL(request.url);
+  const which = url.searchParams.get("board") === "test" ? "test" : "live";
+  const inner = "https://beerboard" + BEER_ROUTE;
+  if (request.method === "GET") return beer(env, which).fetch(new Request(inner));
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+  if (!(request.headers.get("content-type") || "").includes("application/json")) {
+    return json({ error: "Send the change as JSON." }, 415);
+  }
+  if (Number(request.headers.get("content-length") || 0) > 4096) {
+    return json({ error: "That request is too large." }, 413);
+  }
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "That change could not be read." }, 400); }
+  if (!body || typeof body !== "object" || Array.isArray(body) || typeof body.op !== "string") {
+    return json({ error: "That change could not be read." }, 400);
+  }
+  if (JSON.stringify(body).length > 4096) return json({ error: "That request is too large." }, 413);
+  if (body.opId !== undefined && !(typeof body.opId === "string" && BEER_OP_ID.test(body.opId))) {
+    return json({ error: "That change could not be read." }, 400);
+  }
+  return beer(env, which).fetch(new Request(inner, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-client-ip": request.headers.get("cf-connecting-ip") || "",
+    },
+    body: JSON.stringify(body),
+  }));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -492,6 +730,7 @@ export default {
     }
     if (url.pathname === HOUSE_ROUTE) return houseRoute(request, env);
     if (url.pathname === PLAN_ROUTE) return planRoute(request, env);
+    if (url.pathname === BEER_ROUTE) return beerRoute(request, env);
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {

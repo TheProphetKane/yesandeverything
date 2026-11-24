@@ -1,0 +1,1591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070b17">
+<meta name="description" content="Golden&rsquo;s Guzzlers, the family's annual blind beer tasting: thumbs votes, reveals, standings and awards.">
+<title>Golden&rsquo;s Guzzlers · Beer Tasting Night</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Golden's Guzzlers, the family's annual blind beer tasting. Midnight navy under bright metallic gold,
+   white foam, hop green and raspberry for the votes. Gold is the family's ask for this page. Tints stay
+   navy or blue, because gold laid thin over navy turns a muddy olive brown. */
+:root {
+  color-scheme: dark;
+  --night-0: #05070f;
+  --night-1: #0a1022;
+  --night-2: #101a36;
+  --navy: #0b1430;
+  --ink: #eef2ff;
+  --muted: #a3b0d6;
+  --gold-hi: #fff6cc;
+  --gold-1: #ffe27a;
+  --gold-2: #ffcc33;
+  --gold-3: #f2b705;
+  --up: #4ade80;
+  --up-soft: rgba(74, 222, 128, .14);
+  --down: #fb7185;
+  --down-soft: rgba(251, 113, 133, .14);
+  --side: #cbd5e1;
+  --side-soft: rgba(203, 213, 225, .14);
+  --font-display: "Alfa Slab One", Rockwell, "Roboto Slab", Georgia, serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+  background:
+    radial-gradient(1100px 620px at 50% -12%, rgba(72, 104, 255, .26), transparent 62%),
+    radial-gradient(800px 520px at 105% 35%, rgba(79, 110, 247, .14), transparent 60%),
+    radial-gradient(700px 520px at -8% 75%, rgba(56, 189, 248, .07), transparent 60%),
+    linear-gradient(180deg, var(--night-1), var(--night-0) 72%);
+  background-attachment: fixed;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; border-radius: 10px; }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* rising bubbles */
+.bubbles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.bubbles i {
+  position: absolute; bottom: -30px; left: var(--x);
+  width: var(--s); height: var(--s); border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .95) 0 14%, rgba(255, 255, 255, 0) 28%),
+    radial-gradient(circle, rgba(255, 226, 122, 0) 52%, rgba(255, 226, 122, .75) 68%, rgba(255, 226, 122, 0) 72%);
+  box-shadow: 0 0 8px rgba(255, 214, 90, .3);
+  opacity: 0;
+  animation: rise var(--d) linear var(--delay) infinite;
+}
+@keyframes rise {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  8% { opacity: .85; }
+  50% { transform: translate3d(var(--sway), -55vh, 0); }
+  88% { opacity: .55; }
+  100% { transform: translate3d(0, -112vh, 0); opacity: 0; }
+}
+
+/* test board ribbon */
+.ribbon {
+  position: relative; z-index: 2;
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: center;
+  padding: 8px 14px; font-size: .86rem; color: var(--navy);
+  background: linear-gradient(90deg, #f2b705, #ffe27a 28%, #fff6cc 50%, #ffe27a 72%, #f2b705);
+  box-shadow: 0 2px 16px rgba(255, 204, 51, .35);
+}
+.ribbon p { margin: 0; }
+.ribbon a { color: var(--navy); font-weight: 700; }
+
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 1180px; margin: 0 auto;
+  padding: 18px max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px));
+  display: grid; gap: 26px;
+}
+
+/* gold lettering */
+.gold-text, .title .shine {
+  background-image: linear-gradient(180deg, #fff8d9 0%, #ffe48a 30%, #ffc61a 52%, #eda800 60%, #ffd84d 78%, #fff1b0 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+
+/* hero */
+.hero { display: grid; justify-items: center; gap: 10px; text-align: center; padding-top: 10px; }
+.crest {
+  width: clamp(140px, 34vw, 200px); height: auto;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, .6)) drop-shadow(0 0 32px rgba(255, 204, 51, .28));
+  animation: bob 6s ease-in-out infinite;
+}
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
+.crest-text { font-family: var(--font-display); font-size: 13px; letter-spacing: 2px; fill: url(#goldStroke); }
+.eyebrow { margin: 0; font-family: var(--font-data); font-size: .74rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-1); }
+.title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.8rem, 13vw, 5.6rem); line-height: .98; letter-spacing: .01em; text-wrap: balance; }
+.title .shine {
+  background-image:
+    linear-gradient(110deg, transparent 38%, rgba(255, 255, 255, .95) 50%, transparent 62%),
+    linear-gradient(180deg, #fff8d9 0%, #ffe48a 28%, #ffc61a 50%, #eaa400 58%, #ffd84d 76%, #fff1b0 100%);
+  background-size: 260% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-position: 160% 0, 0 0;
+  filter: drop-shadow(0 3px 0 rgba(4, 7, 18, .85)) drop-shadow(0 0 26px rgba(255, 204, 51, .35));
+  animation: shine 7s ease-in-out infinite;
+}
+@keyframes shine { 0%, 55% { background-position: 160% 0, 0 0; } 100% { background-position: -60% 0, 0 0; } }
+.tagline { margin: 2px 0 0; font-size: clamp(1rem, 2.4vw, 1.15rem); color: var(--ink); }
+.stamp {
+  display: inline-block; margin-top: 4px; padding: 6px 16px;
+  border: 2px dashed rgba(255, 214, 90, .75); border-radius: 999px;
+  font-family: var(--font-data); font-size: .74rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gold-1); background: rgba(11, 20, 48, .7); transform: rotate(-3deg);
+}
+.stats {
+  list-style: none; margin: 12px 0 0; padding: 0; width: min(100%, 780px);
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px;
+}
+.stats li {
+  display: grid; gap: 4px; padding: 12px 6px 10px; border-radius: 16px;
+  background: linear-gradient(180deg, #1a2856, #0e1736);
+  border: 1px solid rgba(255, 214, 90, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 190, .22), 0 6px 18px rgba(0, 0, 0, .35);
+}
+.stats b { font-family: var(--font-display); font-weight: 400; font-size: clamp(1.5rem, 4.5vw, 2.1rem); line-height: 1.05; }
+.stats span { display: inline-flex; justify-content: center; align-items: center; gap: 5px; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ic { width: 14px; height: 14px; flex: none; }
+.ic.u { color: var(--up); }
+.ic.s { color: var(--side); transform: rotate(-90deg); }
+.ic.d { color: var(--down); transform: rotate(180deg); }
+.sync {
+  display: inline-flex; align-items: center; gap: 9px; margin: 6px 0 0; padding: 6px 14px; border-radius: 999px;
+  background: rgba(11, 20, 48, .75); border: 1px solid rgba(255, 255, 255, .14); font-size: .84rem; color: var(--muted);
+}
+.sync i { width: 9px; height: 9px; border-radius: 50%; background: #64748b; flex: none; }
+.sync[data-state="live"] i { background: var(--up); box-shadow: 0 0 0 3px rgba(74, 222, 128, .2); }
+.sync[data-state="saving"] i { background: var(--gold-2); animation: blink 1s ease-in-out infinite; }
+.sync[data-state="offline"] { color: #fecdd3; border-color: rgba(251, 113, 133, .45); }
+.sync[data-state="offline"] i { background: var(--down); }
+@keyframes blink { 50% { opacity: .3; } }
+
+/* cards */
+.main-grid { display: grid; gap: 26px; align-items: start; }
+@media (min-width: 980px) { .main-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); } }
+.card {
+  position: relative; border-radius: 22px; padding: clamp(16px, 3vw, 26px);
+  background: linear-gradient(180deg, rgba(24, 36, 74, .80), rgba(11, 18, 40, .88));
+  box-shadow: 0 22px 50px rgba(0, 0, 0, .45), 0 0 44px rgba(72, 104, 255, .10);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.card::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 244, 196, .95), rgba(242, 183, 5, .30) 28%, rgba(255, 226, 122, .80) 58%, rgba(242, 183, 5, .25) 82%, rgba(255, 240, 180, .7));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.sec-head { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+.sec-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.25rem, 5vw, 1.8rem); line-height: 1.1; letter-spacing: .02em; }
+.sec-head .rule { flex: 1; min-width: 20px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, rgba(255, 214, 90, .8), rgba(255, 214, 90, 0)); }
+.mini-cap { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .5)); }
+.sec-sub { margin: -4px 0 14px; color: var(--muted); font-size: .9rem; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+.sub b { color: var(--gold-1); }
+
+/* bottle caps and the can */
+.cap-badge { width: 60px; height: 60px; flex: none; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .55)); }
+.cap-badge.mini { width: 38px; height: 38px; }
+.cap-num { font-family: var(--font-display); font-size: 36px; fill: var(--navy); }
+.can { width: 62px; height: auto; flex: none; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .5)); }
+.can-q { font-family: var(--font-display); font-size: 34px; fill: url(#goldStroke); }
+.can-star { font-size: 22px; fill: var(--gold-2); }
+.can .coozie { transform-box: view-box; }
+.can.mystery .coozie { animation: wobble 4s ease-in-out infinite; transform-origin: 60px 160px; }
+@keyframes wobble { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(0); } 50% { transform: rotate(-2deg); } 55% { transform: rotate(2deg); } 60% { transform: rotate(0); } }
+.can.revealing .coozie { animation: slideoff 1s cubic-bezier(.55, -.25, .6, 1) .15s forwards; }
+.can.open .coozie { display: none; }
+@keyframes slideoff { to { transform: translateY(78px); opacity: 0; } }
+
+/* now pouring */
+.pour-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; margin-bottom: 14px; }
+.pour-copy { min-width: 0; }
+.mystery { margin: 2px 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.4rem, 4vw, 1.75rem); line-height: 1.1; overflow-wrap: anywhere; }
+.votes { display: grid; gap: 8px; }
+.votes-head { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-data); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.votes-head b { color: var(--gold-1); font-size: .95rem; }
+.voter {
+  display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 7px 8px 7px 12px; border-radius: 14px;
+  background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .08);
+  transition: background .2s, border-color .2s;
+}
+.voter.has { background: rgba(72, 104, 255, .13); border-color: rgba(255, 214, 90, .5); }
+.who { font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; }
+.mini-glass { width: 16px; height: 22px; }
+.thumbs { display: flex; gap: 6px; }
+.t {
+  width: 48px; height: 44px; padding: 0; display: grid; place-items: center;
+  border-radius: 12px; border: 1.5px solid rgba(255, 255, 255, .15);
+  background: rgba(8, 13, 30, .65); color: #8390b8;
+  transition: transform .12s, background .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.t-side { width: 40px; }
+.t:hover { border-color: rgba(255, 214, 90, .6); color: var(--gold-1); }
+.t:active { transform: scale(.92); }
+.t svg { width: 24px; height: 24px; }
+.t-side svg { transform: rotate(-90deg); width: 21px; height: 21px; }
+.t-down svg { transform: rotate(180deg); }
+.t.on svg { animation: pop .3s ease-out; }
+@keyframes pop { 0% { scale: .55; } 70% { scale: 1.18; } 100% { scale: 1; } }
+.t-up.on { background: var(--up-soft); border-color: var(--up); color: var(--up); box-shadow: 0 0 0 3px rgba(74, 222, 128, .14), 0 0 18px rgba(74, 222, 128, .28); }
+.t-side.on { background: var(--side-soft); border-color: var(--side); color: var(--side); box-shadow: 0 0 0 3px rgba(203, 213, 225, .12); }
+.t-down.on { background: var(--down-soft); border-color: var(--down); color: var(--down); box-shadow: 0 0 0 3px rgba(251, 113, 133, .14), 0 0 18px rgba(251, 113, 133, .28); }
+
+.guesses { margin-top: 12px; padding: 2px 12px; border-radius: 14px; border: 1px dashed rgba(255, 214, 90, .4); }
+.guesses summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 9px 0; font-weight: 700; }
+.guesses summary::-webkit-details-marker { display: none; }
+.guesses summary::before { content: "\25B8"; color: var(--gold-2); transition: transform .2s; }
+.guesses[open] summary::before { transform: rotate(90deg); }
+.guesses summary i { font-style: normal; font-weight: 400; font-size: .85rem; color: var(--muted); }
+.guesses summary b { margin-left: auto; font-family: var(--font-data); font-size: .8rem; color: var(--gold-1); }
+.guesses summary span, .guesses summary b { white-space: nowrap; }
+.guess-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 2px 0 12px; }
+@media (min-width: 560px) { .guess-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.g { display: grid; gap: 4px; font-size: .82rem; color: var(--muted); }
+select, input {
+  width: 100%; font: inherit; color: var(--ink); background: #0a1126;
+  border: 1.5px solid rgba(255, 214, 90, .3); border-radius: 10px; padding: 9px 10px;
+}
+select:focus, input:focus { outline: none; border-color: var(--gold-2); box-shadow: 0 0 0 3px rgba(255, 204, 51, .22); }
+input::placeholder { color: #6f7ca3; }
+
+.reveal-bar { display: grid; justify-items: center; gap: 8px; margin-top: 16px; text-align: center; }
+.hint { margin: 0; color: var(--muted); font-size: .9rem; }
+.btn-gold {
+  appearance: none; border: 0; border-radius: 999px; padding: 13px 26px;
+  font-family: var(--font-display); font-weight: 400; font-size: 1.08rem; letter-spacing: .02em; color: var(--navy);
+  background: linear-gradient(180deg, #fff3c4 0%, #ffd84d 36%, #f2b705 70%, #ffd84d 100%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .75) inset, 0 -2px 0 rgba(11, 20, 48, .18) inset, 0 8px 22px rgba(255, 190, 20, .35);
+  transition: transform .12s, box-shadow .2s, filter .2s;
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255, 255, 255, .75) inset, 0 -2px 0 rgba(11, 20, 48, .18) inset, 0 12px 30px rgba(255, 190, 20, .5); }
+.btn-gold:active { transform: translateY(1px); }
+.btn-gold.ready { animation: glow 1.8s ease-in-out infinite; }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 214, 90, .6), 0 8px 22px rgba(255, 190, 20, .35); } 50% { box-shadow: 0 0 0 12px rgba(255, 214, 90, 0), 0 8px 22px rgba(255, 190, 20, .35); } }
+.btn-gold.waiting { color: var(--gold-1); background: #121c40; box-shadow: inset 0 0 0 1.5px rgba(255, 214, 90, .65); }
+.btn-gold.waiting:hover { box-shadow: inset 0 0 0 1.5px rgba(255, 214, 90, .95), 0 8px 20px rgba(0, 0, 0, .35); }
+.btn-gold.sm { padding: 9px 18px; font-size: .95rem; }
+.btn-ghost {
+  appearance: none; background: transparent; border: 1.5px solid rgba(255, 214, 90, .55);
+  color: var(--gold-1); border-radius: 999px; padding: 10px 18px; font-weight: 700;
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, .07); }
+.btn-ghost.sm { padding: 6px 13px; font-size: .86rem; }
+.btn-ghost.danger { border-color: rgba(251, 113, 133, .6); color: var(--down); }
+.btn-ghost.danger:hover { background: rgba(251, 113, 133, .1); }
+.link { appearance: none; border: 0; background: none; padding: 0; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: .88rem; }
+.link:hover { color: var(--gold-1); }
+
+.reveal-form, .editor { display: grid; gap: 12px; }
+.reveal-form { margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(255, 214, 90, .4); animation: lift .35s ease-out; }
+@keyframes lift { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.reveal-top { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.fld { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.fld > span, .fld > legend, .fld-label { padding: 0; font-family: var(--font-data); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-1); }
+.fld i { font-family: var(--font-body); font-style: normal; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.fld > legend { margin-bottom: 6px; }
+.two { display: grid; gap: 12px; }
+@media (min-width: 560px) { .two { grid-template-columns: 1fr 1fr; } }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; display: inline-block; }
+.chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.chip span { display: inline-block; padding: 8px 14px; border-radius: 999px; font-weight: 700; border: 1.5px solid rgba(255, 214, 90, .38); background: rgba(8, 13, 30, .65); }
+.chip input:checked + span { color: var(--navy); border-color: transparent; background: linear-gradient(180deg, #fff3c4, #ffd84d 45%, #f2b705); box-shadow: 0 4px 14px rgba(255, 190, 20, .35); }
+.chip input:focus-visible + span { outline: 3px solid var(--gold-2); outline-offset: 2px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 4px; }
+
+/* style search. A card holding the open list sits above the next card, so the list is never covered. */
+.card:focus-within { z-index: 5; }
+.combo { position: relative; }
+.sugs {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px);
+  margin: 0; padding: 4px; list-style: none; max-height: 300px; overflow-y: auto;
+  background: #0d1532; border: 1.5px solid rgba(255, 214, 90, .6); border-radius: 12px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, .6);
+}
+.sugs li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.sugs li.active, .sugs li:hover { background: rgba(72, 104, 255, .24); }
+.sugs .sn { min-width: 0; overflow-wrap: anywhere; }
+.sugs .sn b { color: var(--gold-1); }
+.sugs .sf { flex: none; font-size: .76rem; color: var(--muted); text-align: right; }
+.sugs li.free .sn { color: var(--gold-1); }
+
+.just {
+  margin: 16px 0; padding: 14px 16px; border-radius: 18px; text-align: center;
+  background: radial-gradient(120% 140% at 50% 0%, #26397a, #121c42 70%);
+  border: 1px solid rgba(255, 214, 90, .6);
+  box-shadow: 0 0 24px rgba(255, 204, 51, .16);
+  animation: pourin .55s cubic-bezier(.2, 1.3, .4, 1);
+}
+@keyframes pourin { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+.just .meta { margin: 2px 0 0; color: var(--muted); }
+.just .meta b, .guess-line b { color: var(--gold-1); }
+.placed { margin: 10px 0 0; font-family: var(--font-data); font-size: .85rem; color: var(--gold-1); }
+.next { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+.next.compact { grid-template-columns: minmax(0, 1fr); text-align: center; }
+.next.compact .next-copy { justify-items: center; }
+.next .can { width: 84px; }
+.next-copy { display: grid; gap: 8px; justify-items: start; }
+.next-line { margin: 0; font-size: 1.12rem; }
+.puller { appearance: none; border: 0; background: none; padding: 0 2px; font-weight: 700; color: var(--gold-1); border-bottom: 2px dashed rgba(255, 214, 90, .65); }
+
+/* standings */
+.board { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.row { border-radius: 16px; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .08); transition: border-color .2s, background .2s; }
+.row:hover { border-color: rgba(255, 214, 90, .38); }
+.row.top { border-color: rgba(255, 214, 90, .75); background: linear-gradient(90deg, #22346f, #121c40); box-shadow: 0 0 22px rgba(255, 204, 51, .16); }
+.row.flash { animation: flash 1.7s ease-out; }
+@keyframes flash { 0% { border-color: #fff3c4; box-shadow: 0 0 0 0 rgba(255, 214, 90, .9); } 100% { box-shadow: 0 0 0 16px rgba(255, 214, 90, 0); } }
+.row-main {
+  appearance: none; width: 100%; border: 0; background: none; text-align: left;
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 11px 12px; border-radius: 16px;
+}
+.row.top .row-main { padding-top: 18px; }
+.rank {
+  position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%;
+  border: 1.5px solid rgba(255, 214, 90, .35); font-family: var(--font-display); font-size: .98rem; color: var(--gold-1);
+}
+.rank b { font-weight: 400; }
+.rank.r1 { color: var(--navy); border-color: transparent; background: radial-gradient(circle at 35% 30%, #fff8d8, #ffd84d 45%, #f2b705 82%); box-shadow: 0 0 0 3px rgba(255, 214, 90, .28), 0 6px 16px rgba(255, 190, 20, .45); }
+.rank.r2, .rank.r3 { border-width: 2px; border-color: rgba(255, 214, 90, .85); background: #16224a; }
+.crown { position: absolute; top: -14px; left: 50%; width: 26px; height: 18px; transform: translateX(-50%); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .55)); }
+.info { display: grid; gap: 1px; min-width: 0; }
+.beer { font-family: var(--font-display); font-size: 1.12rem; line-height: 1.15; overflow-wrap: anywhere; }
+.meta, .meta2 { color: var(--muted); font-size: .86rem; overflow-wrap: anywhere; }
+.meta2 { font-size: .8rem; }
+.tag { display: inline-block; margin-left: 4px; padding: 0 8px; border-radius: 999px; border: 1px solid rgba(147, 197, 253, .6); color: #bfdbfe; font-style: normal; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; vertical-align: 1px; }
+.tag.warn { border-color: rgba(251, 113, 133, .6); color: #fecdd3; }
+.tally-mini { display: inline-flex; gap: 12px; margin-top: 4px; font-family: var(--font-data); font-size: .82rem; }
+.tally-mini > span { display: inline-flex; align-items: center; gap: 4px; }
+.tally-mini svg { width: 15px; height: 15px; }
+.tally-mini .u { color: var(--up); }
+.tally-mini .s { color: var(--side); }
+.tally-mini .s svg { transform: rotate(-90deg); }
+.tally-mini .d { color: var(--down); }
+.tally-mini .d svg { transform: rotate(180deg); }
+.tally-mini.big { justify-content: center; gap: 18px; margin-top: 10px; font-size: 1rem; }
+.tally-mini.big svg { width: 20px; height: 20px; }
+.score { display: grid; justify-items: center; gap: 2px; }
+.glass { width: 34px; height: 48px; }
+.score b { font-family: var(--font-display); font-weight: 400; font-size: 1rem; color: var(--gold-1); }
+.score b i { font-style: normal; font-size: .76rem; color: var(--muted); }
+.row-detail { padding: 0 12px 14px 70px; }
+@media (max-width: 560px) { .row-detail { padding-left: 12px; } }
+.vote-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.vc { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 7px; border-radius: 999px; font-size: .84rem; font-weight: 700; border: 1px solid; }
+.vc svg { width: 15px; height: 15px; }
+.vc.up { color: var(--up); border-color: rgba(74, 222, 128, .45); background: var(--up-soft); }
+.vc.side { color: var(--side); border-color: rgba(203, 213, 225, .45); background: var(--side-soft); }
+.vc.side svg { transform: rotate(-90deg); }
+.vc.down { color: var(--down); border-color: rgba(251, 113, 133, .45); background: var(--down-soft); }
+.vc.down svg { transform: rotate(180deg); }
+.vc.none { color: var(--muted); border-color: rgba(255, 255, 255, .16); }
+.vc.none svg { opacity: .35; }
+.guess-line { margin: 10px 0 0; color: var(--muted); font-size: .88rem; }
+.detail-tools { margin-top: 10px; }
+.editor .votes { margin-bottom: 2px; }
+.pending-row { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 16px; border: 1px dashed rgba(255, 214, 90, .4); color: var(--muted); }
+.pending-row p { margin: 0; }
+.pending-row b { color: var(--gold-1); }
+.empty { display: grid; justify-items: center; gap: 8px; padding: 24px 12px; text-align: center; color: var(--muted); }
+.empty .glass { width: 44px; height: 62px; }
+.empty p { margin: 0; }
+
+/* awards */
+.group-label { margin: 4px 0 10px; font-family: var(--font-data); font-size: .76rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.awards { display: grid; gap: 12px; margin-bottom: 12px; }
+.awards.trio { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 20px; }
+.awards.quad { grid-template-columns: 1fr; margin-bottom: 0; }
+@media (min-width: 560px) { .awards.quad { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1150px) { .awards.quad { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.award { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 214, 90, .24); }
+.medal {
+  width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 1.55rem;
+  background: radial-gradient(circle, #16224a 0 57%, rgba(22, 34, 74, 0) 59%), radial-gradient(circle at 35% 30%, #fff8d8, #ffd84d 45%, #f2b705 82%);
+  box-shadow: 0 0 0 3px rgba(11, 20, 48, .95), 0 0 0 5px rgba(255, 214, 90, .65), 0 8px 16px rgba(0, 0, 0, .45);
+}
+.award h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; color: var(--gold-1); }
+.award .why { margin: 1px 0 6px; font-size: .8rem; color: var(--muted); }
+.award .win { margin: 0; font-weight: 700; font-size: 1.06rem; overflow-wrap: anywhere; }
+.award .win.muted { font-weight: 400; color: var(--muted); }
+.award .win-sub { margin: 2px 0 0; font-size: .85rem; color: var(--muted); }
+.award .pick select { margin-top: 8px; padding: 7px 9px; font-size: .9rem; }
+.award.feature { padding: 18px; border-color: rgba(255, 214, 90, .65); background: radial-gradient(120% 170% at 0% 0%, #2a3f86, #131d44 62%); box-shadow: 0 0 26px rgba(255, 204, 51, .12); }
+.award.feature .medal { width: 72px; height: 72px; font-size: 2.1rem; }
+.award.feature h3 { font-size: 1.25rem; }
+.award.feature .win { font-family: var(--font-display); font-weight: 400; font-size: clamp(1.5rem, 4vw, 2.2rem); line-height: 1.1; }
+
+/* house rules */
+.rules > summary { list-style: none; cursor: pointer; margin: 0; }
+.rules > summary::-webkit-details-marker { display: none; }
+.chev { color: var(--gold-1); font-size: 1.1rem; transition: transform .2s; }
+.rules[open] .chev { transform: rotate(180deg); }
+.rules ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 10px; }
+@media (min-width: 800px) { .rules ul { grid-template-columns: 1fr 1fr; column-gap: 30px; } }
+.rules li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; }
+.rules li::before { content: ""; width: 16px; height: 16px; margin-top: 4px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8d8, #ffd84d 45%, #f2b705 82%); box-shadow: 0 0 0 2px rgba(11, 20, 48, .95), 0 0 0 3px rgba(255, 214, 90, .55); }
+
+footer { display: grid; justify-items: center; gap: 8px; text-align: center; color: var(--muted); font-size: .86rem; }
+footer p { margin: 0; }
+footer .mini-cap { width: 34px; height: 34px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 22px; z-index: 50; translate: -50% 16px; opacity: 0; pointer-events: none;
+  padding: 10px 18px; border-radius: 999px; font-weight: 700; color: var(--navy);
+  background: linear-gradient(180deg, #fff3c4, #ffd84d 45%, #f2b705); box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  transition: opacity .25s, translate .25s;
+}
+.toast.show { opacity: 1; translate: -50% 0; }
+.noscript { position: relative; z-index: 3; text-align: center; color: var(--gold-1); }
+
+@media (max-width: 560px) {
+  .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .stats li { grid-column: span 2; }
+  .stats li:nth-child(n+4) { grid-column: span 3; }
+  .pour-head .can { width: 52px; }
+  .stamp { white-space: nowrap; padding: 6px 12px; font-size: .66rem; letter-spacing: .06em; }
+  .guesses summary i { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .bubbles { display: none; }
+}
+</style>
+</head>
+<body>
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="beerFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe07a"/>
+      <stop offset=".45" stop-color="#ffc61a"/>
+      <stop offset="1" stop-color="#f0a800"/>
+    </linearGradient>
+    <linearGradient id="goldStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff4c4"/>
+      <stop offset=".35" stop-color="#ffd23f"/>
+      <stop offset=".6" stop-color="#f2b705"/>
+      <stop offset="1" stop-color="#ffe38a"/>
+    </linearGradient>
+    <radialGradient id="capGold" cx=".35" cy=".3" r=".85">
+      <stop offset="0" stop-color="#fff8d8"/>
+      <stop offset=".35" stop-color="#ffe17a"/>
+      <stop offset=".72" stop-color="#ffc61a"/>
+      <stop offset="1" stop-color="#e6a600"/>
+    </radialGradient>
+    <radialGradient id="capFace" cx=".4" cy=".35" r=".8">
+      <stop offset="0" stop-color="#fff3bd"/>
+      <stop offset=".6" stop-color="#ffd44d"/>
+      <stop offset="1" stop-color="#f2b705"/>
+    </radialGradient>
+    <linearGradient id="alum" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b7a99"/>
+      <stop offset=".22" stop-color="#e2e8f0"/>
+      <stop offset=".42" stop-color="#ffffff"/>
+      <stop offset=".7" stop-color="#94a3b8"/>
+      <stop offset="1" stop-color="#5b6782"/>
+    </linearGradient>
+    <linearGradient id="coozie" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e9a800"/>
+      <stop offset=".28" stop-color="#ffd84d"/>
+      <stop offset=".5" stop-color="#fff3c4"/>
+      <stop offset=".74" stop-color="#ffcc33"/>
+      <stop offset="1" stop-color="#dc9f00"/>
+    </linearGradient>
+    <clipPath id="glassClip" clipPathUnits="userSpaceOnUse">
+      <path d="M5 6H35L31.2 50.5Q30.9 53.5 27.8 53.5H12.2Q9.1 53.5 8.8 50.5Z"/>
+    </clipPath>
+    <symbol id="thumb" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M2.6 10.2h3.6c.4 0 .7.3.7.7v9.4c0 .4-.3.7-.7.7H2.6c-.4 0-.7-.3-.7-.7v-9.4c0-.4.3-.7.7-.7Z"/>
+      <path fill="currentColor" d="M8.2 10.4 11.6 3.5c.4-.8 1.3-1.1 2.1-.8 1.2.5 1.8 1.8 1.5 3l-.8 3.3h5.1c1.5 0 2.6 1.4 2.2 2.9l-1.6 7.1c-.3 1.2-1.3 2-2.5 2H8.2Z"/>
+    </symbol>
+    <symbol id="cap" viewBox="0 0 100 100">
+      <path id="capEdge" fill="url(#capGold)" stroke="#a87b00" stroke-opacity=".45" stroke-width="1"/>
+      <circle cx="50" cy="50" r="39.5" fill="url(#capFace)"/>
+      <circle cx="50" cy="50" r="39.5" fill="none" stroke="#fff6cf" stroke-opacity=".7" stroke-width="1.4"/>
+      <circle cx="50" cy="50" r="34" fill="none" stroke="#0b1430" stroke-opacity=".18" stroke-width="1.2" stroke-dasharray="2 3.2"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="bubbles" aria-hidden="true"></div>
+
+<main class="wrap">
+  <header class="hero">
+    <svg class="crest" viewBox="0 0 220 220" role="img" aria-label="Golden&rsquo;s Guzzlers bottle cap crest">
+      <defs>
+        <path id="crestArc" d="M40 110a70 70 0 1 1 140 0a70 70 0 1 1-140 0"/>
+        <clipPath id="crestGlass"><path d="M-24-34H24L19 34Q18.5 40 13 40H-13Q-18.5 40-19 34Z"/></clipPath>
+      </defs>
+      <path id="crestEdge" fill="url(#capGold)" stroke="#a87b00" stroke-opacity=".4"/>
+      <circle cx="110" cy="110" r="93" fill="none" stroke="#fff6cf" stroke-opacity=".75" stroke-width="1.6"/>
+      <circle cx="110" cy="110" r="88" fill="#0b1430"/>
+      <circle cx="110" cy="110" r="84" fill="none" stroke="url(#goldStroke)" stroke-width="1.6"/>
+      <circle cx="110" cy="110" r="58" fill="none" stroke="url(#goldStroke)" stroke-width="1.2" stroke-dasharray="1.5 4.5" stroke-linecap="round"/>
+      <text class="crest-text"><textPath href="#crestArc" textLength="430" lengthAdjust="spacing">GOLDEN&rsquo;S GUZZLERS &#9733; BEER TASTING NIGHT &#9733;</textPath></text>
+      <g transform="translate(110 116)">
+        <g clip-path="url(#crestGlass)">
+          <rect x="-30" y="-24" width="60" height="70" fill="url(#beerFill)"/>
+          <circle cx="-9" cy="16" r="2.2" fill="#fff" opacity=".75"/>
+          <circle cx="4" cy="4" r="1.6" fill="#fff" opacity=".7"/>
+          <circle cx="10" cy="22" r="2" fill="#fff" opacity=".6"/>
+          <circle cx="-3" cy="29" r="1.4" fill="#fff" opacity=".7"/>
+          <path d="M-17-20L-12 32" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <path d="M-24-34H24L19 34Q18.5 40 13 40H-13Q-18.5 40-19 34Z" fill="none" stroke="url(#goldStroke)" stroke-width="3" stroke-linejoin="round"/>
+        <g fill="#fff">
+          <rect x="-26" y="-32" width="52" height="11" rx="4"/>
+          <circle cx="-19" cy="-32" r="7.5"/>
+          <circle cx="-7" cy="-38" r="9.5"/>
+          <circle cx="6" cy="-39" r="9.5"/>
+          <circle cx="17.5" cy="-34" r="8"/>
+          <circle cx="24" cy="-27" r="5"/>
+          <path d="M-23-23q0 11 4.5 11t4.5-11z"/>
+        </g>
+      </g>
+    </svg>
+    <p class="eyebrow">The annual family beer tasting night</p>
+    <h1 class="title"><span class="shine">Golden&rsquo;s Guzzlers</span></h1>
+    <p class="tagline">Blind pours from one bucket. Thumbs only.</p>
+    <p class="stamp">No dumping. You drink what's poured.</p>
+    <ul class="stats" aria-label="The night so far">
+      <li><b id="st-pours" class="gold-text">0</b><span>pours</span></li>
+      <li><b id="st-up" class="gold-text">0</b><span><svg class="ic u" viewBox="0 0 24 24" aria-hidden="true"><use href="#thumb"/></svg>thumbs up</span></li>
+      <li><b id="st-side" class="gold-text">0</b><span><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><use href="#thumb"/></svg>sideways</span></li>
+      <li><b id="st-down" class="gold-text">0</b><span><svg class="ic d" viewBox="0 0 24 24" aria-hidden="true"><use href="#thumb"/></svg>thumbs down</span></li>
+      <li><b id="st-pct" class="gold-text">0%</b><span>would drink again</span></li>
+    </ul>
+    <p class="sync" id="sync" data-state="connecting" role="status"><i aria-hidden="true"></i><span>Connecting to the board&hellip;</span></p>
+  </header>
+
+  <div class="main-grid">
+    <section class="card" id="now" aria-labelledby="now-h">
+      <div class="sec-head"><svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg><h2 id="now-h" class="gold-text">Now pouring</h2><span class="rule"></span></div>
+      <div id="now-body"></div>
+    </section>
+
+    <section class="card" id="board" aria-labelledby="board-h">
+      <div class="sec-head"><svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg><h2 id="board-h" class="gold-text">The standings</h2><span class="rule"></span><button type="button" class="btn-ghost sm" data-act="copy" aria-label="Copy the standings">Copy</button></div>
+      <p class="sec-sub">Ranked by thumbs up, the would-drink-again vote, then by the fewest thumbs down. Tap a beer to see every vote.</p>
+      <ol class="board" id="board-list"></ol>
+    </section>
+  </div>
+
+  <section class="card" id="awards" aria-labelledby="awards-h">
+    <div class="sec-head"><svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg><h2 id="awards-h" class="gold-text">End-of-night awards</h2><span class="rule"></span></div>
+    <div id="awards-body"></div>
+  </section>
+
+  <details class="card rules">
+    <summary class="sec-head"><svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg><h2 class="gold-text">House rules</h2><span class="rule"></span><span class="chev" aria-hidden="true">&#9662;</span></summary>
+    <ul>
+      <li>Singles only, no packs. Cans or bottles are both fine.</li>
+      <li>No repeated styles in your own lineup, and one lager at most for every five ales.</li>
+      <li>Write your name on the bottom of every can and bottle.</li>
+      <li>Everything goes in one ice bucket, and straight into a coozie when it's pulled.</li>
+      <li>Pour 2 to 3 ounces each. Taste it, then everyone votes at once.</li>
+      <li>Thumbs up means you'd drink it again. Thumbs down means not for you. Sideways is rare.</li>
+      <li>Guess who brought it, then pull the coozie for the reveal.</li>
+      <li>The puller rotates every round. No dumping: finish what's poured.</li>
+    </ul>
+  </details>
+
+  <footer>
+    <svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg>
+    <p>Golden&rsquo;s Guzzlers, the annual family beer tasting night.</p>
+    <p>One shared board: every phone at the table sees the same standings.</p>
+    <button type="button" class="btn-ghost sm danger" data-act="clear">Clear the board for next year</button>
+  </footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="noscript">The scorecard needs JavaScript turned on.</p></noscript>
+
+<script>
+(() => {
+  'use strict';
+
+  const ROSTER = ['Mike', 'Bill', 'Brennan', 'Nick', 'AJ', 'Gannan'];
+  const TEST = new URLSearchParams(location.search).get('board') === 'test';
+  const API = '/goldens-guzzlers/api/board' + (TEST ? '?board=test' : '');
+  const CACHE_KEY = 'goldens-guzzlers-board' + (TEST ? '-test' : '');
+  const OUTBOX_KEY = 'goldens-guzzlers-outbox' + (TEST ? '-test' : '');
+  const POLL_MS = 4000;
+  const NAME = 'Golden’s Guzzlers';
+  const LABEL = { up: 'thumbs up', side: 'thumb to the side', down: 'thumbs down' };
+
+  // Every style the search knows: family | name | other words it answers to.
+  const STYLE_DATA = `
+Lager|American Light Lager|light beer, lite, light lager
+Lager|American Lager|domestic, adjunct lager
+Lager|International Pale Lager|euro lager, premium lager, pale lager
+Lager|Mexican Lager|cerveza
+Lager|Japanese Rice Lager|rice lager, dry lager
+Lager|Pilsner|pils, pilsener
+Lager|German Pilsner|pils, pilsener
+Lager|Czech Pilsner|bohemian pilsner, czech premium pale lager, pils, pilsener
+Lager|Italian Pilsner|pils, pilsener
+Lager|Hoppy Pilsner|pils, pilsener, new world
+Lager|Imperial Pilsner|strong pils, pilsener
+Lager|Helles|munich helles, hell
+Lager|Festbier|wiesn, fest
+Lager|Märzen|marzen, oktoberfest, fest
+Lager|Oktoberfest|marzen, fest
+Lager|Vienna Lager|amber lager, vienna
+Lager|Amber Lager|red lager
+Lager|Dortmunder Export|export, dortmunder
+Lager|Kellerbier|zwickelbier, keller, unfiltered
+Lager|Zwickelbier|kellerbier, zwickel, unfiltered
+Lager|Dunkel|munich dunkel, dark lager
+Lager|Schwarzbier|black lager
+Lager|American Dark Lager|dark lager
+Lager|Czech Amber Lager|polotmavy
+Lager|Czech Dark Lager|tmave
+Lager|Bock|
+Lager|Maibock|helles bock, may bock
+Lager|Doppelbock|bock
+Lager|Eisbock|bock
+Lager|Rauchbier|smoked lager, smoked beer
+Lager|India Pale Lager|hoppy lager, ipl
+Lager|Light Lager|light beer, lite
+Hybrid|Kölsch|kolsch, koelsch
+Hybrid|Altbier|alt, dusseldorf
+Hybrid|Cream Ale|
+Hybrid|Blonde Ale|blond
+Hybrid|California Common|steam beer
+Hybrid|Kentucky Common|
+Hybrid|Cold IPA|cold india pale ale
+Wheat|Hefeweizen|hefe, weissbier, weizen, wheat
+Wheat|Dunkelweizen|dark wheat, weizen
+Wheat|Weizenbock|wheat bock
+Wheat|Kristallweizen|weizen, wheat
+Wheat|American Wheat|wheat ale, wheat beer
+Wheat|Witbier|wit, white ale, belgian wheat
+Wheat|Wheatwine|wheat wine
+Wheat|Roggenbier|rye beer
+Hop-forward|Pale Ale|apa
+Hop-forward|American Pale Ale|apa
+Hop-forward|English Pale Ale|
+Hop-forward|Hazy Pale Ale|new england pale ale, juicy
+Hop-forward|Golden Ale|summer ale
+Hop-forward|Ordinary Bitter|bitter
+Hop-forward|Best Bitter|bitter
+Hop-forward|Extra Special Bitter|esb, strong bitter, bitter
+Hop-forward|Australian Sparkling Ale|
+Hop-forward|Belgian Pale Ale|
+Hop-forward|IPA|india pale ale
+Hop-forward|West Coast IPA|american ipa, india pale ale
+Hop-forward|Hazy IPA|new england ipa, neipa, juicy, india pale ale
+Hop-forward|Juicy IPA|hazy, new england, india pale ale
+Hop-forward|Session IPA|india pale ale
+Hop-forward|Double IPA|imperial ipa, dipa, india pale ale
+Hop-forward|Hazy Double IPA|new england, dipa, india pale ale
+Hop-forward|Triple IPA|india pale ale
+Hop-forward|English IPA|india pale ale
+Hop-forward|Black IPA|cascadian dark ale, india pale ale
+Hop-forward|Red IPA|india pale ale
+Hop-forward|White IPA|india pale ale
+Hop-forward|Rye IPA|india pale ale
+Hop-forward|Brut IPA|india pale ale
+Hop-forward|Milkshake IPA|lactose, india pale ale
+Hop-forward|Fruited IPA|india pale ale
+Hop-forward|Belgian IPA|india pale ale
+Hop-forward|Sour IPA|india pale ale
+Hop-forward|Single Hop IPA|smash, india pale ale
+Hop-forward|Fresh Hop Ale|wet hop, harvest ale
+Malt-forward|Amber Ale|american amber, red ale
+Malt-forward|Red Ale|amber
+Malt-forward|Irish Red Ale|red ale
+Malt-forward|Imperial Red Ale|double red
+Malt-forward|Scottish Ale|scotch, shilling
+Malt-forward|Wee Heavy|scotch ale, strong scotch
+Malt-forward|Brown Ale|nut brown
+Malt-forward|English Brown Ale|nut brown
+Malt-forward|American Brown Ale|
+Malt-forward|Dark Mild|mild
+Malt-forward|Old Ale|stock ale
+Malt-forward|Barleywine|barley wine
+Malt-forward|American Barleywine|barley wine
+Malt-forward|English Barleywine|barley wine
+Malt-forward|Imperial Brown Ale|
+Malt-forward|English Strong Ale|strong ale
+Malt-forward|Winter Warmer|
+Dark and roasty|Stout|
+Dark and roasty|Dry Stout|irish stout
+Dark and roasty|Milk Stout|sweet stout, lactose, cream stout
+Dark and roasty|Oatmeal Stout|oat
+Dark and roasty|Coffee Stout|
+Dark and roasty|Chocolate Stout|
+Dark and roasty|American Stout|
+Dark and roasty|Foreign Extra Stout|
+Dark and roasty|Tropical Stout|
+Dark and roasty|Oyster Stout|
+Dark and roasty|Imperial Stout|russian imperial stout, ris
+Dark and roasty|Pastry Stout|dessert stout
+Dark and roasty|Barrel-Aged Stout|bourbon barrel stout, ba
+Dark and roasty|Porter|
+Dark and roasty|English Porter|brown porter
+Dark and roasty|Robust Porter|american porter
+Dark and roasty|Coffee Porter|
+Dark and roasty|Smoked Porter|
+Dark and roasty|Imperial Porter|
+Dark and roasty|Baltic Porter|
+Belgian and farmhouse|Belgian Blonde|blond
+Belgian and farmhouse|Belgian Single|patersbier, trappist single
+Belgian and farmhouse|Dubbel|belgian dubbel, abbey
+Belgian and farmhouse|Tripel|belgian tripel, abbey
+Belgian and farmhouse|Quadrupel|quad, belgian quad
+Belgian and farmhouse|Belgian Dark Strong Ale|
+Belgian and farmhouse|Belgian Golden Strong Ale|
+Belgian and farmhouse|Saison|farmhouse ale
+Belgian and farmhouse|Farmhouse Ale|saison
+Belgian and farmhouse|Grisette|
+Belgian and farmhouse|Bière de Garde|biere de garde, farmhouse
+Sour and wild|Berliner Weisse|
+Sour and wild|Gose|
+Sour and wild|Fruited Sour|
+Sour and wild|Kettle Sour|
+Sour and wild|Smoothie Sour|pastry sour
+Sour and wild|Lambic|
+Sour and wild|Gueuze|geuze
+Sour and wild|Kriek|cherry lambic
+Sour and wild|Framboise|raspberry lambic
+Sour and wild|Flanders Red Ale|
+Sour and wild|Oud Bruin|flanders brown
+Sour and wild|Wild Ale|american wild ale
+Sour and wild|Brett Beer|brettanomyces
+Sour and wild|Mixed Fermentation Sour|
+Specialty|Barrel-Aged Beer|bourbon barrel, wood aged, ba
+Specialty|Smoked Beer|rauchbier
+Specialty|Smoked Ale|
+Specialty|Rye Ale|rye
+Specialty|Pumpkin Ale|pumpkin spice
+Specialty|Christmas Ale|holiday ale, winter
+Specialty|Spiced Beer|herb and spice
+Specialty|Chili Beer|pepper
+Specialty|Coffee Beer|
+Specialty|Chocolate Beer|
+Specialty|Honey Beer|braggot
+Specialty|Fruit Beer|
+Specialty|Vegetable Beer|
+Specialty|Sahti|
+Specialty|Kvass|
+Specialty|Radler|shandy
+Specialty|Shandy|radler
+Specialty|Gluten-Free Beer|gluten free
+Specialty|Non-Alcoholic Beer|na, alcohol free, zero
+Specialty|Table Beer|
+Not quite beer|Hard Cider|cider
+Not quite beer|Perry|pear cider
+Not quite beer|Mead|honey wine
+Not quite beer|Hard Seltzer|seltzer
+Not quite beer|Hard Kombucha|kombucha
+`;
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const toEl = html => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const r2 = n => String(Math.round(n * 100) / 100);
+  const THUMB = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#thumb"/></svg>';
+  const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  const STYLES = STYLE_DATA.trim().split('\n').map(line => {
+    const [f, n, a] = line.split('|');
+    const k = norm(n);
+    return { f, n, k, nw: new Set(k.split(' ')), w: [...new Set((k + ' ' + norm(a)).split(' ').filter(Boolean))], l: f === 'Lager' };
+  });
+  const STYLE_BY_KEY = new Map(STYLES.map(s => [s.k, s]));
+
+  const UI = { mode: 'vote', open: null, editing: null, draft: null, guessOpen: false, justRevealed: null, flash: null };
+  let S = readJSON(CACHE_KEY, null);
+  if (!S || !Array.isArray(S.pours)) S = fresh();
+  let outbox = readJSON(OUTBOX_KEY, []);
+  if (!Array.isArray(outbox)) outbox = [];
+  let serverBoard = null, seenRev = -1;
+  let flushing = false, retryTimer = 0, backoff = 2000;
+
+  /* ---------- state ---------- */
+  function fresh() { return { v: 1, rev: 0, nextPuller: ROSTER[0], surprise: null, pours: [] }; }
+  function readJSON(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; } }
+  function writeJSON(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* private mode: the board still syncs */ } }
+  function randomId(len, chars) { const a = new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a, x => chars[x % chars.length]).join(''); }
+  const newPourId = () => randomId(12, 'abcdefghijklmnopqrstuvwxyz0123456789');
+  const newOpId = () => randomId(16, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+  function resetUI() { Object.assign(UI, { mode: 'vote', open: null, editing: null, draft: null, guessOpen: false, justRevealed: null, flash: null }); }
+
+  const current = () => { const last = S.pours[S.pours.length - 1]; return last && !last.revealed ? last : null; };
+  const byId = id => S.pours.find(p => p.id === id);
+  const missing = p => ROSTER.filter(n => !p.votes[n]);
+  const nextAfter = name => ROSTER[(ROSTER.indexOf(name) + 1) % ROSTER.length];
+  function tally(p) {
+    let u = 0, s = 0, d = 0;
+    ROSTER.forEach(n => { const v = p.votes[n]; if (v === 'up') u++; else if (v === 'side') s++; else if (v === 'down') d++; });
+    return { u, s, d, cast: u + s + d };
+  }
+  function joinNames(a) {
+    if (a.length < 2) return a.join('');
+    if (a.length === 2) return a[0] + ' and ' + a[1];
+    return a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1];
+  }
+  function isLager(style) {
+    if (!style) return false;
+    const k = norm(style);
+    const s = STYLE_BY_KEY.get(k);
+    if (s) return s.l;
+    return /\b(lager|pils|pilsner|pilsener|helles|bock|marzen|oktoberfest|dunkel|schwarzbier|kellerbier|zwickelbier)\b/.test(k);
+  }
+  function ranked() {
+    const list = S.pours.filter(p => p.revealed).map(p => ({ p, t: tally(p) }));
+    list.sort((a, b) => (b.t.u - a.t.u) || (a.t.d - b.t.d) || (a.p.n - b.p.n));
+    let rank = 0;
+    list.forEach((x, i) => {
+      const prev = list[i - 1];
+      if (!prev || prev.t.u !== x.t.u || prev.t.d !== x.t.d) rank = i + 1;
+      x.rank = rank;
+    });
+    list.forEach(x => { x.tie = list.some(y => y !== x && y.rank === x.rank); });
+    return list;
+  }
+
+  /* ---------- the shared board ---------- */
+  // Each change goes in an outbox, kept on this phone, and is sent one at a time with its own id.
+  // The board on the server is the truth: once the outbox is empty, this phone shows what it says.
+  function setSync(state) {
+    const el = $('#sync');
+    if (!el || el.dataset.state === state) return;
+    el.dataset.state = state;
+    el.querySelector('span').textContent = {
+      connecting: 'Connecting to the board…',
+      live: 'Live board. Every phone sees the same standings.',
+      saving: 'Saving…',
+      offline: 'Not connected. Changes stay on this phone until it reconnects.'
+    }[state];
+  }
+  function send(op) {
+    op.opId = newOpId();
+    outbox.push(op);
+    writeJSON(OUTBOX_KEY, outbox);
+    writeJSON(CACHE_KEY, S);
+    setSync('saving');
+    flush();
+  }
+  async function flush() {
+    if (flushing) return;
+    flushing = true;
+    try {
+      while (outbox.length) {
+        let res, body = null;
+        try {
+          res = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(outbox[0]), cache: 'no-store' });
+          body = await res.json().catch(() => null);
+        } catch (e) { retry(); return; }
+        if (res.status === 429 || res.status >= 500) { retry(res.status === 429 ? 30000 : 0); return; }
+        outbox.shift();
+        writeJSON(OUTBOX_KEY, outbox);
+        if (!res.ok) toast((body && body.error) || 'That change was not saved.');
+        if (body && body.board) serverBoard = body.board;
+        backoff = 2000;
+      }
+      setSync('live');
+      if (serverBoard) adopt(serverBoard);
+    } finally {
+      flushing = false;
+    }
+  }
+  function retry(ms) {
+    setSync('offline');
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(flush, ms || backoff);
+    backoff = Math.min(backoff * 2, 15000);
+  }
+  async function poll() {
+    if (document.hidden) return;
+    try {
+      const res = await fetch(API, { cache: 'no-store' });
+      if (!res.ok) throw new Error('status ' + res.status);
+      const body = await res.json();
+      if (!body || !body.board) throw new Error('no board');
+      serverBoard = body.board;
+      if (!outbox.length && !flushing) { setSync('live'); adopt(body.board); }
+    } catch (e) {
+      if (!outbox.length) setSync('offline');
+    }
+  }
+  // What a viewer can see, so a new revision that changes nothing visible draws nothing.
+  function viewKey(b) {
+    return JSON.stringify([b.nextPuller, b.surprise || null, (b.pours || []).map(p => [p.id, p.n, p.puller,
+      ROSTER.map(n => (p.votes && p.votes[n]) || ''), ROSTER.map(n => (p.guesses && p.guesses[n]) || ''),
+      !!p.revealed, p.name || '', p.brewery || '', p.style || '', p.provider || ''])]);
+  }
+  function adopt(board) {
+    if (outbox.length || !board || !Array.isArray(board.pours)) return;
+    // A slow read that left before the last change landed must not draw the older board.
+    if (typeof board.rev === 'number') { if (board.rev < seenRev) return; seenRev = board.rev; }
+    const same = viewKey(board) === viewKey(S);
+    S = board;
+    writeJSON(CACHE_KEY, S);
+    if (!same) renderLive();
+  }
+  // Draw what another phone changed without wiping a form someone is filling in.
+  function renderLive() {
+    const list = ranked();
+    renderStats();
+    if (!busyIn('#awards')) renderAwards(list);
+    if (!UI.editing) renderBoard(list);
+    const cur = current();
+    const form = $('#now .reveal-form');
+    if (UI.mode === 'reveal' && (!cur || !form || form.dataset.pid !== cur.id)) UI.mode = 'vote';
+    if (UI.mode !== 'reveal' && !busyIn('#now')) renderNow();
+  }
+  function busyIn(sel) {
+    const a = document.activeElement;
+    return !!(a && a.closest && a.closest(sel) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
+  }
+
+  /* ---------- style search ---------- */
+  function osa(a, b) {
+    const m = a.length, n = b.length;
+    if (Math.abs(m - n) > 2) return 3;
+    const d = [];
+    for (let i = 0; i <= m; i++) { d.push([i]); for (let j = 1; j <= n; j++) d[i].push(i ? 0 : j); }
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+      const c = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+    return d[m][n];
+  }
+  function tokenScore(t, w) {
+    if (w === t) return 120;
+    if (w.startsWith(t)) return 100 - Math.min(40, w.length - t.length);
+    if (t.length >= 4) {
+      if (w.includes(t)) return 55;
+      if (osa(t, w) <= 1 || (w.length > t.length && osa(t, w.slice(0, t.length)) <= 1)) return 45;
+      if (t.length >= 7 && osa(t, w) <= 2) return 30;
+    }
+    return 0;
+  }
+  function scoreStyle(s, q) {
+    if (s.k === q) return 10000;
+    let total = s.k.startsWith(q) ? 600 : 0;
+    for (const t of q.split(' ')) {
+      let best = 0;
+      // A word in the style's own name outranks the same word among its other names.
+      for (const w of s.w) { const sc = tokenScore(t, w); if (sc) best = Math.max(best, sc + (s.nw.has(w) ? 10 : 0)); }
+      if (!best) return 0;
+      total += best;
+    }
+    return total - s.k.length / 10;
+  }
+  function highlight(name, q) {
+    const toks = q.split(' ').filter(Boolean);
+    return name.split(' ').map(word => {
+      const nw = norm(word).replace(/ /g, '');
+      const t = toks.filter(x => nw.startsWith(x)).sort((a, b) => b.length - a.length)[0];
+      return t ? '<b>' + esc(word.slice(0, t.length)) + '</b>' + esc(word.slice(t.length)) : esc(word);
+    }).join(' ');
+  }
+  function listFor(input) { return document.getElementById(input.getAttribute('aria-controls')); }
+  function suggest(input) {
+    const ul = listFor(input);
+    if (!ul) return;
+    const typed = input.value.trim();
+    const q = norm(typed);
+    if (!q) { closeSug(input); return; }
+    const hits = STYLES.map(s => ({ s, sc: scoreStyle(s, q) })).filter(x => x.sc > 0).sort((a, b) => b.sc - a.sc).slice(0, 8);
+    const form = input.closest('form');
+    const pid = form ? form.dataset.pid : '';
+    const poured = new Set(S.pours.filter(p => p.revealed && p.style && p.id !== pid).map(p => norm(p.style)));
+    let html = hits.map((x, i) => `<li role="option" id="${ul.id}-${i}" data-style="${esc(x.s.n)}"${i === 0 ? ' class="active"' : ''}><span class="sn">${highlight(x.s.n, q)}</span><span class="sf">${esc(x.s.f)}${x.s.l ? ' <em class="tag">lager</em>' : ''}${poured.has(x.s.k) ? ' <em class="tag warn">poured tonight</em>' : ''}</span></li>`).join('');
+    if (!hits.some(x => x.s.k === q)) html += `<li role="option" id="${ul.id}-free" data-style="${esc(typed)}" class="free${hits.length ? '' : ' active'}"><span class="sn">Use “${esc(typed)}” as typed</span></li>`;
+    ul.innerHTML = html;
+    ul.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    const act = ul.querySelector('li.active');
+    if (act) input.setAttribute('aria-activedescendant', act.id); else input.removeAttribute('aria-activedescendant');
+  }
+  function closeSug(input) {
+    const ul = listFor(input);
+    if (ul) { ul.hidden = true; ul.innerHTML = ''; }
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+  }
+  function pickSug(input, li) {
+    input.value = li.dataset.style;
+    closeSug(input);
+  }
+  function comboKey(e) {
+    const input = e.target, ul = listFor(input);
+    const open = ul && !ul.hidden;
+    if (e.key === 'Escape' && open) { e.preventDefault(); closeSug(input); return; }
+    if (!open) { if (e.key === 'ArrowDown') { e.preventDefault(); suggest(input); } return; }
+    const items = [...ul.querySelectorAll('li')];
+    let i = items.findIndex(li => li.classList.contains('active'));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (items[i]) items[i].classList.remove('active');
+      i = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+      items[i].classList.add('active');
+      input.setAttribute('aria-activedescendant', items[i].id);
+      items[i].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      if (items[i]) { e.preventDefault(); pickSug(input, items[i]); }
+    } else if (e.key === 'Tab') {
+      closeSug(input);
+    }
+  }
+  function styleFieldHTML(value, uid) {
+    return `<div class="fld"><label class="fld-label" for="st-${uid}">Style <i>optional, start typing</i></label>
+      <div class="combo"><input id="st-${uid}" name="style" value="${esc(value)}" maxlength="60" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sg-${uid}" placeholder="hazy, stout, pils, sour"><ul class="sugs" id="sg-${uid}" role="listbox" aria-label="Matching styles" hidden></ul></div></div>`;
+  }
+
+  /* ---------- drawing ---------- */
+  function capPath(cx, cy, ro, ri, n) {
+    const m = n * 2, pts = [];
+    for (let k = 0; k < m; k++) {
+      const a = (k / m) * Math.PI * 2 - Math.PI / 2;
+      const r = k % 2 === 0 ? ro : ri;
+      pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    const s = mid(pts[m - 1], pts[0]);
+    let d = 'M' + r2(s[0]) + ' ' + r2(s[1]);
+    for (let k = 0; k < m; k++) {
+      const c = pts[k], e = mid(pts[k], pts[(k + 1) % m]);
+      d += 'Q' + r2(c[0]) + ' ' + r2(c[1]) + ' ' + r2(e[0]) + ' ' + r2(e[1]);
+    }
+    return d + 'Z';
+  }
+  function capSVG(n, cls) {
+    return `<svg class="cap-badge ${cls || ''}" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/><text x="50" y="52" class="cap-num" text-anchor="middle" dominant-baseline="central">${n}</text></svg>`;
+  }
+  function canSVG(state) {
+    return `<svg class="can ${state}" viewBox="0 0 120 172" aria-hidden="true">
+      <rect x="26" y="14" width="68" height="148" rx="12" fill="url(#alum)"/>
+      <ellipse cx="60" cy="15" rx="34" ry="7.5" fill="#cbd5e1"/>
+      <ellipse cx="60" cy="15" rx="27" ry="5" fill="#94a3b8"/>
+      <rect x="53" y="10" width="14" height="6" rx="3" fill="#e2e8f0" stroke="#64748b" stroke-width="1"/>
+      <rect x="26" y="74" width="68" height="40" fill="#0b1430"/>
+      <text x="60" y="95" text-anchor="middle" dominant-baseline="central" class="can-star">&#9733;</text>
+      <g class="coozie">
+        <rect x="19" y="44" width="82" height="122" rx="11" fill="url(#coozie)"/>
+        <rect x="19" y="56" width="82" height="3" fill="#0b1430" opacity=".22"/>
+        <rect x="19" y="151" width="82" height="3" fill="#0b1430" opacity=".22"/>
+        <circle cx="60" cy="105" r="25" fill="#0b1430"/>
+        <circle cx="60" cy="105" r="25" fill="none" stroke="#fff6cf" stroke-opacity=".65" stroke-width="1.6"/>
+        <text x="60" y="107" text-anchor="middle" dominant-baseline="central" class="can-q">?</text>
+      </g>
+    </svg>`;
+  }
+  function glassSVG(frac) {
+    const f = Math.max(0, Math.min(1, frac));
+    const top = 13, bot = 53.5;
+    const y = bot - (bot - top) * f;
+    let inner = '';
+    if (f > 0) {
+      inner += `<rect x="0" y="${r2(y)}" width="40" height="${r2(56 - y)}" fill="url(#beerFill)"/>`;
+      [[15, 46, 1.3], [23, 40, 1], [27, 49, 1.2], [19, 33, 0.9]].forEach(([cx, cy, r]) => {
+        if (cy > y + 4) inner += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" opacity=".7"/>`;
+      });
+      const fy = y - 1;
+      inner += `<g fill="#fff"><rect x="4" y="${r2(fy - 3)}" width="32" height="5"/><circle cx="10" cy="${r2(fy - 3)}" r="3.2"/><circle cx="17" cy="${r2(fy - 4.2)}" r="3.6"/><circle cx="25" cy="${r2(fy - 3.6)}" r="3.3"/><circle cx="31.5" cy="${r2(fy - 2.6)}" r="2.6"/></g>`;
+    }
+    return `<svg class="glass" viewBox="0 0 40 56" aria-hidden="true"><g clip-path="url(#glassClip)"><rect width="40" height="56" fill="#ffffff" fill-opacity=".05"/>${inner}</g><path d="M5 6H35L31.2 50.5Q30.9 53.5 27.8 53.5H12.2Q9.1 53.5 8.8 50.5Z" fill="none" stroke="url(#goldStroke)" stroke-width="2" stroke-linejoin="round"/><path d="M10 10.5L12.4 47" stroke="#fff" stroke-opacity=".22" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  }
+  function miniGlassSVG(full) {
+    const beer = full ? '<path d="M3.2 7H12.8L11.6 19.2Q11.5 20.4 10.3 20.4H5.7Q4.5 20.4 4.4 19.2Z" fill="url(#beerFill)"/><rect x="2.4" y="4" width="11.2" height="3.6" rx="1.6" fill="#fff"/><circle cx="5" cy="4.2" r="1.8" fill="#fff"/><circle cx="8.4" cy="3.4" r="2.1" fill="#fff"/><circle cx="11.4" cy="4.3" r="1.7" fill="#fff"/>' : '';
+    return `<svg class="mini-glass" viewBox="0 0 16 22" aria-hidden="true">${beer}<path d="M2 2.5H14L12.4 19.4Q12.2 21 10.6 21H5.4Q3.8 21 3.6 19.4Z" fill="none" stroke="${full ? 'url(#goldStroke)' : '#8390b8'}" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+  }
+  const CROWN = '<svg class="crown" viewBox="0 0 26 18" aria-hidden="true"><path d="M2 6.5 7.2 10.5 13 2.8 18.8 10.5 24 6.5 22 16.2H4Z" fill="url(#capGold)" stroke="#0b1430" stroke-width="1.2" stroke-linejoin="round"/><circle cx="2" cy="6" r="1.8" fill="#fff3c4"/><circle cx="13" cy="2.4" r="1.9" fill="#fff3c4"/><circle cx="24" cy="6" r="1.8" fill="#fff3c4"/></svg>';
+  function tallyMiniHTML(t, cls) {
+    return `<span class="tally-mini ${cls || ''}"><span class="u" title="thumbs up">${THUMB}${t.u}</span><span class="s" title="sideways">${THUMB}${t.s}</span><span class="d" title="thumbs down">${THUMB}${t.d}</span></span>`;
+  }
+
+  /* ---------- pieces ---------- */
+  function voterHTML(p, n) {
+    const v = p.votes[n] || '';
+    const btns = ['up', 'side', 'down'].map(k => `<button type="button" class="t t-${k}${v === k ? ' on' : ''}" aria-pressed="${v === k}" aria-label="${esc(n)}: ${LABEL[k]}" data-act="vote" data-pid="${p.id}" data-name="${esc(n)}" data-v="${k}">${THUMB}</button>`).join('');
+    return `<div class="voter${v ? ' has' : ''}">${miniGlassSVG(!!v)}<span class="who">${esc(n)}</span><div class="thumbs" role="group" aria-label="${esc(n)}'s vote">${btns}</div></div>`;
+  }
+  function votesHTML(p) {
+    return `<div class="votes" data-pid="${p.id}"><div class="votes-head"><span>Thumbs</span><span class="count"><b>${tally(p).cast}</b> of 6 in</span></div>${ROSTER.map(n => voterHTML(p, n)).join('')}</div>`;
+  }
+  function guessesHTML(p, open) {
+    const g = p.guesses || {};
+    const count = ROSTER.filter(n => g[n]).length;
+    const grid = ROSTER.map(n => `<label class="g"><span>${esc(n)} guesses</span><select data-act="guess" data-pid="${p.id}" data-name="${esc(n)}" aria-label="${esc(n)}'s guess for who brought it"><option value="">pick one</option>${ROSTER.map(o => `<option value="${esc(o)}"${g[n] === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`).join('');
+    return `<details class="guesses"${open ? ' open' : ''}><summary><span>Who brought it?</span><i>guesses, optional</i><b class="gcount">${count} of 6</b></summary><div class="guess-grid">${grid}</div></details>`;
+  }
+  function revealBarInner(p) {
+    const miss = missing(p);
+    const ready = miss.length === 0;
+    return `<button type="button" class="btn-gold ${ready ? 'ready' : 'waiting'}" data-act="open-reveal">Reveal the beer</button>
+      <p class="hint">${ready ? 'All six thumbs are in. Pull the coozie.' : 'Waiting on ' + esc(joinNames(miss)) + '.'}</p>
+      ${tally(p).cast === 0 ? '<button type="button" class="link" data-act="undo-pull">Pulled by mistake? Put it back in the bucket</button>' : ''}`;
+  }
+  function providerChips(sel) {
+    return `<div class="chips">${ROSTER.map(n => `<label class="chip"><input type="radio" name="provider" value="${esc(n)}"${sel === n ? ' checked' : ''}><span>${esc(n)}</span></label>`).join('')}</div>`;
+  }
+  function fieldsHTML(p, uid) {
+    return `<div class="two">
+        <label class="fld"><span>Name of the beer</span><input name="name" required maxlength="80" autocomplete="off" placeholder="Read it off the can" value="${esc(p.name)}"></label>
+        <label class="fld"><span>Brewery</span><input name="brewery" maxlength="80" autocomplete="off" placeholder="Who made it" value="${esc(p.brewery)}"></label>
+      </div>
+      ${styleFieldHTML(p.style, uid)}
+      <fieldset class="fld"><legend>Brought by <i>the name on the bottom</i></legend>${providerChips(p.provider)}</fieldset>`;
+  }
+  function revealFormHTML(p) {
+    return `<form class="reveal-form" data-pid="${p.id}" autocomplete="off">
+      <div class="reveal-top">${canSVG('revealing')}<div><p class="eyebrow">Pour ${p.n}</p><h3 class="mystery gold-text">The big reveal</h3><p class="sub">Read the can, then flip it for the name on the bottom.</p></div></div>
+      ${fieldsHTML(p, 'r')}
+      <div class="actions"><button type="submit" class="btn-gold">Put it on the board</button><button type="button" class="btn-ghost" data-act="close-reveal">Back to the votes</button></div>
+    </form>`;
+  }
+  function guessLine(p) {
+    const g = p.guesses || {};
+    const guessers = ROSTER.filter(n => g[n]);
+    if (!guessers.length || !p.provider) return '';
+    const right = guessers.filter(n => g[n] === p.provider);
+    if (!right.length) return `Nobody guessed ${esc(p.provider)}.`;
+    return `Guessed right: <b>${esc(joinNames(right))}</b>, ${right.length} of ${guessers.length}.`;
+  }
+  function justHTML(p) {
+    const list = ranked();
+    const x = list.find(y => y.p.id === p.id);
+    return `<div class="just" role="status">
+      <p class="eyebrow">The verdict on pour ${p.n}</p>
+      ${tallyMiniHTML(tally(p), 'big')}
+      <p class="meta">Brought by <b>${esc(p.provider || 'nobody named yet')}</b>. ${guessLine(p)}</p>
+      ${x ? `<p class="placed">Lands at ${x.tie ? 'a tie for ' : ''}#${x.rank} of ${list.length} on the board.</p>` : ''}
+    </div>`;
+  }
+  function nextHTML(compact) {
+    const n = S.pours.reduce((m, p) => Math.max(m, p.n), 0) + 1;
+    return `<div class="next${compact ? ' compact' : ''}">
+      ${compact ? '' : canSVG('mystery')}
+      <div class="next-copy">
+        <p class="eyebrow">Pour ${n} is next</p>
+        <p class="next-line"><button type="button" class="puller" data-act="cycle-puller" aria-label="${esc(S.nextPuller)} pulls next. Tap to change.">${esc(S.nextPuller)}</button> pulls from the bucket.</p>
+        ${compact ? '' : '<p class="sub">The puller rotates each round. Tap the name to change it.</p>'}
+        ${S.pours.length === 0 ? '<button type="button" class="link" data-act="random-puller">Pick the first puller at random</button>' : ''}
+        <button type="button" class="btn-gold" data-act="new-pour">Pull the next beer</button>
+      </div>
+    </div>`;
+  }
+  function rowHTML(x) {
+    const p = x.p, t = x.t, open = UI.open === p.id, editing = UI.editing === p.id && UI.draft;
+    const lager = isLager(p.style) ? ' <em class="tag">lager</em>' : '';
+    return `<li class="row${x.rank === 1 ? ' top' : ''}${UI.flash === p.id ? ' flash' : ''}" data-pid="${p.id}">
+      <button type="button" class="row-main" data-act="toggle-row" data-pid="${p.id}" aria-expanded="${open}" aria-label="${x.tie ? 'Tied for ' : 'Rank '}${x.rank}: ${esc(p.name)}, ${t.u} of 6 thumbs up">
+        <span class="rank r${Math.min(x.rank, 4)}">${x.rank === 1 ? CROWN : ''}<b>${x.tie ? 'T' : ''}${x.rank}</b></span>
+        <span class="info">
+          <span class="beer${x.rank === 1 ? ' gold-text' : ''}">${esc(p.name)}</span>
+          <span class="meta">${esc(p.brewery || 'Brewery not given')}${p.style ? ' · ' + esc(p.style) : ''}${lager}</span>
+          <span class="meta2">Pour ${p.n} · brought by ${esc(p.provider || '?')}</span>
+          ${tallyMiniHTML(t)}
+        </span>
+        <span class="score">${glassSVG(t.u / 6)}<b>${t.u}<i>/6</i></b></span>
+      </button>
+      ${open ? `<div class="row-detail">${editing ? editorHTML(UI.draft) : detailHTML(p)}</div>` : ''}
+    </li>`;
+  }
+  function detailHTML(p) {
+    const chips = ROSTER.map(n => { const v = p.votes[n]; return `<span class="vc ${v || 'none'}">${THUMB}${esc(n)}${v ? '' : ', no vote'}</span>`; }).join('');
+    const g = guessLine(p);
+    return `<div class="vote-chips">${chips}</div>
+      <p class="guess-line">${g || 'No guesses on who brought it.'} Pulled by ${esc(p.puller)}.</p>
+      <div class="detail-tools"><button type="button" class="btn-ghost sm" data-act="edit" data-pid="${p.id}">Fix this pour</button></div>`;
+  }
+  function editorHTML(p) {
+    return `<form class="editor" data-pid="${p.id}" autocomplete="off">
+      ${votesHTML(p)}
+      ${fieldsHTML(p, 'e')}
+      ${guessesHTML(p, false)}
+      <div class="actions"><button type="submit" class="btn-gold sm">Save the fix</button><button type="button" class="btn-ghost sm" data-act="cancel-edit">Cancel</button><button type="button" class="btn-ghost sm danger" data-act="remove" data-pid="${p.id}">Take it off the board</button></div>
+    </form>`;
+  }
+  function pendingHTML(p) {
+    return `<li class="pending-row">${capSVG(p.n, 'mini')}<p><b>Pour ${p.n}</b> is still in the coozie. ${tally(p).cast} of 6 thumbs in.</p></li>`;
+  }
+  function awardCard(icon, title, why, body, feature) {
+    return `<article class="award${feature ? ' feature' : ''}"><div class="medal" aria-hidden="true">${icon}</div><div><h3>${title}</h3><p class="why">${why}</p>${body}</div></article>`;
+  }
+  const waiting = msg => `<p class="win muted">${msg}</p>`;
+
+  /* ---------- awards ---------- */
+  function cmp(a, b) { for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) return a[i] - b[i]; } return 0; }
+  function best(items, key, ok) {
+    let win = [], wk = null;
+    items.forEach(it => {
+      if (ok && !ok(it)) return;
+      const k = key(it);
+      const c = wk ? cmp(k, wk) : 1;
+      if (c > 0) { win = [it]; wk = k; } else if (c === 0) win.push(it);
+    });
+    return win;
+  }
+  function computeAwards(list) {
+    const top = list.filter(x => x.rank === 1);
+    const pol = best(list, x => [Math.min(x.t.u, x.t.d), x.t.u + x.t.d, -x.p.n], x => Math.min(x.t.u, x.t.d) >= 1)[0] || null;
+    const hard = best(list, x => [x.t.d, -x.t.u, -x.p.n], x => x.t.d >= 1)[0] || null;
+    const people = ROSTER.map(n => ({ n, u: 0, s: 0, d: 0, right: 0, guessed: 0 }));
+    S.pours.forEach(p => people.forEach(r => {
+      const v = p.votes[r.n];
+      if (v === 'up') r.u++; else if (v === 'side') r.s++; else if (v === 'down') r.d++;
+      const g = p.guesses && p.guesses[r.n];
+      if (p.revealed && p.provider && g) { r.guessed++; if (g === p.provider) r.right++; }
+    }));
+    const coolers = ROSTER.map(n => ({ n, beers: 0, u: 0 }));
+    list.forEach(x => { const c = coolers.find(c => c.n === x.p.provider); if (c) { c.beers++; c.u += x.t.u; } });
+    return {
+      top, pol, hard,
+      critic: best(people, r => [r.d, -r.u], r => r.d >= 1),
+      easy: best(people, r => [r.u, -r.d], r => r.u >= 1),
+      detective: best(people, r => [r.right, -r.guessed], r => r.right >= 1),
+      cooler: best(coolers, c => [c.u / c.beers, c.beers], c => c.beers >= 1)
+    };
+  }
+
+  /* ---------- render ---------- */
+  function renderStats() {
+    let u = 0, s = 0, d = 0;
+    S.pours.forEach(p => { const t = tally(p); u += t.u; s += t.s; d += t.d; });
+    const all = u + s + d;
+    $('#st-pours').textContent = S.pours.length;
+    $('#st-up').textContent = u;
+    $('#st-side').textContent = s;
+    $('#st-down').textContent = d;
+    $('#st-pct').textContent = (all ? Math.round(100 * u / all) : 0) + '%';
+  }
+  function renderNow() {
+    const el = $('#now-body');
+    const p = current();
+    if (!p) {
+      const last = UI.justRevealed ? byId(UI.justRevealed) : null;
+      if (last && last.revealed) {
+        // Same frame as the vote, so the pour that was just revealed stays where the eye already is.
+        el.innerHTML = `<div class="pour-head">${capSVG(last.n)}<div class="pour-copy"><p class="eyebrow">Pour ${last.n} · revealed</p><h3 class="mystery gold-text">${esc(last.name)}</h3><p class="sub">${esc(last.brewery || 'Brewery not given')}${last.style ? ' · ' + esc(last.style) : ''}</p></div>${canSVG('open')}</div>
+          ${votesHTML(last)}
+          ${guessesHTML(last, UI.guessOpen)}
+          ${justHTML(last)}
+          ${nextHTML(true)}`;
+      } else {
+        el.innerHTML = nextHTML(false);
+      }
+      return;
+    }
+    // The reveal form takes the place of the reveal button, so nothing above it moves.
+    el.innerHTML = `<div class="pour-head">${capSVG(p.n)}<div class="pour-copy"><p class="eyebrow">Pour ${p.n} · blind</p><h3 class="mystery gold-text">Mystery beer</h3><p class="sub">Pulled by <b>${esc(p.puller)}</b>. Still in the coozie.</p></div>${canSVG('mystery')}</div>
+      ${votesHTML(p)}
+      ${guessesHTML(p, UI.guessOpen)}
+      ${UI.mode === 'reveal' ? revealFormHTML(p) : `<div class="reveal-bar">${revealBarInner(p)}</div>`}`;
+  }
+  function renderBoard(list) {
+    const cur = current();
+    const rows = list.length ? list.map(rowHTML).join('') : `<li class="empty">${glassSVG(0)}<p>Nothing on the board yet. The first reveal lands here.</p></li>`;
+    $('#board-list').innerHTML = rows + (cur ? pendingHTML(cur) : '');
+  }
+  function renderAwards(list) {
+    const a = computeAwards(list);
+    const names = arr => esc(joinNames(arr.map(r => r.n)));
+    const beerSub = x => [x.p.brewery, x.p.provider ? 'brought by ' + x.p.provider : ''].filter(Boolean).map(esc).join(' · ');
+
+    const topPour = a.top.length
+      ? `<p class="win gold-text">${esc(joinNames(a.top.map(x => x.p.name)))}</p><p class="win-sub">${a.top.length > 1 ? 'Tied at ' : ''}${a.top[0].t.u} of 6 would drink again${a.top.length === 1 && beerSub(a.top[0]) ? ' · ' + beerSub(a.top[0]) : ''}</p>`
+      : waiting('Waiting on the first reveal.');
+    const pol = a.pol ? `<p class="win">${esc(a.pol.p.name)}</p><p class="win-sub">${a.pol.t.u} up, ${a.pol.t.d} down. The room split.</p>` : waiting('Nobody has split the room yet.');
+    const hard = a.hard ? `<p class="win">${esc(a.hard.p.name)}</p><p class="win-sub">${a.hard.t.d} thumbs down, and every drop finished.</p>` : waiting('No thumbs down yet.');
+
+    const sp = S.surprise ? list.find(x => x.p.id === S.surprise) : null;
+    const pickList = list.slice().sort((x, y) => x.p.n - y.p.n).map(x => `<option value="${x.p.id}"${S.surprise === x.p.id ? ' selected' : ''}>${esc(x.p.name)}</option>`).join('');
+    const surprise = (sp
+      ? `<p class="win">${esc(sp.p.name)}</p><p class="win-sub">${sp.t.u} of 6 thumbs up${sp.p.provider ? ', brought by ' + esc(sp.p.provider) : ''}.${isLager(sp.p.style) ? ' A lager, at a table that swore off lagers.' : ''}</p>`
+      : waiting('Your call when the night wraps up.'))
+      + (list.length ? `<label class="pick"><span class="sr">Pick the biggest surprise</span><select data-act="surprise"><option value="">${sp ? 'No pick' : 'Pick the beer'}</option>${pickList}</select></label>` : '');
+
+    const person = (arr, line, empty) => arr.length ? `<p class="win">${names(arr)}</p><p class="win-sub">${line(arr[0])}</p>` : waiting(empty);
+    const votesBy = r => r.u + r.s + r.d;
+    const critic = person(a.critic, r => `${r.d} thumbs down out of ${votesBy(r)} votes`, 'Waiting on votes.');
+    const easy = person(a.easy, r => `${r.u} thumbs up out of ${votesBy(r)} votes`, 'Waiting on votes.');
+    const det = person(a.detective, r => `${r.right} of ${r.guessed} guesses right on who brought it`, 'No right guesses yet.');
+    const cool = a.cooler.length
+      ? `<p class="win">${esc(joinNames(a.cooler.map(c => c.n)))}</p><p class="win-sub">${a.cooler[0].u} thumbs up over ${a.cooler[0].beers} ${a.cooler[0].beers === 1 ? 'beer' : 'beers'}</p>`
+      : waiting('Waiting on the first reveal.');
+
+    $('#awards-body').innerHTML = `<p class="group-label">For the beers</p>
+      <div class="awards">
+        ${awardCard('&#127942;', 'Pour of the Night', 'Most thumbs up of the night', topPour, true)}
+      </div>
+      <div class="awards trio">
+        ${awardCard('&#9878;&#65039;', 'Most Polarizing', 'The closest split between up and down', pol)}
+        ${awardCard('&#129327;', 'Biggest Surprise', 'Picked by the table', surprise)}
+        ${awardCard('&#128581;', 'Hard No Champion', 'Most thumbs down', hard)}
+      </div>
+      <p class="group-label">For the table</p>
+      <div class="awards quad">
+        ${awardCard('&#129488;', 'Toughest Critic', 'Gave the most thumbs down', critic)}
+        ${awardCard('&#128516;', 'Easiest to Please', 'Gave the most thumbs up', easy)}
+        ${awardCard('&#128373;&#65039;', 'Beer Detective', 'Most right guesses on who brought it', det)}
+        ${awardCard('&#129482;', 'Best Cooler', 'Most thumbs up per beer brought', cool)}
+      </div>`;
+  }
+  function renderAll() {
+    const list = ranked();
+    renderStats();
+    renderNow();
+    renderBoard(list);
+    renderAwards(list);
+  }
+
+  /* ---------- actions ---------- */
+  function doVote(btn) {
+    const inEditor = !!btn.closest('.editor');
+    const p = inEditor ? UI.draft : byId(btn.dataset.pid);
+    if (!p || p.id !== btn.dataset.pid) return;
+    const name = btn.dataset.name, v = btn.dataset.v;
+    const next = p.votes[name] === v ? '' : v;
+    if (next) p.votes[name] = next; else delete p.votes[name];
+    const row = btn.closest('.voter');
+    row.querySelectorAll('.t').forEach(b => { const on = next === b.dataset.v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    row.classList.toggle('has', !!next);
+    const mg = row.querySelector('.mini-glass');
+    if (mg) mg.replaceWith(toEl(miniGlassSVG(!!next)));
+    const count = btn.closest('.votes').querySelector('.count');
+    if (count) count.innerHTML = `<b>${tally(p).cast}</b> of 6 in`;
+    if (inEditor) return;
+    send({ op: 'vote', pid: p.id, name, v: next });
+    if (!p.revealed) {
+      const bar = $('#now .reveal-bar');
+      if (bar) bar.innerHTML = revealBarInner(p);
+      const pr = $('#board-list .pending-row');
+      if (pr) pr.replaceWith(toEl(pendingHTML(p)));
+      renderStats();
+    } else {
+      // A fix made right after the reveal lands on the board at once.
+      const list = ranked();
+      renderStats();
+      if (!UI.editing) renderBoard(list);
+      renderAwards(list);
+      const j = $('#now .just');
+      if (j) j.replaceWith(toEl(justHTML(p)));
+    }
+  }
+  function newPour() {
+    if (current()) return;
+    const n = S.pours.reduce((m, p) => Math.max(m, p.n), 0) + 1;
+    const p = { id: newPourId(), n, puller: S.nextPuller, votes: {}, guesses: {}, revealed: false, name: '', brewery: '', style: '', provider: '' };
+    S.pours.push(p);
+    S.nextPuller = nextAfter(p.puller);
+    UI.mode = 'vote'; UI.justRevealed = null; UI.guessOpen = false;
+    renderAll();
+    send({ op: 'pour', pid: p.id });
+  }
+  function openReveal() {
+    const p = current();
+    if (!p) return;
+    const miss = missing(p);
+    if (miss.length && !window.confirm(`${joinNames(miss)} ${miss.length === 1 ? 'has' : 'have'} not voted yet. Reveal anyway?`)) return;
+    UI.mode = 'reveal';
+    renderNow();
+  }
+  function readFields(form) {
+    const fd = new FormData(form);
+    return {
+      name: String(fd.get('name') || '').trim(),
+      brewery: String(fd.get('brewery') || '').trim(),
+      style: String(fd.get('style') || '').trim(),
+      provider: String(fd.get('provider') || '')
+    };
+  }
+  function submitReveal(form) {
+    const p = byId(form.dataset.pid);
+    if (!p) return;
+    const f = readFields(form);
+    if (!f.name) return;
+    Object.assign(p, f);
+    p.revealed = true;
+    UI.mode = 'vote'; UI.justRevealed = p.id; UI.flash = p.id; UI.guessOpen = false;
+    renderAll();
+    send({ op: 'reveal', pid: p.id, ...f });
+    setTimeout(() => { UI.flash = null; }, 1800);
+  }
+  function toggleRow(pid) {
+    UI.editing = null; UI.draft = null;
+    UI.open = UI.open === pid ? null : pid;
+    renderAll();
+  }
+  function startEdit(pid) {
+    const p = byId(pid);
+    if (!p) return;
+    UI.editing = pid; UI.open = pid; UI.draft = JSON.parse(JSON.stringify(p));
+    renderBoard(ranked());
+  }
+  function saveEdit(form) {
+    const d = UI.draft;
+    if (!d || d.id !== form.dataset.pid) return;
+    const f = readFields(form);
+    if (!f.name) return;
+    Object.assign(d, f);
+    d.revealed = true;
+    const i = S.pours.findIndex(p => p.id === d.id);
+    UI.editing = null; UI.draft = null;
+    if (i < 0) { toast('That pour is no longer on the board.'); renderAll(); return; }
+    S.pours[i] = d;
+    UI.flash = d.id;
+    renderAll();
+    send({ op: 'edit', pid: d.id, ...f, votes: d.votes, guesses: d.guesses });
+    toast(`Pour ${d.n} fixed.`);
+    setTimeout(() => { UI.flash = null; }, 1800);
+  }
+  function removePour(pid) {
+    const p = byId(pid);
+    if (!p) return;
+    if (!window.confirm(`Take pour ${p.n}${p.name ? ' (' + p.name + ')' : ''} off the board? Its votes go with it.`)) return;
+    S.pours = S.pours.filter(x => x.id !== pid);
+    if (S.surprise === pid) S.surprise = null;
+    UI.editing = null; UI.draft = null; UI.open = null;
+    if (UI.justRevealed === pid) UI.justRevealed = null;
+    renderAll();
+    send({ op: 'remove', pid });
+    toast(`Pour ${p.n} is off the board.`);
+  }
+  function standingsText(list) {
+    const lines = [NAME + ' standings'];
+    list.forEach(x => lines.push(`${x.tie ? 'T' : ''}${x.rank}. ${x.p.name}${x.p.brewery ? ' (' + x.p.brewery + ')' : ''}: ${x.t.u} of 6 thumbs up${x.p.provider ? ', brought by ' + x.p.provider : ''}`));
+    const a = computeAwards(list);
+    if (a.top.length) lines.push('', 'Pour of the night: ' + joinNames(a.top.map(x => x.p.name)));
+    if (a.pol) lines.push('Most polarizing: ' + a.pol.p.name);
+    const sp = S.surprise ? byId(S.surprise) : null;
+    if (sp && sp.revealed) lines.push('Biggest surprise: ' + sp.name);
+    if (a.hard) lines.push('Hard no champion: ' + a.hard.p.name);
+    return lines.join('\n');
+  }
+  async function copyStandings() {
+    const text = standingsText(ranked());
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Standings copied for the family chat.');
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Standings copied for the family chat.'); } catch (err) { toast('This browser blocked the copy.'); }
+      ta.remove();
+    }
+  }
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', e => {
+    const li = e.target.closest('.sugs li[data-style]');
+    if (li) {
+      const input = li.closest('.combo').querySelector('input');
+      pickSug(input, li);
+      return;
+    }
+    const b = e.target.closest('[data-act]');
+    if (!b || b.tagName === 'SELECT') return;
+    switch (b.dataset.act) {
+      case 'vote': doVote(b); break;
+      case 'new-pour': newPour(); break;
+      case 'cycle-puller':
+        S.nextPuller = nextAfter(S.nextPuller); renderNow(); send({ op: 'puller', name: S.nextPuller }); break;
+      case 'random-puller':
+        S.nextPuller = ROSTER[Math.floor(Math.random() * ROSTER.length)]; renderNow(); send({ op: 'puller', name: S.nextPuller }); toast(`${S.nextPuller} pulls first.`); break;
+      case 'undo-pull': {
+        const p = current();
+        if (p && tally(p).cast === 0) {
+          S.pours = S.pours.filter(x => x !== p); S.nextPuller = p.puller;
+          renderAll(); send({ op: 'unpour', pid: p.id }); toast('Back in the bucket.');
+        }
+        break;
+      }
+      case 'open-reveal': openReveal(); break;
+      case 'close-reveal': UI.mode = 'vote'; renderNow(); break;
+      case 'toggle-row': toggleRow(b.dataset.pid); break;
+      case 'edit': startEdit(b.dataset.pid); break;
+      case 'cancel-edit': UI.editing = null; UI.draft = null; renderAll(); break;
+      case 'remove': removePour(b.dataset.pid); break;
+      case 'copy': copyStandings(); break;
+      case 'clear': {
+        const word = window.prompt('This wipes every pour and vote, on every phone. Type clear to start a fresh board.');
+        if (word && word.trim().toLowerCase() === 'clear') {
+          S.pours = []; S.surprise = null; resetUI(); renderAll();
+          send({ op: 'clear', confirm: 'clear' });
+          toast('Board cleared for next year.');
+        }
+        break;
+      }
+    }
+  });
+  // Keeps the style input focused while a suggestion is clicked.
+  document.addEventListener('mousedown', e => { if (e.target.closest('.sugs')) e.preventDefault(); });
+  document.addEventListener('input', e => { if (e.target.matches('input[name="style"]')) suggest(e.target); });
+  document.addEventListener('keydown', e => { if (e.target.matches && e.target.matches('input[name="style"]')) comboKey(e); });
+  document.addEventListener('focusout', e => {
+    const t = e.target;
+    if (t.matches && t.matches('input[name="style"]')) setTimeout(() => { if (document.activeElement !== t) closeSug(t); }, 180);
+  });
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('select[data-act="guess"]')) {
+      const inEditor = !!t.closest('.editor');
+      const p = inEditor ? UI.draft : byId(t.dataset.pid);
+      if (!p || p.id !== t.dataset.pid) return;
+      p.guesses = p.guesses || {};
+      if (t.value) p.guesses[t.dataset.name] = t.value; else delete p.guesses[t.dataset.name];
+      const gc = t.closest('.guesses').querySelector('.gcount');
+      if (gc) gc.textContent = ROSTER.filter(n => p.guesses[n]).length + ' of 6';
+      if (!inEditor) send({ op: 'guess', pid: p.id, name: t.dataset.name, who: t.value });
+    } else if (t.matches('select[data-act="surprise"]')) {
+      S.surprise = t.value || null;
+      renderAwards(ranked());
+      send({ op: 'surprise', pid: S.surprise });
+    }
+  });
+  document.addEventListener('submit', e => {
+    const f = e.target;
+    if (f.matches('.reveal-form')) { e.preventDefault(); submitReveal(f); }
+    else if (f.matches('.editor')) { e.preventDefault(); saveEdit(f); }
+  });
+  document.addEventListener('toggle', e => {
+    const d = e.target;
+    if (d.matches && d.matches('#now .guesses')) UI.guessOpen = d.open;
+  }, true);
+
+  /* ---------- start ---------- */
+  function bubbles() {
+    const host = $('.bubbles');
+    const count = window.innerWidth < 600 ? 16 : 28;
+    let h = '';
+    for (let i = 0; i < count; i++) {
+      const s = (4 + Math.random() * 12).toFixed(1), x = (Math.random() * 100).toFixed(1);
+      const d = (10 + Math.random() * 14).toFixed(1), delay = (-Math.random() * 24).toFixed(1), sway = Math.round((Math.random() - 0.5) * 60);
+      h += `<i style="--s:${s}px;--x:${x}%;--d:${d}s;--delay:${delay}s;--sway:${sway}px"></i>`;
+    }
+    host.innerHTML = h;
+  }
+  $('#capEdge').setAttribute('d', capPath(50, 50, 50, 42, 21));
+  $('#crestEdge').setAttribute('d', capPath(110, 110, 109, 97, 24));
+  if (TEST) $('.bubbles').insertAdjacentHTML('afterend', '<div class="ribbon" role="note"><p><b>Test board.</b> Nothing here touches the real standings.</p><a href="./">Open the real board</a></div>');
+  bubbles();
+  renderAll();
+  setSync(outbox.length ? 'saving' : 'connecting');
+  if (outbox.length) flush();
+  poll();
+  setInterval(poll, POLL_MS);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); if (outbox.length) flush(); } });
+  window.addEventListener('online', () => { if (outbox.length) flush(); else poll(); });
+})();
+</script>
+</body>
+</html>

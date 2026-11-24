@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS } from "./worker.js";
+import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_WRITES, BEER_MAX_POURS, beerText } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -41,6 +41,17 @@ function makeEnv(kv) {
   env.PLAN = {
     idFromName: () => "plan",
     get: () => ({ fetch: req => (pqueue = pqueue.then(() => planBox.fetch(req))) }),
+  };
+  // The beer board has two objects, the real board and the test board, each one at a time.
+  env._beer = new Map();
+  env.BEER = {
+    idFromName: name => name,
+    get: name => {
+      if (!env._beer.has(name)) env._beer.set(name, { storage: new FakeStorage(), queue: Promise.resolve() });
+      const slot = env._beer.get(name);
+      const obj = new BeerBoard({ storage: slot.storage });
+      return { fetch: req => (slot.queue = slot.queue.then(() => obj.fetch(req))) };
+    },
   };
   return env;
 }
@@ -259,6 +270,128 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   check("the plan log carries no address", !JSON.stringify(await pget()).includes("198.51.100"));
   const h = await worker.fetch(new Request("https://yesandeverything.com" + HOUSE_ROUTE), env3).then(r => r.json());
   check("the plan state never reaches the house marks", !JSON.stringify(h).includes("job-"));
+}
+
+// Golden's Guzzlers: one beer board shared by every phone at the table.
+{
+  const env4 = makeEnv(new FakeKV());
+  const bbase = "https://yesandeverything.com" + BEER_ROUTE;
+  let seq = 0;
+  const id = () => "change" + String(++seq).padStart(8, "0");
+  const bpost = (body, o = {}) => worker.fetch(new Request(bbase + (o.test ? "?board=test" : ""), {
+    method: "POST",
+    headers: { "content-type": o.type || "application/json", ...(o.ip ? { "cf-connecting-ip": o.ip } : {}), ...(o.length ? { "content-length": String(o.length) } : {}) },
+    body: o.raw !== undefined ? o.raw : JSON.stringify(body),
+  }), env4).then(async r => ({ status: r.status, j: await r.json() }));
+  const bget = test => worker.fetch(new Request(bbase + (test ? "?board=test" : "")), env4).then(r => r.json());
+
+  let g = await bget();
+  check("the beer board starts empty with Mike to pull", g.board.pours.length === 0 && g.board.nextPuller === "Mike" && g.board.rev === 0);
+  let x = await bpost({ op: "pour", opId: id(), pid: "pourone1" });
+  check("a pull makes pour 1, pulled by Mike, and Bill pulls next", x.status === 200 && x.j.board.pours[0].n === 1 && x.j.board.pours[0].puller === "Mike" && x.j.board.nextPuller === "Bill");
+  x = await bpost({ op: "pour", opId: id(), pid: "pourtwo2" });
+  check("a second pull while pour 1 is in its coozie changes nothing", x.status === 200 && x.j.changed === false && x.j.board.pours.length === 1);
+
+  const votes = { Mike: "up", Bill: "side", Brennan: "up", Nick: "down", AJ: "up", Gannan: "up" };
+  await Promise.all(Object.entries(votes).map(([name, v]) => bpost({ op: "vote", opId: id(), pid: "pourone1", name, v })));
+  g = await bget();
+  check("six thumbs sent at once all land", Object.entries(votes).every(([k, v]) => g.board.pours[0].votes[k] === v));
+
+  const again = { op: "vote", opId: "resendNICK01", pid: "pourone1", name: "Nick", v: "up" };
+  await bpost(again);
+  await bpost({ op: "vote", opId: id(), pid: "pourone1", name: "Nick", v: "down" });
+  x = await bpost(again);
+  check("a change sent again after a lost answer applies once", x.j.repeat === true && x.j.board.pours[0].votes.Nick === "down");
+  x = await bpost({ op: "vote", opId: id(), pid: "pourone1", name: "Nick", v: "" });
+  check("a vote can be cleared", x.status === 200 && !("Nick" in x.j.board.pours[0].votes));
+  await bpost({ op: "vote", opId: id(), pid: "pourone1", name: "Nick", v: "down" });
+  x = await bpost({ op: "vote", opId: id(), pid: "pourone1", name: "Nick", v: "maybe" });
+  check("a vote other than up, side or down is refused, with the board sent back", x.status === 400 && x.j.board.pours.length === 1);
+  x = await bpost({ op: "vote", opId: id(), pid: "pourone1", name: "Zed", v: "up" });
+  check("a taster who is not at the table is refused", x.status === 400);
+  x = await bpost({ op: "vote", opId: id(), pid: "nosuchpour", name: "Mike", v: "up" });
+  check("a vote on a pour that is not on the board is refused", x.status === 400);
+
+  x = await bpost({ op: "guess", opId: id(), pid: "pourone1", name: "Mike", who: "Nick" });
+  check("a guess on who brought it saves", x.j.board.pours[0].guesses.Mike === "Nick");
+  x = await bpost({ op: "guess", opId: id(), pid: "pourone1", name: "Mike", who: "Zed" });
+  check("a guess naming someone not at the table is refused", x.status === 400);
+  x = await bpost({ op: "guess", opId: id(), pid: "pourone1", name: "Mike", who: "" });
+  check("a guess can be cleared", !("Mike" in x.j.board.pours[0].guesses));
+
+  x = await bpost({ op: "reveal", opId: id(), pid: "pourone1", name: "   ", brewery: "x" });
+  check("a reveal with no beer name is refused", x.status === 400 && x.j.board.pours[0].revealed === false);
+  x = await bpost({ op: "reveal", opId: id(), pid: "pourone1", name: "Hop\u0007  Goblin" + "!".repeat(120), brewery: " Bramblewood  Brewing ", style: "Hazy IPA", provider: "Gannan" });
+  const p1 = x.j.board.pours[0];
+  check("a reveal saves the name, brewery, style and who brought it", x.status === 200 && p1.revealed === true && p1.brewery === "Bramblewood Brewing" && p1.style === "Hazy IPA" && p1.provider === "Gannan");
+  check("a revealed name loses control characters and stops at 80", p1.name.startsWith("Hop Goblin!") && p1.name.length === 80 && !/[\u0000-\u001f]/.test(p1.name));
+  x = await bpost({ op: "reveal", opId: id(), pid: "pourone1", name: "Hop Goblin", provider: "Zed" });
+  check("a provider who is not at the table is saved as nobody", x.j.board.pours[0].provider === "");
+
+  x = await bpost({ op: "pour", opId: id(), pid: "pourtwo2" });
+  check("after the reveal the next pull is pour 2, pulled by Bill", x.j.board.pours[1].n === 2 && x.j.board.pours[1].puller === "Bill" && x.j.board.nextPuller === "Brennan");
+  x = await bpost({ op: "unpour", opId: id(), pid: "pourtwo2" });
+  check("a pour pulled by mistake goes back in the bucket and Bill pulls again", x.j.board.pours.length === 1 && x.j.board.nextPuller === "Bill");
+  await bpost({ op: "pour", opId: id(), pid: "pourtwo2" });
+  await bpost({ op: "vote", opId: id(), pid: "pourtwo2", name: "AJ", v: "up" });
+  x = await bpost({ op: "unpour", opId: id(), pid: "pourtwo2" });
+  check("a pour with a vote on it cannot be put back", x.j.changed === false && x.j.board.pours.length === 2);
+
+  x = await bpost({ op: "surprise", opId: id(), pid: "pourtwo2" });
+  check("only a revealed beer can be the surprise", x.status === 400);
+  x = await bpost({ op: "surprise", opId: id(), pid: "pourone1" });
+  check("a revealed beer can be the surprise", x.j.board.surprise === "pourone1");
+
+  x = await bpost({ op: "edit", opId: id(), pid: "pourone1", name: "Hop Goblin", brewery: "Bramblewood", style: "Hazy IPA", provider: "Gannan", votes: { Mike: "down", Zed: "up", Bill: "sideways", AJ: "side" }, guesses: { Nick: "Gannan", Bill: "Zed" } });
+  const e1 = x.j.board.pours[0];
+  check("a fix replaces the votes and guesses, keeping only real tasters and real votes", JSON.stringify(e1.votes) === JSON.stringify({ Mike: "down", AJ: "side" }) && JSON.stringify(e1.guesses) === JSON.stringify({ Nick: "Gannan" }) && e1.brewery === "Bramblewood");
+
+  x = await bpost({ op: "remove", opId: id(), pid: "pourone1" });
+  check("taking a pour off the board clears it as the surprise", x.j.board.pours.length === 1 && x.j.board.surprise === null);
+  const live = env4._beer.get("goldens-guzzlers").storage;
+  const kept = [...(await live.list({ prefix: "removed:" })).values()];
+  check("a pour taken off the board is kept for recovery", kept.length === 1 && kept[0].pour.name === "Hop Goblin");
+
+  x = await bpost({ op: "clear", opId: id() });
+  check("clearing the board takes the word clear", x.status === 400 && x.j.board.pours.length === 1);
+  const before = x.j.board.rev;
+  x = await bpost({ op: "clear", opId: id(), confirm: "clear" });
+  const arch = [...(await live.list({ prefix: "archive:" })).values()];
+  check("a cleared board empties and its pours are archived", x.j.board.pours.length === 0 && x.j.board.rev === before + 1 && arch.length === 1 && arch[0].board.pours.length === 1);
+
+  x = await bpost({ op: "explode", opId: id() });
+  check("an unknown change is refused", x.status === 400);
+  x = await bpost(null, { raw: "op=pour", type: "application/x-www-form-urlencoded" });
+  check("a form post to the beer board is refused", x.status === 415);
+  x = await bpost(null, { raw: JSON.stringify({ op: "puller", name: "Mike", pad: "x".repeat(5000) }) });
+  check("a change past four kilobytes is refused", x.status === 413);
+  x = await bpost({ op: "puller", opId: "bad id!", name: "Mike" });
+  check("a change id that is not an id is refused", x.status === 400);
+
+  await bpost({ op: "pour", opId: id(), pid: "testpour1" }, { test: true });
+  const tb = await bget(true), lb = await bget();
+  check("the test board never touches the real one", tb.board.pours.length === 1 && lb.board.pours.length === 0);
+
+  const codes = [];
+  for (let i = 0; i < BEER_WRITES + 2; i++) codes.push((await bpost({ op: "puller", opId: id(), name: i % 2 ? "Bill" : "Mike" }, { ip: "203.0.113.44" })).status);
+  check("one address is cut off after the beer write cap", codes.slice(0, BEER_WRITES).every(c => c === 200) && codes.slice(BEER_WRITES).every(c => c === 429));
+  x = await bpost({ op: "puller", opId: id(), name: "AJ" }, { ip: "198.51.100.44" });
+  check("another address still writes to the board", x.status === 200 && x.j.board.nextPuller === "AJ");
+  check("the board carries no address", !JSON.stringify(await bget()).includes("203.0.113"));
+
+  await bpost({ op: "reveal", opId: id(), pid: "testpour1", name: "Test beer" }, { test: true });
+  for (let i = 1; i < BEER_MAX_POURS; i++) {
+    const pid = "fill" + String(i).padStart(4, "0");
+    await bpost({ op: "pour", opId: id(), pid }, { test: true });
+    await bpost({ op: "reveal", opId: id(), pid, name: "Beer " + i }, { test: true });
+  }
+  x = await bpost({ op: "pour", opId: id(), pid: "onetoomany" }, { test: true });
+  check("a pull past the pour cap is refused", x.status === 400 && x.j.board.pours.length === BEER_MAX_POURS);
+
+  check("beerText keeps one space at a time and drops control characters", beerText("  Two\u0000  Spires\n Brewing ", 80) === "Two Spires Brewing");
+  const h = await worker.fetch(new Request("https://yesandeverything.com" + HOUSE_ROUTE), env4).then(r => r.json());
+  const pl = await worker.fetch(new Request("https://yesandeverything.com" + PLAN_ROUTE), env4).then(r => r.json());
+  check("the beer board never reaches the house marks or the plan", !JSON.stringify(h).includes("pour") && !JSON.stringify(pl).includes("pour"));
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }

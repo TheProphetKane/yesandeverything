@@ -19,24 +19,29 @@
   "routes": [
     { "pattern": "yesandeverything.com/thanksgiving-2026/api/*", "zone_name": "yesandeverything.com" },
     { "pattern": "yesandeverything.com/house-search/api/*", "zone_name": "yesandeverything.com" },
-    { "pattern": "yesandeverything.com/house-plan/api/*", "zone_name": "yesandeverything.com" }
+    { "pattern": "yesandeverything.com/house-plan/api/*", "zone_name": "yesandeverything.com" },
+    { "pattern": "yesandeverything.com/goldens-guzzlers/api/*", "zone_name": "yesandeverything.com" }
   ],
 
   // Every vote goes through one Durable Object, so votes never overwrite each other and every
   // viewer reads the same totals at once. Stored in its own SQLite-backed storage. The house
   // search marks get their own object, HouseMarks, so the two never share a record. The house plan's
-  // Needed, Wanted and Done state gets a third, PlanState, which outlives the house search.
+  // Needed, Wanted and Done state gets a third, PlanState, which outlives the house search. The
+  // Golden's Guzzlers beer board gets a fourth, BeerBoard (2026-11-24), on the free plan's
+  // SQLite-backed storage like the other three.
   "durable_objects": {
     "bindings": [
       { "name": "BOX", "class_name": "VoteBox" },
       { "name": "HOUSE", "class_name": "HouseMarks" },
-      { "name": "PLAN", "class_name": "PlanState" }
+      { "name": "PLAN", "class_name": "PlanState" },
+      { "name": "BEER", "class_name": "BeerBoard" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["VoteBox"] },
     { "tag": "v2", "new_sqlite_classes": ["HouseMarks"] },
-    { "tag": "v3", "new_sqlite_classes": ["PlanState"] }
+    { "tag": "v3", "new_sqlite_classes": ["PlanState"] },
+    { "tag": "v4", "new_sqlite_classes": ["BeerBoard"] }
   ],
 
   // The first version's store. VoteBox reads it once to carry votes over and never writes it.
