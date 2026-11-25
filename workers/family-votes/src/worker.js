@@ -36,6 +36,13 @@
 // once. Clearing the board for next year keeps the cleared board as an archive, and a pour taken off
 // the board is kept too, so neither can be lost to a slipped tap. The query ?board=test points at a
 // second object with the same rules, so the page can be tried without touching the real standings.
+//
+// Since 2026-11-24 the board is a yearly record. Each year's night is its own record, kept under
+// its year for good: starting the next year opens a fresh board and leaves every past year as it
+// was, and no change from the page can reach a past year. Beside the boards sit the beer log's two
+// lists: beers marked to bring back for another try, and the stash, beers someone has collected
+// for a future night. A revealed beer that was in someone's stash comes off it as poured, so the
+// stash only ever shows what is still waiting.
 
 export const ROUTE = "/thanksgiving-2026/api/votes";
 export const MAX_VOTERS = 200;
@@ -508,11 +515,65 @@ export const BEER_SEEN_KEEP = 400;
 // Cleared boards and removed pours kept for recovery.
 export const BEER_ARCHIVE_KEEP = 5;
 export const BEER_REMOVED_KEEP = 60;
+// The first night on the board.
+export const BEER_FIRST_YEAR = 2026;
+// Beers waiting in stashes for future nights.
+export const BEER_STASH_MAX = 400;
+// Changes that go to the beer log's lists rather than to this year's board.
+export const BEER_LIB_OPS = new Set(["bringback", "stash-add", "stash-remove"]);
 const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
 const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
 
 export function beerFresh() {
   return { v: 1, rev: 0, nextPuller: BEER_ROSTER[0], surprise: null, pours: [] };
+}
+
+export function beerNorm(s) {
+  return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+// One beer, however it was typed: "Bramblewood Brewing Co." and "bramblewood" are the same brewery.
+// The page carries the same function, so its log and the stash agree on what counts as the same beer.
+const BEER_BREWERY_FILLER = /\b(brewing|brewery|breweries|brewers|brewhouse|brew|beer|beers|co|company|ales|ale|works|craft|the|and)\b/g;
+export function beerKey(name, brewery) {
+  return beerNorm(name) + "|" + beerNorm(brewery).replace(BEER_BREWERY_FILLER, " ").replace(/\s+/g, " ").trim();
+}
+
+// One change to the beer log's lists: the bring-back marks and the stash. Pure, like beerApply.
+export function beerLibApply(lib, op, now) {
+  const marks = { bringBack: { ...((lib.marks && lib.marks.bringBack) || {}) } };
+  const stash = (lib.stash || []).map(s => ({ ...s }));
+  switch (op.op) {
+    case "bringback": {
+      const name = beerText(op.name, 80), brewery = beerText(op.brewery, 80);
+      if (!name) return { error: "A beer to bring back needs its name." };
+      const key = beerKey(name, brewery);
+      if (op.on === true) marks.bringBack[key] = { name, brewery, style: beerText(op.style, 60), at: now };
+      else if (op.on === false) {
+        if (!marks.bringBack[key]) return { lib, changed: false };
+        delete marks.bringBack[key];
+      } else return { error: "Bring back is on or off." };
+      break;
+    }
+    case "stash-add": {
+      const name = beerText(op.name, 80);
+      if (!name) return { error: "A stashed beer needs its name." };
+      if (typeof op.sid !== "string" || !BEER_POUR_ID.test(op.sid)) return { error: "That stash entry could not be read." };
+      if (stash.some(s => s.id === op.sid)) return { lib, changed: false };
+      if (stash.length >= BEER_STASH_MAX) return { error: "The stash is full." };
+      stash.push({ id: op.sid, name, brewery: beerText(op.brewery, 80), style: beerText(op.style, 60), who: beerWho(op.who), at: now });
+      break;
+    }
+    case "stash-remove": {
+      const i = stash.findIndex(s => s.id === op.sid);
+      if (i < 0) return { lib, changed: false };
+      stash.splice(i, 1);
+      break;
+    }
+    default:
+      return { error: "That change is not one the board knows." };
+  }
+  return { lib: { marks, stash }, changed: true };
 }
 
 // Text from the page: no control characters, one space at a time, cut to a length.
@@ -632,8 +693,35 @@ export class BeerBoard {
     this.storage = ctx.storage;
   }
 
-  async board() {
-    return (await this.storage.get("board")) || beerFresh();
+  // The year record: the year the board is on and every year that has a board. A store from before
+  // years, one "board" record, moves under the first year once.
+  async meta() {
+    const m = await this.storage.get("meta");
+    if (m) return m;
+    const fresh = { year: BEER_FIRST_YEAR, years: [BEER_FIRST_YEAR], libRev: 0 };
+    const old = await this.storage.get("board");
+    if (old) {
+      await this.storage.put("board:" + BEER_FIRST_YEAR, { ...old, year: BEER_FIRST_YEAR });
+      await this.storage.delete("board");
+    }
+    await this.storage.put("meta", fresh);
+    return fresh;
+  }
+
+  async board(year) {
+    return (await this.storage.get("board:" + year)) || { ...beerFresh(), year };
+  }
+
+  async lib() {
+    return {
+      marks: (await this.storage.get("marks")) || { bringBack: {} },
+      stash: (await this.storage.get("stash")) || [],
+    };
+  }
+
+  // What every answer carries: the year, every year, the log's revision and this year's board.
+  async state(m, board) {
+    return { ok: true, year: m.year, years: m.years, libRev: m.libRev, board: board || await this.board(m.year) };
   }
 
   // Keep the newest entries under one prefix and drop the rest.
@@ -644,7 +732,18 @@ export class BeerBoard {
   }
 
   async fetch(request) {
-    if (request.method === "GET") return json({ ok: true, board: await this.board() });
+    const url = new URL(request.url);
+    const m = await this.meta();
+    if (request.method === "GET") {
+      if (url.searchParams.get("view") === "library") {
+        const boards = {};
+        for (const y of m.years) boards[y] = await this.board(y);
+        return json({ ok: true, year: m.year, years: m.years, libRev: m.libRev, boards, ...(await this.lib()) });
+      }
+      const y = Number(url.searchParams.get("year") || m.year);
+      if (!m.years.includes(y)) return json({ error: "There is no board for that year." }, 404);
+      return json({ ok: true, year: m.year, years: m.years, libRev: m.libRev, board: await this.board(y) });
+    }
     const op = await request.json();
     const now = Date.now();
     const ip = request.headers.get("x-client-ip");
@@ -659,11 +758,61 @@ export class BeerBoard {
       const old = await this.storage.list({ prefix: "r:" });
       for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
     }
-    const board = await this.board();
     const seen = (await this.storage.get("seen")) || [];
-    if (op.opId && seen.includes(op.opId)) return json({ ok: true, board, changed: false, repeat: true });
+    if (op.opId && seen.includes(op.opId)) return json({ ...(await this.state(m)), changed: false, repeat: true });
+    const remember = async () => {
+      if (!op.opId) return;
+      seen.push(op.opId);
+      await this.storage.put("seen", seen.slice(-BEER_SEEN_KEEP));
+    };
+
+    // Only the test board can be wiped whole, so a trial run leaves nothing behind there.
+    if (op.op === "wipe") {
+      if (request.headers.get("x-beer-board") !== "test" || op.confirm !== "wipe the test board") {
+        return json({ error: "Only the test board can be wiped.", ...(await this.state(m)) }, 400);
+      }
+      await this.storage.deleteAll();
+      return json({ ...(await this.state(await this.meta())), changed: true });
+    }
+
+    // A new year opens a fresh board and leaves every earlier year exactly as it was.
+    if (op.op === "newyear") {
+      const y = Number(op.year);
+      if (op.confirm !== "new year" || !Number.isInteger(y) || y <= m.year || y > m.year + 5) {
+        return json({ error: "A new year comes after " + m.year + ".", ...(await this.state(m)) }, 400);
+      }
+      const prev = await this.board(m.year);
+      const next = { ...beerFresh(), year: y, nextPuller: prev.nextPuller || BEER_ROSTER[0] };
+      await this.storage.put("board:" + y, next);
+      m.year = y;
+      m.years = [...m.years, y];
+      m.libRev++;
+      await this.storage.put("meta", m);
+      await remember();
+      return json({ ...(await this.state(m, next)), changed: true });
+    }
+
+    if (BEER_LIB_OPS.has(op.op)) {
+      const out = beerLibApply(await this.lib(), op, now);
+      if (out.error) return json({ error: out.error, ...(await this.state(m)) }, 400);
+      if (out.changed) {
+        await this.storage.put("marks", out.lib.marks);
+        await this.storage.put("stash", out.lib.stash);
+        m.libRev++;
+        await this.storage.put("meta", m);
+      }
+      await remember();
+      return json({ ...(await this.state(m)), changed: out.changed });
+    }
+
+    // Every other change is to this year's board. A change made for an earlier year, by a phone
+    // that has not seen the new year start, is turned away rather than landing on the wrong night.
+    if (op.y !== undefined && op.y !== m.year) {
+      return json({ error: "The board has moved on to " + m.year + ", so that change was not saved.", ...(await this.state(m)) }, 409);
+    }
+    const board = await this.board(m.year);
     const out = beerApply(board, op, now);
-    if (out.error) return json({ error: out.error, board }, 400);
+    if (out.error) return json({ error: out.error, ...(await this.state(m, board)) }, 400);
     if (out.changed) {
       let seq = (await this.storage.get("seq")) || 0;
       if (out.archive) {
@@ -675,13 +824,28 @@ export class BeerBoard {
         await this.trim("removed:", BEER_REMOVED_KEEP);
       }
       if (out.archive || out.removed) await this.storage.put("seq", seq);
-      await this.storage.put("board", out.board);
+      await this.storage.put("board:" + m.year, out.board);
+      // A revealed beer that was waiting in someone's stash comes off it as poured.
+      if (op.op === "reveal" || op.op === "edit") {
+        const p = out.board.pours.find(x => x.id === op.pid);
+        const lib = await this.lib();
+        let moved = false;
+        if (p) for (const s of lib.stash) {
+          if (!s.pouredYear && beerKey(s.name, s.brewery) === beerKey(p.name, p.brewery)) {
+            s.pouredYear = m.year;
+            s.pouredPour = p.n;
+            moved = true;
+          }
+        }
+        if (moved) {
+          await this.storage.put("stash", lib.stash);
+          m.libRev++;
+          await this.storage.put("meta", m);
+        }
+      }
     }
-    if (op.opId) {
-      seen.push(op.opId);
-      await this.storage.put("seen", seen.slice(-BEER_SEEN_KEEP));
-    }
-    return json({ ok: true, board: out.board, changed: out.changed });
+    await remember();
+    return json({ ...(await this.state(m, out.board)), changed: out.changed });
   }
 }
 
@@ -695,7 +859,13 @@ async function beerRoute(request, env) {
   const url = new URL(request.url);
   const which = url.searchParams.get("board") === "test" ? "test" : "live";
   const inner = "https://beerboard" + BEER_ROUTE;
-  if (request.method === "GET") return beer(env, which).fetch(new Request(inner));
+  if (request.method === "GET") {
+    const q = new URLSearchParams();
+    if (url.searchParams.get("view") === "library") q.set("view", "library");
+    if (/^\d{4}$/.test(url.searchParams.get("year") || "")) q.set("year", url.searchParams.get("year"));
+    const qs = q.toString();
+    return beer(env, which).fetch(new Request(inner + (qs ? "?" + qs : "")));
+  }
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
   if (!(request.headers.get("content-type") || "").includes("application/json")) {
     return json({ error: "Send the change as JSON." }, 415);
@@ -717,6 +887,7 @@ async function beerRoute(request, env) {
     headers: {
       "content-type": "application/json",
       "x-client-ip": request.headers.get("cf-connecting-ip") || "",
+      "x-beer-board": which,
     },
     body: JSON.stringify(body),
   }));

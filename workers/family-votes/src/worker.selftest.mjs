@@ -1,6 +1,6 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_WRITES, BEER_MAX_POURS, beerText } from "./worker.js";
+import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_WRITES, BEER_MAX_POURS, beerText, beerKey } from "./worker.js";
 
 class FakeKV {
   constructor() { this.m = new Map(); }
@@ -16,6 +16,7 @@ class FakeStorage {
   async get(k) { return this.m.has(k) ? structuredClone(this.m.get(k)) : undefined; }
   async put(k, v) { this.m.set(k, structuredClone(v)); }
   async delete(k) { this.m.delete(k); }
+  async deleteAll() { this.m.clear(); }
   async list({ prefix = "" } = {}) {
     return new Map([...this.m.entries()].filter(([k]) => k.startsWith(prefix)).sort().map(([k, v]) => [k, structuredClone(v)]));
   }
@@ -392,6 +393,65 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   const h = await worker.fetch(new Request("https://yesandeverything.com" + HOUSE_ROUTE), env4).then(r => r.json());
   const pl = await worker.fetch(new Request("https://yesandeverything.com" + PLAN_ROUTE), env4).then(r => r.json());
   check("the beer board never reaches the house marks or the plan", !JSON.stringify(h).includes("pour") && !JSON.stringify(pl).includes("pour"));
+}
+
+// The yearly record: each year's board kept for good, the beer log's bring-back list and stash.
+{
+  const env5 = makeEnv(new FakeKV());
+  const ybase = "https://yesandeverything.com" + BEER_ROUTE;
+  let n5 = 0;
+  const id = () => "yearchg" + String(++n5).padStart(8, "0");
+  const ypost = (body, test) => worker.fetch(new Request(ybase + (test ? "?board=test" : ""), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env5).then(async r => ({ status: r.status, j: await r.json() }));
+  const yget = q => worker.fetch(new Request(ybase + (q || "")), env5).then(r => r.json());
+
+  let g = await yget();
+  check("the board starts on 2026", g.year === 2026 && JSON.stringify(g.years) === "[2026]" && g.board.year === 2026);
+  await ypost({ op: "pour", opId: id(), pid: "yearone1", y: 2026 });
+  await ypost({ op: "vote", opId: id(), pid: "yearone1", name: "Mike", v: "up", y: 2026 });
+  let x = await ypost({ op: "stash-add", opId: id(), sid: "stash0001", name: "Hop  Goblin", brewery: "Bramblewood Brewing Co.", who: "Brennan" });
+  check("a beer goes in the stash, with who has it", x.status === 200 && x.j.libRev === 1);
+  await ypost({ op: "reveal", opId: id(), pid: "yearone1", name: "Hop Goblin", brewery: "Bramblewood Brewing", style: "Hazy IPA", provider: "Gannan", y: 2026 });
+  let lib = await yget("?view=library");
+  check("a revealed beer that was in a stash comes off it as poured", lib.stash[0].pouredYear === 2026 && lib.stash[0].pouredPour === 1 && lib.stash[0].who === "Brennan");
+  check("brewery words like Brewing and Co. do not split one beer in two", beerKey("Hop Goblin", "Bramblewood Brewing Co.") === beerKey("hop  goblin", "Bramblewood"));
+  await ypost({ op: "bringback", opId: id(), name: "Hop Goblin", brewery: "Bramblewood Brewing", on: true });
+  lib = await yget("?view=library");
+  check("a beer can be marked to bring back", lib.marks.bringBack[beerKey("Hop Goblin", "Bramblewood")].name === "Hop Goblin");
+  x = await ypost({ op: "bringback", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: "yes" });
+  check("bring back is on or off, nothing else", x.status === 400);
+
+  x = await ypost({ op: "newyear", opId: id(), year: 2027 });
+  check("a new year needs its confirming words", x.status === 400 && x.j.year === 2026);
+  x = await ypost({ op: "newyear", opId: id(), year: 2026, confirm: "new year" });
+  check("a new year has to come after this one", x.status === 400);
+  x = await ypost({ op: "newyear", opId: id(), year: 2027, confirm: "new year" });
+  check("starting 2027 gives an empty board on 2027", x.status === 200 && x.j.year === 2027 && x.j.board.pours.length === 0 && JSON.stringify(x.j.years) === "[2026,2027]");
+  g = await yget("?year=2026");
+  check("2026 stays saved after 2027 starts", g.board.year === 2026 && g.board.pours.length === 1 && g.board.pours[0].name === "Hop Goblin" && g.board.pours[0].votes.Mike === "up");
+  x = await ypost({ op: "vote", opId: id(), pid: "yearone1", name: "Bill", v: "down", y: 2026 });
+  check("a change meant for 2026 is turned away once 2027 has started", x.status === 409 && x.j.year === 2027);
+  g = await yget("?year=2026");
+  check("and 2026 is untouched by it", !("Bill" in g.board.pours[0].votes));
+  lib = await yget("?view=library");
+  check("the log holds every year's board", Object.keys(lib.boards).join(",") === "2026,2027" && lib.boards["2026"].pours[0].name === "Hop Goblin");
+  x = await ypost({ op: "stash-remove", opId: id(), sid: "stash0001" });
+  check("a stash entry can be taken out", x.status === 200 && x.j.libRev > lib.libRev);
+  lib = await yget("?view=library");
+  check("and it is gone from the stash", lib.stash.length === 0);
+  const r404 = await worker.fetch(new Request(ybase + "?year=2031"), env5);
+  check("a year with no board answers not found", r404.status === 404);
+
+  const st = new FakeStorage();
+  await st.put("board", { v: 1, rev: 3, nextPuller: "AJ", surprise: null, pours: [{ id: "oldpour1", n: 1, puller: "Mike", votes: {}, guesses: {}, revealed: true, name: "Old One", brewery: "", style: "", provider: "" }] });
+  const old = await new BeerBoard({ storage: st }).fetch(new Request("https://beerboard" + BEER_ROUTE)).then(r => r.json());
+  check("a board from before years moves under 2026 with its pours", old.year === 2026 && old.board.pours[0].name === "Old One" && !(await st.get("board")) && (await st.get("board:2026")).rev === 3);
+
+  x = await ypost({ op: "wipe", opId: id(), confirm: "wipe the test board" });
+  check("the real board cannot be wiped", x.status === 400 && x.j.years.length === 2);
+  await ypost({ op: "pour", opId: id(), pid: "testwipe1" }, true);
+  x = await ypost({ op: "wipe", opId: id(), confirm: "wipe the test board" }, true);
+  g = await yget("?board=test");
+  check("the test board wipes clean", x.status === 200 && g.board.pours.length === 0 && JSON.stringify(g.years) === "[2026]");
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }
