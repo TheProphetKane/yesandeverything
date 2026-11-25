@@ -1,7 +1,7 @@
 // escape-html.js - the one HTML-escaper for the whole app.
 //
 // This lived as eight byte-identical copies across render.js, editor.js and
-// saved-labels-ui.js (bar-raise maintainability-02). One copy now; the five
+// saved-labels-ui.js. One copy now; the five
 // characters and their entities are the same set every copy carried, so
 // collapsing them changed no output.
 //

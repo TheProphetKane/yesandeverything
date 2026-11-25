@@ -6,9 +6,9 @@
 // Deliberately no static import of ./persist.js. main.js loads that module
 // dynamically with a cache-busted URL and this module runs the same way; a
 // static import here would pull in a second, un-versioned instance that can
-// serve stale code after a deploy (cache-bust contract, PROJECT_SPEC 3.1,
-// bar-raise architecture-01). notifyStorageError arrives via configure()
-// instead, called once from main.js right after the dynamic import resolves.
+// serve stale code after a deploy (cache-bust contract, PROJECT_SPEC 3.1).
+// notifyStorageError arrives via configure() instead, called once from main.js
+// right after the dynamic import resolves.
 
 const KEY = 'yesandapothecary.v1.saved';
 
@@ -17,7 +17,7 @@ export function configure({ notifyStorageError: fn } = {}) {
   if (typeof fn === 'function') notifyStorageError = fn;
 }
 
-// Backlog B02 and data-integrity-03 (bar-raise 2026-11-18). A stored library
+// Backlog B02. A stored library
 // that will not parse, or that holds an entry without a string id and an
 // object state, is copied whole to this key before anything else happens to
 // it. read() then returns only the usable entries, and write() refuses to
@@ -68,8 +68,8 @@ function read() {
   const { list, clean, error } = parseLibrary(raw);
   if (!clean) {
     // A corrupted entry used to silently discard the user's entire
-    // saved-label library with no on-screen warning (bar-raise
-    // reliability-01). Surface it; the panel still renders what it can.
+    // saved-label library with no on-screen warning. Surface it; the panel
+    // still renders what it can.
     keepCopy(raw);
     notifyStorageError('saved-labels', error, 'read');
   }

@@ -3,9 +3,8 @@
 // pickers, border-tile SVG previews. Mounts the five larger sub-panels from
 // their own modules: src/ui/title-editor.js, src/ui/custom-items.js,
 // src/ui/layout-presets.js, src/ui/layout-designer.js and
-// src/ui/illustration-picker.js (bar-raise maintainability-01, 2026-09-04;
-// this file used to carry all seven mounters directly and had grown to 1642
-// lines, 2.6x render.js).
+// src/ui/illustration-picker.js (this file used to carry all seven mounters
+// directly and had grown to 1642 lines, 2.6x render.js).
 //
 // v0.11: editor reorganized into four collapsible accordion sections so the
 // UI scales. New customization surface area: per-section title editing +
@@ -22,10 +21,10 @@
 // already was, and esc/preserveScroll travel into them through the deps
 // object mountEditor builds rather than a static import inside those files.
 // v1.1.6: printLabel and truncateAtWordBoundary used to violate this exact
-// rule via a stray static import (bar-raise 2026-08-12 architecture-01);
+// rule via a stray static import;
 // they're destructured from ctx below now, same as everything else here.
 
-// The HTML-escaper: one copy for the app (bar-raise maintainability-02).
+// The HTML-escaper: one copy for the app.
 // Six byte-identical closures used to live in this file under two names,
 // escAttr and esc, doing exactly the same five-character escape. Loaded
 // through a versioned dynamic import rather than a static one for the reason
@@ -49,11 +48,11 @@ const [
   import('./layout-presets.js' + ESC_V),
   import('./layout-designer.js' + ESC_V),
   import('./illustration-picker.js' + ESC_V),
-  // bar-raise 2026-09-09 architecture-01: the illustration resolution order,
+  // The illustration resolution order,
   // shared with render.js via main.js's ctx so both call sites use the same
   // three-step chain instead of two independently drifting copies.
   import('../util/resolve-illustration.js' + ESC_V),
-  // bar-raise 2026-11-18 maintainability-01: the layout designer's zone and
+  // The layout designer's zone and
   // item mutations, pure and under test-layout-ops.mjs. The whole module
   // rides into the designer through deps.
   import('../util/layout-ops.js' + ESC_V),
@@ -66,7 +65,7 @@ const SWATCH_COLORS = [
 
 // Runs a sub-panel mounter and contains a throw to that one panel instead of
 // letting it propagate to main().catch, which replaces the entire page with
-// the failure screen (bar-raise reliability-01). targetEl is the element (or
+// the failure screen. targetEl is the element (or
 // array of elements) that panel owns; on failure each one gets cleared and
 // shown a short inline message so the rest of the editor stays usable.
 function mountSafely(label, targetEl, fn) {
@@ -98,7 +97,7 @@ export function mountEditor(root, ctx) {
     exportPng,
     // v1.1.6: forwarded from main.js's versioned dynamic imports.
     printLabel, truncateAtWordBoundary,
-    // maintainability-04: forwarded from main.js's versioned dynamic imports.
+    // Forwarded from main.js's versioned dynamic imports.
     // Do not add this back as a static import; see the note at the top of
     // this file on why cross-module references travel through ctx.
     rankSuggestions,
@@ -136,8 +135,7 @@ export function mountEditor(root, ctx) {
       // Zone geometry (id/layoutMode/width/align) is derived from the
       // template descriptor via defaultLayout() instead of hand-written, so
       // it can't drift from data/label-templates.js the way preset-standard
-      // and preset-three-col already don't (bar-raise
-      // generative-art-schema-driven-correctness-01). Only the per-zone item
+      // and preset-three-col already don't. Only the per-zone item
       // curation below is this preset's own choice.
       layout: () => {
         const baseline = defaultLayout(undefined, templates, defaultTemplateId);
@@ -343,8 +341,8 @@ export function mountEditor(root, ctx) {
   // a one-line warning. 'read' (a corrupted entry, data is lost) and 'write'
   // (quota exceeded, best effort) get different wording so the user knows
   // whether something they had is gone versus something they're about to
-  // lose (bar-raise reliability-01). 'clear' is the reset path failing to
-  // remove the stored label, which reads back on the next load (reliability-02).
+  // lose. 'clear' is the reset path failing to
+  // remove the stored label, which reads back on the next load.
   const STORAGE_ERROR_MSG = {
     read:  'Could not read your saved data. It may be corrupted; starting fresh.',
     clear: 'Could not clear the stored label. The old one may come back on reload.',
@@ -355,9 +353,9 @@ export function mountEditor(root, ctx) {
     statusMsg.className = 'status-msg warn';
   });
   // A state-listener throw (usually the preview paint) used to freeze the
-  // preview with nothing on screen and nothing visible to the user
-  // (bar-raise reliability-02); state.js now broadcasts this event from its
-  // own catch so the status line can say something instead of going silent.
+  // preview with nothing on screen and nothing visible to the user; state.js
+  // now broadcasts this event from its own catch so the status line can say
+  // something instead of going silent.
   document.addEventListener('yaa:render-error', () => {
     statusMsg.textContent = 'The preview failed to update. Your edits are still saved; try again or reload.';
     statusMsg.className = 'status-msg warn';
@@ -411,7 +409,7 @@ export function mountEditor(root, ctx) {
   let suggestionIdx = -1;
   let activeSuggestions = [];
 
-  // Scoring lives in src/util/suggest.js (maintainability-04) so it can run
+  // Scoring lives in src/util/suggest.js so it can run
   // without a DOM and carry its own test coverage; this wrapper just gives
   // it the editor's live search index.
   function filterSuggestions(q) {
@@ -557,7 +555,7 @@ export function mountEditor(root, ctx) {
   };
   // Each mounter used to run back to back with no try/catch, so one throw
   // propagated to main().catch and replaced the whole page with the failure
-  // screen over a single broken panel (bar-raise reliability-01). mountSafely
+  // screen over a single broken panel. mountSafely
   // logs and disables only the panel that failed; the rest of the editor
   // keeps working.
   mountSafely('Layout designer', designerMount, () => mountLayoutDesigner(designerMount, state, deps));
@@ -637,7 +635,7 @@ export function mountEditor(root, ctx) {
     // The live preview used to run its own lookupHerb pass (longest-key-first
     // prefix/contains match) independently of the dropdown's rankSuggestions
     // scoring, so the art shown while typing could name a different herb than
-    // the suggestion ranked first (bar-raise 2026-09-09 architecture-02).
+    // the suggestion ranked first.
     // Drive the preview off the same ranked list the dropdown renders, so
     // they can't disagree; the lookup still runs through lookupHerb (same as
     // selectSuggestion) to get the full herb record, not just the name match.
@@ -780,7 +778,7 @@ export function mountEditor(root, ctx) {
   exportBtn.addEventListener('click', async () => {
     if (typeof exportPng !== 'function' || exportBtn.disabled) return;
     const name = (state.get().herbName || 'apothecary-label').trim();
-    // reliability-04 (2026-09-23): one export at a time. A second click while
+    // One export at a time. A second click while
     // the renderer was still downloading re-entered the loader.
     exportBtn.disabled = true;
     try {

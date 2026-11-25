@@ -48,9 +48,9 @@ export function loadState() {
     return null;
   } catch (err) {
     // A corrupted or unparseable entry silently discarded the user's
-    // autosaved label with no on-screen warning before this call
-    // (bar-raise reliability-01). Surface it; the app still boots clean,
-    // with the raw string copied aside first (backlog B04).
+    // autosaved label with no on-screen warning before this call. Surface it;
+    // the app still boots clean, with the raw string copied aside first
+    // (backlog B04).
     if (raw) backupUnreadable(raw);
     notifyStorageError('state', err, 'read');
     return null;
@@ -80,9 +80,9 @@ export function clearState() {
     localStorage.removeItem(STORAGE_KEY);
   } catch (err) {
     // Reset-to-default used to swallow this, so a failed clear looked like a
-    // successful one and the old label came back on the next load
-    // (bar-raise reliability-02). Route it through the same channel as
-    // loadState and saveState so the status line says something.
+    // successful one and the old label came back on the next load. Route it
+    // through the same channel as loadState and saveState so the status line
+    // says something.
     notifyStorageError('state', err, 'clear');
   }
 }

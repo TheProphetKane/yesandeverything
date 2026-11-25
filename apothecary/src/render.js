@@ -21,7 +21,7 @@
 // against main.js's own versioned copy (label-templates.js was affected both
 // ways at once). See ctx.autofitText / ctx.resolveSize, forwarded from main.js.
 
-// The HTML-escaper lives in one place now (bar-raise maintainability-02);
+// The HTML-escaper lives in one place now;
 // eight byte-identical copies of it used to be spread across this file,
 // editor.js and saved-labels-ui.js. It arrives through a versioned dynamic
 // import, not a static one, for the same reason autofitText and resolveSize
@@ -74,7 +74,7 @@ function parchmentSvg(theme) {
 // an opacity (slots 9-16 in the dark half use 0.80 -> 0.50 to keep text legible).
 // Missing-file onerror reveals the gradient.
 //
-// bar-raise 2026-09-09 performance-02: render() runs on every state.set, and
+// render() runs on every state.set, and
 // previewCardHtml/printCardHtml both call this unconditionally, so it used to
 // rebuild the gradient SVG and texture <img> tag from scratch on every
 // keystroke even though the output only depends on the parchment texture and
@@ -247,7 +247,7 @@ export const ITEM_RENDERERS = {
     // Resolution order for the botanical slot lives in the shared
     // resolveIllustration (src/util/resolve-illustration.js), forwarded via
     // ctx so this renderer and the illustration picker (editor.js) run the
-    // same chain (bar-raise 2026-09-09 architecture-01):
+    // same chain:
     //   1. state.illustration override -> data/illustrations/<keyword>.png
     //   2. herb-name auto-match via ctx.herbAutoMatch -> same dir
     //   3. v0.18 generic category fallback via ctx.herbCategoryFallback
@@ -495,7 +495,7 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
   `;
 }
 
-// compliance-data-steward-01 (bar-raise 2026-09-09): the only disclaimer in
+// The only disclaimer in
 // the app lives in index.html, a direct <body> child that @media print hides
 // along with every other body child in favor of #print-stage (styles/label.css).
 // So a printed label carrying real drug-interaction text (data/herbs.json
@@ -616,7 +616,7 @@ export function render(state, mounts, ctx) {
   // keystroke, since state.set -> notify -> paint -> render runs with no
   // batching. The stage is invisible on screen until the user actually
   // prints or exports, so that work is coalesced behind one requestAnimationFrame
-  // per burst of state changes instead (bar-raise performance-03, 2026-09-16).
+  // per burst of state changes instead.
   // schedulePrintStage/flushPrintStage live at module scope below so
   // printLabel and exportPng can force it to run right now, synchronously,
   // before they act - a print or export can never read a stage still waiting
@@ -640,7 +640,7 @@ export function render(state, mounts, ctx) {
   }
 }
 
-// --- Print-stage coalescing (bar-raise performance-03) ---------------------
+// --- Print-stage coalescing ---------------------
 // Builds the print-stage's HTML + layout class and runs its fit pass. Broken
 // out of render() so it can run either on the next animation frame
 // (schedulePrintStage) or immediately (flushPrintStage).

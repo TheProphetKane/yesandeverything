@@ -2,7 +2,7 @@
 // zones, per-zone width/layoutMode/align, per-instance color/glow, hidden
 // rail). v0.9 + v0.11 alignment selector.
 //
-// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc,
+// Split out of editor.js: esc,
 // preserveScroll and layoutOps travel through the deps object mountEditor
 // builds, not a static import (see editor.js's top-of-file note on why
 // cross-module references travel through ctx/deps in this app). This file
@@ -72,7 +72,7 @@ export function mountLayoutDesigner(root, state, deps) {
     restoreFocus();
   }); }
 
-  // solo-tool-ux-01: after a move, focus lands on the moved chip in its new
+  // After a move, focus lands on the moved chip in its new
   // zone, so a keyboard user can keep going without hunting for it.
   let pendingFocus = null;
   function restoreFocus() {
@@ -219,7 +219,7 @@ export function mountLayoutDesigner(root, state, deps) {
               data-glow-pick data-from-zone="${esc(fromZoneId)}" data-from-index="${fromIndex}"
               title="Set glow (current: ${esc(inst.glow || 'none')})" ${glowDot}>*</button>
     `;
-    // solo-tool-ux-01 (2026-09-23): a chip is focusable and carries a
+    // A chip is focusable and carries a
     // keyboard path (Enter or Space opens the move list, Delete hides) and a
     // click path (the label opens the same list), both moving the real
     // instance through moveItem. A chip in the hidden rail gets no hide
@@ -382,7 +382,7 @@ export function mountLayoutDesigner(root, state, deps) {
   }
 
   // The zone and item mutations live in src/util/layout-ops.js as pure
-  // functions over a layout (bar-raise 2026-11-18 maintainability-01), so
+  // functions over a layout, so
   // test-layout-ops.mjs covers them. Each returns the changed layout, or null
   // when the target zone is gone; only a real change reaches state.set.
   function commit(next) { if (next) state.set({ layout: next }); }
@@ -521,7 +521,7 @@ export function mountLayoutDesigner(root, state, deps) {
     }, 0);
   }
 
-  // performance-02 (2026-09-23): the designer draws the layout and the custom
+  // The designer draws the layout and the custom
   // sections, so only a change to one of those repaints it.
   paint();
   state.subscribe(s => {

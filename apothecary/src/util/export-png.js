@@ -23,7 +23,7 @@
 const H2C_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
 const H2C_SRI = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
 
-// reliability-04 (2026-09-23): a script tag that never fires onload or
+// A script tag that never fires onload or
 // onerror (a stalled connection, a captive portal) left the promise pending
 // for ever, so the export button did nothing and said nothing. The timer
 // turns that into the same failure the error path already reports.
@@ -58,7 +58,7 @@ function loadHtml2Canvas() {
 // each card carries its own 0.25in margin instead.
 // Exported so test-export-print-parity.mjs can assert this stays in step
 // with the @media print rules in styles/label.css without duplicating the
-// values a third time (bar-raise 2026-09-09 generative-art-print-fidelity-01).
+// values a third time.
 export const LAYOUT_RULES = {
   'layout-single':       { flexDirection: 'row',    padding: '0.25in', gap: '0.15in' },
   'layout-side-by-side': { flexDirection: 'row',    padding: '0.25in', gap: '0.15in' },
@@ -76,8 +76,7 @@ function stageLayoutClass(stage) {
 // there for parity with the stylesheet; html2canvas paints backgrounds either
 // way, so it costs nothing and keeps the two blocks readable side by side.
 // Exported for test-export-print-parity.mjs, which holds the card rules here
-// to the @media print block the same way it holds LAYOUT_RULES
-// (generative-art-print-fidelity-02, 2026-09-23).
+// to the @media print block the same way it holds LAYOUT_RULES.
 export const PRINT_STAGE_RULES = `
   #print-stage .label-card {
     transform: none !important;

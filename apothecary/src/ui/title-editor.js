@@ -4,7 +4,7 @@
 // as an "optional title" so the user can opt into wrapping the Full
 // Description in a section card.
 //
-// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc and
+// Split out of editor.js: esc and
 // preserveScroll travel through the deps object mountEditor builds, not a
 // static import (see editor.js's top-of-file note on why cross-module
 // references travel through ctx/deps in this app).
@@ -22,7 +22,7 @@ const TITLE_FIELDS = [
 export function mountTitleEditor(root, state, deps) {
   const { esc } = deps;
 
-  // performance-01 (2026-09-23): the rows are built once. Every state change
+  // The rows are built once. Every state change
   // used to replace root.innerHTML, which destroyed the input that had focus
   // on each keystroke; now a change syncs values onto the existing inputs,
   // the way editor.js's syncFromState does for the main fields.

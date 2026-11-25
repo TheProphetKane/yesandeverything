@@ -1,9 +1,9 @@
 // resolve-illustration.js - the one botanical-illustration resolution order,
 // shared by the renderer (src/render.js) and the illustration picker
-// (src/ui/illustration-picker.js). Extracted 2026-09-11 (bar-raise
-// 2026-09-09 architecture-01): the two call sites had reimplemented the same
-// three-step chain independently, with the same lowercasing and the same
-// fallback order, so a change to one silently drifted from the other.
+// (src/ui/illustration-picker.js). Extracted 2026-09-11: the two call sites had
+// reimplemented the same three-step chain independently, with the same
+// lowercasing and the same fallback order, so a change to one silently drifted
+// from the other.
 //
 // Order:
 //   1. state.illustration override -> data/illustrations/<keyword>.png

@@ -12,9 +12,9 @@
 //   (no match)                        0
 //   alias penalty                    -1
 //
-// Extracted from src/ui/editor.js filterSuggestions (bar-raise 2026-08-26
-// maintainability-04), which ran this same scoring inline with no test
-// coverage. Pure, so it runs without a DOM; covered in test-lookup.mjs.
+// Extracted from src/ui/editor.js filterSuggestions, which ran this same
+// scoring inline with no test coverage. Pure, so it runs without a DOM; covered
+// in test-lookup.mjs.
 
 export function scoreSuggestion(query, item) {
   const ql = (query ?? '').toLowerCase().trim();

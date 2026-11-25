@@ -12,12 +12,11 @@
 // Deliberately no static import of ../state.js. main.js loads state.js
 // dynamically with a cache-busted URL and this module runs the same way; a
 // static import here would pull a second, un-versioned instance that can
-// serve stale code after a deploy (cache-bust contract, PROJECT_SPEC 3.1,
-// bar-raise architecture-01). defaultState/defaultLayout/DEFAULT_SECTION_TITLES
-// arrive via the ctx param instead, forwarded from main.js's own versioned
-// import of state.js.
+// serve stale code after a deploy (cache-bust contract, PROJECT_SPEC 3.1).
+// defaultState/defaultLayout/DEFAULT_SECTION_TITLES arrive via the ctx param
+// instead, forwarded from main.js's own versioned import of state.js.
 
-// bar-raise security-02 (2026-08-26): render.js interpolates state.accent,
+// render.js interpolates state.accent,
 // state.shopColor, and every per-item color/glow straight into style="..."
 // attribute strings with no escaping (the text fields alongside them go
 // through esc(), colors never did). A crafted value like `red" onmouseover="`
@@ -34,7 +33,7 @@ const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 // that was neither a key nor a { key } object reached render.js and the
 // layout designer, which both assume the shape. zoneHtml also interpolates a
 // zone's layoutMode, align and width into a class name and a style attribute
-// unescaped, the same exposure security-02 closed for colours.
+// unescaped, the same exposure the colour check below closes.
 const ZONE_ALIGNS = ['left', 'center', 'right'];
 
 function isItemEntry(it) {
@@ -229,7 +228,7 @@ export function normalizeState(initial, ctx) {
   }
   if (typeof initial.icon === 'undefined') initial.icon = defaults.icon;
 
-  // security-02: accent and shopColor render straight into a style attribute
+  // Accent and shopColor render straight into a style attribute
   // (render.js herb-name/latin/props/description/rune/shop/divider items) with
   // no escaping. Reject anything that isn't a bare hex color.
   if (typeof initial.accent !== 'string' || !HEX_COLOR_RE.test(initial.accent)) {
@@ -239,7 +238,7 @@ export function normalizeState(initial, ctx) {
     initial.shopColor = defaults.shopColor;
   }
 
-  // security-02: state.symbol resolves through ctx.symbolAliases and lands in
+  // state.symbol resolves through ctx.symbolAliases and lands in
   // an unescaped src="data/symbols/<id>.png" attribute (render.js). 'none'
   // is the valid "no symbol" sentinel; anything else must be a known id or
   // alias. ctx.symbolIds is optional so a caller that hasn't wired the new
@@ -282,7 +281,7 @@ export function normalizeState(initial, ctx) {
   if (!Array.isArray(initial.layoutPresets)) initial.layoutPresets = [];
   if (typeof initial.borderStyle !== 'string') initial.borderStyle = 'celtic';
   // v0.14: illustration override field. Default null = auto-match.
-  // security-02: a non-null value lands in an unescaped
+  // A non-null value lands in an unescaped
   // src="data/illustrations/<keyword>.png" attribute (render.js), so it must
   // be a known library keyword. ctx.illustrationKeywords is optional for the
   // same reason ctx.symbolIds is above.
@@ -300,7 +299,7 @@ export function normalizeState(initial, ctx) {
   if (typeof initial.previewCollapse.back  !== 'boolean') initial.previewCollapse.back  = false;
 
   // v0.11: backfill zone.align (default 'center') on any pre-existing layout.
-  // security-02: an item entry can be an object { key, color?, glow? }
+  // An item entry can be an object { key, color?, glow? }
   // (render.js normalizeItem); color and glow land in the same unescaped
   // style attributes as accent/shopColor above, so the same pattern applies.
   // A field that fails it is dropped rather than defaulted: render.js's
@@ -345,7 +344,7 @@ export function normalizeState(initial, ctx) {
   }));
   while (initial.runes.length < 3) initial.runes.push({ ...defaults.runes[initial.runes.length] });
 
-  // generative-art-palette-discipline-01 (2026-09-23): shopColor stopped
+  // shopColor stopped
   // reaching the printed label. A saved label whose owner had picked a header
   // colour other than the old default was showing that colour on the label
   // too, so the one-time migration carries it onto the front shop chip as a

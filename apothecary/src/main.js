@@ -37,7 +37,7 @@ const [
   // saved-labels-ui.js, so it never got a ?v= URL. Loading it here and
   // forwarding its exports via ctx closes that gap, along with migrate.js's
   // static import of state.js and state.js's static import of
-  // label-templates.js (bar-raise 2026-08-12/08-19 architecture-01).
+  // label-templates.js.
   import("./util/saved-labels.js" + V),
   import("./util/lookup.js" + V),
   import("./util/persist.js" + V),
@@ -51,15 +51,15 @@ const [
   // render.js/editor.js, so they never got a ?v= URL and (label-templates.js's
   // resolveSize export) doubled as a second, un-versioned module instance
   // alongside this dynamic one. Loading them here and forwarding via ctx
-  // closes that gap (bar-raise 2026-08-12 architecture-01).
+  // closes that gap.
   import("./util/autofit.js" + V),
   import("./util/print.js" + V),
   import("./util/truncate.js" + V),
-  // maintainability-04: extracted from editor.js's autocomplete scoring so
+  // Extracted from editor.js's autocomplete scoring so
   // it could be unit-tested; forwarded per the same cache-bust contract as
   // the block above rather than statically imported into editor.js.
   import("./util/suggest.js" + V),
-  // bar-raise 2026-09-09 architecture-01: the botanical-illustration
+  // The botanical-illustration
   // resolution order, shared with editor.js's illustration picker via its
   // own dynamic-import graph so both call sites run the same chain.
   import("./util/resolve-illustration.js" + V),
@@ -121,7 +121,7 @@ async function main() {
     // v1.1.9: forwarded so migrate.js doesn't need a static import of
     // state.js. Keeps the v0.8.0 cache-bust contract intact.
     defaultState, defaultLayout, DEFAULT_SECTION_TITLES,
-    // security-02: known-good id sets so normalizeState can reject a symbol
+    // Known-good id sets so normalizeState can reject a symbol
     // or illustration value that didn't come from the app's own pickers
     // before it ever reaches render.js's unescaped src="..." attributes.
     symbolIds: new Set([...Object.keys(SYMBOL_LABELS), ...Object.keys(SYMBOL_ALIASES), 'none']),
@@ -130,7 +130,7 @@ async function main() {
     // layoutMode never reaches zoneHtml's class attribute.
     zoneLayoutModes: ZONE_LAYOUT_MODES,
   };
-  // generative-art-print-fidelity-01: the flush was exported in v1.1.14 and
+  // The flush was exported in v1.1.14 and
   // never called. These two wrappers are its only call sites; the editor gets
   // them under the same names it always had.
   const printLabelFresh = () => { flushPrintStage(); printLabel(); };
@@ -157,7 +157,7 @@ async function main() {
   // so a label saved before v0.9 (no state.layout) no longer loads blank.
   // v1.1.9: the saved-labels CRUD functions are forwarded here too, so
   // saved-labels-ui.js doesn't need a static import of saved-labels.js
-  // (cache-bust contract, bar-raise architecture-01).
+  // (cache-bust contract).
   if (savedMount) mountSavedLabels(savedMount, state, {
     listSaved, saveLabel, loadLabel, deleteLabel, duplicateLabel, renameLabel,
     normalize: (snap) => normalizeState(snap, migrateCtx),
@@ -176,14 +176,14 @@ async function main() {
     // v0.14: illustration library + auto-match table for the picker UI.
     illustrations, herbAutoMatch, herbCategoryFallback,
     // v1.1.0: PNG export handler, forwarded per the cache-bust contract.
-    // generative-art-print-fidelity-01 (2026-09-23): both act on the
+    // Both act on the
     // print-stage, whose rebuild is coalesced to an animation frame, so each
     // flushes that rebuild first and reads the stage the current state built.
     exportPng: exportPngFresh,
-    // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
-    // architecture-01). Do not add these back as static imports in editor.js.
+    // v1.1.6: forwarded per the cache-bust contract. Do not add these back as
+    // static imports in editor.js.
     printLabel: printLabelFresh, truncateAtWordBoundary,
-    // maintainability-04: forwarded per the same contract. Do not add this
+    // Forwarded per the same contract. Do not add this
     // back as a static import in editor.js.
     rankSuggestions,
     onReset: () => {
@@ -211,10 +211,10 @@ async function main() {
     setPreviewCollapse(next) {
       state.set({ previewCollapse: next });
     },
-    // v1.1.6: forwarded per the cache-bust contract (bar-raise 2026-08-12
-    // architecture-01). Do not add these back as static imports in render.js.
+    // v1.1.6: forwarded per the cache-bust contract. Do not add these back as
+    // static imports in render.js.
     autofitText, resolveSize,
-    // bar-raise 2026-09-09 architecture-01: shared botanical-illustration
+    // Shared botanical-illustration
     // resolution order, same instance the illustration picker uses.
     resolveIllustration,
   };
@@ -398,7 +398,7 @@ main().catch(err => {
   // Build the failure screen with textContent, never innerHTML: error text can
   // echo request URLs and other unescaped input.
   const wrap = document.createElement('div');
-  // generative-art-palette-discipline-02: the literal was #C4580A, which is what
+  // The literal was #C4580A, which is what
   // --warn holds in styles/base.css. Two copies of one colour drift the day the
   // token moves, and this screen is the one nobody looks at until it matters.
   wrap.style.cssText = 'padding:20px; font-family:monospace; color:var(--warn);';

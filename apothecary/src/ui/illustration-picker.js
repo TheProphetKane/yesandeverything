@@ -4,16 +4,15 @@
 //   - Click any thumbnail to override: state.illustration = keyword
 //   - Click "Back to Auto" to clear the override
 //
-// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc and
+// Split out of editor.js: esc and
 // preserveScroll travel through the deps object mountEditor builds, not a
 // static import (see editor.js's top-of-file note on why cross-module
 // references travel through ctx/deps in this app).
 //
 // resolveIllustration (src/util/resolve-illustration.js) is the same
 // three-step resolution order render.js's botanical item renderer uses,
-// forwarded here per the same deps-not-static-import rule (bar-raise
-// 2026-09-09 architecture-01: the two used to reimplement the chain
-// independently and could drift).
+// forwarded here per the same deps-not-static-import rule (the two used to
+// reimplement the chain independently and could drift).
 
 export function mountIllustrationPicker(root, state, { illustrations, herbAutoMatch, herbCategoryFallback, esc, preserveScroll, resolveIllustration }) {
 
@@ -134,7 +133,7 @@ export function mountIllustrationPicker(root, state, { illustrations, herbAutoMa
     });
   }
 
-  // performance-02 (2026-09-23): the grid HTML is generated only while the
+  // The grid HTML is generated only while the
   // library is open (above), and a state change that touches neither the
   // illustration, the herb name nor the custom items does not repaint at all.
   let last = null;

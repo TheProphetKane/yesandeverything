@@ -59,8 +59,7 @@ export const TEMPLATES = {
     ],
 
     // A 'fields' list used to live here, naming the seventeen state keys the
-    // Content accordion exposes. Nothing under src/ ever read it (bar-raise
-    // 2026-09-09 generative-art-schema-driven-correctness-01): editor.js
+    // Content accordion exposes. Nothing under src/ ever read it: editor.js
     // hand-authors that accordion's markup directly, one input per field,
     // because there's only ever been the one template. Zone and item
     // composition (what goes where) is schema-driven, through state.layout

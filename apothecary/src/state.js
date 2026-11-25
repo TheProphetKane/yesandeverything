@@ -18,7 +18,7 @@
 // Deliberately no static import of data/label-templates.js. main.js loads
 // that module dynamically with a cache-busted URL; a static import here would
 // pull in a second, un-versioned instance that can serve stale data after a
-// deploy (cache-bust contract, PROJECT_SPEC 3.1, bar-raise architecture-01).
+// deploy (cache-bust contract, PROJECT_SPEC 3.1).
 // Every function below that needs the template registry takes it as a param
 // instead, sourced from a caller who already holds the versioned copy.
 
@@ -45,7 +45,7 @@ export function createState(initial) {
       } catch (err) {
         // A throwing subscriber (usually the render/paint listener) used to
         // freeze the preview with nothing on screen and nothing but a
-        // console line, which the user never sees (bar-raise reliability-02).
+        // console line, which the user never sees.
         // Mirror src/util/persist.js's yaa:storage-error broadcast so the
         // editor status line can say something instead of going silent.
         console.error('state listener failed:', err);
@@ -140,7 +140,7 @@ export const DEFAULT_SECTION_TITLES = {
 
 // --- Default state ---------------------------------------------------------
 
-// data-integrity-01 (2026-09-23): the default label is the chamomile record
+// The default label is the chamomile record
 // and nothing else. The literal below is a copy of data/herbs.json's entry,
 // kept so defaultState() works with no data loaded (tests, the migration
 // harness); main.js passes the live herb table and the record wins. A test
@@ -226,8 +226,7 @@ export function defaultState(templates, defaultTemplateId, herbs = null) {
     parchmentTexture: 'parchment-01',
     // shopColor paints the dark editor header only. The printed shop name
     // takes the theme's own ink, or a per-instance colour set on the shop
-    // chip in the layout designer (generative-art-palette-discipline-01,
-    // 2026-09-23: this gold read 1.17 to 1 against the parchment).
+    // chip in the layout designer (this gold read 1.17 to 1 against the parchment).
     shopColor: '#E8C172',
     __shopColorSplit: true,
   };

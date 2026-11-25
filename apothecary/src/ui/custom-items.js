@@ -4,7 +4,7 @@
 // and drops the new key into layout.hidden); this module only renders and
 // edits the ones that already exist.
 //
-// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc and
+// Split out of editor.js: esc and
 // preserveScroll travel through the deps object mountEditor builds, not a
 // static import (see editor.js's top-of-file note on why cross-module
 // references travel through ctx/deps in this app).
@@ -12,7 +12,7 @@
 export function mountCustomItems(root, state, deps) {
   const { esc, preserveScroll } = deps;
 
-  // performance-01 (2026-09-23): the cards are rebuilt only when the set of
+  // The cards are rebuilt only when the set of
   // custom sections changes (one added or removed). A keystroke in a title or
   // body used to replace root.innerHTML and destroy the focused field; now it
   // syncs the changed value onto the existing inputs.

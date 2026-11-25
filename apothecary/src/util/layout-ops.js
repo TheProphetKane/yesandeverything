@@ -4,11 +4,10 @@
 // given and returns the changed copy, or null when the target zone is gone
 // and nothing should change. test-layout-ops.mjs drives them directly.
 //
-// Pulled out of src/ui/layout-designer.js (bar-raise 2026-11-18
-// maintainability-01), where they were closures nothing could test. Loaded
-// through editor.js's versioned Promise.all block and handed to the designer
-// through deps, never imported statically (the cache-bust rule in CLAUDE.md
-// and PROJECT_SPEC 3.1).
+// Pulled out of src/ui/layout-designer.js, where they were closures nothing
+// could test. Loaded through editor.js's versioned Promise.all block and handed
+// to the designer through deps, never imported statically (the cache-bust rule
+// in CLAUDE.md and PROJECT_SPEC 3.1).
 //
 // v0.15 item shape: a zone item is { key, color?, glow? } or a legacy bare
 // string. Zones allow several instances of one key, so a placed item is

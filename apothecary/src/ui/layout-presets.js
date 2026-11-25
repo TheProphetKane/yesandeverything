@@ -2,7 +2,7 @@
 // save the current layout + section titles as a named preset, recall any
 // preset, and delete user presets (factory presets are read-only).
 //
-// Split out of editor.js (bar-raise maintainability-01, 2026-09-04): esc
+// Split out of editor.js: esc
 // travels through the deps object mountEditor builds, not a static import
 // (see editor.js's top-of-file note on why cross-module references travel
 // through ctx/deps in this app).
@@ -81,7 +81,7 @@ export function mountPresets({ select, saveBtn, actions }, state, deps) {
     paint();
   });
 
-  // performance-02 (2026-09-23): the select lists presets, so only a change
+  // The select lists presets, so only a change
   // to the presets themselves repaints it.
   paint();
   state.subscribe(s => {
