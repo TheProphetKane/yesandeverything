@@ -58,6 +58,66 @@ export function isWellFormedLayout(layout) {
   return true;
 }
 
+// Repair the zone fields and item entries of a well-formed layout in place:
+// an align outside the designer's three becomes 'center', a layoutMode
+// outside ctx.zoneLayoutModes becomes 'stack', a width that is not a number
+// from 1 to 100 becomes 100, an item that is neither a key nor a { key }
+// object is dropped, and an item colour or glow that is not bare hex is
+// removed. Used on the live layout and on every saved preset's layout.
+function repairZones(layout, ctx) {
+  const zoneModes = Array.isArray(ctx.zoneLayoutModes) ? ctx.zoneLayoutModes : null;
+  for (const side of ['front', 'back']) {
+    for (const z of (layout?.[side] ?? [])) {
+      if (!ZONE_ALIGNS.includes(z.align)) z.align = 'center';
+      if (zoneModes && !zoneModes.includes(z.layoutMode)) z.layoutMode = 'stack';
+      if (!(typeof z.width === 'number' && z.width >= 1 && z.width <= 100)) z.width = 100;
+      z.items = (z.items ?? []).filter(isItemEntry);
+      for (const it of z.items) {
+        if (!it || typeof it !== 'object') continue;
+        if (it.color !== undefined && !HEX_COLOR_RE.test(it.color)) delete it.color;
+        if (it.glow !== undefined && !HEX_COLOR_RE.test(it.glow)) delete it.glow;
+      }
+    }
+  }
+}
+
+const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// A custom item is { id, title, body } with a non-empty string id. A title
+// or body that is present must be a string; an absent one becomes ''. A
+// repeated id keeps the first entry, since render.js finds by id and would
+// only ever draw that one.
+export function normalizeCustomItems(items) {
+  const seen = new Set();
+  const out = [];
+  for (const c of items) {
+    if (!isPlainObject(c) || typeof c.id !== 'string' || !c.id || seen.has(c.id)) continue;
+    if (c.title !== undefined && typeof c.title !== 'string') continue;
+    if (c.body !== undefined && typeof c.body !== 'string') continue;
+    seen.add(c.id);
+    out.push({ ...c, title: c.title ?? '', body: c.body ?? '' });
+  }
+  return out;
+}
+
+// A user preset is { id, name, layout, sectionTitles? } with a non-empty
+// string id and name and a layout that passes isWellFormedLayout. A present
+// sectionTitles must be a plain object. The kept layout is repaired the same
+// way as the live one, so a recalled preset cannot carry a tampered zone.
+export function normalizeLayoutPresets(presets, ctx) {
+  const out = [];
+  for (const p of presets) {
+    if (!isPlainObject(p) || typeof p.id !== 'string' || !p.id) continue;
+    if (typeof p.name !== 'string' || !p.name) continue;
+    if (!isWellFormedLayout(p.layout)) continue;
+    if (p.sectionTitles !== undefined && !isPlainObject(p.sectionTitles)) continue;
+    p.layout.hidden = (Array.isArray(p.layout.hidden) ? p.layout.hidden : []).filter(isItemEntry);
+    repairZones(p.layout, ctx);
+    out.push(p);
+  }
+  return out;
+}
+
 // Build a v0.9 layout from a pre-v0.9 saved state. Reads state.placement
 // (per-item front/back booleans) and state.notesSplit (combined vs three-col
 // back-bottom-row) to reconstruct what the user had, then maps onto the new
@@ -279,6 +339,12 @@ export function normalizeState(initial, ctx) {
   }
   if (!Array.isArray(initial.customItems))   initial.customItems = [];
   if (!Array.isArray(initial.layoutPresets)) initial.layoutPresets = [];
+  // Each element is checked as well as the array. render.js looks a custom
+  // item up by id and draws its title and body; a user preset's layout goes
+  // straight into state.set on recall. A malformed element is dropped, and a
+  // sound preset's zones get the same repair as the live layout below.
+  initial.customItems = normalizeCustomItems(initial.customItems);
+  initial.layoutPresets = normalizeLayoutPresets(initial.layoutPresets, ctx);
   if (typeof initial.borderStyle !== 'string') initial.borderStyle = 'celtic';
   // v0.14: illustration override field. Default null = auto-match.
   // A non-null value lands in an unescaped
@@ -311,20 +377,7 @@ export function normalizeState(initial, ctx) {
   // number from 1 to 100 becomes 100. Each replacement is what render.js
   // already drew for a missing field. ctx.zoneLayoutModes is optional for
   // the same reason ctx.symbolIds is above.
-  const zoneModes = Array.isArray(ctx.zoneLayoutModes) ? ctx.zoneLayoutModes : null;
-  for (const side of ['front', 'back']) {
-    for (const z of (initial.layout?.[side] ?? [])) {
-      if (!ZONE_ALIGNS.includes(z.align)) z.align = 'center';
-      if (zoneModes && !zoneModes.includes(z.layoutMode)) z.layoutMode = 'stack';
-      if (!(typeof z.width === 'number' && z.width >= 1 && z.width <= 100)) z.width = 100;
-      z.items = (z.items ?? []).filter(isItemEntry);
-      for (const it of z.items) {
-        if (!it || typeof it !== 'object') continue;
-        if (it.color !== undefined && !HEX_COLOR_RE.test(it.color)) delete it.color;
-        if (it.glow !== undefined && !HEX_COLOR_RE.test(it.glow)) delete it.glow;
-      }
-    }
-  }
+  repairZones(initial.layout, ctx);
 
   // v0.8.3: validate parchmentTexture against the manifest. Old saved states
   // may reference 'gradient' (retired) or a slot id that no longer exists
