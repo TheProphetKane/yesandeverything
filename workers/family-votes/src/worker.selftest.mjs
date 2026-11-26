@@ -1,9 +1,17 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
-import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_WRITES, BEER_MAX_POURS, beerText, beerKey } from "./worker.js";
+import { pbkdf2Sync } from "node:crypto";
+import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_LIVE_ROUTE, BEER_WRITES, BEER_MAX_POURS, BEER_ADMIN_FAILS, beerText, beerKey, beerAdminKey, beerIsAdmin, beerAdminPassword } from "./worker.js";
+
+// A stand-in admin password, hashed the way the real secret is, with fewer rounds to keep the test quick.
+const TEST_ADMIN_PASSWORD = "selftest admin password";
+const TEST_ADMIN_SALT = Buffer.from("00112233445566778899aabbccddeeff", "hex");
+const TEST_ADMIN_HASH = "pbkdf2-sha256$2000$" + TEST_ADMIN_SALT.toString("hex") + "$" + pbkdf2Sync(TEST_ADMIN_PASSWORD, TEST_ADMIN_SALT, 2000, 32, "sha256").toString("hex");
 
 class FakeKV {
   constructor() { this.m = new Map(); }
+  async put(k, v) { this.m.set(k, { value: v }); }
+  async get(k) { const e = this.m.get(k); return e && e.value !== undefined ? e.value : null; }
   async list({ prefix = "" } = {}) {
     const keys = [...this.m.entries()].filter(([k]) => k.startsWith(prefix)).map(([name, e]) => ({ name, metadata: e.metadata }));
     return { keys, list_complete: true };
@@ -17,13 +25,19 @@ class FakeStorage {
   async put(k, v) { this.m.set(k, structuredClone(v)); }
   async delete(k) { this.m.delete(k); }
   async deleteAll() { this.m.clear(); }
-  async list({ prefix = "" } = {}) {
-    return new Map([...this.m.entries()].filter(([k]) => k.startsWith(prefix)).sort().map(([k, v]) => [k, structuredClone(v)]));
+  async getAlarm() { return this.alarmAt || null; }
+  async setAlarm(t) { this.alarmAt = t; }
+  async deleteAlarm() { this.alarmAt = null; }
+  async list({ prefix = "", reverse = false, limit } = {}) {
+    let rows = [...this.m.entries()].filter(([k]) => k.startsWith(prefix)).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+    if (reverse) rows.reverse();
+    if (limit) rows = rows.slice(0, limit);
+    return new Map(rows.map(([k, v]) => [k, structuredClone(v)]));
   }
 }
 
 function makeEnv(kv) {
-  const env = { VOTES: kv };
+  const env = { VOTES: kv, BEER_ADMIN_HASH: TEST_ADMIN_HASH };
   const box = new VoteBox({ storage: new FakeStorage() }, env);
   let queue = Promise.resolve();
   env.BOX = {
@@ -48,9 +62,10 @@ function makeEnv(kv) {
   env.BEER = {
     idFromName: name => name,
     get: name => {
-      if (!env._beer.has(name)) env._beer.set(name, { storage: new FakeStorage(), queue: Promise.resolve() });
+      if (!env._beer.has(name)) env._beer.set(name, { storage: new FakeStorage(), queue: Promise.resolve(), sockets: [] });
       const slot = env._beer.get(name);
-      const obj = new BeerBoard({ storage: slot.storage });
+      const obj = new BeerBoard({ storage: slot.storage, getWebSockets: () => slot.sockets }, env);
+      slot.obj = obj;
       return { fetch: req => (slot.queue = slot.queue.then(() => obj.fetch(req))) };
     },
   };
@@ -347,18 +362,42 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   const e1 = x.j.board.pours[0];
   check("a fix replaces the votes and guesses, keeping only real tasters and real votes", JSON.stringify(e1.votes) === JSON.stringify({ Mike: "down", AJ: "side" }) && JSON.stringify(e1.guesses) === JSON.stringify({ Nick: "Gannan" }) && e1.brewery === "Bramblewood");
 
-  x = await bpost({ op: "remove", opId: id(), pid: "pourone1" });
+  // Deleting is the admin's alone, with a key earned by the password, and every delete takes the word DELETE.
+  x = await bpost({ op: "remove", opId: id(), pid: "pourone1", confirm: "DELETE" });
+  check("a delete without the admin's key is refused and the pour stays", x.status === 403 && x.j.board.pours.length === 2);
+  x = await bpost({ op: "admin-login", password: "not the password" });
+  check("a wrong admin password is refused", x.status === 403 && !x.j.admin);
+  x = await bpost({ op: "admin-login", password: TEST_ADMIN_PASSWORD });
+  const adminKey = x.j.admin;
+  check("the admin password earns a key that is not the password", x.status === 200 && /^\d{13}\.[0-9a-f]{64}$/.test(adminKey || "") && !adminKey.includes(TEST_ADMIN_PASSWORD));
+  x = await bpost({ op: "remove", opId: id(), pid: "pourone1", admin: adminKey });
+  check("a delete without the word DELETE is refused", x.status === 400 && x.j.board.pours.length === 2);
+  x = await bpost({ op: "remove", opId: id(), pid: "pourone1", admin: adminKey.slice(0, -1) + (adminKey.endsWith("0") ? "1" : "0"), confirm: "DELETE" });
+  check("a forged key is refused", x.status === 403 && x.j.board.pours.length === 2);
+  check("a key past its year is refused", !(await beerIsAdmin(env4, await beerAdminKey(env4, Date.now() - 400 * 86400000), Date.now())));
+  check("a secret stored with a trailing line break still matches", await beerAdminPassword({ BEER_ADMIN_HASH: TEST_ADMIN_HASH + "\r\n" }, TEST_ADMIN_PASSWORD));
+  const unset = await new BeerBoard({ storage: new FakeStorage(), getWebSockets: () => [] }, { VOTES: new FakeKV() }).fetch(new Request("https://beerboard" + BEER_ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "admin-login", password: TEST_ADMIN_PASSWORD }) }));
+  check("with no admin password set up, sign-in says so and nobody can delete", unset.status === 503 && /not set up/.test((await unset.json()).error));
+  check("a key made under another password is refused", !(await beerIsAdmin({ BEER_ADMIN_HASH: TEST_ADMIN_HASH.replace(/.$/, c => (c === "0" ? "1" : "0")) }, adminKey, Date.now())));
+  x = await bpost({ op: "remove", opId: id(), pid: "pourone1", admin: adminKey, confirm: "DELETE" });
   check("taking a pour off the board clears it as the surprise", x.j.board.pours.length === 1 && x.j.board.surprise === null);
   const live = env4._beer.get("goldens-guzzlers").storage;
   const kept = [...(await live.list({ prefix: "removed:" })).values()];
   check("a pour taken off the board is kept for recovery", kept.length === 1 && kept[0].pour.name === "Hop Goblin");
 
-  x = await bpost({ op: "clear", opId: id() });
-  check("clearing the board takes the word clear", x.status === 400 && x.j.board.pours.length === 1);
+  x = await bpost({ op: "clear", opId: id(), admin: adminKey });
+  check("clearing the board takes the word DELETE", x.status === 400 && x.j.board.pours.length === 1);
+  x = await bpost({ op: "clear", opId: id(), confirm: "DELETE" });
+  check("clearing without the admin's key is refused", x.status === 403 && x.j.board.pours.length === 1);
   const before = x.j.board.rev;
-  x = await bpost({ op: "clear", opId: id(), confirm: "clear" });
+  x = await bpost({ op: "clear", opId: id(), confirm: "DELETE", admin: adminKey });
   const arch = [...(await live.list({ prefix: "archive:" })).values()];
   check("a cleared board empties and its pours are archived", x.j.board.pours.length === 0 && x.j.board.rev === before + 1 && arch.length === 1 && arch[0].board.pours.length === 1);
+  const pullerBefore = x.j.board.nextPuller;
+  await bpost({ op: "pour", opId: id(), pid: "pourthr3" });
+  await bpost({ op: "vote", opId: id(), pid: "pourthr3", name: "Bill", v: "up" });
+  x = await bpost({ op: "remove", opId: id(), pid: "pourthr3", admin: adminKey, confirm: "DELETE" });
+  check("a pour deleted while still in its coozie hands the pull back", x.status === 200 && x.j.board.pours.length === 0 && x.j.board.nextPuller === pullerBefore);
 
   x = await bpost({ op: "explode", opId: id() });
   check("an unknown change is refused", x.status === 400);
@@ -388,6 +427,12 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   }
   x = await bpost({ op: "pour", opId: id(), pid: "onetoomany" }, { test: true });
   check("a pull past the pour cap is refused", x.status === 400 && x.j.board.pours.length === BEER_MAX_POURS);
+
+  for (let i = 0; i < BEER_ADMIN_FAILS; i++) await bpost({ op: "admin-login", password: "guess number " + i }, { test: true });
+  x = await bpost({ op: "admin-login", password: TEST_ADMIN_PASSWORD }, { test: true });
+  check("after eight wrong passwords admin sign-in pauses, even for the right one", x.status === 429 && !x.j.admin);
+  x = await bpost({ op: "admin-login", password: TEST_ADMIN_PASSWORD });
+  check("the pause on one board leaves the other board's sign-in working", x.status === 200 && !!x.j.admin);
 
   check("beerText keeps one space at a time and drops control characters", beerText("  Two\u0000  Spires\n Brewing ", 80) === "Two Spires Brewing");
   const h = await worker.fetch(new Request("https://yesandeverything.com" + HOUSE_ROUTE), env4).then(r => r.json());
@@ -420,11 +465,14 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   x = await ypost({ op: "bringback", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: "yes" });
   check("bring back is on or off, nothing else", x.status === 400);
 
-  x = await ypost({ op: "newyear", opId: id(), year: 2027 });
-  check("a new year needs its confirming words", x.status === 400 && x.j.year === 2026);
-  x = await ypost({ op: "newyear", opId: id(), year: 2026, confirm: "new year" });
-  check("a new year has to come after this one", x.status === 400);
+  const k5 = (await ypost({ op: "admin-login", password: TEST_ADMIN_PASSWORD })).j.admin;
   x = await ypost({ op: "newyear", opId: id(), year: 2027, confirm: "new year" });
+  check("only the admin can start a new year", x.status === 403 && x.j.year === 2026);
+  x = await ypost({ op: "newyear", opId: id(), year: 2027, admin: k5 });
+  check("a new year needs its confirming words", x.status === 400 && x.j.year === 2026);
+  x = await ypost({ op: "newyear", opId: id(), year: 2026, confirm: "new year", admin: k5 });
+  check("a new year has to come after this one", x.status === 400);
+  x = await ypost({ op: "newyear", opId: id(), year: 2027, confirm: "new year", admin: k5 });
   check("starting 2027 gives an empty board on 2027", x.status === 200 && x.j.year === 2027 && x.j.board.pours.length === 0 && JSON.stringify(x.j.years) === "[2026,2027]");
   g = await yget("?year=2026");
   check("2026 stays saved after 2027 starts", g.board.year === 2026 && g.board.pours.length === 1 && g.board.pours[0].name === "Hop Goblin" && g.board.pours[0].votes.Mike === "up");
@@ -434,7 +482,11 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   check("and 2026 is untouched by it", !("Bill" in g.board.pours[0].votes));
   lib = await yget("?view=library");
   check("the log holds every year's board", Object.keys(lib.boards).join(",") === "2026,2027" && lib.boards["2026"].pours[0].name === "Hop Goblin");
-  x = await ypost({ op: "stash-remove", opId: id(), sid: "stash0001" });
+  x = await ypost({ op: "stash-remove", opId: id(), sid: "stash0001", confirm: "DELETE" });
+  check("only the admin can take a beer out of the stash", x.status === 403 && x.j.libRev === lib.libRev);
+  x = await ypost({ op: "stash-remove", opId: id(), sid: "stash0001", admin: k5 });
+  check("taking a beer out of the stash takes the word DELETE", x.status === 400 && x.j.libRev === lib.libRev);
+  x = await ypost({ op: "stash-remove", opId: id(), sid: "stash0001", admin: k5, confirm: "DELETE" });
   check("a stash entry can be taken out", x.status === 200 && x.j.libRev > lib.libRev);
   lib = await yget("?view=library");
   check("and it is gone from the stash", lib.stash.length === 0);
@@ -452,6 +504,58 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   x = await ypost({ op: "wipe", opId: id(), confirm: "wipe the test board" }, true);
   g = await yget("?board=test");
   check("the test board wipes clean", x.status === 200 && g.board.pours.length === 0 && JSON.stringify(g.years) === "[2026]");
+}
+
+// Live connections, the journal, and the snapshots kept outside the board's own storage.
+{
+  const kv6 = new FakeKV();
+  const env6 = makeEnv(kv6);
+  const b6 = "https://yesandeverything.com" + BEER_ROUTE;
+  let n6 = 0;
+  const id = () => "livechg" + String(++n6).padStart(8, "0");
+  const post6 = (body, test) => worker.fetch(new Request(b6 + (test ? "?board=test" : ""), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env6).then(async r => ({ status: r.status, j: await r.json() }));
+  const get6 = (q, admin) => worker.fetch(new Request(b6 + (q || ""), admin ? { headers: { "x-beer-admin": admin } } : undefined), env6).then(r => r.json());
+  await get6();
+  const k6 = (await post6({ op: "admin-login", password: TEST_ADMIN_PASSWORD })).j.admin;
+  const slot = env6._beer.get("goldens-guzzlers");
+  const phone = () => ({ sent: [], send(m) { this.sent.push(m); } });
+  const phoneA = phone(), phoneB = phone();
+  slot.sockets.push(phoneA, phoneB);
+  const last = p => JSON.parse(p.sent[p.sent.length - 1] || "{}");
+  await post6({ op: "pour", opId: id(), pid: "livepour1", y: 2026 });
+  check("every open phone hears a change the moment it lands", last(phoneA).type === "state" && last(phoneA).board.pours[0].id === "livepour1" && last(phoneB).board.pours.length === 1);
+  await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Mike", v: "up", y: 2026, by: "Nick" });
+  check("and hears the next one too", last(phoneB).board.pours[0].votes.Mike === "up" && phoneB.sent.length === 2);
+  await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Mike", v: "up", y: 2026 });
+  check("a change that changes nothing sends nothing", phoneB.sent.length === 3 || phoneB.sent.length === 2);
+  const r426 = await worker.fetch(new Request("https://yesandeverything.com" + BEER_LIVE_ROUTE), env6);
+  check("the live address takes only a live connection", r426.status === 426);
+  const jr = await get6("?view=journal", k6);
+  check("every change is in the journal, newest first, without its change id", jr.entries[0].op.op === "vote" && jr.entries[jr.entries.length - 1].op.op === "pour" && !("opId" in jr.entries[0].op) && jr.entries[0].year === 2026);
+  check("the journal says who sent each change", jr.entries[1].op.by === "Nick" && !("by" in jr.entries[0].op));
+  const jr403 = await worker.fetch(new Request(b6 + "?view=journal"), env6);
+  check("only the admin can read the journal", jr403.status === 403);
+  await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Bill", v: "up", y: 2026, by: "Zed" });
+  await post6({ op: "stash-add", opId: id(), sid: "keepme01", name: "Lake Fog Pils", by: "Brennan" });
+  const lib6 = await get6("?view=library");
+  check("the stash shown to every phone never says who stashed a beer", lib6.stash.length === 1 && !JSON.stringify(lib6.stash).includes("Brennan"));
+  await post6({ op: "stash-remove", opId: id(), sid: "keepme01", admin: k6, confirm: "DELETE", by: "Nick" });
+  const keptStash = [...(await slot.storage.list({ prefix: "removedStash:" })).values()];
+  check("a beer taken out of the stash is kept for recovery", keptStash.length === 1 && keptStash[0].entry.name === "Lake Fog Pils");
+  const jr2 = await get6("?view=journal", k6);
+  check("a name that is not at the table is left off the journal", jr2.entries[2].op.op === "vote" && !("by" in jr2.entries[2].op));
+  check("the admin's key and password never reach the journal", !JSON.stringify(jr2).includes(k6) && !JSON.stringify(jr2).includes(TEST_ADMIN_PASSWORD) && !("admin" in jr2.entries[0].op));
+  check("a change schedules a snapshot", typeof (await slot.storage.getAlarm()) === "number");
+  await slot.obj.alarm();
+  const snap = JSON.parse(await kv6.get("goldens-guzzlers:live:latest"));
+  check("the snapshot holds every year and both lists", snap.boards["2026"].pours[0].id === "livepour1" && Array.isArray(snap.stash) && snap.board === "live");
+  const today = new Date().toISOString().slice(0, 10);
+  check("and a copy is kept for the day", !!(await kv6.get("goldens-guzzlers:live:day:" + today)));
+  const bk = await get6("?view=backups");
+  check("the backups view lists the snapshots and counts the journal", bk.keys.includes("latest") && bk.keys.includes("day:" + today) && bk.snapshotAt > 0 && bk.journal === 6);
+  const sn = await post6({ op: "snapshot", opId: id() }, true);
+  check("a snapshot can be taken on demand, and the test board's goes under its own name", sn.status === 200 && sn.j.snapshotAt > 0 && !!(await kv6.get("goldens-guzzlers:test:latest")));
+  check("the journal and the snapshots carry no address", !JSON.stringify(jr).includes("203.0.113") && !(await kv6.get("goldens-guzzlers:live:latest")).includes("cf-connecting-ip"));
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }

@@ -8,7 +8,13 @@
 <meta name="theme-color" content="#070b17">
 <meta name="description" content="Golden&rsquo;s Guzzlers, the family's annual blind beer tasting: thumbs votes, reveals, standings and awards.">
 <title>Golden&rsquo;s Guzzlers · Beer Tasting Night</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Guzzlers">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -484,6 +490,28 @@ footer .mini-cap { width: 34px; height: 34px; }
 .toast.show { opacity: 1; translate: -50% 0; }
 .noscript { position: relative; z-index: 3; text-align: center; color: var(--gold-1); }
 
+/* who's drinking, and the small dialogs */
+.gate { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top, 0px)) 18px 20px; overflow-y: auto; background: rgba(5, 7, 15, .84); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.gate-card { position: relative; width: min(440px, 100%); display: grid; gap: 12px; justify-items: center; text-align: center; padding: 24px 20px 20px; border-radius: 22px; background: linear-gradient(180deg, #18244a, #0b1228); border: 1.5px solid rgba(255, 214, 90, .7); box-shadow: 0 30px 80px rgba(0, 0, 0, .6), 0 0 40px rgba(255, 204, 51, .12); }
+.gate-card .mini-cap { width: 54px; height: 54px; }
+.gate-card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.5rem, 6vw, 2rem); line-height: 1.1; }
+.gate-card p { margin: 0; color: var(--muted); }
+.names { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 4px; }
+@media (min-width: 420px) { .names { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.name-btn { appearance: none; padding: 14px 10px; border-radius: 16px; border: 1.5px solid rgba(255, 214, 90, .45); background: rgba(8, 13, 30, .7); font-weight: 700; font-size: 1.1rem; }
+.name-btn:hover { border-color: var(--gold-2); color: var(--gold-1); }
+.name-btn.last { color: var(--navy); border-color: transparent; background: linear-gradient(180deg, #fff3c4, #ffd84d 45%, #f2b705); }
+.dlg .fld { width: 100%; text-align: left; }
+.dlg .dlg-err { min-height: 1.3em; color: var(--down); font-size: .9rem; }
+.dlg .actions { justify-content: center; }
+.whoami { margin: 0; font-size: .88rem; color: var(--muted); }
+.whoami b { color: var(--gold-1); }
+.voter.me { border-color: rgba(255, 214, 90, .8); }
+.voter.me .who::after { content: " \00B7  you"; font-weight: 400; font-size: .8rem; color: var(--gold-1); }
+.awards.duo { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 20px; }
+.awards:last-child { margin-bottom: 0; }
+.install-hint { font-size: .84rem; }
+
 @media (max-width: 560px) {
   .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .stats li { grid-column: span 2; }
@@ -611,6 +639,7 @@ footer .mini-cap { width: 34px; height: 34px; }
       <li><b id="st-pct" class="gold-text">0%</b><span>would drink again</span></li>
     </ul>
     <p class="sync" id="sync" data-state="connecting" role="status"><i aria-hidden="true"></i><span>Connecting to the board&hellip;</span></p>
+    <p class="whoami" id="whoami" hidden></p>
   </header>
 
   <div class="main-grid">
@@ -657,9 +686,12 @@ footer .mini-cap { width: 34px; height: 34px; }
     <p>Golden&rsquo;s Guzzlers, the annual family beer tasting night.</p>
     <p>One shared board: every phone at the table sees the same standings, and every year stays saved.</p>
     <div class="foot-actions">
+      <button type="button" class="btn-gold sm" data-act="install" id="install-btn" hidden>Install the app</button>
       <button type="button" class="btn-ghost sm" data-act="download">Download every year</button>
-      <button type="button" class="btn-ghost sm danger" data-act="new-year" id="new-year-btn">Start the 2027 board</button>
+      <button type="button" class="btn-ghost sm" data-act="admin" id="admin-btn" hidden>Admin</button>
+      <button type="button" class="btn-ghost sm danger" data-act="new-year" id="new-year-btn" hidden>Start the 2027 board</button>
     </div>
+    <p class="install-hint" id="install-hint" hidden>To keep it as an app on an iPhone or iPad: tap Share, then Add to Home Screen.</p>
   </footer>
 </main>
 
@@ -683,7 +715,13 @@ footer .mini-cap { width: 34px; height: 34px; }
   const OUTBOX_KEY = 'goldens-guzzlers-outbox' + (TEST ? '-test' : '');
   const LIB_KEY = 'goldens-guzzlers-library' + (TEST ? '-test' : '');
   const LIB_OPS = new Set(['bringback', 'stash-add', 'stash-remove']);
+  // Deleting, and starting a new year, need the admin's key; the board turns them away without it.
+  const ADMIN_OPS = new Set(['remove', 'stash-remove', 'clear', 'newyear']);
+  const WHO_KEY = 'goldens-guzzlers-who';
+  const ADMIN_KEY = 'goldens-guzzlers-admin';
+  const LIVE_URL = (location.protocol === 'http:' ? 'ws://' : 'wss://') + location.host + '/goldens-guzzlers/api/live' + (TEST ? '?board=test' : '');
   const POLL_MS = 4000;
+  const LIVE_POLL_MS = 30000;
   const NAME = 'Golden’s Guzzlers';
   const LABEL = { up: 'thumbs up', side: 'thumb to the side', down: 'thumbs down' };
 
@@ -883,6 +921,11 @@ Not quite beer|Hard Kombucha|kombucha
   const LOG = { q: '', tab: 'all', adding: false, prefill: '' };
   let serverBoard = null, seenRev = -1, libStale = false;
   let flushing = false, retryTimer = 0, backoff = 2000;
+  // Who is holding this phone: asked each time the page opens, and kept until it closes.
+  let WHO = readWho(sessionStorage, WHO_KEY);
+  let ADMIN = readAdmin();
+  let live = null, liveOpen = false, liveTimer = 0, liveBackoff = 1000, livePing = 0, lastPoll = 0;
+  let installEvt = null;
 
   /* ---------- state ---------- */
   function fresh(year) { return { v: 1, rev: 0, year, nextPuller: ROSTER[0], surprise: null, pours: [] }; }
@@ -894,6 +937,15 @@ Not quite beer|Hard Kombucha|kombucha
   const newPourId = () => randomId(12, 'abcdefghijklmnopqrstuvwxyz0123456789');
   const newOpId = () => randomId(16, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
   function resetUI() { Object.assign(UI, { mode: 'vote', open: null, editing: null, draft: null, guessOpen: false, justRevealed: null, flash: null }); }
+  function readWho(store, key) { try { const n = store.getItem(key); return ROSTER.includes(n) ? n : ''; } catch (e) { return ''; } }
+  function readAdmin() {
+    try {
+      const k = localStorage.getItem(ADMIN_KEY) || '';
+      const m = /^(\d{13})\.[0-9a-f]{64}$/.exec(k);
+      return m && Number(m[1]) > Date.now() ? k : '';
+    } catch (e) { return ''; }
+  }
+  const isAdmin = () => !!ADMIN && Number(ADMIN.split('.')[0]) > Date.now();
 
   const current = () => { const last = S.pours[S.pours.length - 1]; return last && !last.revealed ? last : null; };
   const byId = id => S.pours.find(p => p.id === id);
@@ -946,6 +998,8 @@ Not quite beer|Hard Kombucha|kombucha
   }
   function send(op) {
     op.opId = newOpId();
+    if (WHO) op.by = WHO;
+    if (ADMIN_OPS.has(op.op) && ADMIN) op.admin = ADMIN;
     // A change to the night carries its year, so it can never land on another year's board.
     if (!LIB_OPS.has(op.op) && op.op !== 'newyear') op.y = S.year;
     outbox.push(op);
@@ -965,9 +1019,15 @@ Not quite beer|Hard Kombucha|kombucha
           body = await res.json().catch(() => null);
         } catch (e) { retry(); return; }
         if (res.status === 429 || res.status >= 500) { retry(res.status === 429 ? 30000 : 0); return; }
-        outbox.shift();
+        const sent = outbox.shift();
         writeJSON(OUTBOX_KEY, outbox);
-        if (!res.ok) toast((body && body.error) || 'That change was not saved.');
+        if (!res.ok) {
+          toast((body && body.error) || 'That change was not saved.');
+          // A list change the board turned away comes back from the board's own copy.
+          if (LIB_OPS.has(sent.op)) libStale = true;
+          // A key the board no longer takes is dropped, and the delete buttons go with it.
+          if (res.status === 403 && ADMIN_OPS.has(sent.op)) dropAdmin();
+        }
         noteState(body);
         backoff = 2000;
       }
@@ -986,6 +1046,7 @@ Not quite beer|Hard Kombucha|kombucha
   }
   async function poll() {
     if (document.hidden) return;
+    lastPoll = Date.now();
     try {
       const res = await fetch(api(), { cache: 'no-store' });
       if (!res.ok) throw new Error('status ' + res.status);
@@ -1215,7 +1276,7 @@ Not quite beer|Hard Kombucha|kombucha
   function voterHTML(p, n) {
     const v = p.votes[n] || '';
     const btns = ['up', 'side', 'down'].map(k => `<button type="button" class="t t-${k}${v === k ? ' on' : ''}" aria-pressed="${v === k}" aria-label="${esc(n)}: ${LABEL[k]}" data-act="vote" data-pid="${p.id}" data-name="${esc(n)}" data-v="${k}">${THUMB}</button>`).join('');
-    return `<div class="voter${v ? ' has' : ''}">${miniGlassSVG(!!v)}<span class="who">${esc(n)}</span><div class="thumbs" role="group" aria-label="${esc(n)}'s vote">${btns}</div></div>`;
+    return `<div class="voter${v ? ' has' : ''}${n === WHO ? ' me' : ''}">${miniGlassSVG(!!v)}<span class="who">${esc(n)}</span><div class="thumbs" role="group" aria-label="${esc(n)}'s vote">${btns}</div></div>`;
   }
   function votesHTML(p) {
     return `<div class="votes" data-pid="${p.id}"><div class="votes-head"><span>Thumbs</span><span class="count"><b>${tally(p).cast}</b> of 6 in</span></div>${ROSTER.map(n => voterHTML(p, n)).join('')}</div>`;
@@ -1231,7 +1292,8 @@ Not quite beer|Hard Kombucha|kombucha
     const ready = miss.length === 0;
     return `<button type="button" class="btn-gold ${ready ? 'ready' : 'waiting'}" data-act="open-reveal">Reveal the beer</button>
       <p class="hint">${ready ? 'All six thumbs are in. Pull the coozie.' : 'Waiting on ' + esc(joinNames(miss)) + '.'}</p>
-      ${tally(p).cast === 0 ? '<button type="button" class="link" data-act="undo-pull">Pulled by mistake? Put it back in the bucket</button>' : ''}`;
+      ${tally(p).cast === 0 ? '<button type="button" class="link" data-act="undo-pull">Pulled by mistake? Put it back in the bucket</button>' : ''}
+      ${isAdmin() ? `<button type="button" class="link" data-act="remove" data-pid="${p.id}">Delete this pour</button>` : ''}`;
   }
   function providerChips(sel) {
     return `<div class="chips">${ROSTER.map(n => `<label class="chip"><input type="radio" name="provider" value="${esc(n)}"${sel === n ? ' checked' : ''}><span>${esc(n)}</span></label>`).join('')}</div>`;
@@ -1304,14 +1366,14 @@ Not quite beer|Hard Kombucha|kombucha
     const g = guessLine(p);
     return `<div class="vote-chips">${chips}</div>
       <p class="guess-line">${g || 'No guesses on who brought it.'} Pulled by ${esc(p.puller)}.</p>
-      <div class="detail-tools">${VIEW ? '' : `<button type="button" class="btn-ghost sm" data-act="edit" data-pid="${p.id}">Fix this pour</button>`}${bringBackBtn(p)}</div>`;
+      <div class="detail-tools">${VIEW ? '' : `<button type="button" class="btn-ghost sm" data-act="edit" data-pid="${p.id}">Fix this pour</button>`}${bringBackBtn(p)}${!VIEW && isAdmin() ? `<button type="button" class="btn-ghost sm danger" data-act="remove" data-pid="${p.id}">Delete</button>` : ''}</div>`;
   }
   function editorHTML(p) {
     return `<form class="editor" data-pid="${p.id}" autocomplete="off">
       ${votesHTML(p)}
       ${fieldsHTML(p, 'e')}
       ${guessesHTML(p, false)}
-      <div class="actions"><button type="submit" class="btn-gold sm">Save the fix</button><button type="button" class="btn-ghost sm" data-act="cancel-edit">Cancel</button><button type="button" class="btn-ghost sm danger" data-act="remove" data-pid="${p.id}">Take it off the board</button></div>
+      <div class="actions"><button type="submit" class="btn-gold sm">Save the fix</button><button type="button" class="btn-ghost sm" data-act="cancel-edit">Cancel</button>${isAdmin() ? `<button type="button" class="btn-ghost sm danger" data-act="remove" data-pid="${p.id}">Delete this pour</button>` : ''}</div>
     </form>`;
   }
   function pendingHTML(p) {
@@ -1345,14 +1407,16 @@ Not quite beer|Hard Kombucha|kombucha
       const g = p.guesses && p.guesses[r.n];
       if (p.revealed && p.provider && g) { r.guessed++; if (g === p.provider) r.right++; }
     }));
-    const coolers = ROSTER.map(n => ({ n, beers: 0, u: 0 }));
-    list.forEach(x => { const c = coolers.find(c => c.n === x.p.provider); if (c) { c.beers++; c.u += x.t.u; } });
+    // Each bringer's beers, rated the way the board ranks them: thumbs up first, then fewer thumbs down.
+    const coolers = ROSTER.map(n => ({ n, beers: 0, u: 0, d: 0 }));
+    list.forEach(x => { const c = coolers.find(c => c.n === x.p.provider); if (c) { c.beers++; c.u += x.t.u; c.d += x.t.d; } });
     return {
       top, pol, hard,
+      pick: ROSTER.filter(n => top.some(x => x.p.provider === n)),
       critic: best(people, r => [r.d, -r.u], r => r.d >= 1),
       easy: best(people, r => [r.u, -r.d], r => r.u >= 1),
       detective: best(people, r => [r.right, -r.guessed], r => r.right >= 1),
-      cooler: best(coolers, c => [c.u / c.beers, c.beers], c => c.beers >= 1)
+      shelf: best(coolers, c => [c.u / c.beers, -c.d / c.beers], c => c.beers >= 1)
     };
   }
 
@@ -1421,8 +1485,14 @@ Not quite beer|Hard Kombucha|kombucha
     const critic = person(a.critic, r => `${r.d} thumbs down out of ${votesBy(r)} votes`, 'Waiting on votes.');
     const easy = person(a.easy, r => `${r.u} thumbs up out of ${votesBy(r)} votes`, 'Waiting on votes.');
     const det = person(a.detective, r => `${r.right} of ${r.guessed} guesses right on who brought it`, 'No right guesses yet.');
-    const cool = a.cooler.length
-      ? `<p class="win">${esc(joinNames(a.cooler.map(c => c.n)))}</p><p class="win-sub">${a.cooler[0].u} thumbs up over ${a.cooler[0].beers} ${a.cooler[0].beers === 1 ? 'beer' : 'beers'}</p>`
+    const tenth = n => (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '');
+    const picked = a.top.filter(x => x.p.provider);
+    const pick = a.pick.length
+      ? `<p class="win">${esc(joinNames(a.pick))}</p><p class="win-sub">${picked.length === 1 ? esc(picked[0].p.name) + ', ' + picked[0].t.u + ' of 6 would drink again' : 'Brought the beers tied for the top'}</p>`
+      : waiting(a.top.length ? 'Nobody is named on the top beer yet.' : 'Waiting on the first reveal.');
+    const sh = a.shelf[0];
+    const shelf = sh
+      ? `<p class="win">${esc(joinNames(a.shelf.map(c => c.n)))}</p><p class="win-sub">${tenth(sh.u / sh.beers)} thumbs up a beer, over ${sh.beers} ${sh.beers === 1 ? 'beer' : 'beers'}</p>`
       : waiting('Waiting on the first reveal.');
 
     $('#awards-body').innerHTML = `<p class="group-label">For the beers</p>
@@ -1434,12 +1504,16 @@ Not quite beer|Hard Kombucha|kombucha
         ${awardCard('&#129327;', 'Biggest Surprise', 'Picked by the table', surprise)}
         ${awardCard('&#128581;', 'Hard No Champion', 'Most thumbs down', hard)}
       </div>
+      <p class="group-label">For the bringers</p>
+      <div class="awards duo">
+        ${awardCard('&#127941;', 'Golden Pick', 'Brought the top-rated beer of the night', pick)}
+        ${awardCard('&#127870;', 'Top Shelf', 'Best average rating across the beers they brought', shelf)}
+      </div>
       <p class="group-label">For the table</p>
-      <div class="awards quad">
+      <div class="awards trio">
         ${awardCard('&#129488;', 'Toughest Critic', 'Gave the most thumbs down', critic)}
         ${awardCard('&#128516;', 'Easiest to Please', 'Gave the most thumbs up', easy)}
         ${awardCard('&#128373;&#65039;', 'Beer Detective', 'Most right guesses on who brought it', det)}
-        ${awardCard('&#129482;', 'Best Cooler', 'Most thumbs up per beer brought', cool)}
       </div>`;
   }
   function renderAll() {
@@ -1551,17 +1625,21 @@ Not quite beer|Hard Kombucha|kombucha
     toast(`Pour ${d.n} fixed.`);
     setTimeout(() => { UI.flash = null; }, 1800);
   }
-  function removePour(pid) {
+  async function removePour(pid) {
     const p = byId(pid);
     if (!p) return;
-    if (!window.confirm(`Take pour ${p.n}${p.name ? ' (' + p.name + ')' : ''} off the board? Its votes go with it.`)) return;
+    if (!(await confirmDelete(`pour ${p.n}${p.name ? ', ' + esc(p.name) + ',' : ''} and its votes`))) return;
+    if (!byId(pid)) return;
+    const cur = current();
+    // A pour deleted while still in its coozie hands the pull back, as the board does.
+    if (cur && cur.id === pid) S.nextPuller = p.puller;
     S.pours = S.pours.filter(x => x.id !== pid);
     if (S.surprise === pid) S.surprise = null;
-    UI.editing = null; UI.draft = null; UI.open = null;
+    UI.editing = null; UI.draft = null; UI.open = null; UI.mode = 'vote';
     if (UI.justRevealed === pid) UI.justRevealed = null;
     renderAll();
-    send({ op: 'remove', pid });
-    toast(`Pour ${p.n} is off the board.`);
+    send({ op: 'remove', pid, confirm: 'DELETE' });
+    toast(`Pour ${p.n} deleted.`);
   }
   function standingsText(list) {
     const lines = [NAME + ' ' + (VIEW ? VIEW.year : S.year) + ' standings'];
@@ -1573,6 +1651,8 @@ Not quite beer|Hard Kombucha|kombucha
     const sp = sid ? V().pours.find(p => p.id === sid) : null;
     if (sp && sp.revealed) lines.push('Biggest surprise: ' + sp.name);
     if (a.hard) lines.push('Hard no champion: ' + a.hard.p.name);
+    if (a.pick.length) lines.push('Golden pick: ' + joinNames(a.pick));
+    if (a.shelf.length) lines.push('Top shelf: ' + joinNames(a.shelf.map(c => c.n)));
     return lines.join('\n');
   }
   async function copyStandings() {
@@ -1683,7 +1763,7 @@ Not quite beer|Hard Kombucha|kombucha
         <span class="beer">${esc(s.name)}</span>${warn}
         <p class="meta">${esc(s.brewery || 'Brewery not given')}${s.style ? ' · ' + esc(s.style) : ''}</p>
         ${had ? `<p class="when">${had.rows.map(whenLine).join('')}</p>` : ''}
-      </div><button type="button" class="x" data-act="stash-remove" data-sid="${esc(s.id)}" aria-label="Take ${esc(s.name)} out of the stash">×</button></li>`;
+      </div>${isAdmin() ? `<button type="button" class="x" data-act="stash-remove" data-sid="${esc(s.id)}" aria-label="Delete ${esc(s.name)} from the stash">×</button>` : ''}</li>`;
   }
   function stashFormHTML() {
     return `<form class="stash-form" autocomplete="off">
@@ -1765,14 +1845,15 @@ Not quite beer|Hard Kombucha|kombucha
     renderLog();
     toast(`${s.name} is in the stash.`);
   }
-  function removeFromStash(sid) {
+  async function removeFromStash(sid) {
+    const s = libNow().stash.find(x => x.id === sid);
+    if (!s || !(await confirmDelete(esc(s.name) + ' from the stash'))) return;
     const lib = libNow();
-    const s = lib.stash.find(x => x.id === sid);
-    if (!s || !window.confirm(`Take ${s.name} out of the stash?`)) return;
     lib.stash = lib.stash.filter(x => x.id !== sid);
     writeJSON(LIB_KEY, LIB);
-    send({ op: 'stash-remove', sid });
+    send({ op: 'stash-remove', sid, confirm: 'DELETE' });
     renderLog();
+    toast(`${s.name} is out of the stash.`);
   }
   function renderBrand() {
     const y = VIEW ? VIEW.year : S.year;
@@ -1817,6 +1898,7 @@ Not quite beer|Hard Kombucha|kombucha
     </div>`;
   }
   function startNewYear() {
+    if (!isAdmin()) { toast('Only the admin can start a new year.'); return; }
     if (outbox.length) { toast('One moment: the last change is still saving.'); return; }
     const y = S.year + 1;
     const word = window.prompt(`This starts the ${y} board on every phone. ${S.year} stays saved in the year list and the beer log. Type ${y} to start it.`);
@@ -1839,6 +1921,190 @@ Not quite beer|Hard Kombucha|kombucha
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     toast('Every year downloaded.');
+  }
+
+  /* ---------- who is here, and the admin ---------- */
+  function renderWho() {
+    const el = $('#whoami');
+    el.hidden = !WHO;
+    el.innerHTML = WHO ? `Drinking as <b>${esc(WHO)}</b>${isAdmin() ? ', admin' : ''} &middot; <button type="button" class="link" data-act="switch-who">Switch</button>` : '';
+  }
+  function showGate() {
+    if ($('#gate')) return;
+    const last = readWho(localStorage, WHO_KEY);
+    const el = document.createElement('div');
+    el.className = 'gate';
+    el.id = 'gate';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-labelledby', 'gate-h');
+    el.innerHTML = `<div class="gate-card"><svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg>
+      <h2 id="gate-h" class="gold-text">Who&rsquo;s drinking?</h2>
+      <p>Pick your name. Every change from this phone is saved under it.</p>
+      <div class="names">${ROSTER.map(n => `<button type="button" class="name-btn${n === last ? ' last' : ''}" data-act="who" data-name="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>`;
+    document.body.appendChild(el);
+    $('main').inert = true;
+    (el.querySelector('.name-btn.last') || el.querySelector('.name-btn')).focus();
+  }
+  function pickWho(n) {
+    if (!ROSTER.includes(n)) return;
+    WHO = n;
+    try { sessionStorage.setItem(WHO_KEY, n); localStorage.setItem(WHO_KEY, n); } catch (e) { /* private mode: asked again next time */ }
+    const g = $('#gate');
+    if (g) g.remove();
+    $('main').inert = false;
+    renderAdmin();
+    renderAll();
+  }
+  // A small dialog asking for one line. check(value) answers the problem to show, or nothing to close.
+  function askText(o) {
+    return new Promise(resolve => {
+      const back = document.activeElement;
+      const main = $('main'), wasInert = main.inert;
+      const el = document.createElement('div');
+      el.className = 'gate';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+      el.setAttribute('aria-labelledby', 'dlg-h');
+      el.innerHTML = `<form class="gate-card dlg" novalidate>
+        <h2 id="dlg-h" class="gold-text">${o.title}</h2>
+        <p>${o.text}</p>
+        <label class="fld"><span>${o.label}</span><input name="v" type="${o.type || 'text'}" autocomplete="${o.autocomplete || 'off'}" autocapitalize="${o.caps || 'off'}" autocorrect="off" spellcheck="false"></label>
+        <p class="dlg-err" role="alert"></p>
+        <div class="actions"><button type="submit" class="btn-gold sm">${o.ok}</button><button type="button" class="btn-ghost sm" data-dlg="cancel">Cancel</button></div>
+      </form>`;
+      document.body.appendChild(el);
+      main.inert = true;
+      const form = el.querySelector('form'), input = form.querySelector('input'), err = form.querySelector('.dlg-err'), okBtn = form.querySelector('[type="submit"]');
+      const close = ok => { input.value = ''; el.remove(); main.inert = wasInert; if (back && back.focus) back.focus(); resolve(ok); };
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        e.stopPropagation();
+        okBtn.disabled = true;
+        const problem = o.check ? await o.check(input.value) : '';
+        okBtn.disabled = false;
+        if (problem) { err.textContent = problem; input.focus(); input.select(); return; }
+        close(true);
+      });
+      el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-dlg="cancel"]')) close(false); });
+      el.addEventListener('keydown', e => { if (e.key === 'Escape') close(false); });
+      input.focus();
+    });
+  }
+  async function unlockAdmin() {
+    const ok = await askText({
+      title: 'Admin', label: 'Admin password', type: 'password', autocomplete: 'current-password', ok: 'Unlock',
+      text: 'Deleting is for the admin only. This phone keeps a key for a year, never the password.',
+      check: async v => {
+        if (!v) return 'Type the password.';
+        try {
+          const res = await fetch(api(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'admin-login', password: v }), cache: 'no-store' });
+          const body = await res.json().catch(() => null);
+          if (!res.ok || !body || typeof body.admin !== 'string') return (body && body.error) || 'That did not work. Try again.';
+          ADMIN = body.admin;
+          try { localStorage.setItem(ADMIN_KEY, ADMIN); } catch (e) { /* kept for this visit only */ }
+          return '';
+        } catch (e) { return 'Not connected. Try again once the board is live.'; }
+      }
+    });
+    if (!ok) return;
+    renderAdmin();
+    renderAll();
+    toast('Admin unlocked on this phone.');
+  }
+  function dropAdmin() {
+    ADMIN = '';
+    try { localStorage.removeItem(ADMIN_KEY); } catch (e) { /* nothing kept */ }
+    renderAdmin();
+    renderAll();
+  }
+  function renderAdmin() {
+    const on = isAdmin();
+    const b = $('#admin-btn');
+    b.hidden = !on && WHO !== 'Nick';
+    b.textContent = on ? 'Lock admin' : 'Admin';
+    b.dataset.act = on ? 'lock-admin' : 'admin';
+    $('#new-year-btn').hidden = !on;
+    renderWho();
+  }
+  async function confirmDelete(what) {
+    if (!isAdmin()) { toast('Only the admin can delete.'); return false; }
+    return askText({
+      title: 'Delete', label: 'Type DELETE', ok: 'Delete', caps: 'characters',
+      text: `This deletes ${what} on every phone. A copy stays on the server.`,
+      check: v => (v.trim() === 'DELETE' ? '' : 'Type DELETE in capital letters.')
+    });
+  }
+
+  /* ---------- live connection ---------- */
+  // Every open phone keeps a connection to the board and hears each change the moment it lands.
+  // Polling carries on underneath, every half minute while the connection is up.
+  function connectLive() {
+    if (!('WebSocket' in window) || document.hidden) return;
+    if (live && live.readyState <= 1) return;
+    clearTimeout(liveTimer);
+    let sock;
+    try { sock = new WebSocket(LIVE_URL); } catch (e) { liveLater(); return; }
+    live = sock;
+    sock.onopen = () => {
+      liveOpen = true;
+      liveBackoff = 1000;
+      clearInterval(livePing);
+      livePing = setInterval(() => { try { sock.send('ping'); } catch (e) { /* it reconnects on close */ } }, 25000);
+      poll();
+    };
+    sock.onmessage = e => {
+      if (e.data === 'pong') return;
+      let msg;
+      try { msg = JSON.parse(e.data); } catch (err) { return; }
+      if (!msg || msg.type !== 'state' || !msg.board) return;
+      noteState(msg);
+      if (!outbox.length && !flushing) {
+        setSync('live');
+        adopt(msg.board);
+        if (libStale) loadLibrary();
+      }
+    };
+    sock.onclose = () => {
+      if (live !== sock) return;
+      live = null;
+      liveOpen = false;
+      clearInterval(livePing);
+      liveLater();
+    };
+    sock.onerror = () => { try { sock.close(); } catch (e) { /* closed already */ } };
+  }
+  function liveLater() {
+    clearTimeout(liveTimer);
+    if (document.hidden) return;
+    liveTimer = setTimeout(connectLive, liveBackoff);
+    liveBackoff = Math.min(liveBackoff * 2, 30000);
+  }
+  function dropLive() {
+    clearTimeout(liveTimer);
+    clearInterval(livePing);
+    if (!live) return;
+    const s = live;
+    live = null;
+    liveOpen = false;
+    try { s.close(); } catch (e) { /* closed already */ }
+  }
+
+  /* ---------- the app ---------- */
+  const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const appleMobile = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function renderInstall() {
+    const inApp = standalone();
+    $('#install-btn').hidden = inApp || !installEvt;
+    $('#install-hint').hidden = inApp || !appleMobile;
+  }
+  async function installApp() {
+    if (!installEvt) return;
+    const evt = installEvt;
+    installEvt = null;
+    evt.prompt();
+    try { await evt.userChoice; } catch (e) { /* the browser's choice */ }
+    renderInstall();
   }
 
   /* ---------- events ---------- */
@@ -1885,6 +2151,11 @@ Not quite beer|Hard Kombucha|kombucha
       case 'stash-remove': removeFromStash(b.dataset.sid); break;
       case 'download': downloadAll(); break;
       case 'new-year': startNewYear(); break;
+      case 'who': pickWho(b.dataset.name); break;
+      case 'switch-who': showGate(); break;
+      case 'admin': unlockAdmin(); break;
+      case 'lock-admin': dropAdmin(); toast('Admin locked on this phone.'); break;
+      case 'install': installApp(); break;
     }
   });
   // Keeps the style input focused while a suggestion is clicked.
@@ -1943,13 +2214,26 @@ Not quite beer|Hard Kombucha|kombucha
   if (TEST) $('.bubbles').insertAdjacentHTML('afterend', '<div class="ribbon" role="note"><p><b>Test board.</b> Nothing here touches the real standings.</p><a href="./">Open the real board</a></div>');
   bubbles();
   renderBrand();
+  renderAdmin();
   renderAll();
+  renderInstall();
+  if (!WHO) showGate();
   setSync(outbox.length ? 'saving' : 'connecting');
   if (outbox.length) flush();
   poll();
-  setInterval(poll, POLL_MS);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); if (outbox.length) flush(); } });
-  window.addEventListener('online', () => { if (outbox.length) flush(); else poll(); });
+  connectLive();
+  // With the live connection up a read every half minute is only a check; without it, every four seconds.
+  setInterval(() => { if (!liveOpen || Date.now() - lastPoll >= LIVE_POLL_MS) poll(); }, POLL_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { dropLive(); return; }
+    poll();
+    connectLive();
+    if (outbox.length) flush();
+  });
+  window.addEventListener('online', () => { if (outbox.length) flush(); else poll(); connectLive(); });
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
+  window.addEventListener('appinstalled', () => { installEvt = null; renderInstall(); toast('Installed. It opens from the home screen now.'); });
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* the page works without it */ });
 })();
 </script>
 </body>

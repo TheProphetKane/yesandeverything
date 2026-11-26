@@ -521,8 +521,64 @@ export const BEER_FIRST_YEAR = 2026;
 export const BEER_STASH_MAX = 400;
 // Changes that go to the beer log's lists rather than to this year's board.
 export const BEER_LIB_OPS = new Set(["bringback", "stash-add", "stash-remove"]);
+// Live connections: every open phone hears each change the moment it lands.
+export const BEER_LIVE_ROUTE = "/goldens-guzzlers/api/live";
+export const BEER_LIVE_MAX = 300;
+// The journal keeps every change, newest last; this many stay, about forty nights.
+export const BEER_LOG_KEEP = 20000;
+// A copy of every year goes to the second store this long after a change, and once a day.
+export const BEER_SNAPSHOT_MS = 5 * 60 * 1000;
+export const BEER_REMOVED_STASH_KEEP = 200;
 const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
 const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
+// Deleting, and starting a new year, are for the admin alone. The Worker never holds the admin
+// password: the BEER_ADMIN_HASH secret is pbkdf2-sha256$<rounds>$<salt hex>$<hash hex>, and a
+// right password earns a signed key that the admin's phone keeps for a year.
+export const BEER_ADMIN_OPS = new Set(["remove", "stash-remove", "clear", "newyear"]);
+export const BEER_ADMIN_DAYS = 365;
+// Wrong passwords allowed before admin sign-in pauses, and how long it pauses.
+export const BEER_ADMIN_FAILS = 8;
+export const BEER_ADMIN_LOCK_MS = 15 * 60 * 1000;
+
+const beerEnc = new TextEncoder();
+const beerHex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+const beerUnhex = hex => new Uint8Array((String(hex).match(/[0-9a-f]{2}/gi) || []).map(h => parseInt(h, 16)));
+
+// Every character compared whatever the first difference, so the time taken gives nothing away.
+function beerSame(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+export async function beerAdminPassword(env, password) {
+  const rec = String((env && env.BEER_ADMIN_HASH) || "").trim().split("$");
+  if (rec.length !== 4 || rec[0] !== "pbkdf2-sha256") return false;
+  if (typeof password !== "string" || !password || password.length > 200) return false;
+  const rounds = Number(rec[1]);
+  if (!Number.isInteger(rounds) || rounds < 1000 || rounds > 100000) return false;
+  const key = await crypto.subtle.importKey("raw", beerEnc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: beerUnhex(rec[2]), iterations: rounds }, key, 256);
+  return beerSame(beerHex(bits), rec[3].toLowerCase());
+}
+
+async function beerAdminSig(env, exp) {
+  const key = await crypto.subtle.importKey("raw", beerEnc.encode("goldens-guzzlers-admin|" + String(env.BEER_ADMIN_HASH).trim()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return beerHex(await crypto.subtle.sign("HMAC", key, beerEnc.encode("admin:" + exp)));
+}
+
+export async function beerAdminKey(env, now) {
+  const exp = now + BEER_ADMIN_DAYS * 86400000;
+  return exp + "." + (await beerAdminSig(env, exp));
+}
+
+export async function beerIsAdmin(env, key, now) {
+  if (!env || !env.BEER_ADMIN_HASH || typeof key !== "string") return false;
+  const m = /^(\d{13})\.([0-9a-f]{64})$/.exec(key);
+  if (!m || Number(m[1]) <= now) return false;
+  return beerSame(await beerAdminSig(env, Number(m[1])), m[2]);
+}
 
 export function beerFresh() {
   return { v: 1, rev: 0, nextPuller: BEER_ROSTER[0], surprise: null, pours: [] };
@@ -663,6 +719,8 @@ export function beerApply(board, op, now) {
       if (!p) return { board, changed: false };
       b.pours = b.pours.filter(x => x.id !== op.pid);
       if (b.surprise === op.pid) b.surprise = null;
+      // A pour deleted while still in its coozie hands the pull back, as putting it back does.
+      if (current && current.id === op.pid) b.nextPuller = current.puller;
       removed = p;
       break;
     }
@@ -674,7 +732,7 @@ export function beerApply(board, op, now) {
       break;
     }
     case "clear": {
-      if (op.confirm !== "clear") return { error: "Clearing the board takes the word clear." };
+      if (op.confirm !== "DELETE") return { error: "Clearing the board takes the word DELETE." };
       archive = board;
       b.pours = [];
       b.surprise = null;
@@ -689,8 +747,85 @@ export function beerApply(board, op, now) {
 }
 
 export class BeerBoard {
-  constructor(ctx) {
+  constructor(ctx, env) {
+    this.ctx = ctx;
     this.storage = ctx.storage;
+    this.env = env;
+    // A phone's keep-alive ping is answered without waking the object.
+    if (typeof ctx.setWebSocketAutoResponse === "function" && typeof WebSocketRequestResponsePair !== "undefined") {
+      ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
+    }
+  }
+
+  // After every change: into the journal, a snapshot scheduled, every open phone told.
+  async after(op, now, m, board) {
+    await this.journal(op, now, m);
+    await this.scheduleSnapshot();
+    await this.broadcast(m, board);
+  }
+
+  // The journal: every change as it was sent, so any night can be rebuilt step by step.
+  async journal(op, now, m) {
+    const seq = ((await this.storage.get("logseq")) || 0) + 1;
+    const entry = { at: now, year: m.year, op: { ...op } };
+    delete entry.op.opId;
+    delete entry.op.admin;
+    delete entry.op.password;
+    await this.storage.put("log:" + String(seq).padStart(10, "0"), entry);
+    await this.storage.put("logseq", seq);
+    const cut = seq - BEER_LOG_KEEP;
+    if (cut > 0 && seq % 200 === 0) {
+      const oldest = await this.storage.list({ prefix: "log:", limit: 400 });
+      for (const k of oldest.keys()) if (Number(k.slice(4)) <= cut) await this.storage.delete(k);
+    }
+  }
+
+  async broadcast(m, board) {
+    if (!this.ctx || typeof this.ctx.getWebSockets !== "function") return;
+    const sockets = this.ctx.getWebSockets();
+    if (!sockets.length) return;
+    const msg = JSON.stringify({ type: "state", ...(await this.state(m, board)) });
+    for (const ws of sockets) {
+      try { ws.send(msg); } catch (e) { /* a phone that dropped reconnects and reads the board */ }
+    }
+  }
+
+  async scheduleSnapshot() {
+    if (!this.env || !this.env.VOTES || typeof this.storage.getAlarm !== "function") return;
+    if (!(await this.storage.getAlarm())) await this.storage.setAlarm(Date.now() + BEER_SNAPSHOT_MS);
+  }
+
+  async alarm() {
+    await this.writeSnapshot();
+  }
+
+  // A full copy of every year and both lists, kept in the key-value store, outside this object's
+  // own storage: one copy always current, and one kept for each day there was a change.
+  async writeSnapshot() {
+    if (!this.env || !this.env.VOTES) return null;
+    const m = await this.meta();
+    const which = (await this.storage.get("which")) || "live";
+    const boards = {};
+    for (const y of m.years) boards[y] = await this.board(y);
+    const now = Date.now();
+    const body = JSON.stringify({ at: now, board: which, year: m.year, years: m.years, libRev: m.libRev, boards, ...(await this.lib()) });
+    const prefix = "goldens-guzzlers:" + which + ":";
+    await this.env.VOTES.put(prefix + "latest", body);
+    await this.env.VOTES.put(prefix + "day:" + new Date(now).toISOString().slice(0, 10), body);
+    await this.storage.put("snapAt", now);
+    return now;
+  }
+
+  async webSocketMessage(ws, message) {
+    if (message === "ping") ws.send("pong");
+  }
+
+  async webSocketClose(ws, code, reason) {
+    try { ws.close(code, reason); } catch (e) { /* already closed */ }
+  }
+
+  async webSocketError(ws) {
+    try { ws.close(1011, "error"); } catch (e) { /* already closed */ }
   }
 
   // The year record: the year the board is on and every year that has a board. A store from before
@@ -732,10 +867,32 @@ export class BeerBoard {
   }
 
   async fetch(request) {
+    // A phone opening a live connection. It hears every change from here on.
+    if (request.headers.get("Upgrade") === "websocket") {
+      if (typeof WebSocketPair === "undefined") return json({ error: "Live connections are not available here." }, 426);
+      if (this.ctx.getWebSockets().length >= BEER_LIVE_MAX) return json({ error: "Too many phones are connected." }, 429);
+      const pair = new WebSocketPair();
+      const [client, server] = Object.values(pair);
+      this.ctx.acceptWebSocket(server);
+      return new Response(null, { status: 101, webSocket: client });
+    }
     const url = new URL(request.url);
     const m = await this.meta();
     if (request.method === "GET") {
-      if (url.searchParams.get("view") === "library") {
+      const view = url.searchParams.get("view");
+      // The journal names who did what, the stash included, so only the admin reads it.
+      if (view === "journal") {
+        if (!(await beerIsAdmin(this.env, request.headers.get("x-beer-admin"), Date.now()))) return json({ error: "Only the admin can read the journal." }, 403);
+        const recent = await this.storage.list({ prefix: "log:", reverse: true, limit: 50 });
+        return json({ ok: true, entries: [...recent.values()] });
+      }
+      // Dates and counts only, nothing from the board: when the last copy went out, and how long the journal is.
+      if (view === "backups") {
+        const prefix = "goldens-guzzlers:" + ((await this.storage.get("which")) || "live") + ":";
+        const keys = this.env && this.env.VOTES ? (await this.env.VOTES.list({ prefix })).keys.map(k => k.name.slice(prefix.length)) : [];
+        return json({ ok: true, snapshotAt: (await this.storage.get("snapAt")) || null, keys, journal: (await this.storage.get("logseq")) || 0 });
+      }
+      if (view === "library") {
         const boards = {};
         for (const y of m.years) boards[y] = await this.board(y);
         return json({ ok: true, year: m.year, years: m.years, libRev: m.libRev, boards, ...(await this.lib()) });
@@ -746,6 +903,12 @@ export class BeerBoard {
     }
     const op = await request.json();
     const now = Date.now();
+    // Which board this object is, so its snapshots go under the right name.
+    const which = request.headers.get("x-beer-board");
+    if (which && which !== this.which) {
+      this.which = which;
+      await this.storage.put("which", which);
+    }
     const ip = request.headers.get("x-client-ip");
     if (ip) {
       const step = rateStep(await this.storage.get("r:" + ip), now, BEER_WRITES, IP_WINDOW_MS);
@@ -758,8 +921,36 @@ export class BeerBoard {
       const old = await this.storage.list({ prefix: "r:" });
       for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
     }
+    // The admin signs in with the password and gets back a key; the password itself is never stored.
+    if (op.op === "admin-login") {
+      if (!this.env || !this.env.BEER_ADMIN_HASH) return json({ error: "The admin password is not set up yet." }, 503);
+      const lock = (await this.storage.get("adminFails")) || { n: 0, start: now };
+      if (now - lock.start > BEER_ADMIN_LOCK_MS) { lock.n = 0; lock.start = now; }
+      if (lock.n >= BEER_ADMIN_FAILS) return json({ error: "Too many wrong passwords. Try again in fifteen minutes." }, 429);
+      if (!(await beerAdminPassword(this.env, op.password))) {
+        lock.n++;
+        await this.storage.put("adminFails", lock);
+        return json({ error: "That is not the admin password." }, 403);
+      }
+      await this.storage.delete("adminFails");
+      return json({ ok: true, admin: await beerAdminKey(this.env, now) });
+    }
+    delete op.password;
+    // Who sent it, from the name picked when the page opened. It goes in the journal and nowhere else.
+    if (op.by !== undefined) {
+      const by = beerWho(op.by);
+      if (by) op.by = by; else delete op.by;
+    }
+
     const seen = (await this.storage.get("seen")) || [];
     if (op.opId && seen.includes(op.opId)) return json({ ...(await this.state(m)), changed: false, repeat: true });
+
+    // A delete, or a new year, needs the admin's key, and a delete needs the word DELETE as well.
+    if (BEER_ADMIN_OPS.has(op.op)) {
+      if (!(await beerIsAdmin(this.env, op.admin, now))) return json({ error: "Only the admin can do that.", ...(await this.state(m)) }, 403);
+      if (op.op !== "newyear" && op.confirm !== "DELETE") return json({ error: "A delete takes the word DELETE.", ...(await this.state(m)) }, 400);
+    }
+    delete op.admin;
     const remember = async () => {
       if (!op.opId) return;
       seen.push(op.opId);
@@ -772,7 +963,17 @@ export class BeerBoard {
         return json({ error: "Only the test board can be wiped.", ...(await this.state(m)) }, 400);
       }
       await this.storage.deleteAll();
-      return json({ ...(await this.state(await this.meta())), changed: true });
+      const fresh = await this.meta();
+      await this.storage.put("which", "test");
+      await this.broadcast(fresh);
+      return json({ ...(await this.state(fresh)), changed: true });
+    }
+
+    // A snapshot on demand, to make sure the copy outside this object is current.
+    if (op.op === "snapshot") {
+      const at = await this.writeSnapshot();
+      await remember();
+      return json({ ...(await this.state(m)), changed: false, snapshotAt: at });
     }
 
     // A new year opens a fresh board and leaves every earlier year exactly as it was.
@@ -788,18 +989,29 @@ export class BeerBoard {
       m.years = [...m.years, y];
       m.libRev++;
       await this.storage.put("meta", m);
+      await this.after(op, now, m, next);
       await remember();
       return json({ ...(await this.state(m, next)), changed: true });
     }
 
     if (BEER_LIB_OPS.has(op.op)) {
-      const out = beerLibApply(await this.lib(), op, now);
+      const before = await this.lib();
+      const out = beerLibApply(before, op, now);
       if (out.error) return json({ error: out.error, ...(await this.state(m)) }, 400);
       if (out.changed) {
+        // A beer taken out of the stash is kept, so a slipped tap loses nothing.
+        const gone = op.op === "stash-remove" ? before.stash.find(s => s.id === op.sid) : null;
+        if (gone) {
+          let seq = (await this.storage.get("seq")) || 0;
+          await this.storage.put("removedStash:" + String(++seq).padStart(8, "0"), { at: now, entry: gone });
+          await this.storage.put("seq", seq);
+          await this.trim("removedStash:", BEER_REMOVED_STASH_KEEP);
+        }
         await this.storage.put("marks", out.lib.marks);
         await this.storage.put("stash", out.lib.stash);
         m.libRev++;
         await this.storage.put("meta", m);
+        await this.after(op, now, m);
       }
       await remember();
       return json({ ...(await this.state(m)), changed: out.changed });
@@ -843,6 +1055,7 @@ export class BeerBoard {
           await this.storage.put("meta", m);
         }
       }
+      await this.after(op, now, m, out.board);
     }
     await remember();
     return json({ ...(await this.state(m, out.board)), changed: out.changed });
@@ -859,12 +1072,17 @@ async function beerRoute(request, env) {
   const url = new URL(request.url);
   const which = url.searchParams.get("board") === "test" ? "test" : "live";
   const inner = "https://beerboard" + BEER_ROUTE;
+  if (url.pathname === BEER_LIVE_ROUTE) {
+    if (request.headers.get("Upgrade") !== "websocket") return json({ error: "This address takes a live connection." }, 426);
+    return beer(env, which).fetch(request);
+  }
   if (request.method === "GET") {
     const q = new URLSearchParams();
-    if (url.searchParams.get("view") === "library") q.set("view", "library");
+    const view = url.searchParams.get("view");
+    if (view === "library" || view === "journal" || view === "backups") q.set("view", view);
     if (/^\d{4}$/.test(url.searchParams.get("year") || "")) q.set("year", url.searchParams.get("year"));
     const qs = q.toString();
-    return beer(env, which).fetch(new Request(inner + (qs ? "?" + qs : "")));
+    return beer(env, which).fetch(new Request(inner + (qs ? "?" + qs : ""), { headers: { "x-beer-admin": request.headers.get("x-beer-admin") || "" } }));
   }
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
   if (!(request.headers.get("content-type") || "").includes("application/json")) {
@@ -901,7 +1119,7 @@ export default {
     }
     if (url.pathname === HOUSE_ROUTE) return houseRoute(request, env);
     if (url.pathname === PLAN_ROUTE) return planRoute(request, env);
-    if (url.pathname === BEER_ROUTE) return beerRoute(request, env);
+    if (url.pathname === BEER_ROUTE || url.pathname === BEER_LIVE_ROUTE) return beerRoute(request, env);
     if (url.pathname !== ROUTE) return json({ error: "Not found." }, 404);
 
     if (request.method === "GET") {

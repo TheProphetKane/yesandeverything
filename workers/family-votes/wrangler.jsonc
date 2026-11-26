@@ -3,7 +3,9 @@
   // listing, kept in its own Durable Object so it never shares storage with the gated pages.
   // The page itself is a static file served by GitHub Pages; only the vote route runs here.
   //
-  // No secrets. Each browser sends a random device id and nothing else.
+  // One secret since 2026-11-26, BEER_ADMIN_HASH: a salted hash of the beer board's admin password,
+  // set by set-admin-password.ps1 and never the password itself. The vote pages send a random
+  // device id and nothing else.
   //
   // Since 2026-10-28 the same Worker keeps the house search marks (yesandeverything.com/house-search/,
   // the Want to view and No buttons) as one shared list in a second Durable Object, HouseMarks,
@@ -45,6 +47,8 @@
   ],
 
   // The first version's store. VoteBox reads it once to carry votes over and never writes it.
+  // Since 2026-11-26 the beer board writes its backups here too, five minutes after a change:
+  // goldens-guzzlers:<live|test>:latest, and one goldens-guzzlers:<live|test>:day:<date> per day.
   "kv_namespaces": [
     { "binding": "VOTES", "id": "aa8ec9aad79340d1ba796ced1ecf3452" }
   ],
