@@ -520,7 +520,7 @@ export const BEER_FIRST_YEAR = 2026;
 // Beers waiting in stashes for future nights.
 export const BEER_STASH_MAX = 400;
 // Changes that go to the beer log's lists rather than to this year's board.
-export const BEER_LIB_OPS = new Set(["bringback", "stash-add", "stash-remove", "ban"]);
+export const BEER_LIB_OPS = new Set(["bringback", "stash-add", "stash-remove", "stash-edit", "ban"]);
 // Live connections: every open phone hears each change the moment it lands.
 export const BEER_LIVE_ROUTE = "/goldens-guzzlers/api/live";
 export const BEER_LIVE_MAX = 300;
@@ -711,6 +711,15 @@ export function beerLibApply(lib, op, now) {
       stash.push({ id: op.sid, name, brewery: beerText(op.brewery, 80), style: beerText(op.style, 60), who: beerWho(op.who), at: now });
       break;
     }
+    case "stash-edit": {
+      const i = stash.findIndex(s => s.id === op.sid);
+      if (i < 0) return { error: "That stash entry is gone." };
+      const name = beerText(op.name, 80), brewery = beerText(op.brewery, 80);
+      if (!name) return { error: "A stashed beer needs its name." };
+      if (beerBanHit(marks.banned, name, brewery)) return { error: name + " is banned from Golden's Guzzlers. Pick another beer." };
+      stash[i] = { ...stash[i], name, brewery, style: beerText(op.style, 60) };
+      break;
+    }
     case "stash-remove": {
       const i = stash.findIndex(s => s.id === op.sid);
       if (i < 0) return { lib, changed: false };
@@ -799,12 +808,13 @@ export function beerApply(board, op, now) {
       const name = beerText(op.name, 80);
       if (!name) return { error: "A revealed beer needs its name." };
       p.name = name;
-      p.brewery = beerText(op.brewery, 80);
-      p.style = beerText(op.style, 60);
-      p.provider = beerWho(op.provider);
+      // A fix from the beer log sends only the words it changes; whatever it leaves out stays as it was.
+      if (op.op === "reveal" || op.brewery !== undefined) p.brewery = beerText(op.brewery, 80);
+      if (op.op === "reveal" || op.style !== undefined) p.style = beerText(op.style, 60);
+      if (op.op === "reveal" || op.provider !== undefined) p.provider = beerWho(op.provider);
       if (op.op === "edit") {
-        p.votes = beerMap(op.votes, v => BEER_VOTES.has(v));
-        p.guesses = beerMap(op.guesses, w => BEER_ROSTER.includes(w));
+        if (op.votes !== undefined) p.votes = beerMap(op.votes, v => BEER_VOTES.has(v));
+        if (op.guesses !== undefined) p.guesses = beerMap(op.guesses, w => BEER_ROSTER.includes(w));
       }
       if (!p.revealed) { p.revealed = true; p.revealedAt = now; }
       break;

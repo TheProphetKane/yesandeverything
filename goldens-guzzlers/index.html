@@ -519,6 +519,8 @@ footer .mini-cap { width: 34px; height: 34px; }
 .snap-preview { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; border: 1.5px solid rgba(255, 214, 90, .6); }
 .snap-note { margin: 0; color: var(--muted); font-size: .9rem; }
 .snap-more { display: flex; flex-wrap: wrap; gap: 8px; }
+.log-item.editing { grid-template-columns: minmax(0, 1fr); }
+.log-edit { display: grid; gap: 12px; }
 .fld input.guess { border-style: dashed; border-color: rgba(255, 204, 51, .95); background: rgba(255, 204, 51, .07); }
 /* a tablet keeping score for the table: bigger targets for fingers */
 @media (min-width: 700px) and (pointer: coarse) {
@@ -827,7 +829,7 @@ a.btn-ghost { display: inline-block; text-decoration: none; }
   const CACHE_KEY = 'goldens-guzzlers-board' + (TEST ? '-test' : '');
   const OUTBOX_KEY = 'goldens-guzzlers-outbox' + (TEST ? '-test' : '');
   const LIB_KEY = 'goldens-guzzlers-library' + (TEST ? '-test' : '');
-  const LIB_OPS = new Set(['bringback', 'stash-add', 'stash-remove', 'ban']);
+  const LIB_OPS = new Set(['bringback', 'stash-add', 'stash-remove', 'stash-edit', 'ban']);
   // Deleting, banning a beer, and starting a new year need the admin's key; the board turns them away without it.
   const ADMIN_OPS = new Set(['remove', 'stash-remove', 'clear', 'newyear', 'ban']);
   const WHO_KEY = 'goldens-guzzlers-who';
@@ -1037,7 +1039,7 @@ Not quite beer|Hard Kombucha|kombucha
   const META = { year: S.year, years: [S.year], libRev: -1 };
   // A past year being looked at, read only: {year, board}. Null shows this year's night.
   let VIEW = null;
-  const LOG = { q: '', tab: 'all', adding: false, prefill: '' };
+  const LOG = { q: '', tab: 'all', adding: false, prefill: '', editing: null };
   let serverBoard = null, seenRev = -1, libStale = false;
   let flushing = false, retryTimer = 0, backoff = 2000;
   // Who is holding this phone: asked each time the page opens, and kept until it closes.
@@ -1940,17 +1942,53 @@ Not quite beer|Hard Kombucha|kombucha
   function whenLine(h) {
     return `<span><b>${h.year}</b>: ${h.t.u} of 6 thumbs up, ${h.tie ? 'tied for ' : ''}#${h.rank} of ${h.count}${h.p.provider ? ', brought by ' + esc(h.p.provider) : ''}</span>`;
   }
+  // Fixing a beer from the beer log: its name, brewery, style and who brought it. The votes and the
+  // guesses stay as they are. This year's beers are the ones the board can change.
+  function logEditHTML(item, kind) {
+    return `<li class="log-item editing"><form class="log-edit" data-${kind}="${esc(item.id)}" autocomplete="off">
+      <div class="two">
+        <label class="fld"><span>Name of the beer</span><input name="name" required maxlength="80" value="${esc(item.name)}"></label>
+        <label class="fld"><span>Brewery</span><input name="brewery" maxlength="80" value="${esc(item.brewery || '')}"></label>
+      </div>
+      ${styleFieldHTML(item.style || '', 'l')}
+      ${kind === 'pid' ? `<fieldset class="fld"><legend>Brought by</legend>${providerChips(item.provider)}</fieldset>` : ''}
+      <div class="actions"><button type="submit" class="btn-gold sm">Save</button><button type="button" class="btn-ghost sm" data-act="log-edit-cancel">Cancel</button></div>
+    </form></li>`;
+  }
+  function saveLogEdit(form) {
+    const f = readFields(form);
+    if (!f.name) return;
+    const pid = form.dataset.pid, sid = form.dataset.sid;
+    if (pid) {
+      const p = byId(pid);
+      if (!p) { toast('That beer is not on this year’s board.'); LOG.editing = null; renderLog(); return; }
+      Object.assign(p, { name: f.name, brewery: f.brewery, style: f.style, provider: f.provider });
+      send({ op: 'edit', pid, name: f.name, brewery: f.brewery, style: f.style, provider: f.provider });
+    } else if (sid) {
+      const s = libNow().stash.find(x => x.id === sid);
+      if (!s) { toast('That stash entry is gone.'); LOG.editing = null; renderLog(); return; }
+      Object.assign(s, { name: f.name, brewery: f.brewery, style: f.style });
+      writeJSON(LIB_KEY, LIB);
+      send({ op: 'stash-edit', sid, name: f.name, brewery: f.brewery, style: f.style });
+    }
+    LOG.editing = null;
+    renderAll();
+    toast(`${f.name} saved.`);
+  }
   function beerItemHTML(g, stash) {
     const p = g.latest.p;
+    const editable = !VIEW && g.latest.year === S.year && !!byId(p.id);
+    if (editable && LOG.editing === p.id) return logEditHTML(p, 'pid');
     const stashed = stash.filter(s => beerKey(s.name, s.brewery) === g.key);
     const shot = g.rows.slice().reverse().find(h => h.p.photo);
     return `<li class="log-item${shot ? ' pic' : ''}">${shot ? `<img class="thumb" src="${photoURL(shot.p)}" alt="" loading="lazy">` : ''}<div>
         <span class="beer">${esc(p.name)}</span>${g.rows.length > 1 ? `<em class="badge repeat">poured ${g.rows.length} times</em>` : ''}${stashed.length ? '<em class="badge stash">in a stash</em>' : ''}${isBanned(g.key) ? '<em class="badge warn">banned</em>' : ''}
         <p class="meta">${esc(p.brewery || 'Brewery not given')}${p.style ? ' · ' + esc(p.style) : ''}</p>
         <p class="when">${g.rows.map(whenLine).join('')}</p>
-      </div><div class="mark-btns">${markBtns(p, false)}</div></li>`;
+      </div><div class="mark-btns">${editable ? `<button type="button" class="star" data-act="log-edit" data-id="${esc(p.id)}">&#9998; Edit</button>` : ''}${markBtns(p, false)}</div></li>`;
   }
   function stashItemHTML(s, groups, stash) {
+    if (LOG.editing === s.id) return logEditHTML(s, 'sid');
     const key = beerKey(s.name, s.brewery);
     const had = groups.find(g => g.key === key);
     const twins = stash.filter(o => o !== s && beerKey(o.name, o.brewery) === key);
@@ -1961,7 +1999,7 @@ Not quite beer|Hard Kombucha|kombucha
         <span class="beer">${esc(s.name)}</span>${warn}
         <p class="meta">${esc(s.brewery || 'Brewery not given')}${s.style ? ' · ' + esc(s.style) : ''}</p>
         ${had ? `<p class="when">${had.rows.map(whenLine).join('')}</p>` : ''}
-      </div>${isAdmin() ? `<button type="button" class="x" data-act="stash-remove" data-sid="${esc(s.id)}" aria-label="Delete ${esc(s.name)} from the stash">×</button>` : ''}</li>`;
+      </div><button type="button" class="x" data-act="log-edit" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.name)}">&#9998;</button>${isAdmin() ? `<button type="button" class="x" data-act="stash-remove" data-sid="${esc(s.id)}" aria-label="Delete ${esc(s.name)} from the stash">×</button>` : ''}</li>`;
   }
   // Snap the can: the camera opens, the photo is read for the beer's name, brewery and style, and
   // the answers fill in whatever is still blank, for a check before saving.
@@ -2778,6 +2816,14 @@ Not quite beer|Hard Kombucha|kombucha
         renderLog();
         break;
       case 'stash-close': LOG.adding = false; LOG.prefill = ''; renderLog(); break;
+      case 'log-edit': {
+        LOG.editing = b.dataset.id;
+        renderLog();
+        const box = $('#log-body .log-edit input[name="name"]');
+        if (box) box.focus();
+        break;
+      }
+      case 'log-edit-cancel': LOG.editing = null; renderLog(); break;
       case 'stash-remove': removeFromStash(b.dataset.sid); break;
       case 'download': downloadAll(); break;
       case 'new-year': startNewYear(); break;
@@ -2835,6 +2881,7 @@ Not quite beer|Hard Kombucha|kombucha
     if (f.matches('.reveal-form')) { e.preventDefault(); submitReveal(f); }
     else if (f.matches('.editor')) { e.preventDefault(); saveEdit(f); }
     else if (f.matches('.stash-form')) { e.preventDefault(); addToStash(f); }
+    else if (f.matches('.log-edit')) { e.preventDefault(); saveLogEdit(f); }
   });
   document.addEventListener('toggle', e => {
     const d = e.target;

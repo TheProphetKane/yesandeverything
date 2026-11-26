@@ -689,5 +689,27 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   check("reading a label stores no photo on the board and changes no pour", !(await slot8.storage.list({ prefix: "photo:" })).size && (await worker.fetch(new Request(b8), env8).then(r => r.json())).board.pours[0].photo === undefined);
 }
 
+// Renaming from the beer log: the words change, the votes and guesses stay.
+{
+  const env9 = makeEnv(new FakeKV());
+  const b9 = "https://yesandeverything.com" + BEER_ROUTE;
+  let n9 = 0;
+  const id = () => "rename0" + String(++n9).padStart(8, "0");
+  const post9 = body => worker.fetch(new Request(b9, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env9).then(async r => ({ status: r.status, j: await r.json() }));
+  await post9({ op: "pour", opId: id(), pid: "rename01", y: 2026 });
+  await post9({ op: "vote", opId: id(), pid: "rename01", name: "Mike", v: "up", y: 2026 });
+  await post9({ op: "guess", opId: id(), pid: "rename01", name: "Bill", who: "AJ", y: 2026 });
+  await post9({ op: "reveal", opId: id(), pid: "rename01", name: "HOP GOBLN", brewery: "Bramblewood", style: "Hazy IPA", provider: "AJ", y: 2026 });
+  let x = await post9({ op: "edit", opId: id(), pid: "rename01", name: "Hop Goblin", brewery: "Bramblewood Brewing", style: "Hazy IPA", y: 2026 });
+  const r9 = x.j.board.pours[0];
+  check("a rename from the beer log keeps the votes, the guesses and who brought it", x.status === 200 && r9.name === "Hop Goblin" && r9.brewery === "Bramblewood Brewing" && r9.votes.Mike === "up" && r9.guesses.Bill === "AJ" && r9.provider === "AJ");
+  await post9({ op: "stash-add", opId: id(), sid: "stashren1", name: "Lake Fgo Pils" });
+  x = await post9({ op: "stash-edit", opId: id(), sid: "stashren1", name: "Lake Fog Pils", brewery: "Test Brewing", style: "Pilsner" });
+  const lib9 = await worker.fetch(new Request(b9 + "?view=library"), env9).then(r => r.json());
+  check("a stash entry can be renamed by anyone", x.status === 200 && lib9.stash[0].name === "Lake Fog Pils" && lib9.stash[0].brewery === "Test Brewing" && lib9.stash[0].id === "stashren1");
+  x = await post9({ op: "stash-edit", opId: id(), sid: "stashren1", name: "" });
+  check("a stash entry keeps a name", x.status === 400);
+}
+
 if (failed) { console.error(failed + " failed"); process.exit(1); }
 console.log("family-votes self-test passed");
