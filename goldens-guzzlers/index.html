@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#070b17">
+<meta name="gg-build" content="2026-11-26-1752">
 <meta name="description" content="Golden&rsquo;s Guzzlers, the family's annual blind beer tasting: thumbs votes, reveals, standings and awards.">
 <title>Golden&rsquo;s Guzzlers · Beer Tasting Night</title>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -521,6 +522,7 @@ footer .mini-cap { width: 34px; height: 34px; }
 .snap-more { display: flex; flex-wrap: wrap; gap: 8px; }
 .log-item.editing { grid-template-columns: minmax(0, 1fr); }
 .log-edit { display: grid; gap: 12px; }
+.update-bar { position: fixed; top: 12px; left: 50%; z-index: 70; transform: translateX(-50%); padding: 12px 20px; border: 0; border-radius: 999px; font-weight: 700; color: var(--navy); background: linear-gradient(180deg, #fff3c4, #ffd84d 45%, #f2b705); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
 .fld input.guess { border-style: dashed; border-color: rgba(255, 204, 51, .95); background: rgba(255, 204, 51, .07); }
 /* a tablet keeping score for the table: bigger targets for fingers */
 @media (min-width: 700px) and (pointer: coarse) {
@@ -2358,6 +2360,25 @@ Not quite beer|Hard Kombucha|kombucha
     try { s.close(); } catch (e) { /* closed already */ }
   }
 
+  /* ---------- a newer page ---------- */
+  // An open page never changes by itself, so it checks the site for a newer one and offers it. The
+  // gg-build stamp in the head changes with every release of the page.
+  const BUILD = (document.querySelector('meta[name="gg-build"]') || {}).content || '';
+  async function checkBuild() {
+    if (!BUILD || document.hidden || $('#update-bar')) return;
+    try {
+      const res = await fetch('./index.html?build=' + Date.now(), { cache: 'no-store' });
+      const m = (await res.text()).match(/<meta name="gg-build" content="([^"]+)"/);
+      if (m && m[1] !== BUILD) document.body.insertAdjacentHTML('beforeend', '<button type="button" class="update-bar" id="update-bar" data-act="reload-page">A newer version of the board is ready. Tap to load it.</button>');
+    } catch (e) { /* checked again in two minutes */ }
+  }
+  // Loading it by a fresh address skips the copy the browser kept.
+  function loadNewest() {
+    const q = new URLSearchParams(location.search);
+    q.set('fresh', String(Date.now()));
+    location.replace(location.pathname + '?' + q);
+  }
+
   /* ---------- the app ---------- */
   const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const appleMobile = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -2832,6 +2853,7 @@ Not quite beer|Hard Kombucha|kombucha
       case 'admin': unlockAdmin(); break;
       case 'lock-admin': dropAdmin(); toast('Admin locked on this phone.'); break;
       case 'install': installApp(); break;
+      case 'reload-page': loadNewest(); break;
       case 'lens': searchByPicture(b.closest('form')); break;
       case 'web-search': searchWeb(b.closest('form')); break;
       case 'recap': openRecap(); break;
@@ -2934,6 +2956,9 @@ Not quite beer|Hard Kombucha|kombucha
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
   window.addEventListener('appinstalled', () => { installEvt = null; renderInstall(); toast('Installed. It opens from the home screen now.'); });
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* the page works without it */ });
+  setTimeout(checkBuild, 15000);
+  setInterval(checkBuild, 120000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkBuild(); });
 })();
 </script>
 </body>
