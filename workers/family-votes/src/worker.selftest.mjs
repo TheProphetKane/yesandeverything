@@ -313,7 +313,7 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   let g = await bget();
   check("the beer board starts empty with Mike to pull", g.board.pours.length === 0 && g.board.nextPuller === "Mike" && g.board.rev === 0);
   let x = await bpost({ op: "pour", opId: id(), pid: "pourone1" });
-  check("a pull makes pour 1, pulled by Mike, and Bill pulls next", x.status === 200 && x.j.board.pours[0].n === 1 && x.j.board.pours[0].puller === "Mike" && x.j.board.nextPuller === "Bill");
+  check("a pull makes pour 1, pulled by Mike, and Mike pulls the next one too", x.status === 200 && x.j.board.pours[0].n === 1 && x.j.board.pours[0].puller === "Mike" && x.j.board.nextPuller === "Mike");
   x = await bpost({ op: "pour", opId: id(), pid: "pourtwo2" });
   check("a second pull while pour 1 is in its coozie changes nothing", x.status === 200 && x.j.changed === false && x.j.board.pours.length === 1);
 
@@ -354,9 +354,9 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   check("a provider who is not at the table is saved as nobody", x.j.board.pours[0].provider === "");
 
   x = await bpost({ op: "pour", opId: id(), pid: "pourtwo2" });
-  check("after the reveal the next pull is pour 2, pulled by Bill", x.j.board.pours[1].n === 2 && x.j.board.pours[1].puller === "Bill" && x.j.board.nextPuller === "Brennan");
+  check("after the reveal the next pull is pour 2, pulled by Mike again", x.j.board.pours[1].n === 2 && x.j.board.pours[1].puller === "Mike" && x.j.board.nextPuller === "Mike");
   x = await bpost({ op: "unpour", opId: id(), pid: "pourtwo2" });
-  check("a pour pulled by mistake goes back in the bucket and Bill pulls again", x.j.board.pours.length === 1 && x.j.board.nextPuller === "Bill");
+  check("a pour pulled by mistake goes back in the bucket and Mike pulls again", x.j.board.pours.length === 1 && x.j.board.nextPuller === "Mike");
   await bpost({ op: "pour", opId: id(), pid: "pourtwo2" });
   await bpost({ op: "vote", opId: id(), pid: "pourtwo2", name: "AJ", v: "up" });
   x = await bpost({ op: "unpour", opId: id(), pid: "pourtwo2" });
@@ -600,11 +600,11 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   const post7 = body => worker.fetch(new Request(b7, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env7).then(async r => ({ status: r.status, j: await r.json() }));
   await post7({ op: "pour", opId: id(), pid: "secret01", y: 2026 });
   let x = await post7({ op: "vote", opId: id(), pid: "secret01", name: "Mike", v: "up", y: 2026, by: "Bill" });
-  check("a phone cannot vote for someone else", x.status === 400 && /Switch/.test(x.j.error) && !x.j.board.pours[0].votes.Mike);
+  check("with secret ballots off, any phone enters anyone's vote", x.status === 200 && x.j.board.pours[0].votes.Mike === "up");
   x = await post7({ op: "vote", opId: id(), pid: "secret01", name: "Bill", v: "down", y: 2026, by: "Bill" });
   check("a phone votes for whoever is holding it", x.status === 200 && x.j.board.pours[0].votes.Bill === "down");
   x = await post7({ op: "guess", opId: id(), pid: "secret01", name: "Mike", who: "Nick", y: 2026, by: "Bill" });
-  check("a phone cannot guess for someone else", x.status === 400);
+  check("and anyone's guess", x.status === 200 && x.j.board.pours[0].guesses.Mike === "Nick");
   x = await post7({ op: "guess", opId: id(), pid: "secret01", name: "Bill", who: "Nick", y: 2026, by: "Bill" });
   check("a phone guesses for whoever is holding it", x.status === 200 && x.j.board.pours[0].guesses.Bill === "Nick");
 
@@ -645,7 +645,7 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   x = await post8({ op: "guess", opId: id(), pid: "tablet01", name: "Gannan", who: "Bill", y: 2026, by: "Nick", admin: k8 });
   check("and someone else's guess", x.status === 200 && x.j.board.pours[0].guesses.Gannan === "Bill");
   x = await post8({ op: "vote", opId: id(), pid: "tablet01", name: "Bill", v: "up", y: 2026, by: "Nick", keeper: true });
-  check("a phone cannot claim to keep score without the key", x.status === 400 && !x.j.board.pours[0].votes.Bill);
+  check("a keeper flag sent by a phone is dropped, and the vote still lands with secret ballots off", x.status === 200 && x.j.board.pours[0].votes.Bill === "up");
   const jr8 = await worker.fetch(new Request(b8 + "?view=journal", { headers: { "x-beer-admin": k8 } }), env8).then(r => r.json());
   check("the journal shows the scorekeeper entered the vote, without the key", jr8.entries.some(e => e.op.op === "vote" && e.op.name === "Mike" && e.op.by === "Nick" && e.op.keeper === true) && !JSON.stringify(jr8).includes(k8));
 

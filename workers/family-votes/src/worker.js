@@ -537,6 +537,9 @@ export const BEER_PHOTO_WRITES = 60;
 // Secret ballots: a phone votes and guesses only for whoever is holding it. The admin's device keeps
 // score for the table, so its key lets it enter anyone's vote or guess.
 const BEER_OWN_ROW = "Each phone votes for whoever is holding it. Tap Switch to hand the phone over.";
+// Off for the 2026 night (Kane, 2026-11-26 17:28): one tablet enters every vote, so any phone can
+// enter any row. Turning it back on brings the own-row rule back on the board and on the page.
+export const BEER_SECRET_BALLOTS = false;
 // Snap the can: a vision model on Cloudflare reads a photo of the label for the beer's name, brewery
 // and style. Reads are capped per address and per day, which keeps them inside the free daily allowance.
 export const BEER_LABEL_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
@@ -750,6 +753,8 @@ export function beerApply(board, op, now) {
       const name = beerWho(op.name);
       if (!name) return { error: "That puller is not at the table." };
       b.nextPuller = name;
+      // A beer still in its coozie was pulled by whoever pulls now.
+      if (current && !Object.keys(current.votes).length) current.puller = name;
       break;
     }
     case "pour": {
@@ -757,8 +762,8 @@ export function beerApply(board, op, now) {
       if (typeof op.pid !== "string" || !BEER_POUR_ID.test(op.pid)) return { error: "That pour could not be read." };
       if (b.pours.length >= BEER_MAX_POURS) return { error: "The board is full." };
       const n = b.pours.reduce((m, p) => Math.max(m, p.n), 0) + 1;
+      // One person pulls every beer (Mike, in 2026), so the puller stays put until someone changes it.
       b.pours.push({ id: op.pid, n, puller: b.nextPuller, votes: {}, guesses: {}, revealed: false, name: "", brewery: "", style: "", provider: "", at: now });
-      b.nextPuller = BEER_ROSTER[(BEER_ROSTER.indexOf(b.nextPuller) + 1) % BEER_ROSTER.length];
       break;
     }
     case "unpour": {
@@ -771,7 +776,7 @@ export function beerApply(board, op, now) {
       const p = find(op.pid), name = beerWho(op.name);
       if (!p) return { error: "That pour is not on the board." };
       if (!name) return { error: "That taster is not at the table." };
-      if (op.by && op.by !== name && !op.keeper) return { error: BEER_OWN_ROW };
+      if (BEER_SECRET_BALLOTS && op.by && op.by !== name && !op.keeper) return { error: BEER_OWN_ROW };
       if (op.v === "") delete p.votes[name];
       else if (BEER_VOTES.has(op.v)) p.votes[name] = op.v;
       else return { error: "A vote is up, side, down or cleared." };
@@ -781,7 +786,7 @@ export function beerApply(board, op, now) {
       const p = find(op.pid), name = beerWho(op.name), who = beerWho(op.who);
       if (!p) return { error: "That pour is not on the board." };
       if (!name) return { error: "That taster is not at the table." };
-      if (op.by && op.by !== name && !op.keeper) return { error: BEER_OWN_ROW };
+      if (BEER_SECRET_BALLOTS && op.by && op.by !== name && !op.keeper) return { error: BEER_OWN_ROW };
       if (who) p.guesses[name] = who;
       else if (op.who === "") delete p.guesses[name];
       else return { error: "A guess names someone at the table." };

@@ -776,7 +776,7 @@ a.btn-ghost { display: inline-block; text-decoration: none; }
       <li>Pour 2 to 3 ounces each. Taste it, then everyone votes at once.</li>
       <li>Thumbs up means you'd drink it again. Thumbs down means not for you. Sideways is rare.</li>
       <li>Guess who brought it, then pull the coozie for the reveal.</li>
-      <li>The puller rotates every round. No dumping: finish what's poured.</li>
+      <li>One puller pulls every beer from the bucket. No dumping: finish what's poured.</li>
     </ul>
   </details>
 
@@ -839,6 +839,8 @@ a.btn-ghost { display: inline-block; text-decoration: none; }
   const TV = new URLSearchParams(location.search).has('tv');
   // A set is two beers or more; the set awards average each bringer's beers.
   const SET_MIN = 2;
+  // Off for the 2026 night: one tablet enters every vote, so every row takes a vote from any phone.
+  const SECRET_BALLOTS = false;
   const NAME = 'Golden’s Guzzlers';
   const LABEL = { up: 'thumbs up', side: 'thumb to the side', down: 'thumbs down' };
 
@@ -1397,7 +1399,7 @@ Not quite beer|Hard Kombucha|kombucha
     const v = p.votes[n] || '';
     const mine = n === WHO;
     // The admin's tablet keeps score for the table, so every row is its to enter.
-    const live = edit || mine || isAdmin();
+    const live = !SECRET_BALLOTS || edit || mine || isAdmin();
     let right;
     if (live || ballotsOpen(p)) {
       right = `<div class="thumbs" role="group" aria-label="${esc(n)}'s vote">${['up', 'side', 'down'].map(k => `<button type="button" class="t t-${k}${v === k ? ' on' : ''}" aria-pressed="${v === k}" aria-label="${esc(n)}: ${LABEL[k]}"${live ? ` data-act="vote" data-pid="${p.id}" data-name="${esc(n)}" data-v="${k}"` : ' disabled'}>${THUMB}</button>`).join('')}</div>`;
@@ -1407,14 +1409,14 @@ Not quite beer|Hard Kombucha|kombucha
     return `<div class="voter${v ? ' has' : ''}${mine ? ' me' : ''}">${miniGlassSVG(!!v)}<span class="who">${esc(n)}</span>${right}</div>`;
   }
   function votesHTML(p, edit) {
-    const hidden = !edit && !isAdmin() && !ballotsOpen(p);
+    const hidden = SECRET_BALLOTS && !edit && !isAdmin() && !ballotsOpen(p);
     return `<div class="votes" data-pid="${p.id}"><div class="votes-head"><span>Thumbs</span><span class="count"><b>${tally(p).cast}</b> of 6 in</span></div>${ROSTER.map(n => voterHTML(p, n, edit)).join('')}${hidden ? '<p class="secret-note">Thumbs stay hidden until all six are in, then they all show at once.</p>' : ''}</div>`;
   }
   function guessesHTML(p, open, edit) {
     const g = p.guesses || {};
     const count = ROSTER.filter(n => g[n]).length;
     const grid = ROSTER.map(n => {
-      const live = edit || n === WHO || isAdmin();
+      const live = !SECRET_BALLOTS || edit || n === WHO || isAdmin();
       if (!live && !p.revealed) return `<p class="g g-secret"><span>${esc(n)}</span><b>${g[n] ? 'Guessed' : 'Not yet'}</b></p>`;
       return `<label class="g"><span>${esc(n)} guesses</span><select data-act="guess" data-pid="${p.id}" data-name="${esc(n)}" aria-label="${esc(n)}'s guess for who brought it"${live ? '' : ' disabled'}><option value="">pick one</option>${ROSTER.map(o => `<option value="${esc(o)}"${g[n] === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
     }).join('');
@@ -1472,7 +1474,7 @@ Not quite beer|Hard Kombucha|kombucha
       <div class="next-copy">
         <p class="eyebrow">Pour ${n} is next</p>
         <p class="next-line"><button type="button" class="puller" data-act="cycle-puller" aria-label="${esc(S.nextPuller)} pulls next. Tap to change.">${esc(S.nextPuller)}</button> pulls from the bucket.</p>
-        ${compact ? '' : '<p class="sub">The puller rotates each round. Tap the name to change it.</p>'}
+        ${compact ? '' : '<p class="sub">The same puller pulls every beer. Tap the name to change it.</p>'}
         ${S.pours.length === 0 ? '<button type="button" class="link" data-act="random-puller">Pick the first puller at random</button>' : ''}
         <button type="button" class="btn-gold" data-act="new-pour">Pull the next beer</button>
       </div>
@@ -1601,7 +1603,7 @@ Not quite beer|Hard Kombucha|kombucha
       return;
     }
     // The reveal form takes the place of the reveal button, so nothing above it moves.
-    el.innerHTML = `<div class="pour-head">${capSVG(p.n)}<div class="pour-copy"><p class="eyebrow">Pour ${p.n} · blind</p><h3 class="mystery gold-text">Mystery beer</h3><p class="sub">Pulled by <b>${esc(p.puller)}</b>. Still in the coozie.</p></div>${canSVG('mystery')}</div>
+    el.innerHTML = `<div class="pour-head">${capSVG(p.n)}<div class="pour-copy"><p class="eyebrow">Pour ${p.n} · blind</p><h3 class="mystery gold-text">Mystery beer</h3><p class="sub">Pulled by ${tally(p).cast ? `<b>${esc(p.puller)}</b>` : `<button type="button" class="puller" data-act="cycle-puller" aria-label="${esc(p.puller)} pulled it. Tap to change.">${esc(p.puller)}</button>`}. Still in the coozie.</p></div>${canSVG('mystery')}</div>
       ${votesHTML(p)}
       ${guessesHTML(p, UI.guessOpen)}
       ${UI.mode === 'reveal' ? revealFormHTML(p) : `<div class="reveal-bar">${revealBarInner(p)}</div>`}`;
@@ -1688,7 +1690,7 @@ Not quite beer|Hard Kombucha|kombucha
     if (!p || p.id !== btn.dataset.pid) return;
     const name = btn.dataset.name, v = btn.dataset.v;
     // Secret ballots: this phone votes only for whoever is holding it.
-    if (!inEditor && name !== WHO && !isAdmin()) return;
+    if (SECRET_BALLOTS && !inEditor && name !== WHO && !isAdmin()) return;
     const wasOpen = ballotsOpen(p);
     const next = p.votes[name] === v ? '' : v;
     if (next) p.votes[name] = next; else delete p.votes[name];
@@ -1724,7 +1726,7 @@ Not quite beer|Hard Kombucha|kombucha
     const n = S.pours.reduce((m, p) => Math.max(m, p.n), 0) + 1;
     const p = { id: newPourId(), n, puller: S.nextPuller, votes: {}, guesses: {}, revealed: false, name: '', brewery: '', style: '', provider: '' };
     S.pours.push(p);
-    S.nextPuller = nextAfter(p.puller);
+    // The same person pulls every beer, so the puller stays put.
     UI.mode = 'vote'; UI.justRevealed = null; UI.guessOpen = false;
     renderAll();
     send({ op: 'pour', pid: p.id });
@@ -2745,7 +2747,10 @@ Not quite beer|Hard Kombucha|kombucha
       case 'vote': doVote(b); break;
       case 'new-pour': newPour(); break;
       case 'cycle-puller':
-        S.nextPuller = nextAfter(S.nextPuller); renderNow(); send({ op: 'puller', name: S.nextPuller }); break;
+        S.nextPuller = nextAfter(S.nextPuller);
+        // A beer still in its coozie with no thumbs yet takes the new puller too, as the board does.
+        if (current() && !tally(current()).cast) current().puller = S.nextPuller;
+        renderNow(); send({ op: 'puller', name: S.nextPuller }); break;
       case 'random-puller':
         S.nextPuller = ROSTER[Math.floor(Math.random() * ROSTER.length)]; renderNow(); send({ op: 'puller', name: S.nextPuller }); toast(`${S.nextPuller} pulls first.`); break;
       case 'undo-pull': {
@@ -2804,7 +2809,7 @@ Not quite beer|Hard Kombucha|kombucha
     const t = e.target;
     if (t.matches('select[data-act="guess"]')) {
       const inEditor = !!t.closest('.editor');
-      if (!inEditor && t.dataset.name !== WHO && !isAdmin()) return;
+      if (SECRET_BALLOTS && !inEditor && t.dataset.name !== WHO && !isAdmin()) return;
       const p = inEditor ? UI.draft : byId(t.dataset.pid);
       if (!p || p.id !== t.dataset.pid) return;
       p.guesses = p.guesses || {};
