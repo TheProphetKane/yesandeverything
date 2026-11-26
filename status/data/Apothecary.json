@@ -1,10 +1,10 @@
 {
   "project": "Apothecary",
   "displayName": "Yes& Apothecary",
-  "version": "1.3.9",
-  "lastReleaseAt": "2026-11-25T00:13:13-06:00",
-  "lastReleaseMessage": "Source comments say what the code does instead of naming the review that asked for it, and a seventh test suite refuses review vocabulary in shipped source",
-  "lastCommitAt": "2026-11-25T00:13:13-06:00",
+  "version": "1.3.10",
+  "lastReleaseAt": "2026-11-26T00:22:25-06:00",
+  "lastReleaseMessage": "A failed announcements post now ends the release on a warning, and DEPLOY.md states the exit codes the Discord step returns",
+  "lastCommitAt": "2026-11-26T00:22:25-06:00",
   "milestone": {
     "id": "v1.0",
     "label": "v1.0 - core label designer complete",
@@ -16,16 +16,14 @@
   },
   "itemsLeft": {
     "open": 23,
-    "queue": 1,
-    "backlog": 22,
+    "queue": 3,
+    "backlog": 20,
     "gates": 0,
     "items": []
   },
   "backlog": {
-    "count": 22,
+    "count": 20,
     "items": [
-      "DEPLOY.md says a missing Discord webhook exits 0; scripts/discord-notify.ps1 has exited 1 since 5cda146",
-      "A failed announcements post sets no failure flag, so release.ps1 never warns (scripts/discord-notify.ps1)",
       "The mirror readback hashes index.html only (scripts/deploy-to-yae.ps1)",
       "README.md's licence section reads as if the repository were unpublished",
       "The accepted-risk record for the SpiceJungle art does not cover the repository copy (PROJECT_SPEC.md section 8, data/illustrations/SOURCES.md)",
@@ -61,94 +59,113 @@
     }
   },
   "barRaise": {
-    "latestReportPath": "docs/BAR_RAISE-2026-11-18.md",
-    "latestReportAt": "2026-11-19T00:45:00Z",
+    "latestReportPath": "docs/BAR_RAISE-2026-11-25.md",
+    "latestReportAt": "2026-11-26T00:50:00Z",
     "verdict": "working",
-    "topFinding": "Working at health 88, down from 92 on 2026-11-04 because this pass graded the open backlog rows harder, not because anything shipped broke: no commit has landed since v1.3.5 on 2026-11-14. Four lenses independently flagged backlog B03, a print from the browser menu that skips flushPrintStage() (no beforeprint listener anywhere in src/, read 2026-11-18), as the defect most worth doing next. One new gap has no backlog row: an unreadable saved-labels entry makes read() return an empty list, and the next save overwrites the whole library (src/util/saved-labels.js), now queued. v1.3.6 (B02) still waits uncommitted in the working tree on Kane's go.",
-    "actionsOpen": 0,
+    "topFinding": "Working at health 89, up from 88 on 2026-11-18. Four releases since then (v1.3.6 to v1.3.9) closed backlog rows B02, B03, B04, B05, B06, B09, B10 and B32, and the 2026-11-25 nightly audit ran all ten gates green with no drift. No lens found breakage. Three medium gaps are queued: normalizeState still checks only that customItems and layoutPresets are arrays, not what is in them (src/util/migrate.js:280-281); the unreadable-data message still says 'starting fresh' although v1.3.6 keeps a copy (src/ui/editor.js:347); and ten source comments still cite backlog rows after v1.3.9 claimed the scrub, with no pattern in test-source-voice.mjs to catch them.",
+    "actionsOpen": 3,
     "actionsClosed": 69,
-    "actions": [],
-    "deferred": [],
-    "health": 88,
+    "actions": [
+      {
+        "id": "data-integrity-01",
+        "severity": "MED",
+        "title": "Filter customItems to objects with a string id, filter layoutPresets to objects with a string id and an object layout, run isWellFormedLayout on a user preset's layout before state.set on recall, and add cases to test-migration.mjs.",
+        "lens": "data-integrity",
+        "priority": 12
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "MED",
+        "title": "Reword the read-failure message to say a copy was kept (or that none could be), and add an in-app way to download or restore the kept copy.",
+        "lens": "solo-tool-ux",
+        "priority": 12
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "MED",
+        "title": "Rewrite those comments to state the behaviour and reason without the row id, and add a backlog-row pattern (\\bbacklog B\\d{2}\\b) to test-source-voice.mjs so the suite enforces what the changelog says.",
+        "lens": "maintainability",
+        "priority": 10
+      }
+    ],
+    "deferred": [
+      {
+        "id": "strategic-kill-this-01",
+        "severity": "MED",
+        "title": "Two of the four releases since 2026-11-18 (v1.3.8, v1.3.9) added only process machinery for a finished app (a mirror-push recovery script and a test suite that polices comment wording across 24 source files), with no user-visible change.",
+        "lens": "strategic-kill-this",
+        "reason": "standing posture rather than a work item: hold the finished app to user-facing fixes and the open P2 backlog rows; nothing for a session to pick up and finish"
+      }
+    ],
+    "health": 89,
     "lensScores": {
-      "architecture": 90,
-      "reliability": 84,
-      "security": 93,
-      "performance": 86,
-      "data-integrity": 82,
+      "architecture": 92,
+      "reliability": 87,
+      "security": 94,
+      "performance": 88,
+      "data-integrity": 85,
       "maintainability": 88,
-      "solo-tool-ux": 88,
-      "cost-economics": 96,
-      "dependency": 92,
-      "observability": 86,
-      "strategic-kill-this": 88,
-      "compliance-data-steward": 80,
-      "generative-art-schema-driven-correctness": 90,
-      "generative-art-print-fidelity": 84,
-      "generative-art-palette-discipline": 91,
-      "release-pipeline-per-project-ps1-stack": 90,
-      "release-pipeline-discord-notify-wiring": 84,
-      "release-pipeline-version-pill-drift": 96,
-      "release-pipeline-gate-page-publish": 93
+      "solo-tool-ux": 87,
+      "cost-economics": 88,
+      "dependency": 93,
+      "observability": 90,
+      "strategic-kill-this": 82,
+      "compliance-data-steward": 84,
+      "generative-art-schema-driven-correctness": 89,
+      "generative-art-print-fidelity": 88,
+      "generative-art-palette-discipline": 92,
+      "release-pipeline-per-project-ps1-stack": 89,
+      "release-pipeline-discord-notify-wiring": 90,
+      "release-pipeline-version-pill-drift": 97,
+      "release-pipeline-gate-page-publish": 95
     },
-    "openFindings": [],
+    "openFindings": [
+      {
+        "id": "data-integrity-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-25"
+      },
+      {
+        "id": "solo-tool-ux-01",
+        "severity": "medium",
+        "priority": 12,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-25"
+      },
+      {
+        "id": "maintainability-01",
+        "severity": "medium",
+        "priority": 10,
+        "runsOpen": 1,
+        "firstSeen": "2026-11-25"
+      }
+    ],
     "tensionsOpen": [
-      {
-        "lenses": [
-          "compliance-data-steward",
-          "strategic-kill-this"
-        ],
-        "runsSeen": 10,
-        "note": "promote via adr-promoter: illustration half decided at PROJECT_SPEC.md:346; the repository-copy sentence is backlog B14"
-      },
-      {
-        "lenses": [
-          "generative-art-print-fidelity",
-          "performance"
-        ],
-        "runsSeen": 8,
-        "note": "promote via adr-promoter: decided 2026-10-14, screen texture tier for the preview (backlog B18), full resolution for print and export"
-      },
-      {
-        "lenses": [
-          "dependency",
-          "maintainability"
-        ],
-        "runsSeen": 5,
-        "note": "promote via adr-promoter: keep the pinned cdnjs build, vendor only if cdnjs drops 1.4.1"
-      },
-      {
-        "lenses": [
-          "observability",
-          "solo-tool-ux"
-        ],
-        "runsSeen": 3,
-        "note": "promote via adr-promoter: plain one-line error for the user, full error kept in the console (backlog B05)"
-      },
-      {
-        "lenses": [
-          "security",
-          "dependency"
-        ],
-        "runsSeen": 3,
-        "note": "promote via adr-promoter: a content security policy (B17) lists cdnjs and Google Fonts beside their pins"
-      },
-      {
-        "lenses": [
-          "reliability",
-          "observability"
-        ],
-        "runsSeen": 1
-      },
       {
         "lenses": [
           "strategic-kill-this",
           "maintainability"
         ],
+        "runsSeen": 2
+      },
+      {
+        "lenses": [
+          "solo-tool-ux",
+          "data-integrity"
+        ],
+        "runsSeen": 1
+      },
+      {
+        "lenses": [
+          "performance",
+          "maintainability"
+        ],
         "runsSeen": 1
       }
     ],
-    "reconcileNote": "2026-11-18: previous openFindings empty and no live apothecary queue row, so nothing to close. Findings already carried as BACKLOG.md rows (B03, B04, B05, B06, B07, B08, B09, B13, B14, B16, B18, B20) stay in the backlog bucket and were not enqueued, so no item sits in two buckets. Two findings with no backlog row enqueued at P2: data-integrity-03 and maintainability-01.",
+    "reconcileNote": "2026-11-25: previous openFindings empty; both 2026-11-18 rows (data-integrity-03, maintainability-01) completed in the archive on 2026-11-20 with v1.3.6, verified against BACKLOG.md B32 and src/util/layout-ops.js. Three new medium findings enqueued at P2; strategic-kill-this-01 deferred as a standing posture.",
     "closedLog": [
       {
         "date": "2026-09-02",
@@ -430,7 +447,7 @@
       "v": "75"
     }
   ],
-  "workQueueDepth": 1,
+  "workQueueDepth": 3,
   "stale": false,
   "tags": [
     "generative-art",
