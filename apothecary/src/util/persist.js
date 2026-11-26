@@ -6,20 +6,22 @@
 const STORAGE_KEY = 'yesandapothecary.v1.state';
 // Backlog B04: an autosave entry that will not parse is copied here before
 // the editor starts fresh, because the next debounced save writes over the
-// main key. One copy, the latest unreadable one; a person can recover it by
-// hand from the browser's storage panel.
+// main key. One copy, the latest unreadable one; the status line offers it
+// as a download.
 export const STATE_BACKUP_KEY = STORAGE_KEY + '.corrupt-backup';
 
 // Broadcast a storage failure so the editor can show a status line. Detail
 // carries which store failed, the error name (QuotaExceededError,
 // SecurityError when storage is disabled, etc), and which operation failed:
 // 'read' (a corrupted or unparseable entry, data is lost) vs 'write' (best
-// effort, quota exceeded) get different on-screen wording.
-export function notifyStorageError(key, err, op = 'write') {
+// effort, quota exceeded) get different on-screen wording. backupKey names
+// the key that holds a copy of an unreadable entry, and is set only when that
+// copy was written, so the status line can offer it as a download.
+export function notifyStorageError(key, err, op = 'write', backupKey = null) {
   if (typeof document === 'undefined') return;
-  document.dispatchEvent(new CustomEvent('yaa:storage-error', {
-    detail: { key, op, error: err && err.name ? err.name : 'StorageError' },
-  }));
+  const detail = { key, op, error: err && err.name ? err.name : 'StorageError' };
+  if (backupKey) detail.backupKey = backupKey;
+  document.dispatchEvent(new CustomEvent('yaa:storage-error', { detail }));
 }
 
 // Copies an unreadable entry aside. Returns false when the copy could not be
@@ -43,16 +45,16 @@ export function loadState() {
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
     // Valid JSON that is not a state object (a bare number, null, an array)
     // is as unreadable as broken JSON, and the next save overwrites it too.
-    backupUnreadable(raw);
-    notifyStorageError('state', null, 'read');
+    const kept = backupUnreadable(raw);
+    notifyStorageError('state', null, 'read', kept ? STATE_BACKUP_KEY : null);
     return null;
   } catch (err) {
     // A corrupted or unparseable entry silently discarded the user's
     // autosaved label with no on-screen warning before this call. Surface it;
     // the app still boots clean, with the raw string copied aside first
     // (backlog B04).
-    if (raw) backupUnreadable(raw);
-    notifyStorageError('state', err, 'read');
+    const kept = raw ? backupUnreadable(raw) : false;
+    notifyStorageError('state', err, 'read', kept ? STATE_BACKUP_KEY : null);
     return null;
   }
 }

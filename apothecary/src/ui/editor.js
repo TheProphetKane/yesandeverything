@@ -41,6 +41,7 @@ const [
   { mountIllustrationPicker },
   { resolveIllustration },
   layoutOps,
+  { storageNotice },
 ] = await Promise.all([
   import('../util/escape-html.js' + ESC_V),
   import('./title-editor.js' + ESC_V),
@@ -56,6 +57,9 @@ const [
   // item mutations, pure and under test-layout-ops.mjs. The whole module
   // rides into the designer through deps.
   import('../util/layout-ops.js' + ESC_V),
+  // The status-line wording for a storage failure, and the kept copy of an
+  // unreadable entry to offer as a download.
+  import('../util/storage-notice.js' + ESC_V),
 ]);
 
 const SWATCH_COLORS = [
@@ -338,19 +342,24 @@ export function mountEditor(root, ctx) {
   const resetBtn   = $('btn-reset');
 
   // localStorage failures raised by persist.js / saved-labels.js land here as
-  // a one-line warning. 'read' (a corrupted entry, data is lost) and 'write'
-  // (quota exceeded, best effort) get different wording so the user knows
-  // whether something they had is gone versus something they're about to
-  // lose. 'clear' is the reset path failing to
-  // remove the stored label, which reads back on the next load.
-  const STORAGE_ERROR_MSG = {
-    read:  'Could not read your saved data. It may be corrupted; starting fresh.',
-    clear: 'Could not clear the stored label. The old one may come back on reload.',
-    write: 'Storage is full. Changes may not save. Delete unused saved labels.',
-  };
+  // a one-line warning. 'read' (a corrupted entry), 'write' (quota exceeded,
+  // best effort) and 'clear' (reset failed to remove the stored label) get
+  // different wording from storage-notice.js. When an unreadable entry was
+  // copied aside, the line ends on a link that downloads that copy.
+  let noticeUrl = null;
   document.addEventListener('yaa:storage-error', (e) => {
-    statusMsg.textContent = STORAGE_ERROR_MSG[e.detail?.op] || STORAGE_ERROR_MSG.write;
+    const { text, download } = storageNotice(e.detail, (k) => localStorage.getItem(k));
+    statusMsg.textContent = text;
     statusMsg.className = 'status-msg warn';
+    if (!download) return;
+    if (noticeUrl) URL.revokeObjectURL(noticeUrl);
+    noticeUrl = URL.createObjectURL(new Blob([download.data], { type: 'text/plain' }));
+    const link = document.createElement('a');
+    link.href = noticeUrl;
+    link.download = download.filename;
+    link.className = 'status-download';
+    link.textContent = download.label;
+    statusMsg.append(' ', link);
   });
   // A state-listener throw (usually the preview paint) used to freeze the
   // preview with nothing on screen and nothing visible to the user; state.js

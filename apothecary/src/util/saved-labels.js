@@ -70,8 +70,8 @@ function read() {
     // A corrupted entry used to silently discard the user's entire
     // saved-label library with no on-screen warning. Surface it; the panel
     // still renders what it can.
-    keepCopy(raw);
-    notifyStorageError('saved-labels', error, 'read');
+    const kept = keepCopy(raw);
+    notifyStorageError('saved-labels', error, 'read', kept ? SAVED_BACKUP_KEY : null);
   }
   return list;
 }
