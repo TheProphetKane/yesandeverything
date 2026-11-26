@@ -1,7 +1,7 @@
 // Offline self-test for the family vote Worker and its VoteBox, against stand-in stores.
 //     node workers/family-votes/src/worker.selftest.mjs
 import { pbkdf2Sync } from "node:crypto";
-import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_LIVE_ROUTE, BEER_WRITES, BEER_MAX_POURS, BEER_ADMIN_FAILS, beerText, beerKey, beerAdminKey, beerIsAdmin, beerAdminPassword } from "./worker.js";
+import worker, { VoteBox, HouseMarks, PlanState, PLAN_ROUTE, PLAN_WRITES, PLAN_MAX_JOBS, cleanDevice, cleanName, rateStep, ROUTE, KV_PREFIX, IP_NEW_DEVICES, IP_WINDOW_MS, HOUSE_ROUTE, HOUSE_WRITES, HOUSE_MAX_SLUGS, BeerBoard, BEER_ROUTE, BEER_LIVE_ROUTE, BEER_WRITES, BEER_MAX_POURS, BEER_ADMIN_FAILS, BEER_PHOTO_MAX, beerText, beerKey, beerAdminKey, beerIsAdmin, beerAdminPassword } from "./worker.js";
 
 // A stand-in admin password, hashed the way the real secret is, with fewer rounds to keep the test quick.
 const TEST_ADMIN_PASSWORD = "selftest admin password";
@@ -547,7 +547,7 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   const last = p => JSON.parse(p.sent[p.sent.length - 1] || "{}");
   await post6({ op: "pour", opId: id(), pid: "livepour1", y: 2026 });
   check("every open phone hears a change the moment it lands", last(phoneA).type === "state" && last(phoneA).board.pours[0].id === "livepour1" && last(phoneB).board.pours.length === 1);
-  await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Mike", v: "up", y: 2026, by: "Nick" });
+  await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Mike", v: "up", y: 2026, by: "Mike" });
   check("and hears the next one too", last(phoneB).board.pours[0].votes.Mike === "up" && phoneB.sent.length === 2);
   await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Mike", v: "up", y: 2026 });
   check("a change that changes nothing sends nothing", phoneB.sent.length === 3 || phoneB.sent.length === 2);
@@ -555,7 +555,7 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   check("the live address takes only a live connection", r426.status === 426);
   const jr = await get6("?view=journal", k6);
   check("every change is in the journal, newest first, without its change id", jr.entries[0].op.op === "vote" && jr.entries[jr.entries.length - 1].op.op === "pour" && !("opId" in jr.entries[0].op) && jr.entries[0].year === 2026);
-  check("the journal says who sent each change", jr.entries[1].op.by === "Nick" && !("by" in jr.entries[0].op));
+  check("the journal says who sent each change", jr.entries[1].op.by === "Mike" && !("by" in jr.entries[0].op));
   const jr403 = await worker.fetch(new Request(b6 + "?view=journal"), env6);
   check("only the admin can read the journal", jr403.status === 403);
   await post6({ op: "vote", opId: id(), pid: "livepour1", name: "Bill", v: "up", y: 2026, by: "Zed" });
@@ -579,6 +579,47 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   const sn = await post6({ op: "snapshot", opId: id() }, true);
   check("a snapshot can be taken on demand, and the test board's goes under its own name", sn.status === 200 && sn.j.snapshotAt > 0 && !!(await kv6.get("goldens-guzzlers:test:latest")));
   check("the journal and the snapshots carry no address", !JSON.stringify(jr).includes("203.0.113") && !(await kv6.get("goldens-guzzlers:live:latest")).includes("cf-connecting-ip"));
+}
+
+// Secret ballots, and a photo of the can kept with its pour.
+{
+  const kv7 = new FakeKV();
+  const env7 = makeEnv(kv7);
+  const b7 = "https://yesandeverything.com" + BEER_ROUTE;
+  let n7 = 0;
+  const id = () => "ballots" + String(++n7).padStart(8, "0");
+  const post7 = body => worker.fetch(new Request(b7, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env7).then(async r => ({ status: r.status, j: await r.json() }));
+  await post7({ op: "pour", opId: id(), pid: "secret01", y: 2026 });
+  let x = await post7({ op: "vote", opId: id(), pid: "secret01", name: "Mike", v: "up", y: 2026, by: "Bill" });
+  check("a phone cannot vote for someone else", x.status === 400 && /Switch/.test(x.j.error) && !x.j.board.pours[0].votes.Mike);
+  x = await post7({ op: "vote", opId: id(), pid: "secret01", name: "Bill", v: "down", y: 2026, by: "Bill" });
+  check("a phone votes for whoever is holding it", x.status === 200 && x.j.board.pours[0].votes.Bill === "down");
+  x = await post7({ op: "guess", opId: id(), pid: "secret01", name: "Mike", who: "Nick", y: 2026, by: "Bill" });
+  check("a phone cannot guess for someone else", x.status === 400);
+  x = await post7({ op: "guess", opId: id(), pid: "secret01", name: "Bill", who: "Nick", y: 2026, by: "Bill" });
+  check("a phone guesses for whoever is holding it", x.status === 200 && x.j.board.pours[0].guesses.Bill === "Nick");
+
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 0xff, 0xd9]);
+  const up = (pid, body, type = "image/jpeg", extra = "") => worker.fetch(new Request(b7 + "?photo=" + pid + extra, { method: "POST", headers: { "content-type": type }, body }), env7).then(async r => ({ status: r.status, j: await r.json() }));
+  x = await up("secret01", jpeg, "image/jpeg", "&by=Bill");
+  check("a photo of the can lands on its pour", x.status === 200 && x.j.board.pours[0].photo > 0);
+  const img = await worker.fetch(new Request(b7 + "?photo=secret01"), env7);
+  const got = new Uint8Array(await img.arrayBuffer());
+  check("the photo reads back as the same image", img.status === 200 && img.headers.get("content-type") === "image/jpeg" && got.length === jpeg.length && got.every((b, i) => b === jpeg[i]));
+  check("a spare copy of the photo goes to the key-value store", !!kv7.m.get("goldens-guzzlers:live:photo:secret01"));
+  x = await up("secret01", new Uint8Array(BEER_PHOTO_MAX + 1));
+  check("a photo past the size cap is refused", x.status === 413);
+  x = await up("secret01", jpeg, "text/plain");
+  check("a photo that is not an image is refused", x.status === 415);
+  x = await up("nosuchpour", jpeg);
+  check("a photo for a pour not on the board is refused", x.status === 400);
+  x = await post7({ op: "photo", opId: id(), pid: "secret01" });
+  check("a photo cannot be claimed without the image", x.status === 400);
+  const none = await worker.fetch(new Request(b7 + "?photo=nophoto1"), env7);
+  check("a pour with no photo answers not found", none.status === 404);
+  const k7 = (await post7({ op: "admin-login", password: TEST_ADMIN_PASSWORD })).j.admin;
+  const jr7 = await worker.fetch(new Request(b7 + "?view=journal", { headers: { "x-beer-admin": k7 } }), env7).then(r => r.json());
+  check("the journal notes the photo, and who sent it, without the image", jr7.entries[0].op.op === "photo" && jr7.entries[0].op.by === "Bill" && !("bytes" in jr7.entries[0].op));
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }

@@ -529,6 +529,13 @@ export const BEER_LOG_KEEP = 20000;
 // A copy of every year goes to the second store this long after a change, and once a day.
 export const BEER_SNAPSHOT_MS = 5 * 60 * 1000;
 export const BEER_REMOVED_STASH_KEEP = 200;
+// A photo of the can, shrunk on the phone before it is sent: one per pour, replaced when sent again.
+export const BEER_PHOTO_MAX = 400 * 1024;
+export const BEER_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+// Photos one address may send per hour. Each one also costs a write to the key-value store.
+export const BEER_PHOTO_WRITES = 60;
+// Secret ballots: a phone votes and guesses only for whoever is holding it.
+const BEER_OWN_ROW = "Each phone votes for whoever is holding it. Tap Switch to hand the phone over.";
 const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
 const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
 // Deleting, banning a beer, and starting a new year are for the admin alone. The Worker never
@@ -718,6 +725,7 @@ export function beerApply(board, op, now) {
       const p = find(op.pid), name = beerWho(op.name);
       if (!p) return { error: "That pour is not on the board." };
       if (!name) return { error: "That taster is not at the table." };
+      if (op.by && op.by !== name) return { error: BEER_OWN_ROW };
       if (op.v === "") delete p.votes[name];
       else if (BEER_VOTES.has(op.v)) p.votes[name] = op.v;
       else return { error: "A vote is up, side, down or cleared." };
@@ -727,6 +735,7 @@ export function beerApply(board, op, now) {
       const p = find(op.pid), name = beerWho(op.name), who = beerWho(op.who);
       if (!p) return { error: "That pour is not on the board." };
       if (!name) return { error: "That taster is not at the table." };
+      if (op.by && op.by !== name) return { error: BEER_OWN_ROW };
       if (who) p.guesses[name] = who;
       else if (op.who === "") delete p.guesses[name];
       else return { error: "A guess names someone at the table." };
@@ -757,6 +766,13 @@ export function beerApply(board, op, now) {
       // A pour deleted while still in its coozie hands the pull back, as putting it back does.
       if (current && current.id === op.pid) b.nextPuller = current.puller;
       removed = p;
+      break;
+    }
+    case "photo": {
+      // Only the board's own photo upload makes this change, once the image is stored.
+      const p = find(op.pid);
+      if (!p) return { error: "That pour is not on the board." };
+      p.photo = now;
       break;
     }
     case "surprise": {
@@ -914,6 +930,13 @@ export class BeerBoard {
     const url = new URL(request.url);
     const m = await this.meta();
     if (request.method === "GET") {
+      const photo = url.searchParams.get("photo");
+      if (photo) {
+        const rec = BEER_POUR_ID.test(photo) ? await this.storage.get("photo:" + photo) : null;
+        if (!rec) return json({ error: "There is no photo for that pour." }, 404);
+        // The address carries the photo's time, so a replaced photo is a new address.
+        return new Response(rec.bytes, { headers: { "content-type": rec.type, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
+      }
       const view = url.searchParams.get("view");
       // The journal names who did what, the stash included, so only the admin reads it.
       if (view === "journal") {
@@ -936,8 +959,40 @@ export class BeerBoard {
       if (!m.years.includes(y)) return json({ error: "There is no board for that year." }, 404);
       return json({ ok: true, year: m.year, years: m.years, libRev: m.libRev, board: await this.board(y) });
     }
+    // A photo of the can: kept with the pour, copied to the key-value store, and every phone told.
+    if (request.method === "PUT") {
+      const pid = url.searchParams.get("photo") || "";
+      const type = request.headers.get("content-type") || "";
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      const now = Date.now();
+      if (!BEER_POUR_ID.test(pid) || !BEER_PHOTO_TYPES.has(type) || !bytes.length || bytes.length > BEER_PHOTO_MAX) {
+        return json({ error: "That photo could not be read." }, 400);
+      }
+      const ip = request.headers.get("x-client-ip");
+      if (ip) {
+        const step = rateStep(await this.storage.get("p:" + ip), now, BEER_PHOTO_WRITES, IP_WINDOW_MS);
+        if (!step.allowed) return json({ error: "Too many photos from this address. Try again later." }, 429);
+        await this.storage.put("p:" + ip, step.rec);
+        const old = await this.storage.list({ prefix: "p:" });
+        for (const [k, rec] of old) if (now - rec.start >= IP_WINDOW_MS) await this.storage.delete(k);
+      }
+      const board = await this.board(m.year);
+      const out = beerApply(board, { op: "photo", pid }, now);
+      if (out.error) return json({ error: out.error, ...(await this.state(m, board)) }, 400);
+      await this.storage.put("photo:" + pid, { type, bytes, at: now });
+      await this.storage.put("board:" + m.year, out.board);
+      const where = request.headers.get("x-beer-board") === "test" ? "test" : "live";
+      try {
+        if (this.env && this.env.VOTES) await this.env.VOTES.put("goldens-guzzlers:" + where + ":photo:" + pid, bytes, { metadata: { type, at: now } });
+      } catch (e) { /* the copy is a spare; the photo itself is stored above */ }
+      const by = beerWho(url.searchParams.get("by"));
+      await this.after(by ? { op: "photo", pid, by } : { op: "photo", pid }, now, m, out.board);
+      return json({ ...(await this.state(m, out.board)), changed: true });
+    }
+
     const op = await request.json();
     const now = Date.now();
+    if (op.op === "photo") return json({ error: "A photo goes up as the image itself." }, 400);
     // Which board this object is, so its snapshots go under the right name.
     const which = request.headers.get("x-beer-board");
     if (which && which !== this.which) {
@@ -1116,10 +1171,30 @@ async function beerRoute(request, env) {
     const view = url.searchParams.get("view");
     if (view === "library" || view === "journal" || view === "backups") q.set("view", view);
     if (/^\d{4}$/.test(url.searchParams.get("year") || "")) q.set("year", url.searchParams.get("year"));
+    if (BEER_POUR_ID.test(url.searchParams.get("photo") || "")) q.set("photo", url.searchParams.get("photo"));
     const qs = q.toString();
     return beer(env, which).fetch(new Request(inner + (qs ? "?" + qs : ""), { headers: { "x-beer-admin": request.headers.get("x-beer-admin") || "" } }));
   }
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+  // A photo of the can goes up as the image itself, never inside a change.
+  if (url.searchParams.has("photo")) {
+    const pid = url.searchParams.get("photo") || "";
+    const type = (request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!BEER_POUR_ID.test(pid)) return json({ error: "That pour could not be read." }, 400);
+    if (!BEER_PHOTO_TYPES.has(type)) return json({ error: "Send the photo as an image." }, 415);
+    if (Number(request.headers.get("content-length") || 0) > BEER_PHOTO_MAX) return json({ error: "That photo is too large." }, 413);
+    const bytes = await request.arrayBuffer();
+    if (!bytes.byteLength) return json({ error: "That photo is empty." }, 400);
+    if (bytes.byteLength > BEER_PHOTO_MAX) return json({ error: "That photo is too large." }, 413);
+    const q = new URLSearchParams({ photo: pid });
+    const by = beerWho(url.searchParams.get("by"));
+    if (by) q.set("by", by);
+    return beer(env, which).fetch(new Request(inner + "?" + q, {
+      method: "PUT",
+      headers: { "content-type": type, "x-client-ip": request.headers.get("cf-connecting-ip") || "", "x-beer-board": which },
+      body: bytes,
+    }));
+  }
   if (!(request.headers.get("content-type") || "").includes("application/json")) {
     return json({ error: "Send the change as JSON." }, 415);
   }
