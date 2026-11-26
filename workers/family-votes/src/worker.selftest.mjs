@@ -44,7 +44,7 @@ function makeEnv(kv) {
     async run(model, input) {
       this.calls.push({ model, input });
       if (this.fail) throw new Error("the reader is down");
-      return this.reply || { response: { name: "Hop Goblin", brewery: "Bramblewood Brewing", style: "Hazy IPA" }, usage: { prompt_tokens: 1500, completion_tokens: 30 } };
+      return this.reply || { response: { printed: { name: "Hop Goblin", brewery: "", style: "Hazy IPA" }, known: { name: "Hop Goblin", brewery: "Bramblewood Brewing", style: "Hazy IPA" } }, usage: { prompt_tokens: 1500, completion_tokens: 30 } };
     },
   };
   const box = new VoteBox({ storage: new FakeStorage() }, env);
@@ -654,27 +654,39 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   x = await read(jpeg);
   const call = env8.AI.calls[env8.AI.calls.length - 1];
   const sent = call && call.input.messages[1].content[1].image_url.url;
-  check("a photo of a can comes back as a name, a brewery and a style", x.status === 200 && x.j.label.name === "Hop Goblin" && x.j.label.brewery === "Bramblewood Brewing" && x.j.label.style === "Hazy IPA");
+  check("a photo of a can comes back as what the label prints", x.status === 200 && x.j.label.name === "Hop Goblin" && x.j.label.brewery === "" && x.j.label.style === "Hazy IPA");
+  check("and as what the reader recognizes, kept apart so the page can mark it a guess", x.j.known.brewery === "Bramblewood Brewing" && x.j.known.name === "Hop Goblin");
   check("the reader gets the photo itself, as a data address", call.model === "@cf/meta/llama-4-scout-17b-16e-instruct" && sent === "data:image/jpeg;base64," + Buffer.from(jpeg).toString("base64"));
   check("the token count comes back so the cost can be measured", x.j.tokens && x.j.tokens.input === 1500 && x.j.tokens.output === 30);
+  check("the snap gets an address of its own for a picture search", /^\d{13}[a-z0-9]{4}$/.test(x.j.snap || ""));
+  const snapRes = await worker.fetch(new Request(b8 + "?snap=" + x.j.snap), env8);
+  const snapBytes = new Uint8Array(await snapRes.arrayBuffer());
+  check("and that address serves the photo back", snapRes.status === 200 && snapRes.headers.get("content-type") === "image/jpeg" && snapBytes.length === jpeg.length);
   env8.AI.reply = { response: 'Here it is: {"name": "Lake  Fog\\u0007 Pils", "brewery": "Test Brewing", "style": ""}' };
   x = await read(jpeg);
-  check("an answer with words around its JSON is still read, and cleaned", x.status === 200 && x.j.label.name === "Lake Fog Pils" && x.j.label.style === "");
+  check("an answer with words around its JSON is still read, and cleaned", x.status === 200 && x.j.label.name === "Lake Fog Pils" && x.j.label.style === "" && x.j.known.name === "");
   env8.AI.reply = { response: "I cannot read this label." };
   x = await read(jpeg);
   check("an answer with no JSON says to type it in", x.status === 502 && /Type it in/.test(x.j.error));
   env8.AI.reply = null;
   env8.AI.fail = true;
   x = await read(jpeg);
-  check("a reader that is down says to type it in", x.status === 502);
+  check("a reader that is down says to type it in, and the snap is still there to search by", x.status === 502 && /^\d{13}[a-z0-9]{4}$/.test(x.j.snap || ""));
   env8.AI.fail = false;
   x = await read(jpeg, "text/plain");
   check("a label read takes only an image", x.status === 415);
   const slot8 = env8._beer.get("goldens-guzzlers");
   await slot8.storage.put("reads:" + new Date().toISOString().slice(0, 10), 120);
   x = await read(jpeg);
-  check("the reads stop for the day at the cap", x.status === 429 && /today/.test(x.j.error));
-  check("reading a label stores no photo and changes no board", !(await slot8.storage.list({ prefix: "photo:" })).size && (await worker.fetch(new Request(b8), env8).then(r => r.json())).board.pours[0].photo === undefined);
+  check("the reads stop for the day at the cap", x.status === 429 && /today/.test(x.j.error) && !!x.j.snap);
+  const slotSnaps = [...(await slot8.storage.list({ prefix: "snap:" })).values()];
+  const oldSnap = slotSnaps[0];
+  oldSnap.at = Date.now() - 2 * 24 * 60 * 60 * 1000;
+  const oldKey = [...(await slot8.storage.list({ prefix: "snap:" })).keys()][0];
+  await slot8.storage.put(oldKey, oldSnap);
+  const gone = await worker.fetch(new Request(b8 + "?snap=" + oldKey.slice(5)), env8);
+  check("a snap older than a day is gone", gone.status === 404);
+  check("reading a label stores no photo on the board and changes no pour", !(await slot8.storage.list({ prefix: "photo:" })).size && (await worker.fetch(new Request(b8), env8).then(r => r.json())).board.pours[0].photo === undefined);
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }

@@ -542,7 +542,11 @@ const BEER_OWN_ROW = "Each phone votes for whoever is holding it. Tap Switch to 
 export const BEER_LABEL_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 export const BEER_LABEL_READS = 60;
 export const BEER_LABEL_DAY = 120;
-const BEER_LABEL_ASK = "This photo shows a beer can or bottle. Read its label. Give the beer's name, the brewery that made it, and its style, such as Hazy IPA, Pilsner, Oatmeal Stout or Gose. Copy the words as they are printed, leaving out the alcohol content and the size. Use an empty string for anything the label does not show.";
+// Each snap is also kept for a day at an address of its own, so a picture search can fetch it.
+export const BEER_SNAP_KEEP = 30;
+export const BEER_SNAP_MS = 24 * 60 * 60 * 1000;
+const BEER_SNAP_ID = /^\d{13}[a-z0-9]{4}$/;
+const BEER_LABEL_ASK = "This photo shows a beer can or bottle. Under printed, copy what its label prints: the beer's name, the brewery that made it, and its style, such as Hazy IPA, Pilsner, Oatmeal Stout or Gose, leaving out the alcohol content and the size. Under known, give the name, brewery and style of this exact beer if you recognize it from its can or bottle, including anything the label leaves out. Use an empty string for anything you are not sure of, and never make up a beer.";
 const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
 const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
 // Deleting, banning a beer, and starting a new year are for the admin alone. The Worker never
@@ -625,6 +629,9 @@ export function beerBanHit(banned, name, brewery) {
 // Read a label with the vision model: the photo goes in as a data address, and the answer comes back
 // as {name, brewery, style}, each cut to the page's lengths. The model's words are only suggestions:
 // the page fills them into the form, and a person checks them before anything is saved.
+// The reader answers twice: what the label prints, and what it knows of this exact beer from the
+// can's look, which the page marks as a guess to check.
+const BEER_LABEL_FIELDS = { type: "object", properties: { name: { type: "string" }, brewery: { type: "string" }, style: { type: "string" } }, required: ["name", "brewery", "style"] };
 export async function beerReadLabel(env, bytes, type) {
   let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -635,9 +642,9 @@ export async function beerReadLabel(env, bytes, type) {
     ],
     response_format: {
       type: "json_schema",
-      json_schema: { type: "object", properties: { name: { type: "string" }, brewery: { type: "string" }, style: { type: "string" } }, required: ["name", "brewery", "style"] },
+      json_schema: { type: "object", properties: { printed: BEER_LABEL_FIELDS, known: BEER_LABEL_FIELDS }, required: ["printed", "known"] },
     },
-    max_tokens: 200,
+    max_tokens: 300,
     temperature: 0,
   });
   let r = out && out.response;
@@ -646,8 +653,12 @@ export async function beerReadLabel(env, bytes, type) {
     r = m ? JSON.parse(m[0]) : null;
   }
   if (!r || typeof r !== "object") throw new Error("no label");
+  // An answer in the older flat shape is read as what the label prints.
+  const printed = r.printed && typeof r.printed === "object" ? r.printed : r;
+  const known = r.known && typeof r.known === "object" ? r.known : {};
+  const clean = f => ({ name: beerText(f.name, 80), brewery: beerText(f.brewery, 80), style: beerText(f.style, 60) });
   const usage = out.usage && typeof out.usage === "object" ? { input: out.usage.prompt_tokens || 0, output: out.usage.completion_tokens || 0 } : null;
-  return { label: { name: beerText(r.name, 80), brewery: beerText(r.brewery, 80), style: beerText(r.style, 60) }, tokens: usage };
+  return { label: clean(printed), known: clean(known), tokens: usage };
 }
 
 // One change to the beer log's lists: the bring-back marks, the banned beers and the stash. Pure,
@@ -965,6 +976,12 @@ export class BeerBoard {
     const url = new URL(request.url);
     const m = await this.meta();
     if (request.method === "GET") {
+      const snapId = url.searchParams.get("snap");
+      if (snapId) {
+        const rec = BEER_SNAP_ID.test(snapId) ? await this.storage.get("snap:" + snapId) : null;
+        if (!rec || Date.now() - rec.at > BEER_SNAP_MS) return json({ error: "That snap is gone." }, 404);
+        return new Response(rec.bytes, { headers: { "content-type": rec.type, "cache-control": "public, max-age=3600", "x-content-type-options": "nosniff" } });
+      }
       const photo = url.searchParams.get("photo");
       if (photo) {
         const rec = BEER_POUR_ID.test(photo) ? await this.storage.get("photo:" + photo) : null;
@@ -1000,21 +1017,26 @@ export class BeerBoard {
       const bytes = new Uint8Array(await request.arrayBuffer());
       const now = Date.now();
       if (!BEER_PHOTO_TYPES.has(type) || !bytes.length || bytes.length > BEER_PHOTO_MAX) return json({ error: "That photo could not be read." }, 400);
-      if (!this.env || !this.env.AI) return json({ error: "Reading labels is not set up here." }, 503);
       const ip = request.headers.get("x-client-ip");
       if (ip) {
         const step = rateStep(await this.storage.get("a:" + ip), now, BEER_LABEL_READS, IP_WINDOW_MS);
         if (!step.allowed) return json({ error: "Too many labels read from this address. Type this one in." }, 429);
         await this.storage.put("a:" + ip, step.rec);
       }
+      // The snap is kept first, so a picture search still works when the reader cannot help.
+      const tail = [...crypto.getRandomValues(new Uint8Array(4))].map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+      const snap = String(now) + tail;
+      await this.storage.put("snap:" + snap, { type, bytes, at: now });
+      await this.trim("snap:", BEER_SNAP_KEEP);
+      if (!this.env || !this.env.AI) return json({ error: "Reading labels is not set up here.", snap }, 503);
       const day = "reads:" + new Date(now).toISOString().slice(0, 10);
       const count = (await this.storage.get(day)) || 0;
-      if (count >= BEER_LABEL_DAY) return json({ error: "The label reader is done for today. Type this one in." }, 429);
+      if (count >= BEER_LABEL_DAY) return json({ error: "The label reader is done for today. Type this one in.", snap }, 429);
       await this.storage.put(day, count + 1);
       try {
-        return json({ ok: true, ...(await beerReadLabel(this.env, bytes, type)) });
+        return json({ ok: true, snap, ...(await beerReadLabel(this.env, bytes, type)) });
       } catch (e) {
-        return json({ error: "The label could not be read. Type it in." }, 502);
+        return json({ error: "The label could not be read. Type it in.", snap }, 502);
       }
     }
 
@@ -1235,6 +1257,7 @@ async function beerRoute(request, env) {
     if (view === "library" || view === "journal" || view === "backups") q.set("view", view);
     if (/^\d{4}$/.test(url.searchParams.get("year") || "")) q.set("year", url.searchParams.get("year"));
     if (BEER_POUR_ID.test(url.searchParams.get("photo") || "")) q.set("photo", url.searchParams.get("photo"));
+    if (BEER_SNAP_ID.test(url.searchParams.get("snap") || "")) q.set("snap", url.searchParams.get("snap"));
     const qs = q.toString();
     return beer(env, which).fetch(new Request(inner + (qs ? "?" + qs : ""), { headers: { "x-beer-admin": request.headers.get("x-beer-admin") || "" } }));
   }

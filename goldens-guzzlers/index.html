@@ -518,6 +518,8 @@ footer .mini-cap { width: 34px; height: 34px; }
 .snap-btn { position: relative; display: inline-block; cursor: pointer; }
 .snap-preview { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; border: 1.5px solid rgba(255, 214, 90, .6); }
 .snap-note { margin: 0; color: var(--muted); font-size: .9rem; }
+.snap-more { display: flex; flex-wrap: wrap; gap: 8px; }
+.fld input.guess { border-style: dashed; border-color: rgba(255, 204, 51, .95); background: rgba(255, 204, 51, .07); }
 /* a tablet keeping score for the table: bigger targets for fingers */
 @media (min-width: 700px) and (pointer: coarse) {
   .t { width: 76px; height: 60px; border-radius: 14px; }
@@ -1962,7 +1964,8 @@ Not quite beer|Hard Kombucha|kombucha
   // Snap the can: the camera opens, the photo is read for the beer's name, brewery and style, and
   // the answers fill in whatever is still blank, for a check before saving.
   function snapHTML(field, note) {
-    return `<div class="snap"><label class="btn-gold snap-btn">&#128247; Snap the can<input class="sr" type="file" name="${field}" accept="image/*" capture="environment" data-act="snap"></label><img class="snap-preview" alt="" hidden><p class="snap-note" aria-live="polite">${note}</p></div>`;
+    return `<div class="snap"><label class="btn-gold snap-btn">&#128247; Snap the can<input class="sr" type="file" name="${field}" accept="image/*" capture="environment" data-act="snap"></label><img class="snap-preview" alt="" hidden><p class="snap-note" aria-live="polite">${note}</p>
+      <div class="snap-more" hidden><label class="btn-ghost sm photo-btn">&#128247; Snap the back<input class="sr" type="file" name="snap2" accept="image/*" capture="environment" data-act="snap"></label><button type="button" class="btn-ghost sm" data-act="lens">&#128269; Search by picture</button><button type="button" class="btn-ghost sm" data-act="web-search">Search the web</button></div></div>`;
   }
   function stashFormHTML() {
     return `<form class="stash-form" autocomplete="off">
@@ -2368,35 +2371,94 @@ Not quite beer|Hard Kombucha|kombucha
     }
     return pick ? pick.n : String(text).trim();
   }
-  async function readLabel(form, file) {
+  // Our own records: a stashed beer, or one poured before, with the same name, and the same brewery
+  // when both are known. The stash is where tonight's beers were checked in.
+  function findRecord(name, brewery) {
+    const n = beerKey(name, '').split('|')[0];
+    if (!n) return null;
+    const b = brewery ? beerKey('', brewery).split('|')[1] : '';
+    const hit = (en, eb) => { const k = beerKey(en, eb).split('|'); return k[0] === n && (!b || !k[1] || k[1] === b); };
+    const s = waitingStash().find(x => hit(x.name, x.brewery));
+    if (s) return { brewery: s.brewery, style: s.style, from: 'the stash' };
+    const g = beerGroups().slice().reverse().find(x => hit(x.latest.p.name, x.latest.p.brewery));
+    if (g) return { brewery: g.latest.p.brewery, style: g.latest.p.style, from: 'the beer log' };
+    return null;
+  }
+  // Snap the can, or its back. The blanks fill in this order: what the label prints, then a match in
+  // the stash or the beer log, then what the reader recognizes from the can's look, marked a guess.
+  async function readLabel(form, file, front) {
     if (!form || !file) return;
     const note = form.querySelector('.snap-note');
-    const shot = form.querySelector('.snap-preview');
-    if (shot) {
-      if (shot.src) URL.revokeObjectURL(shot.src);
-      shot.src = URL.createObjectURL(file);
-      shot.hidden = false;
+    if (front) {
+      const shot = form.querySelector('.snap-preview');
+      if (shot) {
+        if (shot.src) URL.revokeObjectURL(shot.src);
+        shot.src = URL.createObjectURL(file);
+        shot.hidden = false;
+      }
     }
-    note.textContent = 'Reading the can…';
+    note.textContent = front ? 'Reading the can…' : 'Reading the back…';
+    let body = null;
     try {
       const blob = await shrinkPhoto(file, 1024, 0.82);
       const res = await fetch(api({ read: 'label' }), { method: 'POST', headers: { 'content-type': 'image/jpeg' }, body: blob, cache: 'no-store' });
-      const body = await res.json().catch(() => null);
-      if (!form.isConnected) return;
-      if (!res.ok || !body || !body.label) { note.textContent = (body && body.error) || 'The label could not be read. Type it in.'; return; }
-      const L = body.label;
-      // Only blank fields fill in, so nothing typed by hand is written over.
-      const fill = (name, v) => { const el = form.querySelector(`input[name="${name}"]`); if (el && v && !el.value.trim()) el.value = v; };
-      fill('name', L.name);
-      fill('brewery', L.brewery);
-      fill('style', matchStyle(L.style));
-      const stash = form.matches('.stash-form');
-      note.textContent = L.name
-        ? (stash ? 'Read from the can. Check it, then add it to the stash.' : 'Read from the can. Check it, pick who brought it, and put it on the board.')
-        : 'No beer name on that label. Type it in.';
+      body = await res.json().catch(() => null);
+      if (body && !res.ok && !body.error) body.error = 'The label could not be read.';
     } catch (e) {
-      if (form.isConnected) note.textContent = 'The label could not be read. Type it in.';
+      body = null;
     }
+    if (!form.isConnected) return;
+    body = body || { error: 'The label could not be read.' };
+    // The picture search looks at the front of the can when there is one.
+    if (body.snap && (front || !form._snap)) form._snap = body.snap;
+    const more = form.querySelector('.snap-more');
+    if (more) more.hidden = false;
+    const field = n => form.querySelector(`input[name="${n}"]`);
+    const blank = n => { const el = field(n); return !!el && !el.value.trim(); };
+    const fill = (n, v, guess) => {
+      const el = field(n);
+      if (!el || !v || el.value.trim()) return false;
+      el.value = n === 'style' ? matchStyle(v) : v;
+      el.classList.toggle('guess', !!guess);
+      return true;
+    };
+    const L = body.label || {}, K = body.known || {};
+    const read = ['name', 'brewery', 'style'].filter(n => fill(n, L[n])).length;
+    let from = '';
+    const fromRecord = () => {
+      if (blank('name')) return null;
+      const rec = findRecord(field('name').value, field('brewery') ? field('brewery').value : '');
+      if (rec) ['brewery', 'style'].forEach(n => { if (fill(n, rec[n])) from = rec.from; });
+      return rec;
+    };
+    const rec = fromRecord();
+    const guessed = ['name', 'brewery', 'style'].filter(n => fill(n, K[n], true));
+    if (!rec && guessed.includes('name')) fromRecord();
+    const words = { name: 'the name', brewery: 'the brewery', style: 'the style' };
+    const parts = [];
+    if (!read && !from && !guessed.length) parts.push((body.error || 'Nothing new on that side.') + ' Snap the back, or search by picture.');
+    else {
+      if (read) parts.push(front ? 'Read from the can.' : 'Read from the back.');
+      if (from) parts.push('Filled from ' + from + '.');
+      if (guessed.length) parts.push('A guess from the can’s look: ' + joinNames(guessed.map(n => words[n])) + '. Check it.');
+    }
+    const still = ['name', 'brewery', 'style'].filter(blank);
+    if (still.length) parts.push('Still blank: ' + joinNames(still.map(n => words[n])) + '.');
+    else parts.push(form.matches('.stash-form') ? 'Check it, then add it to the stash.' : 'Check it, pick who brought it, and put it on the board.');
+    note.textContent = parts.join(' ');
+  }
+  // Search by picture: Google's picture search fetches the snap from its own address on the board.
+  function searchByPicture(form) {
+    if (!form || !form._snap) { toast('Snap the can first.'); return; }
+    const src = new URL(api({ snap: form._snap }), location.href).href;
+    window.open('https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(src), '_blank', 'noopener');
+  }
+  // Search the web for whatever is filled in so far, where the beer sites list brewery and style.
+  function searchWeb(form) {
+    const v = n => { const el = form && form.querySelector(`input[name="${n}"]`); return el ? el.value.trim() : ''; };
+    const q = [v('name'), v('brewery'), v('style')].filter(Boolean).join(' ');
+    if (!q) { toast('Snap the can, or type what you can read, first.'); return; }
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(q + ' beer untappd'), '_blank', 'noopener');
   }
   async function uploadPhoto(pid, file) {
     toast('Saving the photo…');
@@ -2719,6 +2781,8 @@ Not quite beer|Hard Kombucha|kombucha
       case 'admin': unlockAdmin(); break;
       case 'lock-admin': dropAdmin(); toast('Admin locked on this phone.'); break;
       case 'install': installApp(); break;
+      case 'lens': searchByPicture(b.closest('form')); break;
+      case 'web-search': searchWeb(b.closest('form')); break;
       case 'recap': openRecap(); break;
       case 'tv-full': toggleFull(); break;
     }
@@ -2726,6 +2790,8 @@ Not quite beer|Hard Kombucha|kombucha
   // Keeps the style input focused while a suggestion is clicked.
   document.addEventListener('mousedown', e => { if (e.target.closest('.sugs')) e.preventDefault(); });
   document.addEventListener('input', e => {
+    // A guess typed over is a guess no longer.
+    if (e.target.classList && e.target.classList.contains('guess')) e.target.classList.remove('guess');
     if (e.target.matches('input[name="style"]')) suggest(e.target);
     else if (e.target.id === 'log-q') { LOG.q = e.target.value; renderLog(); }
   });
@@ -2748,7 +2814,7 @@ Not quite beer|Hard Kombucha|kombucha
       if (!inEditor) send({ op: 'guess', pid: p.id, name: t.dataset.name, who: t.value });
     } else if (t.matches('input[data-act="snap"]')) {
       const file = t.files && t.files[0];
-      if (file) readLabel(t.closest('form'), file);
+      if (file) readLabel(t.closest('form'), file, t.name !== 'snap2');
     } else if (t.matches('input[data-act="photo"]')) {
       const file = t.files && t.files[0];
       if (file) uploadPhoto(t.dataset.pid, file);
