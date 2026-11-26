@@ -534,8 +534,15 @@ export const BEER_PHOTO_MAX = 400 * 1024;
 export const BEER_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 // Photos one address may send per hour. Each one also costs a write to the key-value store.
 export const BEER_PHOTO_WRITES = 60;
-// Secret ballots: a phone votes and guesses only for whoever is holding it.
+// Secret ballots: a phone votes and guesses only for whoever is holding it. The admin's device keeps
+// score for the table, so its key lets it enter anyone's vote or guess.
 const BEER_OWN_ROW = "Each phone votes for whoever is holding it. Tap Switch to hand the phone over.";
+// Snap the can: a vision model on Cloudflare reads a photo of the label for the beer's name, brewery
+// and style. Reads are capped per address and per day, which keeps them inside the free daily allowance.
+export const BEER_LABEL_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
+export const BEER_LABEL_READS = 60;
+export const BEER_LABEL_DAY = 120;
+const BEER_LABEL_ASK = "This photo shows a beer can or bottle. Read its label. Give the beer's name, the brewery that made it, and its style, such as Hazy IPA, Pilsner, Oatmeal Stout or Gose. Copy the words as they are printed, leaving out the alcohol content and the size. Use an empty string for anything the label does not show.";
 const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
 const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
 // Deleting, banning a beer, and starting a new year are for the admin alone. The Worker never
@@ -613,6 +620,34 @@ export function beerBanHit(banned, name, brewery) {
     if (n === want[0] && (b === want[1] || !b || !want[1])) return m;
   }
   return null;
+}
+
+// Read a label with the vision model: the photo goes in as a data address, and the answer comes back
+// as {name, brewery, style}, each cut to the page's lengths. The model's words are only suggestions:
+// the page fills them into the form, and a person checks them before anything is saved.
+export async function beerReadLabel(env, bytes, type) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  const out = await env.AI.run(BEER_LABEL_MODEL, {
+    messages: [
+      { role: "system", content: "You read beer labels in photos. Answer with the JSON asked for and nothing else." },
+      { role: "user", content: [{ type: "text", text: BEER_LABEL_ASK }, { type: "image_url", image_url: { url: "data:" + type + ";base64," + btoa(bin) } }] },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: { type: "object", properties: { name: { type: "string" }, brewery: { type: "string" }, style: { type: "string" } }, required: ["name", "brewery", "style"] },
+    },
+    max_tokens: 200,
+    temperature: 0,
+  });
+  let r = out && out.response;
+  if (typeof r === "string") {
+    const m = r.match(/\{[\s\S]*\}/);
+    r = m ? JSON.parse(m[0]) : null;
+  }
+  if (!r || typeof r !== "object") throw new Error("no label");
+  const usage = out.usage && typeof out.usage === "object" ? { input: out.usage.prompt_tokens || 0, output: out.usage.completion_tokens || 0 } : null;
+  return { label: { name: beerText(r.name, 80), brewery: beerText(r.brewery, 80), style: beerText(r.style, 60) }, tokens: usage };
 }
 
 // One change to the beer log's lists: the bring-back marks, the banned beers and the stash. Pure,
@@ -725,7 +760,7 @@ export function beerApply(board, op, now) {
       const p = find(op.pid), name = beerWho(op.name);
       if (!p) return { error: "That pour is not on the board." };
       if (!name) return { error: "That taster is not at the table." };
-      if (op.by && op.by !== name) return { error: BEER_OWN_ROW };
+      if (op.by && op.by !== name && !op.keeper) return { error: BEER_OWN_ROW };
       if (op.v === "") delete p.votes[name];
       else if (BEER_VOTES.has(op.v)) p.votes[name] = op.v;
       else return { error: "A vote is up, side, down or cleared." };
@@ -735,7 +770,7 @@ export function beerApply(board, op, now) {
       const p = find(op.pid), name = beerWho(op.name), who = beerWho(op.who);
       if (!p) return { error: "That pour is not on the board." };
       if (!name) return { error: "That taster is not at the table." };
-      if (op.by && op.by !== name) return { error: BEER_OWN_ROW };
+      if (op.by && op.by !== name && !op.keeper) return { error: BEER_OWN_ROW };
       if (who) p.guesses[name] = who;
       else if (op.who === "") delete p.guesses[name];
       else return { error: "A guess names someone at the table." };
@@ -959,6 +994,30 @@ export class BeerBoard {
       if (!m.years.includes(y)) return json({ error: "There is no board for that year." }, 404);
       return json({ ok: true, year: m.year, years: m.years, libRev: m.libRev, board: await this.board(y) });
     }
+    // Snap the can: read the label and send back the beer's name, brewery and style. Nothing is stored.
+    if (request.method === "PUT" && url.searchParams.get("read") === "label") {
+      const type = request.headers.get("content-type") || "";
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      const now = Date.now();
+      if (!BEER_PHOTO_TYPES.has(type) || !bytes.length || bytes.length > BEER_PHOTO_MAX) return json({ error: "That photo could not be read." }, 400);
+      if (!this.env || !this.env.AI) return json({ error: "Reading labels is not set up here." }, 503);
+      const ip = request.headers.get("x-client-ip");
+      if (ip) {
+        const step = rateStep(await this.storage.get("a:" + ip), now, BEER_LABEL_READS, IP_WINDOW_MS);
+        if (!step.allowed) return json({ error: "Too many labels read from this address. Type this one in." }, 429);
+        await this.storage.put("a:" + ip, step.rec);
+      }
+      const day = "reads:" + new Date(now).toISOString().slice(0, 10);
+      const count = (await this.storage.get(day)) || 0;
+      if (count >= BEER_LABEL_DAY) return json({ error: "The label reader is done for today. Type this one in." }, 429);
+      await this.storage.put(day, count + 1);
+      try {
+        return json({ ok: true, ...(await beerReadLabel(this.env, bytes, type)) });
+      } catch (e) {
+        return json({ error: "The label could not be read. Type it in." }, 502);
+      }
+    }
+
     // A photo of the can: kept with the pour, copied to the key-value store, and every phone told.
     if (request.method === "PUT") {
       const pid = url.searchParams.get("photo") || "";
@@ -1034,6 +1093,10 @@ export class BeerBoard {
 
     const seen = (await this.storage.get("seen")) || [];
     if (op.opId && seen.includes(op.opId)) return json({ ...(await this.state(m)), changed: false, repeat: true });
+
+    // The admin's device keeps score for the table: with its key, a vote or a guess can be anyone's.
+    delete op.keeper;
+    if ((op.op === "vote" || op.op === "guess") && op.by && op.name !== op.by && (await beerIsAdmin(this.env, op.admin, now))) op.keeper = true;
 
     // A delete, a ban or a new year needs the admin's key, and a delete needs the word DELETE as well.
     if (BEER_ADMIN_OPS.has(op.op)) {
@@ -1176,6 +1239,20 @@ async function beerRoute(request, env) {
     return beer(env, which).fetch(new Request(inner + (qs ? "?" + qs : ""), { headers: { "x-beer-admin": request.headers.get("x-beer-admin") || "" } }));
   }
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+  // Snap the can: the photo goes to the board's object, which counts the reads and asks the label reader.
+  if (url.searchParams.get("read") === "label") {
+    const type = (request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!BEER_PHOTO_TYPES.has(type)) return json({ error: "Send the photo as an image." }, 415);
+    if (Number(request.headers.get("content-length") || 0) > BEER_PHOTO_MAX) return json({ error: "That photo is too large." }, 413);
+    const bytes = await request.arrayBuffer();
+    if (!bytes.byteLength) return json({ error: "That photo is empty." }, 400);
+    if (bytes.byteLength > BEER_PHOTO_MAX) return json({ error: "That photo is too large." }, 413);
+    return beer(env, which).fetch(new Request(inner + "?read=label", {
+      method: "PUT",
+      headers: { "content-type": type, "x-client-ip": request.headers.get("cf-connecting-ip") || "", "x-beer-board": which },
+      body: bytes,
+    }));
+  }
   // A photo of the can goes up as the image itself, never inside a change.
   if (url.searchParams.has("photo")) {
     const pid = url.searchParams.get("photo") || "";

@@ -38,6 +38,15 @@ class FakeStorage {
 
 function makeEnv(kv) {
   const env = { VOTES: kv, BEER_ADMIN_HASH: TEST_ADMIN_HASH };
+  // A stand-in for the label reader: it answers as the vision model does, or fails when told to.
+  env.AI = {
+    calls: [],
+    async run(model, input) {
+      this.calls.push({ model, input });
+      if (this.fail) throw new Error("the reader is down");
+      return this.reply || { response: { name: "Hop Goblin", brewery: "Bramblewood Brewing", style: "Hazy IPA" }, usage: { prompt_tokens: 1500, completion_tokens: 30 } };
+    },
+  };
   const box = new VoteBox({ storage: new FakeStorage() }, env);
   let queue = Promise.resolve();
   env.BOX = {
@@ -620,6 +629,52 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   const k7 = (await post7({ op: "admin-login", password: TEST_ADMIN_PASSWORD })).j.admin;
   const jr7 = await worker.fetch(new Request(b7 + "?view=journal", { headers: { "x-beer-admin": k7 } }), env7).then(r => r.json());
   check("the journal notes the photo, and who sent it, without the image", jr7.entries[0].op.op === "photo" && jr7.entries[0].op.by === "Bill" && !("bytes" in jr7.entries[0].op));
+}
+
+// The scorekeeper's tablet, and the label reader.
+{
+  const env8 = makeEnv(new FakeKV());
+  const b8 = "https://yesandeverything.com" + BEER_ROUTE;
+  let n8 = 0;
+  const id = () => "keeper0" + String(++n8).padStart(8, "0");
+  const post8 = body => worker.fetch(new Request(b8, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env8).then(async r => ({ status: r.status, j: await r.json() }));
+  const k8 = (await post8({ op: "admin-login", password: TEST_ADMIN_PASSWORD })).j.admin;
+  await post8({ op: "pour", opId: id(), pid: "tablet01", y: 2026 });
+  let x = await post8({ op: "vote", opId: id(), pid: "tablet01", name: "Mike", v: "up", y: 2026, by: "Nick", admin: k8 });
+  check("the admin's tablet enters someone else's vote", x.status === 200 && x.j.board.pours[0].votes.Mike === "up");
+  x = await post8({ op: "guess", opId: id(), pid: "tablet01", name: "Gannan", who: "Bill", y: 2026, by: "Nick", admin: k8 });
+  check("and someone else's guess", x.status === 200 && x.j.board.pours[0].guesses.Gannan === "Bill");
+  x = await post8({ op: "vote", opId: id(), pid: "tablet01", name: "Bill", v: "up", y: 2026, by: "Nick", keeper: true });
+  check("a phone cannot claim to keep score without the key", x.status === 400 && !x.j.board.pours[0].votes.Bill);
+  const jr8 = await worker.fetch(new Request(b8 + "?view=journal", { headers: { "x-beer-admin": k8 } }), env8).then(r => r.json());
+  check("the journal shows the scorekeeper entered the vote, without the key", jr8.entries.some(e => e.op.op === "vote" && e.op.name === "Mike" && e.op.by === "Nick" && e.op.keeper === true) && !JSON.stringify(jr8).includes(k8));
+
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 9, 8, 7, 6, 0xff, 0xd9]);
+  const read = (body, type = "image/jpeg", extra = "") => worker.fetch(new Request(b8 + "?read=label" + extra, { method: "POST", headers: { "content-type": type }, body }), env8).then(async r => ({ status: r.status, j: await r.json() }));
+  x = await read(jpeg);
+  const call = env8.AI.calls[env8.AI.calls.length - 1];
+  const sent = call && call.input.messages[1].content[1].image_url.url;
+  check("a photo of a can comes back as a name, a brewery and a style", x.status === 200 && x.j.label.name === "Hop Goblin" && x.j.label.brewery === "Bramblewood Brewing" && x.j.label.style === "Hazy IPA");
+  check("the reader gets the photo itself, as a data address", call.model === "@cf/meta/llama-4-scout-17b-16e-instruct" && sent === "data:image/jpeg;base64," + Buffer.from(jpeg).toString("base64"));
+  check("the token count comes back so the cost can be measured", x.j.tokens && x.j.tokens.input === 1500 && x.j.tokens.output === 30);
+  env8.AI.reply = { response: 'Here it is: {"name": "Lake  Fog\\u0007 Pils", "brewery": "Test Brewing", "style": ""}' };
+  x = await read(jpeg);
+  check("an answer with words around its JSON is still read, and cleaned", x.status === 200 && x.j.label.name === "Lake Fog Pils" && x.j.label.style === "");
+  env8.AI.reply = { response: "I cannot read this label." };
+  x = await read(jpeg);
+  check("an answer with no JSON says to type it in", x.status === 502 && /Type it in/.test(x.j.error));
+  env8.AI.reply = null;
+  env8.AI.fail = true;
+  x = await read(jpeg);
+  check("a reader that is down says to type it in", x.status === 502);
+  env8.AI.fail = false;
+  x = await read(jpeg, "text/plain");
+  check("a label read takes only an image", x.status === 415);
+  const slot8 = env8._beer.get("goldens-guzzlers");
+  await slot8.storage.put("reads:" + new Date().toISOString().slice(0, 10), 120);
+  x = await read(jpeg);
+  check("the reads stop for the day at the cap", x.status === 429 && /today/.test(x.j.error));
+  check("reading a label stores no photo and changes no board", !(await slot8.storage.list({ prefix: "photo:" })).size && (await worker.fetch(new Request(b8), env8).then(r => r.json())).board.pours[0].photo === undefined);
 }
 
 if (failed) { console.error(failed + " failed"); process.exit(1); }
