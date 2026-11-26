@@ -490,6 +490,29 @@ check("the house marks never reach the Thanksgiving vote", !("17-savoy-dr" in j.
   check("a stash entry can be taken out", x.status === 200 && x.j.libRev > lib.libRev);
   lib = await yget("?view=library");
   check("and it is gone from the stash", lib.stash.length === 0);
+
+  // Banning is the admin's alone, needs no DELETE, and keeps a beer out of every future stash.
+  const hg = beerKey("Hop Goblin", "Bramblewood");
+  await ypost({ op: "bringback", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: true });
+  x = await ypost({ op: "ban", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: true });
+  check("only the admin can ban a beer", x.status === 403);
+  x = await ypost({ op: "ban", opId: id(), name: "Hop Goblin", brewery: "Bramblewood Brewing", style: "Hazy IPA", on: true, admin: k5 });
+  lib = await yget("?view=library");
+  check("a ban needs no DELETE, and a banned beer leaves the bring-back list", x.status === 200 && lib.marks.banned[hg].name === "Hop Goblin" && !lib.marks.bringBack[hg]);
+  x = await ypost({ op: "stash-add", opId: id(), sid: "banned01", name: "hop  goblin", brewery: "Bramblewood Brewing Co." });
+  check("a banned beer cannot go in the stash, and the answer says it is banned", x.status === 400 && /banned/.test(x.j.error));
+  x = await ypost({ op: "stash-add", opId: id(), sid: "banned02", name: "Hop Goblin" });
+  check("leaving the brewery off does not slip a banned beer past", x.status === 400);
+  x = await ypost({ op: "stash-add", opId: id(), sid: "banned03", name: "Hop Goblin", brewery: "Other Barn Ales" });
+  check("the same name from another brewery can still be stashed", x.status === 200);
+  x = await ypost({ op: "bringback", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: true });
+  check("a banned beer cannot be marked to bring back", x.status === 400 && /banned/.test(x.j.error));
+  x = await ypost({ op: "ban", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: "yes", admin: k5 });
+  check("a ban is on or off, nothing else", x.status === 400);
+  await ypost({ op: "ban", opId: id(), name: "Hop Goblin", brewery: "Bramblewood", on: false, admin: k5 });
+  x = await ypost({ op: "stash-add", opId: id(), sid: "banned04", name: "Hop Goblin", brewery: "Bramblewood" });
+  lib = await yget("?view=library");
+  check("once unbanned it can be stashed again", x.status === 200 && !lib.marks.banned[hg]);
   const r404 = await worker.fetch(new Request(ybase + "?year=2031"), env5);
   check("a year with no board answers not found", r404.status === 404);
 

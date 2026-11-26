@@ -520,7 +520,7 @@ export const BEER_FIRST_YEAR = 2026;
 // Beers waiting in stashes for future nights.
 export const BEER_STASH_MAX = 400;
 // Changes that go to the beer log's lists rather than to this year's board.
-export const BEER_LIB_OPS = new Set(["bringback", "stash-add", "stash-remove"]);
+export const BEER_LIB_OPS = new Set(["bringback", "stash-add", "stash-remove", "ban"]);
 // Live connections: every open phone hears each change the moment it lands.
 export const BEER_LIVE_ROUTE = "/goldens-guzzlers/api/live";
 export const BEER_LIVE_MAX = 300;
@@ -531,10 +531,12 @@ export const BEER_SNAPSHOT_MS = 5 * 60 * 1000;
 export const BEER_REMOVED_STASH_KEEP = 200;
 const BEER_POUR_ID = /^[a-z0-9]{4,24}$/;
 const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
-// Deleting, and starting a new year, are for the admin alone. The Worker never holds the admin
-// password: the BEER_ADMIN_HASH secret is pbkdf2-sha256$<rounds>$<salt hex>$<hash hex>, and a
-// right password earns a signed key that the admin's phone keeps for a year.
-export const BEER_ADMIN_OPS = new Set(["remove", "stash-remove", "clear", "newyear"]);
+// Deleting, banning a beer, and starting a new year are for the admin alone. The Worker never
+// holds the admin password: the BEER_ADMIN_HASH secret is pbkdf2-sha256$<rounds>$<salt hex>$<hash hex>,
+// and a right password earns a signed key that the admin's phone keeps for a year.
+export const BEER_ADMIN_OPS = new Set(["remove", "stash-remove", "clear", "newyear", "ban"]);
+// The deletes among them, which take the word DELETE as well.
+export const BEER_DELETE_OPS = new Set(["remove", "stash-remove", "clear"]);
 export const BEER_ADMIN_DAYS = 365;
 // Wrong passwords allowed before admin sign-in pauses, and how long it pauses.
 export const BEER_ADMIN_FAILS = 8;
@@ -595,17 +597,49 @@ export function beerKey(name, brewery) {
   return beerNorm(name) + "|" + beerNorm(brewery).replace(BEER_BREWERY_FILLER, " ").replace(/\s+/g, " ").trim();
 }
 
-// One change to the beer log's lists: the bring-back marks and the stash. Pure, like beerApply.
+// A banned beer, matched on its name: the same brewery, or a brewery left blank on either side,
+// so leaving the brewery off never slips a banned beer past. The page uses the same rule.
+export function beerBanHit(banned, name, brewery) {
+  const want = beerKey(name, brewery).split("|");
+  for (const [key, m] of Object.entries(banned || {})) {
+    const [n, b] = key.split("|");
+    if (n === want[0] && (b === want[1] || !b || !want[1])) return m;
+  }
+  return null;
+}
+
+// One change to the beer log's lists: the bring-back marks, the banned beers and the stash. Pure,
+// like beerApply.
 export function beerLibApply(lib, op, now) {
-  const marks = { bringBack: { ...((lib.marks && lib.marks.bringBack) || {}) } };
+  const marks = {
+    bringBack: { ...((lib.marks && lib.marks.bringBack) || {}) },
+    banned: { ...((lib.marks && lib.marks.banned) || {}) },
+  };
   const stash = (lib.stash || []).map(s => ({ ...s }));
   switch (op.op) {
+    case "ban": {
+      const name = beerText(op.name, 80), brewery = beerText(op.brewery, 80);
+      if (!name) return { error: "A beer to ban needs its name." };
+      const key = beerKey(name, brewery);
+      if (op.on === true) {
+        if (marks.banned[key]) return { lib, changed: false };
+        marks.banned[key] = { name, brewery, style: beerText(op.style, 60), at: now };
+        // A banned beer never comes back.
+        delete marks.bringBack[key];
+      } else if (op.on === false) {
+        if (!marks.banned[key]) return { lib, changed: false };
+        delete marks.banned[key];
+      } else return { error: "A ban is on or off." };
+      break;
+    }
     case "bringback": {
       const name = beerText(op.name, 80), brewery = beerText(op.brewery, 80);
       if (!name) return { error: "A beer to bring back needs its name." };
       const key = beerKey(name, brewery);
-      if (op.on === true) marks.bringBack[key] = { name, brewery, style: beerText(op.style, 60), at: now };
-      else if (op.on === false) {
+      if (op.on === true) {
+        if (beerBanHit(marks.banned, name, brewery)) return { error: name + " is banned, so it cannot come back." };
+        marks.bringBack[key] = { name, brewery, style: beerText(op.style, 60), at: now };
+      } else if (op.on === false) {
         if (!marks.bringBack[key]) return { lib, changed: false };
         delete marks.bringBack[key];
       } else return { error: "Bring back is on or off." };
@@ -614,6 +648,7 @@ export function beerLibApply(lib, op, now) {
     case "stash-add": {
       const name = beerText(op.name, 80);
       if (!name) return { error: "A stashed beer needs its name." };
+      if (beerBanHit(marks.banned, name, beerText(op.brewery, 80))) return { error: name + " is banned from Golden's Guzzlers. Pick another beer." };
       if (typeof op.sid !== "string" || !BEER_POUR_ID.test(op.sid)) return { error: "That stash entry could not be read." };
       if (stash.some(s => s.id === op.sid)) return { lib, changed: false };
       if (stash.length >= BEER_STASH_MAX) return { error: "The stash is full." };
@@ -945,10 +980,10 @@ export class BeerBoard {
     const seen = (await this.storage.get("seen")) || [];
     if (op.opId && seen.includes(op.opId)) return json({ ...(await this.state(m)), changed: false, repeat: true });
 
-    // A delete, or a new year, needs the admin's key, and a delete needs the word DELETE as well.
+    // A delete, a ban or a new year needs the admin's key, and a delete needs the word DELETE as well.
     if (BEER_ADMIN_OPS.has(op.op)) {
       if (!(await beerIsAdmin(this.env, op.admin, now))) return json({ error: "Only the admin can do that.", ...(await this.state(m)) }, 403);
-      if (op.op !== "newyear" && op.confirm !== "DELETE") return json({ error: "A delete takes the word DELETE.", ...(await this.state(m)) }, 400);
+      if (BEER_DELETE_OPS.has(op.op) && op.confirm !== "DELETE") return json({ error: "A delete takes the word DELETE.", ...(await this.state(m)) }, 400);
     }
     delete op.admin;
     const remember = async () => {

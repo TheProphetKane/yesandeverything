@@ -456,6 +456,9 @@ input::placeholder { color: #6f7ca3; }
 .badge.warn { color: #fecdd3; border: 1px solid rgba(251, 113, 133, .6); }
 .star { appearance: none; border: 1.5px solid rgba(255, 214, 90, .5); background: transparent; color: var(--gold-1); border-radius: 999px; padding: 5px 11px; font-size: .8rem; font-weight: 700; white-space: nowrap; }
 .star.on { color: var(--navy); border-color: transparent; background: linear-gradient(180deg, #fff3c4, #ffd84d 45%, #f2b705); }
+.star.ban { border-color: rgba(251, 113, 133, .6); color: #fecdd3; }
+.star.ban.on { color: var(--navy); border-color: transparent; background: linear-gradient(180deg, #ffe4e6, #fb7185); }
+.mark-btns { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .detail-tools { display: flex; flex-wrap: wrap; gap: 8px; }
 .log-empty { display: grid; justify-items: start; gap: 10px; padding: 14px; border-radius: 14px; border: 1px dashed rgba(255, 214, 90, .4); color: var(--muted); }
 .log-empty p { margin: 0; }
@@ -714,9 +717,9 @@ footer .mini-cap { width: 34px; height: 34px; }
   const CACHE_KEY = 'goldens-guzzlers-board' + (TEST ? '-test' : '');
   const OUTBOX_KEY = 'goldens-guzzlers-outbox' + (TEST ? '-test' : '');
   const LIB_KEY = 'goldens-guzzlers-library' + (TEST ? '-test' : '');
-  const LIB_OPS = new Set(['bringback', 'stash-add', 'stash-remove']);
-  // Deleting, and starting a new year, need the admin's key; the board turns them away without it.
-  const ADMIN_OPS = new Set(['remove', 'stash-remove', 'clear', 'newyear']);
+  const LIB_OPS = new Set(['bringback', 'stash-add', 'stash-remove', 'ban']);
+  // Deleting, banning a beer, and starting a new year need the admin's key; the board turns them away without it.
+  const ADMIN_OPS = new Set(['remove', 'stash-remove', 'clear', 'newyear', 'ban']);
   const WHO_KEY = 'goldens-guzzlers-who';
   const ADMIN_KEY = 'goldens-guzzlers-admin';
   const LIVE_URL = (location.protocol === 'http:' ? 'ws://' : 'wss://') + location.host + '/goldens-guzzlers/api/live' + (TEST ? '?board=test' : '');
@@ -1366,7 +1369,7 @@ Not quite beer|Hard Kombucha|kombucha
     const g = guessLine(p);
     return `<div class="vote-chips">${chips}</div>
       <p class="guess-line">${g || 'No guesses on who brought it.'} Pulled by ${esc(p.puller)}.</p>
-      <div class="detail-tools">${VIEW ? '' : `<button type="button" class="btn-ghost sm" data-act="edit" data-pid="${p.id}">Fix this pour</button>`}${bringBackBtn(p)}${!VIEW && isAdmin() ? `<button type="button" class="btn-ghost sm danger" data-act="remove" data-pid="${p.id}">Delete</button>` : ''}</div>`;
+      <div class="detail-tools">${VIEW ? '' : `<button type="button" class="btn-ghost sm" data-act="edit" data-pid="${p.id}">Fix this pour</button>`}${markBtns(p, true)}${!VIEW && isAdmin() ? `<button type="button" class="btn-ghost sm danger" data-act="remove" data-pid="${p.id}">Delete</button>` : ''}</div>`;
   }
   function editorHTML(p) {
     return `<form class="editor" data-pid="${p.id}" autocomplete="off">
@@ -1684,7 +1687,8 @@ Not quite beer|Hard Kombucha|kombucha
     return norm(name) + '|' + norm(brewery).replace(BREWERY_FILLER, ' ').replace(/\s+/g, ' ').trim();
   }
   function libNow() {
-    if (!LIB) LIB = { boards: {}, marks: { bringBack: {} }, stash: [] };
+    if (!LIB) LIB = { boards: {}, marks: { bringBack: {}, banned: {} }, stash: [] };
+    if (!LIB.marks.banned) LIB.marks.banned = {};
     return LIB;
   }
   async function loadLibrary() {
@@ -1695,7 +1699,7 @@ Not quite beer|Hard Kombucha|kombucha
       if (!res.ok || !body || !body.boards) throw new Error('library');
       // A change to the lists still on its way stays on screen until it lands.
       if (outbox.some(o => LIB_OPS.has(o.op))) { libStale = true; return; }
-      LIB = { boards: body.boards, marks: body.marks || { bringBack: {} }, stash: body.stash || [] };
+      LIB = { boards: body.boards, marks: { bringBack: {}, banned: {}, ...(body.marks || {}) }, stash: body.stash || [] };
       if (Array.isArray(body.years)) META.years = body.years;
       if (typeof body.libRev === 'number') META.libRev = body.libRev;
       writeJSON(LIB_KEY, LIB);
@@ -1707,6 +1711,24 @@ Not quite beer|Hard Kombucha|kombucha
     }
   }
   const isBack = key => !!(LIB && LIB.marks && LIB.marks.bringBack && LIB.marks.bringBack[key]);
+  const bans = () => (LIB && LIB.marks && LIB.marks.banned) || {};
+  const isBanned = key => !!bans()[key];
+  // A banned beer, matched on its name: the same brewery, or a brewery left blank on either side.
+  // The Worker uses the same rule, so leaving the brewery off never slips a banned beer past.
+  function banHit(name, brewery) {
+    const want = beerKey(name, brewery).split('|');
+    for (const [key, m] of Object.entries(bans())) {
+      const [n, b] = key.split('|');
+      if (n === want[0] && (b === want[1] || !b || !want[1])) return m;
+    }
+    return null;
+  }
+  // The same name banned from another brewery: worth a question, not a refusal.
+  function banNear(name) {
+    const n = beerKey(name, '').split('|')[0];
+    const hit = Object.entries(bans()).find(([key]) => key.split('|')[0] === n);
+    return hit ? hit[1] : null;
+  }
   // Every revealed beer of every year, each ranked within its own night.
   function history() {
     const out = [];
@@ -1741,6 +1763,15 @@ Not quite beer|Hard Kombucha|kombucha
     const on = isBack(beerKey(p.name, p.brewery));
     return `<button type="button" class="star${on ? ' on' : ''}" data-act="bring-back" data-name="${esc(p.name)}" data-brewery="${esc(p.brewery || '')}" data-style="${esc(p.style || '')}" aria-pressed="${on}">${on ? '★ Bringing it back' : '☆ Bring it back'}</button>`;
   }
+  // Bring it back, or the banned mark instead, and for the admin the Ban switch.
+  function markBtns(p, badge) {
+    const banned = isBanned(beerKey(p.name, p.brewery));
+    return (banned ? (badge ? '<em class="badge warn">banned</em>' : '') : bringBackBtn(p)) + banBtn(p, banned);
+  }
+  function banBtn(p, banned) {
+    if (!isAdmin()) return '';
+    return `<button type="button" class="star ban${banned ? ' on' : ''}" data-act="ban" data-name="${esc(p.name)}" data-brewery="${esc(p.brewery || '')}" data-style="${esc(p.style || '')}" aria-pressed="${banned}">${banned ? 'Unban' : '&#9940; Ban'}</button>`;
+  }
   function whenLine(h) {
     return `<span><b>${h.year}</b>: ${h.t.u} of 6 thumbs up, ${h.tie ? 'tied for ' : ''}#${h.rank} of ${h.count}${h.p.provider ? ', brought by ' + esc(h.p.provider) : ''}</span>`;
   }
@@ -1748,16 +1779,17 @@ Not quite beer|Hard Kombucha|kombucha
     const p = g.latest.p;
     const stashed = stash.filter(s => beerKey(s.name, s.brewery) === g.key);
     return `<li class="log-item"><div>
-        <span class="beer">${esc(p.name)}</span>${g.rows.length > 1 ? `<em class="badge repeat">poured ${g.rows.length} times</em>` : ''}${stashed.length ? '<em class="badge stash">in a stash</em>' : ''}
+        <span class="beer">${esc(p.name)}</span>${g.rows.length > 1 ? `<em class="badge repeat">poured ${g.rows.length} times</em>` : ''}${stashed.length ? '<em class="badge stash">in a stash</em>' : ''}${isBanned(g.key) ? '<em class="badge warn">banned</em>' : ''}
         <p class="meta">${esc(p.brewery || 'Brewery not given')}${p.style ? ' · ' + esc(p.style) : ''}</p>
         <p class="when">${g.rows.map(whenLine).join('')}</p>
-      </div>${bringBackBtn(p)}</li>`;
+      </div><div class="mark-btns">${markBtns(p, false)}</div></li>`;
   }
   function stashItemHTML(s, groups, stash) {
     const key = beerKey(s.name, s.brewery);
     const had = groups.find(g => g.key === key);
     const twins = stash.filter(o => o !== s && beerKey(o.name, o.brewery) === key);
-    const warn = (had ? `<em class="badge warn">poured in ${esc(joinNames(had.rows.map(h => String(h.year))))}</em>` : '')
+    const warn = (banHit(s.name, s.brewery) ? '<em class="badge warn">banned</em>' : '')
+      + (had ? `<em class="badge warn">poured in ${esc(joinNames(had.rows.map(h => String(h.year))))}</em>` : '')
       + (twins.length ? '<em class="badge warn">someone else has one stashed</em>' : '');
     return `<li class="log-item"><div>
         <span class="beer">${esc(s.name)}</span>${warn}
@@ -1795,7 +1827,8 @@ Not quite beer|Hard Kombucha|kombucha
     const repeats = groups.filter(g => g.rows.length > 1);
     const marks = (LIB && LIB.marks && LIB.marks.bringBack) || {};
     const back = Object.entries(marks).map(([key, m]) => ({ m, g: groups.find(g => g.key === key) }));
-    const tabs = [['all', 'Every beer', groups.length], ['repeat', 'Poured more than once', repeats.length], ['back', 'Bring back', back.length], ['stash', 'The stash', stash.length]];
+    const banned = Object.entries(bans()).map(([key, m]) => ({ m, g: groups.find(g => g.key === key) }));
+    const tabs = [['all', 'Every beer', groups.length], ['repeat', 'Poured more than once', repeats.length], ['back', 'Bring back', back.length], ['banned', 'Banned', banned.length], ['stash', 'The stash', stash.length]];
     let h = `<div class="tabs" role="group" aria-label="Beer log lists">${tabs.map(([k, label, n]) => `<button type="button" class="tab${LOG.tab === k ? ' on' : ''}" data-act="tab" data-tab="${k}" aria-pressed="${LOG.tab === k}">${label}<b>${n}</b></button>`).join('')}</div>`;
     const newestFirst = (a, b) => (b.latest.year - a.latest.year) || (a.latest.rank - b.latest.rank);
     const none = msg => `<div class="log-empty"><p>${msg}</p></div>`;
@@ -1805,6 +1838,8 @@ Not quite beer|Hard Kombucha|kombucha
       h += repeats.length ? `<ul class="log-list">${repeats.slice().sort(newestFirst).map(g => beerItemHTML(g, stash)).join('')}</ul>` : none('No beer has come back yet. A beer poured in two different years shows up here.');
     } else if (LOG.tab === 'back') {
       h += back.length ? `<ul class="log-list">${back.map(b => b.g ? beerItemHTML(b.g, stash) : `<li class="log-item"><div><span class="beer">${esc(b.m.name)}</span><p class="meta">${esc(b.m.brewery || 'Brewery not given')}</p></div>${bringBackBtn(b.m)}</li>`).join('')}</ul>` : none('Nothing marked yet. Open a beer in the standings, or find it here, and tap Bring it back.');
+    } else if (LOG.tab === 'banned') {
+      h += banned.length ? `<ul class="log-list">${banned.map(b => b.g ? beerItemHTML(b.g, stash) : `<li class="log-item"><div><span class="beer">${esc(b.m.name)}</span><em class="badge warn">banned</em><p class="meta">${esc(b.m.brewery || 'Brewery not given')}</p></div><div class="mark-btns">${banBtn(b.m, true)}</div></li>`).join('')}</ul>` : none('No beer is banned. A banned beer can never go in the stash for a future night.');
     } else {
       h += LOG.adding ? stashFormHTML() : '<button type="button" class="btn-gold sm" data-act="stash-open">Add a beer to the stash</button>';
       if (!stash.length) {
@@ -1817,6 +1852,7 @@ Not quite beer|Hard Kombucha|kombucha
     el.innerHTML = h;
   }
   function toggleBringBack(btn) {
+    if (isBanned(beerKey(btn.dataset.name, btn.dataset.brewery || ''))) { toast(`${btn.dataset.name} is banned.`); return; }
     const name = btn.dataset.name, brewery = btn.dataset.brewery || '', style = btn.dataset.style || '';
     const key = beerKey(name, brewery);
     const lib = libNow();
@@ -1829,9 +1865,29 @@ Not quite beer|Hard Kombucha|kombucha
     if (!UI.editing) renderBoard(ranked());
     toast(on ? `${name} is on the bring-back list.` : `${name} is off the bring-back list.`);
   }
+  function toggleBan(btn) {
+    if (!isAdmin()) { toast('Only the admin can ban a beer.'); return; }
+    const name = btn.dataset.name, brewery = btn.dataset.brewery || '', style = btn.dataset.style || '';
+    const key = beerKey(name, brewery);
+    const lib = libNow();
+    const on = !lib.marks.banned[key];
+    if (on && !window.confirm(`Ban ${name}? Nobody can put it in the stash for a future night, and anyone who tries is told it is banned.`)) return;
+    if (on) { lib.marks.banned[key] = { name, brewery, style, at: Date.now() }; delete lib.marks.bringBack[key]; }
+    else delete lib.marks.banned[key];
+    writeJSON(LIB_KEY, LIB);
+    send({ op: 'ban', name, brewery, style, on });
+    renderLog();
+    if (!UI.editing) renderBoard(ranked());
+    toast(on ? `${name} is banned.` : `${name} is off the banned list.`);
+  }
   function addToStash(form) {
     const f = readFields(form);
     if (!f.name) return;
+    // A banned beer never goes on anyone's list for a future night.
+    const banned = banHit(f.name, f.brewery);
+    if (banned) { window.alert(`${banned.name} is banned from ${NAME}. Pick another beer.`); return; }
+    const near = banNear(f.name);
+    if (near && !window.confirm(`A beer called ${near.name}${near.brewery ? ' from ' + near.brewery : ''} is banned. Is yours a different beer?`)) return;
     const key = beerKey(f.name, f.brewery);
     const had = beerGroups().find(g => g.key === key);
     const twin = waitingStash().find(s => beerKey(s.name, s.brewery) === key);
@@ -1907,10 +1963,10 @@ Not quite beer|Hard Kombucha|kombucha
     toast(`Starting the ${y} board.`);
   }
   function downloadAll() {
-    const rows = [['Year', 'Pour', 'Beer', 'Brewery', 'Style', 'Brought by', 'Thumbs up', 'Sideways', 'Thumbs down', 'Place', ...ROSTER.map(n => n + ' vote'), 'Bring back']];
+    const rows = [['Year', 'Pour', 'Beer', 'Brewery', 'Style', 'Brought by', 'Thumbs up', 'Sideways', 'Thumbs down', 'Place', ...ROSTER.map(n => n + ' vote'), 'Bring back', 'Banned']];
     history().forEach(h => {
       const p = h.p;
-      rows.push([h.year, p.n, p.name, p.brewery, p.style, p.provider, h.t.u, h.t.s, h.t.d, (h.tie ? 'tied for ' : '') + h.rank + ' of ' + h.count, ...ROSTER.map(n => p.votes[n] || ''), isBack(h.key) ? 'yes' : '']);
+      rows.push([h.year, p.n, p.name, p.brewery, p.style, p.provider, h.t.u, h.t.s, h.t.d, (h.tie ? 'tied for ' : '') + h.rank + ' of ' + h.count, ...ROSTER.map(n => p.votes[n] || ''), isBack(h.key) ? 'yes' : '', isBanned(h.key) ? 'yes' : '']);
     });
     const csv = rows.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
     const a = document.createElement('a');
@@ -2141,6 +2197,7 @@ Not quite beer|Hard Kombucha|kombucha
       case 'copy': copyStandings(); break;
       case 'view-year': viewYear(Number(b.dataset.year)); break;
       case 'bring-back': toggleBringBack(b); break;
+      case 'ban': toggleBan(b); break;
       case 'tab': LOG.tab = b.dataset.tab; LOG.adding = false; renderLog(); break;
       case 'stash-open':
         LOG.tab = 'stash'; LOG.adding = true; LOG.prefill = b.dataset.prefill || '';
