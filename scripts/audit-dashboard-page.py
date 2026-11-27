@@ -479,8 +479,17 @@ for pid, s in statuses.items():
         continue
     exp = "%d open / %d closed" % (br.get("actionsOpen") or 0, br.get("actionsClosed") or 0)
     seg = D["lists"]["found"].split("\n" + pid + "\n")
-    ok = len(seg) > 1 and exp in seg[1][:400]
-    row("dashboard", "lists found " + pid, "present" if ok else "absent", "present", ok, exp)
+    shown = len(seg) > 1 and exp in seg[1][:400]
+    # The page draws a Found row only for a project with an open action, a parked finding or an
+    # audit finding (buildListRow in dashboard/index.html returns null otherwise), so a project
+    # with none of the three is right to be absent. Gnosis failed here on 2026-11-27 for exactly
+    # that: 0 open, nothing parked, no audit findings.
+    fnd = (s.get("audit") or {}).get("findings") or {}
+    aud_total = sum(int(fnd.get(k) or 0) for k in ("critical", "high", "medium", "low"))
+    parked = br.get("deferred") if isinstance(br.get("deferred"), list) else []
+    listed = bool(br.get("actionsOpen")) or bool(parked) or aud_total > 0
+    row("dashboard", "lists found " + pid, "present" if shown else "absent",
+        "present" if listed else "absent", shown == listed, exp)
 
 # ---------- layer 2b: feeds -> status page ----------
 # The status page takes tokens today from the one-day file only when that file is for today's
