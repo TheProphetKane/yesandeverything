@@ -113,6 +113,15 @@ try {
     # browser pages carry stamped copies of it because this site has no build
     # step and every page is self-contained. A stamped copy that drifted is a
     # page back to being hand-kept, which is what the finding was about.
+    # The Pages workflow stamps live versions into the artifact only; nothing wrote them back, so the
+    # committed pills sat at v0.71.0 and v0.3.635 from 2026-09-23 until 2026-11-26. Stamp here, so the
+    # commit carries current pills, then fail on any pill that still differs from the canonical status file.
+    Write-Host "==== Step 2.2/6: public version pills ====" -ForegroundColor Magenta
+    & node (Join-Path $here "update-project-pages.mjs")
+    if ($LASTEXITCODE -ne 0) { Write-Host "Aborting release: the page stamper failed." -ForegroundColor Red; exit 1 }
+    & python (Join-Path $here "check-public-pills.py")
+    if ($LASTEXITCODE -ne 0) { Write-Host "Aborting release: a public version pill differs from its status file." -ForegroundColor Red; exit 1 }
+
     Write-Host "==== Step 2.3/6: project registry ====" -ForegroundColor Magenta
     & node (Join-Path $here "stamp-project-registry.mjs") --check
     if ($LASTEXITCODE -ne 0) {

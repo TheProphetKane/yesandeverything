@@ -559,6 +559,14 @@ for pid, s in statuses.items():
     v = "v" + str(s["version"]).lstrip("v")
     row("homepage", pid + " pill", v if v in home else "absent", v, note="Agents is delisted from the homepage by rule; Everything is the site itself and has no card")
 
+# public version pills in the repo html against the canonical status files (check-public-pills.py)
+import importlib.util
+_sp = importlib.util.spec_from_file_location("check_public_pills", os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-public-pills.py"))
+_cp = importlib.util.module_from_spec(_sp)
+_sp.loader.exec_module(_cp)
+for _f, _who, _shown, _exp, _ok in _cp.check():
+    row("public pill", _f + " " + _who, _shown, _exp, _ok, "stamped by scripts/update-project-pages.mjs; run it, then commit")
+
 # ---------- report ----------
 fails = [r for r in rows if not r[4]]
 day = datetime.now().strftime("%Y-%m-%d")
