@@ -24,7 +24,9 @@ art. It is presumptively SpiceJungle's proprietary illustration set.
 Decision (owner, 2026-07-11, locked in PROJECT_SPEC.md section 8): keep the
 set and accept the risk knowingly. The app is a personal, non-commercial
 hobby page at yesandeverything.com/apothecary with no monetization, so this
-is not a commercial concern.
+is not a commercial concern. The copy of the art in the source repository,
+private now and the same if it is ever made public, falls under the same
+decision.
 
 Two boundaries survive the decision:
 
