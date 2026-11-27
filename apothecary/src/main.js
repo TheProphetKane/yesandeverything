@@ -27,6 +27,7 @@ const [
   truncateMod,
   suggestMod,
   resolveIllustrationMod,
+  swatchesMod,
 ] = await Promise.all([
   import("./state.js" + V),
   import("./render.js" + V),
@@ -63,6 +64,8 @@ const [
   // resolution order, shared with editor.js's illustration picker via its
   // own dynamic-import graph so both call sites run the same chain.
   import("./util/resolve-illustration.js" + V),
+  // The editor's preset colours, kept in data so the contrast check reads them.
+  import("../data/swatches.js" + V),
 ]);
 
 const { createState, defaultState, defaultLayout, makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, DEFAULT_SECTION_TITLES } = stateMod;
@@ -84,6 +87,7 @@ const { printLabel } = printMod;
 const { truncateAtWordBoundary } = truncateMod;
 const { rankSuggestions } = suggestMod;
 const { resolveIllustration } = resolveIllustrationMod;
+const { ACCENT_SWATCHES, ITEM_COLOR_PRESETS, ITEM_GLOW_PRESETS } = swatchesMod;
 
 // v1.1.9: inject persist.js's notifyStorageError into saved-labels.js instead
 // of letting saved-labels.js statically import persist.js itself (same
@@ -187,6 +191,7 @@ async function main() {
     // Forwarded per the same contract. Do not add this
     // back as a static import in editor.js.
     rankSuggestions,
+    ACCENT_SWATCHES, ITEM_COLOR_PRESETS, ITEM_GLOW_PRESETS,
     onReset: () => {
       clearState();
       state.set(defaultState(TEMPLATES, DEFAULT_TEMPLATE_ID, herbDB));

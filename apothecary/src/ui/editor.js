@@ -62,11 +62,6 @@ const [
   import('../util/storage-notice.js' + ESC_V),
 ]);
 
-const SWATCH_COLORS = [
-  '#C4922A', '#7B5EA7', '#2D6A4F', '#5C7A5A', '#8B1A1A',
-  '#4A3F6B', '#C97BA8', '#C4580A', '#B8860B', '#6B3A2A',
-];
-
 // Runs a sub-panel mounter and contains a throw to that one panel instead of
 // letting it propagate to main().catch, which replaces the entire page with
 // the failure screen. targetEl is the element (or
@@ -106,6 +101,8 @@ export function mountEditor(root, ctx) {
     // Do not add this back as a static import; see the note at the top of
     // this file on why cross-module references travel through ctx.
     rankSuggestions,
+    // The preset colours, from data/swatches.js.
+    ACCENT_SWATCHES = [], ITEM_COLOR_PRESETS = [], ITEM_GLOW_PRESETS = [],
   } = ctx;
   const tmpl = templates[state.get().templateId];
 
@@ -537,7 +534,7 @@ export function mountEditor(root, ctx) {
   }
 
   // --- Swatches ---
-  for (const color of SWATCH_COLORS) {
+  for (const color of ACCENT_SWATCHES) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'swatch';
@@ -562,6 +559,7 @@ export function mountEditor(root, ctx) {
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
     FACTORY_PRESETS, esc, preserveScroll, layoutOps, isWellFormedLayout,
+    ITEM_COLOR_PRESETS, ITEM_GLOW_PRESETS,
   };
   // Each mounter used to run back to back with no try/catch, so one throw
   // propagated to main().catch and replaced the whole page with the failure

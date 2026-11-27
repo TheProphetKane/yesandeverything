@@ -22,7 +22,8 @@ const ZONE_ALIGN_LABELS = {
 };
 
 export function mountLayoutDesigner(root, state, deps) {
-  const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone, esc, preserveScroll, layoutOps } = deps;
+  const { ITEM_LABELS, ALL_ITEM_KEYS, ZONE_LAYOUT_MODES, ZONE_WIDTHS, makeZone, esc, preserveScroll, layoutOps,
+    ITEM_COLOR_PRESETS = [], ITEM_GLOW_PRESETS = [] } = deps;
   let dragPayload = null;
   let lastLayout = null;
   let lastCustom = null;
@@ -440,11 +441,9 @@ export function mountLayoutDesigner(root, state, deps) {
 
   // v0.15: color/glow picker popover. Opens above the clicked dot, has
   // preset swatches + a native color wheel + a "Clear" action. Field is
-  // either 'color' or 'glow'.
-  const PRESET_COLORS = [
-    '#E8A03A', '#F5C842', '#C84A1A', '#8B4A2A',
-    '#4A7858', '#6B9579', '#EFDDB0', '#000000',
-  ];
+  // either 'color' or 'glow'. The two fields offer different swatches, both
+  // from data/swatches.js: a colour is text on the parchment and has to stay
+  // readable, while a glow is a halo and may be light.
 
   function openColorPopover(anchorBtn, field, zoneId, idx) {
     // v0.15.3: popover appends to document.body (not the chip) so it escapes
@@ -457,6 +456,7 @@ export function mountLayoutDesigner(root, state, deps) {
     if (!z) return;
     const cur = z.zone.items[idx];
     const currentVal = (cur && typeof cur === 'object') ? (cur[field] || '') : '';
+    const presets = field === 'glow' ? ITEM_GLOW_PRESETS : ITEM_COLOR_PRESETS;
 
     const pop = document.createElement('div');
     pop.className = 'layout-color-popover';
@@ -464,7 +464,7 @@ export function mountLayoutDesigner(root, state, deps) {
       <button type="button" class="layout-color-popover-close" data-color-close aria-label="Close">×</button>
       <div class="layout-color-popover-title">${field === 'glow' ? 'Glow' : 'Color'}</div>
       <div class="layout-color-popover-swatches">
-        ${PRESET_COLORS.map(c => `
+        ${presets.map(c => `
           <button type="button" class="layout-color-swatch${currentVal.toLowerCase() === c.toLowerCase() ? ' is-selected' : ''}"
                   data-color-val="${c}" style="background:${c}" title="${c}">&nbsp;</button>
         `).join('')}
@@ -472,7 +472,7 @@ export function mountLayoutDesigner(root, state, deps) {
       <div class="layout-color-popover-custom">
         <label>
           <span>Custom</span>
-          <input type="color" value="${currentVal || '#E8A03A'}" data-color-custom />
+          <input type="color" value="${currentVal || presets[0] || '#000000'}" data-color-custom />
         </label>
         <button type="button" class="layout-color-clear" data-color-clear>Clear (use default)</button>
       </div>
