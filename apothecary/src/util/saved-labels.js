@@ -17,8 +17,7 @@ export function configure({ notifyStorageError: fn } = {}) {
   if (typeof fn === 'function') notifyStorageError = fn;
 }
 
-// Backlog B02. A stored library
-// that will not parse, or that holds an entry without a string id and an
+// A stored library that will not parse, or that holds an entry without a string id and an
 // object state, is copied whole to this key before anything else happens to
 // it. read() then returns only the usable entries, and write() refuses to
 // replace an unreadable library until that copy is safely stored, because

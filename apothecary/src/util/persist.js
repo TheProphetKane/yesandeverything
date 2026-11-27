@@ -4,7 +4,7 @@
 // Debounced save so we don't write on every keystroke.
 
 const STORAGE_KEY = 'yesandapothecary.v1.state';
-// Backlog B04: an autosave entry that will not parse is copied here before
+// An autosave entry that will not parse is copied here before
 // the editor starts fresh, because the next debounced save writes over the
 // main key. One copy, the latest unreadable one; the status line offers it
 // as a download.
@@ -51,8 +51,7 @@ export function loadState() {
   } catch (err) {
     // A corrupted or unparseable entry silently discarded the user's
     // autosaved label with no on-screen warning before this call. Surface it;
-    // the app still boots clean, with the raw string copied aside first
-    // (backlog B04).
+    // the app still boots clean, with the raw string copied aside first.
     const kept = raw ? backupUnreadable(raw) : false;
     notifyStorageError('state', err, 'read', kept ? STATE_BACKUP_KEY : null);
     return null;

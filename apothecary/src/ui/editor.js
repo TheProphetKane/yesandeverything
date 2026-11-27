@@ -95,6 +95,7 @@ export function mountEditor(root, ctx) {
     // v0.11.1: forwarded from main.js's versioned dynamic imports.
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
+    isWellFormedLayout,
     // v0.14: illustration library + auto-match.
     illustrations = [], herbAutoMatch = {}, herbCategoryFallback = {},
     // v1.0.4: PNG export of the print-stage (lazy-loads html2canvas).
@@ -560,7 +561,7 @@ export function mountEditor(root, ctx) {
   const deps = {
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
-    FACTORY_PRESETS, esc, preserveScroll, layoutOps,
+    FACTORY_PRESETS, esc, preserveScroll, layoutOps, isWellFormedLayout,
   };
   // Each mounter used to run back to back with no try/catch, so one throw
   // propagated to main().catch and replaced the whole page with the failure

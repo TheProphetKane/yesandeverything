@@ -28,7 +28,7 @@
 // nothing on legitimate state and only rejects a tampered or hand-edited one.
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
-// Backlog B06: normalizeState used to check layout.front and nothing else, so
+// normalizeState used to check layout.front and nothing else, so
 // a back side that was not an array, a zone with no items array, or an item
 // that was neither a key nor a { key } object reached render.js and the
 // layout designer, which both assume the shape. zoneHtml also interpolates a
@@ -315,14 +315,14 @@ export function normalizeState(initial, ctx) {
   if (!initial.layout || !Array.isArray(initial.layout.front)) {
     initial.layout = migrateLayoutFrom(initial, defaults, ctx);
   } else if (!isWellFormedLayout(initial.layout)) {
-    // Backlog B06: a v0.9+ layout whose back side or a zone is malformed
+    // A v0.9+ layout whose back side or a zone is malformed
     // cannot be repaired item by item, so it takes the default layout.
     initial.layout = ctx.defaultLayout(initial.templateId, templates, defaultTemplateId);
   } else {
     // Already on v0.9 shape - just ensure hidden array exists.
     if (!Array.isArray(initial.layout.hidden)) initial.layout.hidden = [];
   }
-  // Backlog B06: an entry that is neither a key nor a { key } object is
+  // An entry that is neither a key nor a { key } object is
   // dropped from the hidden rail; the zone loop below does the same in zones.
   initial.layout.hidden = initial.layout.hidden.filter(isItemEntry);
   delete initial.placement;
@@ -371,7 +371,7 @@ export function normalizeState(initial, ctx) {
   // A field that fails it is dropped rather than defaulted: render.js's
   // instanceColor/instanceGlow already fall back to state.accent / no glow
   // when the field is absent, which is the correct per-item default.
-  // Backlog B06: the same rule for the zone fields zoneHtml interpolates.
+  // The same rule for the zone fields zoneHtml interpolates.
   // An align outside the designer's three becomes 'center'; a layoutMode
   // outside ctx.zoneLayoutModes becomes 'stack'; a width that is not a
   // number from 1 to 100 becomes 100. Each replacement is what render.js

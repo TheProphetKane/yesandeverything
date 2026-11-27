@@ -7,7 +7,7 @@
 // the editor builds the link from what this returns.
 
 const MESSAGES = {
-  read:  'Could not read your saved data. It may be corrupted; starting fresh.',
+  read:  'Could not read your saved data, and no copy could be kept. Starting fresh.',
   clear: 'Could not clear the stored label. The old one may come back on reload.',
   write: 'Storage is full. Changes may not save. Delete unused saved labels.',
 };

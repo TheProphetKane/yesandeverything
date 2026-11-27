@@ -93,7 +93,7 @@ export const PRINT_STAGE_RULES = `
   }
 `;
 
-// The one line a person sees when an export fails (backlog B05). It used to be
+// The one line a person sees when an export fails. It used to be
 // "See console for details", which told nobody without a developer console
 // what went wrong or what to try. The full error still goes to the console.
 // The common causes get their own wording; anything else names the browser's

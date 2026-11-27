@@ -6,8 +6,7 @@
 // on every state change, but the rebuild waits for the next animation frame, so
 // a print has to flush it first. main.js wraps this call with flushPrintStage()
 // for the Print button, flushes again in a capture-phase Ctrl/Cmd+P listener,
-// and flushes on window beforeprint for a print started from the browser menu
-// (backlog B03).
+// and flushes on window beforeprint for a print started from the browser menu.
 
 export function printLabel() {
   window.print();

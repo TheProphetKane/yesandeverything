@@ -53,7 +53,7 @@ export function mountSavedLabels(root, state, ctx) {
       listEl.innerHTML = `<li class="saved-empty">No saved labels yet. Save the current label above.</li>`;
       return;
     }
-    // Backlog B02: the id lands in an attribute, so it is escaped like the
+    // The id lands in an attribute, so it is escaped like the
     // name. read() already keeps only entries with a string id; this holds
     // even if an id arrives with a quote in it.
     listEl.innerHTML = entries.map(e => `

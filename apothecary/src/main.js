@@ -126,7 +126,7 @@ async function main() {
     // before it ever reaches render.js's unescaped src="..." attributes.
     symbolIds: new Set([...Object.keys(SYMBOL_LABELS), ...Object.keys(SYMBOL_ALIASES), 'none']),
     illustrationKeywords: new Set(illustrations.map(i => i.keyword)),
-    // Backlog B06: the zone layout modes the renderer styles, so a tampered
+    // The zone layout modes the renderer styles, so a tampered
     // layoutMode never reaches zoneHtml's class attribute.
     zoneLayoutModes: ZONE_LAYOUT_MODES,
   };
@@ -140,7 +140,7 @@ async function main() {
   // mountEditor, below. loadState runs first, so a boot-time read failure,
   // the one that matters most, used to fire into nothing and the person never
   // saw the warning. Hold what fires before the editor mounts and replay it
-  // after (found while proving backlog B04 in the browser).
+  // after.
   const earlyStorageErrors = [];
   const holdStorageError = (e) => earlyStorageErrors.push(e.detail);
   document.addEventListener('yaa:storage-error', holdStorageError);
@@ -173,6 +173,7 @@ async function main() {
     // modules. Keeps the v0.8.0 cache-bust contract intact.
     ITEM_LABELS, ALL_ITEM_KEYS, BORDER_STYLES, BORDER_STYLE_LABELS,
     makeZone, ZONE_LAYOUT_MODES, ZONE_WIDTHS, defaultLayout, DEFAULT_SECTION_TITLES,
+    isWellFormedLayout: migrateMod.isWellFormedLayout,
     // v0.14: illustration library + auto-match table for the picker UI.
     illustrations, herbAutoMatch, herbCategoryFallback,
     // v1.1.0: PNG export handler, forwarded per the cache-bust contract.
@@ -302,7 +303,7 @@ async function main() {
       flushPrintStage();
     }
   }, true);
-  // Backlog B03: a print started from the browser menu, or any other path
+  // A print started from the browser menu, or any other path
   // that skips both the Print button and Ctrl/Cmd+P, still fires
   // beforeprint before the page is laid out for paper. Flushing there means
   // every print reads the stage the current state built. A flush with

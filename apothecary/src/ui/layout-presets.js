@@ -8,7 +8,7 @@
 // through ctx/deps in this app).
 
 export function mountPresets({ select, saveBtn, actions }, state, deps) {
-  const { esc, FACTORY_PRESETS, DEFAULT_SECTION_TITLES } = deps;
+  const { esc, FACTORY_PRESETS, DEFAULT_SECTION_TITLES, isWellFormedLayout } = deps;
   let lastPresets = null;
   function allPresets() {
     return [
@@ -46,7 +46,21 @@ export function mountPresets({ select, saveBtn, actions }, state, deps) {
     const presets = allPresets();
     const p = presets.find(x => x.id === select.value);
     if (!p) return;
-    const layout = typeof p.layout === 'function' ? p.layout() : structuredClone(p.layout);
+    let layout;
+    try {
+      layout = typeof p.layout === 'function' ? p.layout() : structuredClone(p.layout);
+    } catch (err) {
+      layout = null;
+    }
+    // A saved preset can be hand-edited in storage. Its layout goes straight
+    // into state.set, so a malformed one is refused here and the select goes
+    // back to its placeholder instead of breaking the renderer.
+    if (typeof isWellFormedLayout === 'function' && !isWellFormedLayout(layout)) {
+      console.warn('Layout preset "' + p.id + '" is malformed and was not loaded.');
+      select.value = '';
+      paint();
+      return;
+    }
     // A preset snapshots layout + sectionTitles only, not the custom-section
     // bodies. If a custom-XXXX section was deleted since the preset was saved,
     // its key still lingers in the snapshot and would reference a section that
