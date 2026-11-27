@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#070b17">
-<meta name="gg-build" content="2026-11-26-2135">
+<meta name="gg-build" content="2026-11-26-2150">
 <meta name="description" content="Golden&rsquo;s Guzzlers, the family's annual blind beer tasting: thumbs votes, reveals, standings and awards.">
 <title>Golden&rsquo;s Guzzlers · Beer Tasting Night</title>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -176,6 +176,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .spark polyline { fill: none; stroke: var(--gold-2); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .spark .mid { stroke: rgba(255, 255, 255, .2); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 .spark-key { margin: 0 0 6px; font-size: .72rem; color: var(--muted); }
+.taster h4 { margin: 14px 0 4px; padding-top: 8px; border-top: 1px solid rgba(255, 214, 90, .2); font-family: var(--font-data); font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-1); }
+.taster-beers { width: 100%; margin-top: 6px; border-collapse: collapse; font-size: .82rem; }
+.taster-beers th { padding: 2px 4px; font-family: var(--font-data); font-size: .66rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-align: left; color: var(--muted); }
+.taster-beers td { padding: 4px; border-top: 1px solid rgba(255, 255, 255, .07); vertical-align: top; }
+.taster-beers td i { display: block; font-style: normal; font-size: .74rem; color: var(--muted); }
+.taster-beers td.n { font-family: var(--font-data); white-space: nowrap; color: var(--gold-1); }
 .taster-pick b { color: var(--ink); }
 .fam-bars { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 5px; }
 .fam-bars li { display: grid; grid-template-columns: minmax(0, 10em) 1fr auto; gap: 8px; align-items: center; font-size: .8rem; color: var(--muted); }
@@ -1785,64 +1791,75 @@ Not quite beer|Hard Kombucha|kombucha
     let tableSum = 0, tableN = 0;
     rows.forEach(h => ROSTER.forEach(m => { const v = h.p.votes[m]; if (v) { tableSum += val(v); tableN++; } }));
     const tableAvg = tableN ? tableSum / tableN : 0;
+    const nightRows = rows.filter(h => h.year === S.year);
+    const nightPoints = nightRows.reduce((s, h) => s + beerPoints(h.t), 0);
     el.innerHTML = ROSTER.map(n => {
       const mine = rows.filter(h => h.p.votes[n]).map(h => ({ h, v: h.p.votes[n], pts: val(h.p.votes[n]) }));
       const all = mine.length;
-      if (!all) return `<article class="taster"><h3>${esc(n)}</h3><p class="taster-line">No votes yet.</p></article>`;
-      const share = k => Math.round(100 * mine.filter(x => x.v === k).length / all) + '%';
-      const lines = [];
-      // How generous, against everyone at the table.
-      const given = avg(mine);
-      const gen = tableAvg ? Math.round(100 * (given - tableAvg) / tableAvg) : 0;
-      lines.push(`Gives <b>${pctOf(given)}</b> a beer, the table ${pctOf(tableAvg)}: ${gen === 0 ? 'right in line with the table' : Math.abs(gen) + '% ' + (gen > 0 ? 'more generous' : 'stingier')}.`);
-      // Tonight, first half against second half, and a line of their last four votes at each pour.
+      const share = k => (all ? Math.round(100 * mine.filter(x => x.v === k).length / all) : 0) + '%';
       const tonight = mine.filter(x => x.h.year === S.year);
+
+      // The night: thirds, the straight-line trend, and the types of beer that moved between the halves.
+      const night = [];
       let spark = '';
-      if (tonight.length >= 4) {
-        const half = Math.ceil(tonight.length / 2);
-        const early = avg(tonight.slice(0, half)), late = avg(tonight.slice(half));
-        const diff = Math.round(100 * (late - early));
-        const turn = diff >= 12 ? 'Easier to please as the night went on' : diff <= -12 ? 'Harder to please as the night went on' : 'Steady all night';
-        lines.push(`<b>${turn}</b>: ${pctOf(early)} a beer over the first ${half} pours, ${pctOf(late)} over the last ${tonight.length - half}.`);
+      if (tonight.length >= 6) {
+        const third = Math.ceil(tonight.length / 3);
+        const [early, middle, late] = [tonight.slice(0, third), tonight.slice(third, 2 * third), tonight.slice(2 * third)].map(avg);
+        const ys = tonight.map(x => x.pts), mx = (ys.length - 1) / 2, my = ys.reduce((a, b) => a + b, 0) / ys.length;
+        let num = 0, den = 0;
+        ys.forEach((y, i) => { num += (i - mx) * (y - my); den += (i - mx) * (i - mx); });
+        const per10 = den ? Math.round(1000 * num / den) : 0;
+        const change = Math.round(100 * (late - early));
+        const verdict = change >= 12 && per10 > 0 ? 'Trended up over the night' : change <= -12 && per10 < 0 ? 'Trended down over the night' : 'Even over the night';
+        night.push(`<b>${verdict}</b>. Early ${pctOf(early)}, middle ${pctOf(middle)}, late ${pctOf(late)}: about ${per10 > 0 ? '+' : ''}${per10} points every ten pours.`);
         const roll = tonight.map((x, i) => avg(tonight.slice(Math.max(0, i - 3), i + 1)));
         const step = roll.length > 1 ? 100 / (roll.length - 1) : 100;
         spark = `<svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true"><line class="mid" x1="0" y1="17" x2="100" y2="17"/><polyline points="${roll.map((v, i) => (i * step).toFixed(1) + ',' + (31 - 28 * v).toFixed(1)).join(' ')}"/></svg><p class="spark-key">Their last four votes at each pour, first pour on the left. The dashed line is half.</p>`;
+        const half = Math.ceil(tonight.length / 2);
+        const byFam = new Map();
+        tonight.forEach((x, i) => {
+          const f = familyOf(x.h.p.style);
+          if (!f || f === 'Other') return;
+          const e = byFam.get(f) || { f, a: [], b: [] };
+          (i < half ? e.a : e.b).push(x);
+          byFam.set(f, e);
+        });
+        const moves = [...byFam.values()].filter(x => x.a.length && x.b.length).map(x => ({ f: x.f, a: avg(x.a), b: avg(x.b), na: x.a.length, nb: x.b.length }));
+        const warmed = moves.filter(x => x.b - x.a >= 0.25).sort((p, q) => (q.b - q.a) - (p.b - p.a)).slice(0, 2);
+        const cooled = moves.filter(x => x.b - x.a <= -0.25).sort((p, q) => (p.b - p.a) - (q.b - q.a)).slice(0, 2);
+        warmed.forEach(x => night.push(`Warmed up to <b>${esc(x.f)}</b>: ${pctOf(x.a)} over ${x.na} in the first half, ${pctOf(x.b)} over ${x.nb} in the second.`));
+        cooled.forEach(x => night.push(`Cooled on <b>${esc(x.f)}</b>: ${pctOf(x.a)} over ${x.na} in the first half, ${pctOf(x.b)} over ${x.nb} in the second.`));
+        if (moves.length && !warmed.length && !cooled.length) night.push('No type of beer swung a quarter or more from the first half of the night to the second.');
+        if (!moves.length) night.push('No type of beer came up in both halves of the night yet.');
+      } else if (tonight.length) {
+        night.push('Six votes tonight and the night gets a trend.');
       }
-      // Who they vote like: how close their points sit to each other person's on the same beers.
+
+      // As a taster.
+      const taster = [];
+      const given = avg(mine);
+      const gen = tableAvg ? Math.round(100 * (given - tableAvg) / tableAvg) : 0;
+      if (all) taster.push(`Gives <b>${pctOf(given)}</b> a beer, the table ${pctOf(tableAvg)}: ${gen === 0 ? 'right in line with the table' : Math.abs(gen) + '% ' + (gen > 0 ? 'more generous' : 'stingier')}.`);
       const sims = ROSTER.filter(m => m !== n).map(m => {
         const both = rows.filter(h => h.p.votes[n] && h.p.votes[m]);
         if (!both.length) return null;
         const d = both.reduce((s, h) => s + Math.abs(val(h.p.votes[n]) - val(h.p.votes[m])), 0) / both.length;
         return { m, agree: 1 - d };
       }).filter(Boolean).sort((a, b) => b.agree - a.agree);
-      if (sims.length >= 2) lines.push(`Votes most like <b>${esc(sims[0].m)}</b> (${pctOf(sims[0].agree)} in step), least like <b>${esc(sims[sims.length - 1].m)}</b> (${pctOf(sims[sims.length - 1].agree)}).`);
-      // Against the table: the thumbs up the rest disagreed with most, and the thumbs down.
+      if (sims.length >= 2) taster.push(`Votes most like <b>${esc(sims[0].m)}</b> (${pctOf(sims[0].agree)} in step), least like <b>${esc(sims[sims.length - 1].m)}</b> (${pctOf(sims[sims.length - 1].agree)}).`);
       const others = h => { const vs = ROSTER.filter(m => m !== n && h.p.votes[m]).map(m => val(h.p.votes[m])); return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null; };
       const against = mine.map(x => ({ ...x, o: others(x.h) })).filter(x => x.o !== null);
       const gem = against.filter(x => x.v === 'up').sort((a, b) => a.o - b.o)[0];
       const lone = against.filter(x => x.v === 'down').sort((a, b) => b.o - a.o)[0];
-      if (gem && gem.o <= 0.5) lines.push(`Loved it when the table didn't: <b>${esc(gem.h.p.name)}</b>, a thumbs up where the rest gave ${pctOf(gem.o)}.`);
-      if (lone && lone.o >= 0.5) lines.push(`Not for them when the table loved it: <b>${esc(lone.h.p.name)}</b>, a thumbs down where the rest gave ${pctOf(lone.o)}.`);
-      // As a bringer.
-      const brought = rows.filter(h => h.p.provider === n);
-      if (brought.length) {
-        const sc = h => beerPoints(h.t);
-        const bs = brought.slice().sort((a, b) => sc(b) - sc(a));
-        const bAvg = brought.reduce((s, h) => s + sc(h), 0) / brought.length;
-        lines.push(`Brought ${brought.length} ${brought.length === 1 ? 'beer' : 'beers'}, ${ptsText(bAvg)} of 6 points a beer. Best: <b>${esc(bs[0].p.name)}</b>, ${ptsText(sc(bs[0]))}${bs.length > 1 ? `. Least liked: <b>${esc(bs[bs.length - 1].p.name)}</b>, ${ptsText(sc(bs[bs.length - 1]))}` : ''}.`);
-      }
-      // Their own beers, tasted blind.
+      if (gem && gem.o <= 0.5) taster.push(`Loved it when the table didn't: <b>${esc(gem.h.p.name)}</b>, a thumbs up where the rest gave ${pctOf(gem.o)}.`);
+      if (lone && lone.o >= 0.5) taster.push(`Not for them when the table loved it: <b>${esc(lone.h.p.name)}</b>, a thumbs down where the rest gave ${pctOf(lone.o)}.`);
       const own = mine.filter(x => x.h.p.provider === n), rest = mine.filter(x => x.h.p.provider && x.h.p.provider !== n);
-      if (own.length && rest.length) lines.push(`Their own beers, tasted blind: gave them <b>${pctOf(avg(own))}</b>, against ${pctOf(avg(rest))} for everyone else's.`);
-      // Guessing who brought it.
+      if (own.length && rest.length) taster.push(`Their own beers, tasted blind: gave them <b>${pctOf(avg(own))}</b>, against ${pctOf(avg(rest))} for everyone else's.`);
       const guessed = rows.filter(h => h.p.provider && h.p.guesses && h.p.guesses[n]);
-      if (guessed.length) lines.push(`Guessed who brought it: ${guessed.filter(h => h.p.guesses[n] === h.p.provider).length} of ${guessed.length} right.`);
-      // Runs tonight.
+      if (guessed.length) taster.push(`Guessed who brought it: ${guessed.filter(h => h.p.guesses[n] === h.p.provider).length} of ${guessed.length} right.`);
       const run = k => { let top = 0, cur = 0; tonight.forEach(x => { cur = x.v === k ? cur + 1 : 0; top = Math.max(top, cur); }); return top; };
-      const upRun = run('up'), downRun = run('down');
-      const runs = [upRun > 1 ? `${upRun} thumbs up in a row` : '', downRun > 1 ? `${downRun} thumbs down in a row` : ''].filter(Boolean);
-      if (runs.length) lines.push(`Longest ${runs.length > 1 ? 'runs' : 'run'} tonight: ${runs.join(', ')}.`);
-      // Types of beer: liked and disliked, from types with two beers or more when there are two.
+      const runs = [run('up') > 1 ? `${run('up')} thumbs up in a row` : '', run('down') > 1 ? `${run('down')} thumbs down in a row` : ''].filter(Boolean);
+      if (runs.length) taster.push(`Longest ${runs.length > 1 ? 'runs' : 'run'} tonight: ${runs.join(', ')}.`);
       const fam = new Map();
       mine.forEach(x => {
         const f = familyOf(x.h.p.style);
@@ -1857,12 +1874,33 @@ Not quite beer|Hard Kombucha|kombucha
       const pool = solid.length >= 2 ? solid : fams.filter(f => f.f !== 'Other');
       const love = pool[0], hate = pool.length > 1 ? pool[pool.length - 1] : null;
       const typeLine = (label, f) => `<p class="taster-pick">${label} <b>${esc(f.f)}</b> · ${pctOf(f.avg)} over ${f.n} ${f.n === 1 ? 'beer' : 'beers'}</p>`;
+
+      // Their beers: every beer they brought, with the numbers on what it was worth to the table.
+      const brought = rows.filter(h => h.p.provider === n).sort((a, b) => (beerPoints(b.t) - beerPoints(a.t)) || (a.p.n - b.p.n));
+      let beers = '<p class="taster-line">No beers named to them yet.</p>';
+      if (brought.length) {
+        const total = brought.reduce((s, h) => s + beerPoints(h.t), 0);
+        const top10 = brought.filter(h => h.rank <= 10).length;
+        const mineTonight = brought.filter(h => h.year === S.year);
+        const beerShare = nightRows.length ? Math.round(100 * mineTonight.length / nightRows.length) : 0;
+        const pointShare = nightPoints ? Math.round(100 * mineTonight.reduce((s, h) => s + beerPoints(h.t), 0) / nightPoints) : 0;
+        const ups = brought.reduce((s, h) => s + h.t.u, 0), sides = brought.reduce((s, h) => s + h.t.s, 0), downs = brought.reduce((s, h) => s + h.t.d, 0);
+        beers = `<p class="taster-line">${brought.length} ${brought.length === 1 ? 'beer' : 'beers'}, <b>${ptsText(total)} points</b> in all, <b>${ptsText(total / brought.length)} of 6</b> a beer. ${top10} in the top ten.</p>
+          <p class="taster-line">${beerShare}% of tonight's beers earned <b>${pointShare}%</b> of tonight's points${pointShare > beerShare ? ', more than their share' : pointShare < beerShare ? ', less than their share' : ', right at their share'}. Their beers drew ${ups} thumbs up, ${sides} sideways and ${downs} thumbs down.</p>
+          <table class="taster-beers"><thead><tr><th>Place</th><th>Beer</th><th>Points</th><th>Up, side, down</th></tr></thead><tbody>${brought.map(h => `<tr><td class="n">${h.tie ? 'T' : ''}${h.rank}</td><td>${esc(h.p.name)}${h.p.style ? `<i>${esc(h.p.style)}</i>` : ''}</td><td class="n">${ptsText(beerPoints(h.t))}</td><td class="n">${h.t.u}, ${h.t.s}, ${h.t.d}</td></tr>`).join('')}</tbody></table>`;
+      }
+
       return `<article class="taster"><h3>${esc(n)}<i>${all} ${all === 1 ? 'vote' : 'votes'}</i></h3>
         <p class="taster-thumbs"><span class="u">${THUMB}${share('up')}</span><span class="s">${THUMB}${share('side')}</span><span class="d">${THUMB}${share('down')}</span></p>
-        ${lines.map((l, i) => `<p class="taster-line">${l}</p>${i === 1 && spark ? spark : ''}`).join('')}
+        <h4>The night</h4>
+        ${night.map((l, i) => `<p class="taster-line">${l}</p>${i === 0 && spark ? spark : ''}`).join('') || '<p class="taster-line">No votes tonight yet.</p>'}
+        <h4>As a taster</h4>
+        ${taster.map(l => `<p class="taster-line">${l}</p>`).join('')}
         ${love ? typeLine('Loves', love) : ''}
         ${hate && love && hate.avg < love.avg ? typeLine('Not for them:', hate) : ''}
         ${fams.length ? `<ul class="fam-bars">${fams.map(f => `<li><span>${esc(f.f)}</span><i style="--w:${Math.round(f.avg * 100)}%"></i><b>${Math.round(f.avg * 100)}%</b></li>`).join('')}</ul>` : ''}
+        <h4>Their beers</h4>
+        ${beers}
       </article>`;
     }).join('');
   }
