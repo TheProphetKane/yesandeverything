@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#070b17">
-<meta name="gg-build" content="2026-11-26-1812">
+<meta name="gg-build" content="2026-11-26-2010">
 <meta name="description" content="Golden&rsquo;s Guzzlers, the family's annual blind beer tasting: thumbs votes, reveals, standings and awards.">
 <title>Golden&rsquo;s Guzzlers · Beer Tasting Night</title>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -759,7 +759,7 @@ a.btn-ghost { display: inline-block; text-decoration: none; }
 
     <section class="card" id="board" aria-labelledby="board-h">
       <div class="sec-head"><svg class="mini-cap" viewBox="0 0 100 100" aria-hidden="true"><use href="#cap"/></svg><h2 id="board-h" class="gold-text">The standings</h2><span class="rule"></span><button type="button" class="btn-ghost sm" data-act="copy" aria-label="Copy the standings">Copy</button></div>
-      <p class="sec-sub">Ranked by thumbs up, the would-drink-again vote, then by the fewest thumbs down. Tap a beer to see every vote.</p>
+      <p class="sec-sub">Ranked by points: a thumbs up is 1, sideways is half, a thumbs down is 0. Tap a beer to see every vote.</p>
       <ol class="board" id="board-list"></ol>
     </section>
   </div>
@@ -849,6 +849,8 @@ a.btn-ghost { display: inline-block; text-decoration: none; }
   const TV = new URLSearchParams(location.search).has('tv');
   // A set is two beers or more; the set awards average each bringer's beers.
   const SET_MIN = 2;
+  // Each set gets this many average beers of the night mixed in, so a short set has to be more convincing.
+  const SET_PRIOR = 2;
   // Off for the 2026 night: one tablet enters every vote, so every row takes a vote from any phone.
   const SECRET_BALLOTS = false;
   const NAME = 'Golden’s Guzzlers';
@@ -1098,13 +1100,17 @@ Not quite beer|Hard Kombucha|kombucha
     return /\b(lager|pils|pilsner|pilsener|helles|bock|marzen|oktoberfest|dunkel|schwarzbier|kellerbier|zwickelbier)\b/.test(k);
   }
   function ranked() { return rankedOf(V()); }
+  // Points rank the beers (Kane, 2026-11-26): a thumbs up is 1, sideways is half, a thumbs down is 0.
+  // Equal points share a place; within it, more thumbs up are listed first.
+  function beerPoints(t) { return t.u + t.s / 2; }
+  function ptsText(n) { return String(Math.round(n * 10) / 10); }
   function rankedOf(board) {
-    const list = board.pours.filter(p => p.revealed).map(p => ({ p, t: tally(p) }));
-    list.sort((a, b) => (b.t.u - a.t.u) || (a.t.d - b.t.d) || (a.p.n - b.p.n));
+    const list = board.pours.filter(p => p.revealed).map(p => { const t = tally(p); return { p, t, score: beerPoints(t) }; });
+    list.sort((a, b) => (b.score - a.score) || (b.t.u - a.t.u) || (a.p.n - b.p.n));
     let rank = 0;
     list.forEach((x, i) => {
       const prev = list[i - 1];
-      if (!prev || prev.t.u !== x.t.u || prev.t.d !== x.t.d) rank = i + 1;
+      if (!prev || prev.score !== x.score) rank = i + 1;
       x.rank = rank;
     });
     list.forEach(x => { x.tie = list.some(y => y !== x && y.rank === x.rank); });
@@ -1494,7 +1500,7 @@ Not quite beer|Hard Kombucha|kombucha
     const p = x.p, t = x.t, open = UI.open === p.id, editing = UI.editing === p.id && UI.draft;
     const lager = isLager(p.style) ? ' <em class="tag">lager</em>' : '';
     return `<li class="row${x.rank === 1 ? ' top' : ''}${UI.flash === p.id ? ' flash' : ''}" data-pid="${p.id}">
-      <button type="button" class="row-main${p.photo ? ' pic' : ''}" data-act="toggle-row" data-pid="${p.id}" aria-expanded="${open}" aria-label="${x.tie ? 'Tied for ' : 'Rank '}${x.rank}: ${esc(p.name)}, ${t.u} of 6 thumbs up">
+      <button type="button" class="row-main${p.photo ? ' pic' : ''}" data-act="toggle-row" data-pid="${p.id}" aria-expanded="${open}" aria-label="${x.tie ? 'Tied for ' : 'Rank '}${x.rank}: ${esc(p.name)}, ${ptsText(x.score)} of 6 points">
         <span class="rank r${Math.min(x.rank, 4)}">${x.rank === 1 ? CROWN : ''}<b>${x.tie ? 'T' : ''}${x.rank}</b></span>
         ${p.photo ? `<img class="thumb" src="${photoURL(p)}" alt="" loading="lazy">` : ''}
         <span class="info">
@@ -1503,7 +1509,7 @@ Not quite beer|Hard Kombucha|kombucha
           <span class="meta2">Pour ${p.n} · brought by ${esc(p.provider || '?')}</span>
           ${tallyMiniHTML(t)}
         </span>
-        <span class="score">${glassSVG(t.u / 6)}<b>${t.u}<i>/6</i></b></span>
+        <span class="score">${glassSVG(x.score / 6)}<b>${ptsText(x.score)}<i>/6</i></b></span>
       </button>
       ${open ? `<div class="row-detail">${editing ? editorHTML(UI.draft) : detailHTML(p)}</div>` : ''}
     </li>`;
@@ -1562,13 +1568,23 @@ Not quite beer|Hard Kombucha|kombucha
     // compete evenly: thumbs up first, then fewer thumbs down, the way the board ranks a beer. The
     // split is the smaller side, up or down, so three up and three down is the widest split. A set
     // is two beers or more, and best and worst need two sets to compare.
-    const sets = ROSTER.map(n => ({ n, beers: 0, u: 0, d: 0, split: 0 }));
-    list.forEach(x => { const c = sets.find(c => c.n === x.p.provider); if (c) { c.beers++; c.u += x.t.u; c.d += x.t.d; c.split += Math.min(x.t.u, x.t.d); } });
+    const sets = ROSTER.map(n => ({ n, beers: 0, u: 0, d: 0, split: 0, pts: 0 }));
+    list.forEach(x => { const c = sets.find(c => c.n === x.p.provider); if (c) { c.beers++; c.u += x.t.u; c.d += x.t.d; c.split += Math.min(x.t.u, x.t.d); c.pts += x.score; } });
+    // Weighed by how many beers each brought (Kane, 2026-11-26): every set gets SET_PRIOR average beers of
+    // the night mixed in, so a short set needs a stronger showing to win or to lose.
+    const counted = sets.filter(c => c.beers);
+    const allBeers = counted.reduce((s, c) => s + c.beers, 0) || 1;
+    const meanPts = counted.reduce((s, c) => s + c.pts, 0) / allBeers;
+    const meanSplit = counted.reduce((s, c) => s + c.split, 0) / allBeers;
+    sets.forEach(c => {
+      c.wPts = (c.pts + SET_PRIOR * meanPts) / (c.beers + SET_PRIOR);
+      c.wSplit = (c.split + SET_PRIOR * meanSplit) / (c.beers + SET_PRIOR);
+    });
     const per = (c, k) => c[k] / c.beers;
     const inSet = c => c.beers >= SET_MIN;
     const full = sets.filter(inSet).length;
-    const shelf = full >= 2 ? best(sets, c => [per(c, 'u'), -per(c, 'd')], inSet) : [];
-    let bottom = full >= 2 ? best(sets, c => [-per(c, 'u'), per(c, 'd')], inSet) : [];
+    const shelf = full >= 2 ? best(sets, c => [c.wPts], inSet) : [];
+    let bottom = full >= 2 ? best(sets, c => [-c.wPts], inSet) : [];
     // When every set ties, nobody is both the best and the worst.
     if (bottom.length && bottom.every(c => shelf.includes(c))) bottom = [];
     return {
@@ -1578,7 +1594,7 @@ Not quite beer|Hard Kombucha|kombucha
       easy: best(people, r => [r.u, -r.d], r => r.u >= 1),
       detective: best(people, r => [r.right, -r.guessed], r => r.right >= 1),
       shelf, bottom,
-      feud: best(sets, c => [per(c, 'split'), per(c, 'u') + per(c, 'd')], c => inSet(c) && c.split > 0)
+      feud: best(sets, c => [c.wSplit, per(c, 'u') + per(c, 'd')], c => inSet(c) && c.split > 0)
     };
   }
 
@@ -1627,7 +1643,7 @@ Not quite beer|Hard Kombucha|kombucha
     const beerSub = x => [x.p.brewery, x.p.provider ? 'brought by ' + x.p.provider : ''].filter(Boolean).map(esc).join(' · ');
 
     const topPour = a.top.length
-      ? `<p class="win gold-text">${esc(joinNames(a.top.map(x => x.p.name)))}</p><p class="win-sub">${a.top.length > 1 ? 'Tied at ' : ''}${a.top[0].t.u} of 6 would drink again${a.top.length === 1 && beerSub(a.top[0]) ? ' · ' + beerSub(a.top[0]) : ''}</p>`
+      ? `<p class="win gold-text">${esc(joinNames(a.top.map(x => x.p.name)))}</p><p class="win-sub">${a.top.length > 1 ? 'Tied at ' : ''}${ptsText(a.top[0].score)} of 6 points${a.top.length === 1 && beerSub(a.top[0]) ? ' · ' + beerSub(a.top[0]) : ''}</p>`
       : waiting('Waiting on the first reveal.');
     const pol = a.pol ? `<p class="win">${esc(a.pol.p.name)}</p><p class="win-sub">${a.pol.t.u} up, ${a.pol.t.d} down. The room split.</p>` : waiting('Nobody has split the room yet.');
     const hard = a.hard ? `<p class="win">${esc(a.hard.p.name)}</p><p class="win-sub">${a.hard.t.d} thumbs down, and every drop finished.</p>` : waiting('No thumbs down yet.');
@@ -1648,18 +1664,20 @@ Not quite beer|Hard Kombucha|kombucha
     const tenth = n => (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '');
     const picked = a.top.filter(x => x.p.provider);
     const pick = a.pick.length
-      ? `<p class="win">${esc(joinNames(a.pick))}</p><p class="win-sub">${picked.length === 1 ? esc(picked[0].p.name) + ', ' + picked[0].t.u + ' of 6 would drink again' : 'Brought the beers tied for the top'}</p>`
+      ? `<p class="win">${esc(joinNames(a.pick))}</p><p class="win-sub">${picked.length === 1 ? esc(picked[0].p.name) + ', ' + ptsText(picked[0].score) + ' of 6 points' : 'Brought the beers tied for the top'}</p>`
       : waiting(a.top.length ? 'Nobody is named on the top beer yet.' : 'Waiting on the first reveal.');
     // A set award shows what it ranked: thumbs up and down per beer, over how many beers.
-    const setWin = arr => `<p class="win">${esc(joinNames(arr.map(c => c.n)))}</p><p class="win-sub">${tenth(arr[0].u / arr[0].beers)} up and ${tenth(arr[0].d / arr[0].beers)} down a beer, over ${arr[0].beers} beers</p>`;
+    const setNames = arr => `<p class="win">${esc(joinNames(arr.map(c => c.n)))}</p>`;
+    const shelfWin = arr => `${setNames(arr)}<p class="win-sub">${tenth(arr[0].pts / arr[0].beers)} points a beer over ${arr[0].beers} beers, ${tenth(arr[0].wPts)} weighed</p>`;
+    const feudWin = arr => `${setNames(arr)}<p class="win-sub">${tenth(arr[0].u / arr[0].beers)} up and ${tenth(arr[0].d / arr[0].beers)} down a beer over ${arr[0].beers} beers</p>`;
     const needSets = 'Waiting until two bringers each have two beers revealed.';
-    const shelf = a.shelf.length ? setWin(a.shelf) : waiting(needSets);
-    const bottom = a.bottom.length ? setWin(a.bottom) : waiting(a.full >= 2 ? 'Every set is tied so far.' : needSets);
-    const feud = a.feud.length ? setWin(a.feud) : waiting(a.full ? 'No set has split the room yet.' : 'Waiting until a bringer has two beers revealed.');
+    const shelf = a.shelf.length ? shelfWin(a.shelf) : waiting(needSets);
+    const bottom = a.bottom.length ? shelfWin(a.bottom) : waiting(a.full >= 2 ? 'Every set is tied so far.' : needSets);
+    const feud = a.feud.length ? feudWin(a.feud) : waiting(a.full ? 'No set has split the room yet.' : 'Waiting until a bringer has two beers revealed.');
 
     $('#awards-body').innerHTML = `<p class="group-label">For the beers</p>
       <div class="awards">
-        ${awardCard('&#127942;', 'Pour of the Night', 'Most thumbs up of the night', topPour, true)}
+        ${awardCard('&#127942;', 'Pour of the Night', 'Most points of the night', topPour, true)}
       </div>
       <div class="awards trio">
         ${awardCard('&#9878;&#65039;', 'Most Polarizing', 'The closest split between up and down', pol)}
@@ -1667,12 +1685,12 @@ Not quite beer|Hard Kombucha|kombucha
         ${awardCard('&#128581;', 'Hard No Champion', 'Most thumbs down', hard)}
       </div>
       <p class="group-label">For the bringers</p>
-      <p class="group-note">The set awards average each bringer's beers, so a small cooler and a big one compete evenly. A set is two beers or more.</p>
+      <p class="group-note">The set awards weigh each bringer's average by how many beers they brought: every set gets two average beers of the night mixed in, so a short set has to be more convincing. A set is two beers or more.</p>
       <div class="awards quad">
         ${awardCard('&#127941;', 'Golden Pick', 'Brought the top-rated beer of the night', pick)}
-        ${awardCard('&#127870;', 'Top Shelf', 'Best rating per beer across their set', shelf)}
-        ${awardCard('&#129354;', 'Family Feud', 'Their set split the table the most, per beer', feud)}
-        ${awardCard('&#128465;&#65039;', 'Bottom Shelf', 'Lowest rating per beer across their set', bottom)}
+        ${awardCard('&#127870;', 'Top Shelf', 'Most points per beer, weighed by how many they brought', shelf)}
+        ${awardCard('&#129354;', 'Family Feud', 'Their set split the table the most, weighed by how many they brought', feud)}
+        ${awardCard('&#128465;&#65039;', 'Bottom Shelf', 'Fewest points per beer, weighed by how many they brought', bottom)}
       </div>
       <p class="group-label">For the table</p>
       <div class="awards trio">
@@ -1834,7 +1852,7 @@ Not quite beer|Hard Kombucha|kombucha
   }
   function standingsText(list) {
     const lines = [NAME + ' ' + (VIEW ? VIEW.year : S.year) + ' standings'];
-    list.forEach(x => lines.push(`${x.tie ? 'T' : ''}${x.rank}. ${x.p.name}${x.p.brewery ? ' (' + x.p.brewery + ')' : ''}: ${x.t.u} of 6 thumbs up${x.p.provider ? ', brought by ' + x.p.provider : ''}`));
+    list.forEach(x => lines.push(`${x.tie ? 'T' : ''}${x.rank}. ${x.p.name}${x.p.brewery ? ' (' + x.p.brewery + ')' : ''}: ${ptsText(x.score)} of 6 points${x.p.provider ? ', brought by ' + x.p.provider : ''}`));
     const a = computeAwards(list);
     if (a.top.length) lines.push('', 'Pour of the night: ' + joinNames(a.top.map(x => x.p.name)));
     if (a.pol) lines.push('Most polarizing: ' + a.pol.p.name);
@@ -1963,7 +1981,7 @@ Not quite beer|Hard Kombucha|kombucha
     return `<button type="button" class="star ban${banned ? ' on' : ''}" data-act="ban" data-name="${esc(p.name)}" data-brewery="${esc(p.brewery || '')}" data-style="${esc(p.style || '')}" aria-pressed="${banned}">${banned ? 'Unban' : '&#9940; Ban'}</button>`;
   }
   function whenLine(h) {
-    return `<span><b>${h.year}</b>: ${h.t.u} of 6 thumbs up, ${h.tie ? 'tied for ' : ''}#${h.rank} of ${h.count}${h.p.provider ? ', brought by ' + esc(h.p.provider) : ''}</span>`;
+    return `<span><b>${h.year}</b>: ${ptsText(beerPoints(h.t))} of 6 points, ${h.tie ? 'tied for ' : ''}#${h.rank} of ${h.count}${h.p.provider ? ', brought by ' + esc(h.p.provider) : ''}</span>`;
   }
   // Fixing a beer from the beer log: its name, brewery, style and who brought it. The votes and the
   // guesses stay as they are. This year's beers are the ones the board can change.
@@ -2197,10 +2215,10 @@ Not quite beer|Hard Kombucha|kombucha
     toast(`Starting the ${y} board.`);
   }
   function downloadAll() {
-    const rows = [['Year', 'Pour', 'Beer', 'Brewery', 'Style', 'Brought by', 'Thumbs up', 'Sideways', 'Thumbs down', 'Place', ...ROSTER.map(n => n + ' vote'), 'Bring back', 'Banned']];
+    const rows = [['Year', 'Pour', 'Beer', 'Brewery', 'Style', 'Brought by', 'Thumbs up', 'Sideways', 'Thumbs down', 'Points', 'Place', ...ROSTER.map(n => n + ' vote'), 'Bring back', 'Banned']];
     history().forEach(h => {
       const p = h.p;
-      rows.push([h.year, p.n, p.name, p.brewery, p.style, p.provider, h.t.u, h.t.s, h.t.d, (h.tie ? 'tied for ' : '') + h.rank + ' of ' + h.count, ...ROSTER.map(n => p.votes[n] || ''), isBack(h.key) ? 'yes' : '', isBanned(h.key) ? 'yes' : '']);
+      rows.push([h.year, p.n, p.name, p.brewery, p.style, p.provider, h.t.u, h.t.s, h.t.d, beerPoints(h.t), (h.tie ? 'tied for ' : '') + h.rank + ' of ' + h.count, ...ROSTER.map(n => p.votes[n] || ''), isBack(h.key) ? 'yes' : '', isBanned(h.key) ? 'yes' : '']);
     });
     const csv = rows.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
     const a = document.createElement('a');
@@ -2602,7 +2620,7 @@ Not quite beer|Hard Kombucha|kombucha
     $('#tv-now').innerHTML = now;
     const shown = list.slice(0, 8);
     $('#tv-board').innerHTML = '<h3 class="tv-h">The standings</h3>' + (shown.length
-      ? `<ol class="tv-list">${shown.map(x => `<li class="${x.rank === 1 ? 'top' : ''}"><span class="tv-rank">${x.tie ? 'T' : ''}${x.rank}</span><span class="tv-pic">${x.p.photo ? `<img class="thumb" src="${photoURL(x.p)}" alt="">` : ''}</span><span class="tv-name">${esc(x.p.name)}<i>${esc(x.p.provider ? 'brought by ' + x.p.provider : (x.p.brewery || ''))}</i></span><b class="tv-score">${x.t.u}<i>/6</i></b></li>`).join('')}</ol>${list.length > 8 ? `<p class="tv-more">and ${list.length - 8} more on the board</p>` : ''}`
+      ? `<ol class="tv-list">${shown.map(x => `<li class="${x.rank === 1 ? 'top' : ''}"><span class="tv-rank">${x.tie ? 'T' : ''}${x.rank}</span><span class="tv-pic">${x.p.photo ? `<img class="thumb" src="${photoURL(x.p)}" alt="">` : ''}</span><span class="tv-name">${esc(x.p.name)}<i>${esc(x.p.provider ? 'brought by ' + x.p.provider : (x.p.brewery || ''))}</i></span><b class="tv-score">${ptsText(x.score)}<i>/6</i></b></li>`).join('')}</ol>${list.length > 8 ? `<p class="tv-more">and ${list.length - 8} more on the board</p>` : ''}`
       : '<p class="tv-sub">The first reveal lands here.</p>');
     const a = computeAwards(list);
     const names = arr => (arr.length ? esc(joinNames(arr.map(c => c.n))) : '&hellip;');
@@ -2717,7 +2735,7 @@ Not quite beer|Hard Kombucha|kombucha
       g.fillText(fit([top.p.brewery, top.p.provider ? 'brought by ' + top.p.provider : ''].filter(Boolean).join(' · ') || 'Brewery not given', tw), tx, y + 176);
       g.font = `400 28px ${BODY}`;
       g.fillStyle = '#a3b0d6';
-      g.fillText(`${a.top.length > 1 ? 'Tied at ' : ''}${top.t.u} of 6 would drink again`, tx, y + 218);
+      g.fillText(`${a.top.length > 1 ? 'Tied at ' : ''}${ptsText(top.score)} of 6 points`, tx, y + 218);
     }
     // The standings, the top six.
     y = 690;
@@ -2738,7 +2756,7 @@ Not quite beer|Hard Kombucha|kombucha
       g.textAlign = 'right';
       g.font = `400 30px ${DISPLAY}`;
       g.fillStyle = '#ffe27a';
-      g.fillText(`${x.t.u}/6`, W - 100, ry + 41);
+      g.fillText(`${ptsText(x.score)}/6`, W - 100, ry + 41);
     });
     if (list.length > 6) {
       g.textAlign = 'left';
