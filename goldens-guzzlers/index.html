@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#070b17">
-<meta name="gg-build" content="2026-11-26-2010">
+<meta name="gg-build" content="2026-11-26-2030">
 <meta name="description" content="Golden&rsquo;s Guzzlers, the family's annual blind beer tasting: thumbs votes, reveals, standings and awards.">
 <title>Golden&rsquo;s Guzzlers · Beer Tasting Night</title>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -1593,6 +1593,8 @@ Not quite beer|Hard Kombucha|kombucha
       critic: best(people, r => [r.d, -r.u], r => r.d >= 1),
       easy: best(people, r => [r.u, -r.d], r => r.u >= 1),
       detective: best(people, r => [r.right, -r.guessed], r => r.right >= 1),
+      // Switzerland: the most sideways thumbs given; a tie goes to whoever took a side least.
+      mid: best(people, r => [r.s, -(r.u + r.d)], r => r.s >= 1),
       shelf, bottom,
       feud: best(sets, c => [c.wSplit, per(c, 'u') + per(c, 'd')], c => inSet(c) && c.split > 0)
     };
@@ -1661,6 +1663,7 @@ Not quite beer|Hard Kombucha|kombucha
     const critic = person(a.critic, r => `${r.d} thumbs down out of ${votesBy(r)} votes`, 'Waiting on votes.');
     const easy = person(a.easy, r => `${r.u} thumbs up out of ${votesBy(r)} votes`, 'Waiting on votes.');
     const det = person(a.detective, r => `${r.right} of ${r.guessed} guesses right on who brought it`, 'No right guesses yet.');
+    const mid = person(a.mid, r => `${r.s} sideways out of ${votesBy(r)} votes`, 'No sideways thumbs yet.');
     const tenth = n => (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '');
     const picked = a.top.filter(x => x.p.provider);
     const pick = a.pick.length
@@ -1693,9 +1696,10 @@ Not quite beer|Hard Kombucha|kombucha
         ${awardCard('&#128465;&#65039;', 'Bottom Shelf', 'Fewest points per beer, weighed by how many they brought', bottom)}
       </div>
       <p class="group-label">For the table</p>
-      <div class="awards trio">
+      <div class="awards quad">
         ${awardCard('&#129488;', 'Toughest Critic', 'Gave the most thumbs down', critic)}
         ${awardCard('&#128516;', 'Easiest to Please', 'Gave the most thumbs up', easy)}
+        ${awardCard('&#129335;', 'Switzerland', 'Gave the most sideways thumbs, never taking a side', mid)}
         ${awardCard('&#128373;&#65039;', 'Beer Detective', 'Most right guesses on who brought it', det)}
       </div>`;
   }
@@ -2650,7 +2654,7 @@ Not quite beer|Hard Kombucha|kombucha
   }
   // The night as one picture for the family chat: the pour of the night, the standings and the awards.
   async function recapImage(list) {
-    const W = 1080, H = 1600;
+    const W = 1080, H = 1680;
     const DISPLAY = '"Alfa Slab One", Rockwell, Georgia, serif';
     const BODY = '"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif';
     const DATA = '"IBM Plex Mono", Consolas, monospace';
@@ -2783,6 +2787,7 @@ Not quite beer|Hard Kombucha|kombucha
       ['Toughest Critic', names(a.critic)],
       ['Easiest to Please', names(a.easy)],
       ['Beer Detective', names(a.detective)],
+      ['Switzerland', names(a.mid)],
       ['Biggest Surprise', sp ? sp.p.name : '']
     ].filter(w => w[1]);
     awards.forEach(([label, win], i) => {
