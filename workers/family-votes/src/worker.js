@@ -555,9 +555,12 @@ const BEER_OP_ID = /^[A-Za-z0-9_-]{8,40}$/;
 // Deleting, banning a beer, and starting a new year are for the admin alone. The Worker never
 // holds the admin password: the BEER_ADMIN_HASH secret is pbkdf2-sha256$<rounds>$<salt hex>$<hash hex>,
 // and a right password earns a signed key that the admin's phone keeps for a year.
-export const BEER_ADMIN_OPS = new Set(["remove", "stash-remove", "clear", "newyear", "ban"]);
+export const BEER_ADMIN_OPS = new Set(["remove", "stash-remove", "clear", "newyear", "ban", "final"]);
 // The deletes among them, which take the word DELETE as well.
 export const BEER_DELETE_OPS = new Set(["remove", "stash-remove", "clear"]);
+// A night called final (Kane, 2026-11-26) takes no new pours, votes, guesses or reveals until the
+// admin reopens it. A fix from the admin's own device and the table's surprise pick still land.
+export const BEER_FINAL_LOCKED = new Set(["pour", "unpour", "vote", "guess", "reveal", "puller", "remove", "clear"]);
 export const BEER_ADMIN_DAYS = 365;
 // Wrong passwords allowed before admin sign-in pauses, and how long it pauses.
 export const BEER_ADMIN_FAILS = 8;
@@ -757,7 +760,21 @@ export function beerApply(board, op, now) {
   const last = b.pours[b.pours.length - 1];
   const current = last && !last.revealed ? last : null;
   let archive = null, removed = null;
+  if (board.final && BEER_FINAL_LOCKED.has(op.op)) return { error: "This night is final. The admin can reopen it to change it." };
   switch (op.op) {
+    case "final": {
+      if (op.on !== true && op.on !== false) return { error: "Final is on or off." };
+      if (op.on) {
+        if (b.final) return { board, changed: false };
+        if (current) return { error: "A beer is still in the coozie. Reveal it or put it back in the bucket first." };
+        if (!b.pours.some(p => p.revealed)) return { error: "Nothing has been revealed yet." };
+        b.final = now;
+      } else {
+        if (!b.final) return { board, changed: false };
+        b.final = null;
+      }
+      break;
+    }
     case "puller": {
       const name = beerWho(op.name);
       if (!name) return { error: "That puller is not at the table." };
@@ -1140,6 +1157,8 @@ export class BeerBoard {
       if (!(await beerIsAdmin(this.env, op.admin, now))) return json({ error: "Only the admin can do that.", ...(await this.state(m)) }, 403);
       if (BEER_DELETE_OPS.has(op.op) && op.confirm !== "DELETE") return json({ error: "A delete takes the word DELETE.", ...(await this.state(m)) }, 400);
     }
+    // On a final night only the admin's own device can still fix a pour.
+    const fixByAdmin = op.op === "edit" && !!op.admin && (await beerIsAdmin(this.env, op.admin, now));
     delete op.admin;
     const remember = async () => {
       if (!op.opId) return;
@@ -1173,6 +1192,8 @@ export class BeerBoard {
         return json({ error: "A new year comes after " + m.year + ".", ...(await this.state(m)) }, 400);
       }
       const prev = await this.board(m.year);
+      // The next year starts only from a night called final, so a slipped tap cannot end one early.
+      if (!prev.final) return json({ error: "Finalize " + m.year + " before starting " + y + ".", ...(await this.state(m)) }, 400);
       const next = { ...beerFresh(), year: y, nextPuller: prev.nextPuller || BEER_ROSTER[0] };
       await this.storage.put("board:" + y, next);
       m.year = y;
@@ -1213,6 +1234,7 @@ export class BeerBoard {
       return json({ error: "The board has moved on to " + m.year + ", so that change was not saved.", ...(await this.state(m)) }, 409);
     }
     const board = await this.board(m.year);
+    if (board.final && op.op === "edit" && !fixByAdmin) return json({ error: "This night is final. Only the admin can fix it now.", ...(await this.state(m, board)) }, 409);
     const out = beerApply(board, op, now);
     if (out.error) return json({ error: out.error, ...(await this.state(m, board)) }, 400);
     if (out.changed) {
@@ -1246,6 +1268,8 @@ export class BeerBoard {
         }
       }
       await this.after(op, now, m, out.board);
+      // A night called final is copied out at once, not on the next scheduled snapshot.
+      if (op.op === "final" && op.on) await this.writeSnapshot();
     }
     await remember();
     return json({ ...(await this.state(m, out.board)), changed: out.changed });
