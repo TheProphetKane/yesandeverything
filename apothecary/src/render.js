@@ -81,11 +81,19 @@ function parchmentSvg(theme) {
 // the theme's gradient/grain fields. Memoized on those, kept inside render.js
 // (module-scoped, not shared state) so the pure-renderer rule still holds:
 // same inputs always produce the same output, computed once and reused.
-let _parchmentBgCache = null; // { key, html } | null
-function parchmentBg(state, theme, ctx) {
+//
+// Two variants. 'print' (the print stage, which PNG export also captures)
+// loads the full-resolution source in data/textures/. 'screen' (the live
+// preview) loads the 1200px copy in data/textures/screen/, about 3 MB for all
+// sixteen slots against 16.6 MB for the sources; scripts/make-texture-thumbs.py
+// writes it. If the screen copy fails to load, the image falls back to the
+// source once before the gradient shows through. One cache entry per variant.
+const _parchmentBgCache = new Map(); // variant -> { key, html }
+export function parchmentBg(state, theme, ctx, variant = 'print') {
   const id = state.parchmentTexture;
   const key = `${id}|${theme.paperGradStart}|${theme.paperGradEnd}|${theme.paperGrain}`;
-  if (_parchmentBgCache && _parchmentBgCache.key === key) return _parchmentBgCache.html;
+  const cached = _parchmentBgCache.get(variant);
+  if (cached && cached.key === key) return cached.html;
 
   const textures = ctx.parchmentTextures || [];
   const slot = textures.find(t => t.id === id);
@@ -103,9 +111,13 @@ function parchmentBg(state, theme, ctx) {
     if (op < 1) styleParts.push(`opacity:${op}`);
     if (scale !== 1) styleParts.push(`transform:scale(${scale})`);
     const styleAttr = styleParts.length ? ` style="${styleParts.join(';')}"` : '';
-    html = `${svg}<img class="parchment-bg parchment-bg--texture" src="data/textures/${slot.file}" alt=""${styleAttr} onerror="this.remove()"/>`;
+    const full = `data/textures/${slot.file}`;
+    const img = variant === 'screen'
+      ? `<img class="parchment-bg parchment-bg--texture" src="data/textures/screen/${slot.file}" data-full="${full}" alt=""${styleAttr} onerror="if(this.dataset.full){this.src=this.dataset.full;this.dataset.full=''}else{this.remove()}"/>`
+      : `<img class="parchment-bg parchment-bg--texture" src="${full}" alt=""${styleAttr} onerror="this.remove()"/>`;
+    html = svg + img;
   }
-  _parchmentBgCache = { key, html };
+  _parchmentBgCache.set(variant, { key, html });
   return html;
 }
 
@@ -484,7 +496,7 @@ function previewCardHtml({ state, fullCtx, designSize, phys, side, zones, theme,
           height:${designH}in;
           transform: scale(${physicalScale});
         ">
-          ${parchmentBg(state, theme, fullCtx)}
+          ${parchmentBg(state, theme, fullCtx, 'screen')}
           ${borderSvg(state.accent, theme, designSize, state.borderStyle)}
           <div class="label-interior label-interior--${side}" style="width:${designW}in; height:${designH}in;">
             ${zonesHtml(zones, state, fullCtx)}
